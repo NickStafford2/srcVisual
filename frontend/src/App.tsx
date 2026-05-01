@@ -138,7 +138,7 @@ export default function App() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="rounded-2xl border border-sky-300/30 bg-sky-300/10 px-4 py-3 text-sm font-medium text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
+                  className="rounded-2xl border border-sky-300/30 bg-green-900 px-4 py-3 text-sm font-medium text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
                 >
                   {isLoading ? "Converting..." : "Visualize"}
                 </button>
