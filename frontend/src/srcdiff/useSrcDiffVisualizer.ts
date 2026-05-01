@@ -3,7 +3,7 @@ import { visualizeSrcDiff } from "../api";
 import { NESTED_SAMPLE } from "../samples";
 import type { VisualizeResponse } from "../types";
 import { buildSourceView } from "./srcView";
-import { findTreeNodeById } from "./tree";
+import { buildTreeIndex } from "./treeIndex";
 
 export function useSrcDiffVisualizer() {
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
@@ -16,10 +16,14 @@ export function useSrcDiffVisualizer() {
 
   const selectedFile = data?.files[selectedFileIndex] ?? null;
 
-  const selectedNode = useMemo(
-    () => findTreeNodeById(selectedFile?.tree, selectedNodeId),
-    [selectedFile?.tree, selectedNodeId],
+  const treeIndex = useMemo(
+    () => buildTreeIndex(selectedFile?.tree ?? null),
+    [selectedFile?.tree],
   );
+
+  const selectedNode = selectedNodeId
+    ? (treeIndex.get(selectedNodeId) ?? null)
+    : null;
 
   const beforeLines = useMemo(
     () =>
