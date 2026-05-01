@@ -105,6 +105,10 @@ input {
   gap: 12px;
 }
 
+.sample-row {
+  margin-top: 18px;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -207,6 +211,23 @@ input {
   color: var(--text);
   background: rgba(142, 208, 255, 0.16);
   border-color: rgba(142, 208, 255, 0.28);
+}
+
+.xml-input {
+  width: 100%;
+  min-height: 280px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  resize: vertical;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-family:
+    "SFMono-Regular", "SF Mono", "Cascadia Code", "Source Code Pro", Menlo, Consolas,
+    monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .status-row {

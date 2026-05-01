@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { DELETE_INSERT_SAMPLE, NESTED_SAMPLE, SIMPLE_MOVE_SAMPLE } from "./samples";
 import type { HighlightKind, ViewerLine } from "./srcdiff";
 import { alignSources } from "./srcdiff";
 
@@ -19,6 +20,7 @@ interface VisualizeResponse {
 
 export default function App() {
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
+  const [xmlInput, setXmlInput] = useState(NESTED_SAMPLE);
   const [data, setData] = useState<VisualizeResponse | null>(null);
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,13 +38,17 @@ export default function App() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedUpload) {
-      setError("Choose a srcdiff XML file first.");
+    if (!selectedUpload && !xmlInput.trim()) {
+      setError("Choose a srcdiff file or paste srcdiff XML first.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("srcdiff", selectedUpload);
+    if (selectedUpload) {
+      formData.append("srcdiff", selectedUpload);
+    } else {
+      formData.append("srcdiff_xml", xmlInput);
+    }
 
     setIsLoading(true);
     setError(null);
@@ -94,7 +100,7 @@ export default function App() {
           <div className="panel-header">
             <div>
               <h2>srcDiff input</h2>
-              <p>Choose a srcdiff XML file. The backend is the source of truth.</p>
+              <p>Choose a srcdiff XML file or paste raw XML. The backend is the source of truth.</p>
             </div>
             <div className="button-row">
               <label className="file-picker">
@@ -110,6 +116,29 @@ export default function App() {
               </button>
             </div>
           </div>
+
+          <div className="button-row sample-row">
+            <button type="button" onClick={() => setXmlInput(NESTED_SAMPLE)}>
+              Load nested sample
+            </button>
+            <button type="button" onClick={() => setXmlInput(SIMPLE_MOVE_SAMPLE)}>
+              Load move sample
+            </button>
+            <button type="button" onClick={() => setXmlInput(DELETE_INSERT_SAMPLE)}>
+              Load rename sample
+            </button>
+          </div>
+
+          <textarea
+            className="xml-input"
+            spellCheck={false}
+            value={xmlInput}
+            onChange={(event) => {
+              setXmlInput(event.target.value);
+              setSelectedUpload(null);
+            }}
+            placeholder="Paste srcdiff XML here"
+          />
         </form>
 
         <div className="status-row">
