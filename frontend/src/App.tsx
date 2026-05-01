@@ -5,8 +5,9 @@ import { InputPanel } from "./components/InputPanel";
 import { SourceSection } from "./components/SourceSection";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
 import { NESTED_SAMPLE } from "./samples";
-import { buildSourceView, findTreeNodeById } from "./srcdiff";
 import type { VisualizeResponse } from "./types";
+import { buildSourceView } from "./srcdiff/srcView";
+import { findTreeNodeById } from "./srcdiff/tree";
 
 export default function App() {
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);

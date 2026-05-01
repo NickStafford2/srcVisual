@@ -1,4 +1,4 @@
-import type { SrcDiffTreeNode } from "./srcdiff";
+import { SrcDiffTreeNode } from "./srcdiff/types";
 
 export interface VisualizedFile {
   unit: number;

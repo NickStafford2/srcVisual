@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SrcDiffTreeNode } from "../../srcdiff";
+import { SrcDiffTreeNode } from "../../srcdiff/types";
 
 export default function SrcDiffTree({
   root,
@@ -117,7 +117,11 @@ function TreeNodeRow({
         >
           <span className={kindClasses(node.kind)}>{node.kind}</span>
           <span className="truncate text-slate-100">{node.label}</span>
-          {node.move_id ? <span className="text-xs text-emerald-300">move={node.move_id}</span> : null}
+          {node.move_id ? (
+            <span className="text-xs text-emerald-300">
+              move={node.move_id}
+            </span>
+          ) : null}
         </button>
       </div>
 

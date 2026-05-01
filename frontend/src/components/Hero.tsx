@@ -3,14 +3,11 @@ export function Hero() {
     <section className="rounded-[28px] border border-white/10 bg-slate-950/65 p-7 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="grid gap-5">
         <div>
-          <p className="mb-2 text-xs font-medium tracking-[0.14em] text-sky-300 uppercase">
-            srcVisual / srcMove / srcDiff
-          </p>
-          <h1 className="text-4xl leading-none font-semibold sm:text-5xl lg:text-7xl">
+          <h1 className="leading-none font-semibold sm:text-3xl lg:text-5xl">
             Send a srcDiff document to the backend and inspect the XML tree
             against live source spans.
           </h1>
-          <p className="mt-4 max-w-4xl text-base leading-7 text-slate-300">
+          <p className="mt-4 text-base leading-7 text-slate-300">
             The backend reconstructs revision 0 and revision 1, reruns srcdiff
             with position data, runs srcMove, then sends back a normalized tree.
             Selecting any node in that tree highlights the corresponding source

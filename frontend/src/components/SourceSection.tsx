@@ -1,4 +1,4 @@
-import type { HighlightKind, SrcDiffTreeNode, ViewerLine } from "../srcdiff";
+import { HighlightKind, SrcDiffTreeNode, ViewerLine } from "../srcdiff/types";
 
 type SourceSectionProps = {
   filename: string | null;
