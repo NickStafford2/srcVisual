@@ -30,7 +30,7 @@ body {
 }
 
 button,
-textarea {
+input {
   font: inherit;
 }
 
@@ -98,7 +98,8 @@ textarea {
 
 .legend,
 .button-row,
-.status-row {
+.status-row,
+.file-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -163,21 +164,49 @@ textarea {
   border-color: rgba(142, 208, 255, 0.44);
 }
 
-.xml-input {
-  width: 100%;
-  min-height: 280px;
-  margin-top: 18px;
-  padding: 18px;
+.button-row button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.upload-form {
+  display: block;
+}
+
+.file-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  resize: vertical;
-  background: var(--bg-panel);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  font-family:
-    "SFMono-Regular", "SF Mono", "Cascadia Code", "Source Code Pro", Menlo, Consolas,
-    monospace;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  cursor: pointer;
+}
+
+.file-picker input {
+  display: none;
+}
+
+.file-strip {
+  margin-top: 18px;
+}
+
+.file-tab {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.file-tab-active {
+  color: var(--text);
+  background: rgba(142, 208, 255, 0.16);
+  border-color: rgba(142, 208, 255, 0.28);
 }
 
 .status-row {
