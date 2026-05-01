@@ -1,178 +1,134 @@
 export type HighlightKind = "plain" | "delete" | "insert" | "move";
 
-export interface ViewerLine {
-  number: number;
+export interface SourceSpan {
+  start_line: number;
+  start_col: number;
+  end_line: number;
+  end_col: number;
+}
+
+export interface SrcDiffTreeNode {
+  id: string;
+  path: string;
+  tag: string;
+  label: string;
+  kind: HighlightKind;
+  move_id?: string | null;
+  before_span?: SourceSpan | null;
+  after_span?: SourceSpan | null;
+  children: SrcDiffTreeNode[];
+}
+
+export interface ViewerLineSegment {
   text: string;
   kind: HighlightKind;
+  highlighted: boolean;
+}
+
+export interface ViewerLine {
+  number: number;
+  segments: ViewerLineSegment[];
   hasHighlight: boolean;
 }
 
-interface DiffRow {
-  before?: string;
-  after?: string;
-  kind: HighlightKind;
-}
-
-export function alignSources(
-  beforeSource: string,
-  afterSource: string,
-): {
-  beforeLines: ViewerLine[];
-  afterLines: ViewerLine[];
-} {
-  const before = splitLines(beforeSource);
-  const after = splitLines(afterSource);
-  const rows = buildAlignedRows(before, after);
-
-  let beforeLineNumber = 0;
-  let afterLineNumber = 0;
-
-  return {
-    beforeLines: rows.map((row) => {
-      if (row.before !== undefined) {
-        beforeLineNumber += 1;
-      }
-
-      return {
-        number: row.before !== undefined ? beforeLineNumber : 0,
-        text: row.before ?? "",
-        kind: row.kind === "insert" ? "plain" : row.kind,
-        hasHighlight: row.kind !== "plain",
-      };
-    }),
-    afterLines: rows.map((row) => {
-      if (row.after !== undefined) {
-        afterLineNumber += 1;
-      }
-
-      return {
-        number: row.after !== undefined ? afterLineNumber : 0,
-        text: row.after ?? "",
-        kind: row.kind === "delete" ? "plain" : row.kind,
-        hasHighlight: row.kind !== "plain",
-      };
-    }),
-  };
-}
-
-function splitLines(source: string): string[] {
+export function buildSourceView(
+  source: string,
+  span: SourceSpan | null | undefined,
+  kind: HighlightKind,
+): ViewerLine[] {
   const normalized = source.replace(/\r\n/g, "\n");
   const lines = normalized.split("\n");
   if (lines.length > 0 && lines[lines.length - 1] === "") {
     lines.pop();
   }
-  return lines;
-}
 
-function buildAlignedRows(before: string[], after: string[]): DiffRow[] {
-  const rows: DiffRow[] = [];
-  const lcs = buildLcsTable(before, after);
+  return lines.map((line, index) => {
+    const lineNumber = index + 1;
+    const lineSpan = spanForLine(lineNumber, line, span);
 
-  let beforeIndex = 0;
-  let afterIndex = 0;
+    if (!lineSpan) {
+      return {
+        number: lineNumber,
+        segments: [{ text: line || " ", kind: "plain", highlighted: false }],
+        hasHighlight: false,
+      };
+    }
 
-  while (beforeIndex < before.length && afterIndex < after.length) {
-    if (before[beforeIndex] === after[afterIndex]) {
-      rows.push({
-        before: before[beforeIndex],
-        after: after[afterIndex],
+    const segments: ViewerLineSegment[] = [];
+    const startIndex = Math.max(0, Math.min(line.length, lineSpan.start_col - 1));
+    const endExclusive = Math.max(startIndex, Math.min(line.length, lineSpan.end_col));
+
+    if (startIndex > 0) {
+      segments.push({
+        text: line.slice(0, startIndex),
         kind: "plain",
+        highlighted: false,
       });
-      beforeIndex += 1;
-      afterIndex += 1;
-      continue;
     }
 
-    if (lcs[beforeIndex + 1][afterIndex] >= lcs[beforeIndex][afterIndex + 1]) {
-      rows.push({
-        before: before[beforeIndex],
-        kind: "delete",
+    segments.push({
+      text: line.slice(startIndex, endExclusive) || " ",
+      kind,
+      highlighted: true,
+    });
+
+    if (endExclusive < line.length) {
+      segments.push({
+        text: line.slice(endExclusive),
+        kind: "plain",
+        highlighted: false,
       });
-      beforeIndex += 1;
-      continue;
     }
 
-    rows.push({
-      after: after[afterIndex],
-      kind: "insert",
-    });
-    afterIndex += 1;
-  }
-
-  while (beforeIndex < before.length) {
-    rows.push({
-      before: before[beforeIndex],
-      kind: "delete",
-    });
-    beforeIndex += 1;
-  }
-
-  while (afterIndex < after.length) {
-    rows.push({
-      after: after[afterIndex],
-      kind: "insert",
-    });
-    afterIndex += 1;
-  }
-
-  return coalesceChangedRows(rows);
+    return {
+      number: lineNumber,
+      segments,
+      hasHighlight: true,
+    };
+  });
 }
 
-function buildLcsTable(before: string[], after: string[]): number[][] {
-  const table = Array.from({ length: before.length + 1 }, () =>
-    Array<number>(after.length + 1).fill(0),
-  );
+export function findTreeNodeById(
+  node: SrcDiffTreeNode | null | undefined,
+  id: string | null,
+): SrcDiffTreeNode | null {
+  if (!node || !id) {
+    return null;
+  }
 
-  for (
-    let beforeIndex = before.length - 1;
-    beforeIndex >= 0;
-    beforeIndex -= 1
-  ) {
-    for (let afterIndex = after.length - 1; afterIndex >= 0; afterIndex -= 1) {
-      if (before[beforeIndex] === after[afterIndex]) {
-        table[beforeIndex][afterIndex] =
-          table[beforeIndex + 1][afterIndex + 1] + 1;
-      } else {
-        table[beforeIndex][afterIndex] = Math.max(
-          table[beforeIndex + 1][afterIndex],
-          table[beforeIndex][afterIndex + 1],
-        );
-      }
+  if (node.id === id) {
+    return node;
+  }
+
+  for (const child of node.children) {
+    const match = findTreeNodeById(child, id);
+    if (match) {
+      return match;
     }
   }
 
-  return table;
+  return null;
 }
 
-function coalesceChangedRows(rows: DiffRow[]): DiffRow[] {
-  const merged: DiffRow[] = [];
-
-  for (let index = 0; index < rows.length; index += 1) {
-    const row = rows[index];
-    const next = rows[index + 1];
-
-    if (row.kind === "delete" && next?.kind === "insert") {
-      merged.push({
-        before: row.before,
-        after: next.after,
-        kind: "move",
-      });
-      index += 1;
-      continue;
-    }
-
-    if (row.kind === "insert" && next?.kind === "delete") {
-      merged.push({
-        before: next.before,
-        after: row.after,
-        kind: "move",
-      });
-      index += 1;
-      continue;
-    }
-
-    merged.push(row);
+function spanForLine(
+  lineNumber: number,
+  line: string,
+  span: SourceSpan | null | undefined,
+): SourceSpan | null {
+  if (!span) {
+    return null;
   }
 
-  return merged;
+  if (lineNumber < span.start_line || lineNumber > span.end_line) {
+    return null;
+  }
+
+  const startCol = lineNumber === span.start_line ? span.start_col : 1;
+  const endCol = lineNumber === span.end_line ? span.end_col : Math.max(line.length, 1);
+  return {
+    start_line: lineNumber,
+    start_col: startCol,
+    end_line: lineNumber,
+    end_col: endCol,
+  };
 }
