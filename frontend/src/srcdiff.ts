@@ -13,7 +13,10 @@ interface DiffRow {
   kind: HighlightKind;
 }
 
-export function alignSources(beforeSource: string, afterSource: string): {
+export function alignSources(
+  beforeSource: string,
+  afterSource: string,
+): {
   beforeLines: ViewerLine[];
   afterLines: ViewerLine[];
 } {
@@ -116,12 +119,19 @@ function buildAlignedRows(before: string[], after: string[]): DiffRow[] {
 }
 
 function buildLcsTable(before: string[], after: string[]): number[][] {
-  const table = Array.from({ length: before.length + 1 }, () => Array<number>(after.length + 1).fill(0));
+  const table = Array.from({ length: before.length + 1 }, () =>
+    Array<number>(after.length + 1).fill(0),
+  );
 
-  for (let beforeIndex = before.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
+  for (
+    let beforeIndex = before.length - 1;
+    beforeIndex >= 0;
+    beforeIndex -= 1
+  ) {
     for (let afterIndex = after.length - 1; afterIndex >= 0; afterIndex -= 1) {
       if (before[beforeIndex] === after[afterIndex]) {
-        table[beforeIndex][afterIndex] = table[beforeIndex + 1][afterIndex + 1] + 1;
+        table[beforeIndex][afterIndex] =
+          table[beforeIndex + 1][afterIndex + 1] + 1;
       } else {
         table[beforeIndex][afterIndex] = Math.max(
           table[beforeIndex + 1][afterIndex],
