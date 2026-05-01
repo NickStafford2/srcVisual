@@ -1,0 +1,22 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "include": ["src"],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["src"]
+    }
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "strict",
+  "useLibraryCodeForTypes": true,
+  "reportImportCycles": "error",
+  "reportMissingImports": "error",
+  "reportMissingModuleSource": "warning",
+  "reportUnusedImport": "error",
+  "reportDuplicateImport": "error",
+  "reportUnnecessaryTypeIgnoreComment": "warning",
+  "reportUnsupportedDunderAll": "error",
+  "reportMissingTypeStubs": "none"
+}
