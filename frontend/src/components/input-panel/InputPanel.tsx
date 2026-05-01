@@ -2,8 +2,11 @@ import {
   DELETE_INSERT_SAMPLE,
   NESTED_SAMPLE,
   SIMPLE_MOVE_SAMPLE,
-} from "../samples";
-import type { VisualizeResponse } from "../types";
+} from "../../samples";
+import type { VisualizeResponse } from "../../types";
+import { FileTabs } from "./FileTabs";
+import { SampleButton } from "./SampleButton";
+import { StatusPill } from "./StatusPill";
 
 type InputPanelProps = {
   selectedUpload: File | null;
@@ -71,9 +74,11 @@ export function InputPanel({
           <SampleButton onClick={() => onXmlInputChange(NESTED_SAMPLE)}>
             Load nested sample
           </SampleButton>
+
           <SampleButton onClick={() => onXmlInputChange(SIMPLE_MOVE_SAMPLE)}>
             Load move sample
           </SampleButton>
+
           <SampleButton onClick={() => onXmlInputChange(DELETE_INSERT_SAMPLE)}>
             Load rename sample
           </SampleButton>
@@ -102,6 +107,7 @@ export function InputPanel({
             <span className="inline-flex items-center rounded-full border border-white/8 bg-white/5 px-3 py-2 text-sm text-slate-300">
               {data.units} unit(s) extracted
             </span>
+
             <span className="inline-flex items-center rounded-full border border-white/8 bg-white/5 px-3 py-2 text-sm text-slate-300">
               {data.has_position_data
                 ? "position-aware highlights enabled"
@@ -112,67 +118,12 @@ export function InputPanel({
       </div>
 
       {data ? (
-        <div
-          className="mt-5 flex flex-wrap gap-3"
-          role="tablist"
-          aria-label="Archive files"
-        >
-          {data.files.map((file, index) => (
-            <button
-              key={`${file.unit}-${file.filename}`}
-              type="button"
-              className={[
-                "cursor-pointer rounded-full border px-4 py-2.5 text-sm transition",
-                index === selectedFileIndex
-                  ? "border-sky-300/30 bg-sky-300/15 text-slate-50"
-                  : "border-white/8 bg-white/5 text-slate-300 hover:border-sky-300/20 hover:bg-sky-300/8",
-              ].join(" ")}
-              onClick={() => onSelectFileIndex(index)}
-            >
-              {file.filename}
-            </button>
-          ))}
-        </div>
+        <FileTabs
+          files={data.files}
+          selectedFileIndex={selectedFileIndex}
+          onSelectFileIndex={onSelectFileIndex}
+        />
       ) : null}
     </section>
-  );
-}
-
-function SampleButton({
-  children,
-  onClick,
-}: {
-  children: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-2xl border border-sky-300/30 bg-sky-300/10 px-4 py-2.5 text-sm text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20"
-    >
-      {children}
-    </button>
-  );
-}
-
-function StatusPill({
-  children,
-  error,
-}: {
-  children: string;
-  error: string | null;
-}) {
-  return (
-    <span
-      className={[
-        "inline-flex items-center rounded-full border px-3 py-2 text-sm",
-        error
-          ? "border-red-300/10 bg-red-300/10 text-red-200"
-          : "border-emerald-300/10 bg-emerald-300/10 text-emerald-200",
-      ].join(" ")}
-    >
-      {children}
-    </span>
   );
 }

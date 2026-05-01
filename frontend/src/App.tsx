@@ -1,9 +1,8 @@
 import { Hero } from "./components/Hero";
-import { InputPanel } from "./components/InputPanel";
 import { SourceSection } from "./components/source-view/SourceSection";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
 import { useSrcDiffVisualizer } from "./srcdiff/useSrcDiffVisualizer";
-
+import { InputPanel } from "./components/input-panel/InputPanel";
 export default function App() {
   const srcDiff = useSrcDiffVisualizer();
 
