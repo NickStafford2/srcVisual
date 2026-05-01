@@ -97,7 +97,7 @@ export default function App() {
                 Upload a srcDiff file and let the backend reconstruct both
                 revisions.
               </h1>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
+              <p className="mt-4 text-base leading-7 text-slate-300">
                 The Flask backend runs the command-line tools on your PATH, uses
                 srcMove to annotate the diff, extracts revision 0 and revision 1
                 with archive_reader, and sends the source code back for display.
