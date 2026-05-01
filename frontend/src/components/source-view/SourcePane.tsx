@@ -50,13 +50,22 @@ export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
 }
 
 function SourceSegment({ segment }: { segment: ViewerLineSegment }) {
+  const displayText =
+    segment.highlighted && segment.text.trim().length === 0
+      ? renderVisibleWhitespace(segment.text)
+      : segment.text;
+
   return (
     <span
       className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
     >
-      {segment.text}
+      {displayText}
     </span>
   );
+}
+
+function renderVisibleWhitespace(text: string): string {
+  return text.replace(/ /g, "·").replace(/\t/g, "⇥");
 }
 
 export function getSourceSegmentClasses(
