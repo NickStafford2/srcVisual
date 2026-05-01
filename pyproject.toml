@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-web = "srcvisual:main"
+web = "srcvisual.app:main"
 
 
 [build-system]
