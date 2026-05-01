@@ -1,0 +1,25 @@
+{
+  "name": "src_move_visualizer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "React frontend for visualizing srcDiff XML",
+  "license": "MIT",
+  "author": "Nicholas Stafford",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}
