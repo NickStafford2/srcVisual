@@ -4,24 +4,25 @@ import type {
   ViewerLineSegment,
 } from "../../srcdiff/types";
 
-type SourcePaneProps = {
+import { getSourceSegmentClasses } from "./segmentStyles";
+type XmlPaneProps = {
   title: string;
   subtitle: string;
   lines: ViewerLine[];
 };
 
-export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
+export function XmlPane({ title, subtitle, lines }: XmlPaneProps) {
   return (
-    <article className="overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/45">
+    <article className="overflow-hidden rounded-[24px] border border-purple-300/15 bg-slate-950/55">
       <header className="px-5 pt-5 pb-4">
         <h3 className="text-xl font-semibold text-slate-50">{title}</h3>
         <p className="mt-2 text-sm text-slate-300">{subtitle}</p>
       </header>
 
-      <div className="max-h-[72vh] overflow-auto border-t border-white/10 bg-slate-950/85 font-mono">
+      <div className="max-h-[44vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
         {lines.length === 0 ? (
           <div className="px-6 py-8 text-sm text-slate-400">
-            No source to render yet.
+            No XML to render yet.
           </div>
         ) : (
           lines.map((line) => (
@@ -29,7 +30,7 @@ export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
               key={`${title}-${line.number}`}
               className={[
                 "grid grid-cols-[72px_1fr] gap-3 px-5",
-                line.hasHighlight ? "bg-white/[0.04]" : "",
+                line.hasHighlight ? "bg-red-500/10" : "",
               ].join(" ")}
             >
               <span className="border-r border-white/5 py-2 pr-3 text-right text-sm text-slate-500 select-none">
@@ -38,7 +39,7 @@ export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
 
               <span className="block py-2 text-sm break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (
-                  <SourceSegment key={segmentIndex} segment={segment} />
+                  <XmlSegment key={segmentIndex} segment={segment} />
                 ))}
               </span>
             </div>
@@ -49,41 +50,12 @@ export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
   );
 }
 
-function SourceSegment({ segment }: { segment: ViewerLineSegment }) {
-  const displayText =
-    segment.highlighted && segment.text.trim().length === 0
-      ? renderVisibleWhitespace(segment.text)
-      : segment.text;
-
+function XmlSegment({ segment }: { segment: ViewerLineSegment }) {
   return (
     <span
       className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
     >
-      {displayText}
+      {segment.text}
     </span>
   );
-}
-
-function renderVisibleWhitespace(text: string): string {
-  return text.replace(/ /g, "·").replace(/\t/g, "⇥");
-}
-
-export function getSourceSegmentClasses(
-  kind: HighlightKind,
-  highlighted: boolean,
-): string {
-  if (!highlighted) {
-    return "";
-  }
-
-  switch (kind) {
-    case "delete":
-      return "rounded-md bg-red-300/85";
-    case "insert":
-      return "rounded-md bg-sky-300/85";
-    case "move":
-      return "rounded-md bg-amber-300/85";
-    default:
-      return "rounded-md bg-emerald-300/85";
-  }
 }

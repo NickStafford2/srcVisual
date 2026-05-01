@@ -1,5 +1,7 @@
 import type { SrcDiffTreeNode, ViewerLine } from "../../srcdiff/types";
-import { SourcePane } from "./SourcePane";
+
+import { CodePane } from "./CodePane";
+import { XmlPane } from "./XmlPane";
 
 type SourceSectionProps = {
   filename: string | null;
@@ -19,7 +21,7 @@ export function SourceSection({
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
-        <div className="bg-red-600">
+        <div>
           <h2 className="text-2xl font-semibold text-slate-50">
             XML and source
           </h2>
@@ -48,7 +50,7 @@ export function SourceSection({
       </div>
 
       <div className="mt-6">
-        <SourcePane
+        <XmlPane
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
           lines={xmlLines}
@@ -56,13 +58,13 @@ export function SourceSection({
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <SourcePane
+        <CodePane
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
           lines={beforeLines}
         />
 
-        <SourcePane
+        <CodePane
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
           lines={afterLines}
