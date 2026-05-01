@@ -7,7 +7,6 @@ type SourceSectionProps = {
   xmlLines: ViewerLine[];
   beforeLines: ViewerLine[];
   afterLines: ViewerLine[];
-  onSelectNode: (nodeId: string) => void;
 };
 
 export function SourceSection({
@@ -16,7 +15,6 @@ export function SourceSection({
   xmlLines,
   beforeLines,
   afterLines,
-  onSelectNode,
 }: SourceSectionProps) {
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
@@ -44,7 +42,6 @@ export function SourceSection({
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
           lines={xmlLines}
-          onSelectNode={onSelectNode}
         />
       </div>
 
@@ -53,14 +50,12 @@ export function SourceSection({
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
           lines={beforeLines}
-          onSelectNode={onSelectNode}
         />
 
         <SourcePane
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
           lines={afterLines}
-          onSelectNode={onSelectNode}
         />
       </div>
     </section>

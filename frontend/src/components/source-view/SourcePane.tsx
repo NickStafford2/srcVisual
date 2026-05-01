@@ -8,15 +8,9 @@ type SourcePaneProps = {
   title: string;
   subtitle: string;
   lines: ViewerLine[];
-  onSelectNode?: (nodeId: string) => void;
 };
 
-export function SourcePane({
-  title,
-  subtitle,
-  lines,
-  onSelectNode,
-}: SourcePaneProps) {
+export function SourcePane({ title, subtitle, lines }: SourcePaneProps) {
   return (
     <article className="overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/45">
       <header className="px-5 pt-5 pb-4">
@@ -44,11 +38,7 @@ export function SourcePane({
 
               <span className="block py-2 text-sm break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (
-                  <SourceSegment
-                    key={segmentIndex}
-                    segment={segment}
-                    onSelectNode={onSelectNode}
-                  />
+                  <SourceSegment key={segmentIndex} segment={segment} />
                 ))}
               </span>
             </div>
@@ -59,65 +49,32 @@ export function SourcePane({
   );
 }
 
-function SourceSegment({
-  segment,
-  onSelectNode,
-}: {
-  segment: ViewerLineSegment;
-  onSelectNode?: (nodeId: string) => void;
-}) {
-  const isClickable = Boolean(segment.nodeId && onSelectNode);
-
-  if (!isClickable) {
-    return (
-      <span
-        className={getSourceSegmentClasses(
-          segment.kind,
-          segment.highlighted,
-          false,
-        )}
-      >
-        {segment.text}
-      </span>
-    );
-  }
-
+function SourceSegment({ segment }: { segment: ViewerLineSegment }) {
   return (
-    <button
-      type="button"
-      className={getSourceSegmentClasses(
-        segment.kind,
-        segment.highlighted,
-        true,
-      )}
-      onClick={() => onSelectNode?.(segment.nodeId!)}
+    <span
+      className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
     >
       {segment.text}
-    </button>
+    </span>
   );
 }
 
 export function getSourceSegmentClasses(
   kind: HighlightKind,
   highlighted: boolean,
-  clickable: boolean,
 ): string {
-  const interactionClasses = clickable
-    ? "cursor-pointer text-left font-mono hover:bg-white/10"
-    : "";
-
   if (!highlighted) {
-    return interactionClasses;
+    return "";
   }
 
-  const highlightClasses =
-    kind === "delete"
-      ? "rounded-md bg-amber-300/25"
-      : kind === "insert"
-        ? "rounded-md bg-sky-300/25"
-        : kind === "move"
-          ? "rounded-md bg-emerald-300/25"
-          : "rounded-md bg-white/10";
-
-  return [highlightClasses, interactionClasses].filter(Boolean).join(" ");
+  switch (kind) {
+    case "delete":
+      return "rounded-md bg-amber-300/25";
+    case "insert":
+      return "rounded-md bg-sky-300/25";
+    case "move":
+      return "rounded-md bg-emerald-300/25";
+    default:
+      return "rounded-md bg-white/10";
+  }
 }

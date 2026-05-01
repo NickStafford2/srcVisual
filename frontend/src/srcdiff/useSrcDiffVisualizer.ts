@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { visualizeSrcDiff } from "../api";
 import { NESTED_SAMPLE } from "../samples";
 import type { VisualizeResponse } from "../types";
-import { buildInteractiveSourceView } from "./srcView";
+import { buildSourceView } from "./srcView";
 import { buildTreeIndex } from "./treeIndex";
 
 export function useSrcDiffVisualizer() {
@@ -27,35 +27,32 @@ export function useSrcDiffVisualizer() {
 
   const xmlLines = useMemo(
     () =>
-      buildInteractiveSourceView({
-        source: data?.annotated_srcdiff_xml ?? xmlInput,
-        root: selectedFile?.tree ?? null,
-        selectedNodeId,
-        getSpan: (node) => node.xml_span,
-      }),
-    [data?.annotated_srcdiff_xml, xmlInput, selectedFile?.tree, selectedNodeId],
+      buildSourceView(
+        data?.annotated_srcdiff_xml ?? xmlInput,
+        selectedNode?.xml_span,
+        selectedNode?.kind ?? "plain",
+      ),
+    [data?.annotated_srcdiff_xml, xmlInput, selectedNode],
   );
 
   const beforeLines = useMemo(
     () =>
-      buildInteractiveSourceView({
-        source: selectedFile?.before_source ?? "",
-        root: selectedFile?.tree ?? null,
-        selectedNodeId,
-        getSpan: (node) => node.before_span,
-      }),
-    [selectedFile?.before_source, selectedFile?.tree, selectedNodeId],
+      buildSourceView(
+        selectedFile?.before_source ?? "",
+        selectedNode?.before_span,
+        selectedNode?.kind ?? "plain",
+      ),
+    [selectedFile?.before_source, selectedNode],
   );
 
   const afterLines = useMemo(
     () =>
-      buildInteractiveSourceView({
-        source: selectedFile?.after_source ?? "",
-        root: selectedFile?.tree ?? null,
-        selectedNodeId,
-        getSpan: (node) => node.after_span,
-      }),
-    [selectedFile?.after_source, selectedFile?.tree, selectedNodeId],
+      buildSourceView(
+        selectedFile?.after_source ?? "",
+        selectedNode?.after_span,
+        selectedNode?.kind ?? "plain",
+      ),
+    [selectedFile?.after_source, selectedNode],
   );
 
   useEffect(() => {
