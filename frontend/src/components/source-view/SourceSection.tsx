@@ -19,15 +19,25 @@ export function SourceSection({
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
-        <div>
+        <div className="bg-red-600">
           <h2 className="text-2xl font-semibold text-slate-50">
             XML and source
           </h2>
+
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode
               ? `Selected ${selectedNode.label} at XML path ${selectedNode.path}`
               : "Select a tree node to highlight its XML and source spans."}
           </p>
+
+          {selectedNode ? (
+            <p className="mt-1 font-mono text-xs text-slate-400">
+              xml_span:{" "}
+              {selectedNode.xml_span
+                ? `${selectedNode.xml_span.start_line}:${selectedNode.xml_span.start_col} → ${selectedNode.xml_span.end_line}:${selectedNode.xml_span.end_col}`
+                : "missing"}
+            </p>
+          ) : null}
         </div>
 
         {selectedNode?.move_id ? (

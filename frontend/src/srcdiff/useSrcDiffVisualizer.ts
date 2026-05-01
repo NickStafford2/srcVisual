@@ -2,8 +2,30 @@ import { useEffect, useMemo, useState } from "react";
 import { visualizeSrcDiff } from "../api";
 import { NESTED_SAMPLE } from "../samples";
 import type { VisualizeResponse } from "../types";
+import type { SrcDiffTreeNode } from "./types";
 import { buildSourceView } from "./srcView";
 import { buildTreeIndex } from "./treeIndex";
+
+function assertSelectedNodeHasXmlSpan(
+  node: SrcDiffTreeNode | null,
+): asserts node is SrcDiffTreeNode & {
+  xml_span: NonNullable<SrcDiffTreeNode["xml_span"]>;
+} {
+  if (!node) return;
+
+  // do not catch! something is wrong and devs should know.
+  if (!node.xml_span) {
+    throw new Error(
+      [
+        "Selected SrcDiffTreeNode is missing xml_span.",
+        `id=${node.id}`,
+        `path=${node.path}`,
+        `tag=${node.tag}`,
+        `label=${node.label}`,
+      ].join(" "),
+    );
+  }
+}
 
 export function useSrcDiffVisualizer() {
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
@@ -25,15 +47,15 @@ export function useSrcDiffVisualizer() {
     ? (treeIndex.get(selectedNodeId) ?? null)
     : null;
 
-  const xmlLines = useMemo(
-    () =>
-      buildSourceView(
-        data?.annotated_srcdiff_xml ?? xmlInput,
-        selectedNode?.xml_span,
-        selectedNode?.kind ?? "plain",
-      ),
-    [data?.annotated_srcdiff_xml, xmlInput, selectedNode],
-  );
+  const xmlLines = useMemo(() => {
+    assertSelectedNodeHasXmlSpan(selectedNode);
+
+    return buildSourceView(
+      data?.annotated_srcdiff_xml ?? xmlInput,
+      selectedNode?.xml_span,
+      selectedNode?.kind ?? "plain",
+    );
+  }, [data?.annotated_srcdiff_xml, xmlInput, selectedNode]);
 
   const beforeLines = useMemo(
     () =>

@@ -1,4 +1,5 @@
 import type { VisualizeResponse } from "./types";
+import type { SrcDiffTreeNode } from "./srcdiff/types";
 
 export async function visualizeSrcDiff(
   formData: FormData,
@@ -16,5 +17,45 @@ export async function visualizeSrcDiff(
     throw new Error("error" in payload ? payload.error : "Upload failed.");
   }
 
+  assertVisualizeResponseHasXmlSpans(payload);
+
   return payload;
+}
+
+function assertVisualizeResponseHasXmlSpans(
+  payload: VisualizeResponse,
+): asserts payload is VisualizeResponse {
+  for (const file of payload.files) {
+    if (!file.tree) continue;
+
+    assertTreeHasXmlSpans(file.tree, file.filename);
+  }
+}
+
+function assertTreeHasXmlSpans(
+  root: SrcDiffTreeNode,
+  filename: string,
+): asserts root is SrcDiffTreeNode {
+  const stack: SrcDiffTreeNode[] = [root];
+
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+
+    if (!node.xml_span) {
+      throw new Error(
+        [
+          "Backend returned SrcDiffTreeNode without xml_span.",
+          `filename=${filename}`,
+          `id=${node.id}`,
+          `path=${node.path}`,
+          `tag=${node.tag}`,
+          `label=${node.label}`,
+        ].join(" "),
+      );
+    }
+
+    for (const child of node.children) {
+      stack.push(child);
+    }
+  }
 }
