@@ -3,6 +3,7 @@ import { SourceSection } from "./components/source-view/SourceSection";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
 import { useSrcDiffVisualizer } from "./srcdiff/useSrcDiffVisualizer";
 import { InputPanel } from "./components/input-panel/InputPanel";
+
 export default function App() {
   const srcDiff = useSrcDiffVisualizer();
 
@@ -33,6 +34,7 @@ export default function App() {
         <SourceSection
           filename={srcDiff.selectedFile?.filename ?? null}
           selectedNode={srcDiff.selectedNode}
+          xmlLines={srcDiff.xmlLines}
           beforeLines={srcDiff.beforeLines}
           afterLines={srcDiff.afterLines}
         />

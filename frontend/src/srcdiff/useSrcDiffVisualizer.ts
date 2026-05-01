@@ -25,6 +25,21 @@ export function useSrcDiffVisualizer() {
     ? (treeIndex.get(selectedNodeId) ?? null)
     : null;
 
+  const xmlLines = useMemo(
+    () =>
+      buildSourceView(
+        data?.annotated_srcdiff_xml ?? xmlInput,
+        selectedNode?.xml_span,
+        selectedNode?.kind ?? "plain",
+      ),
+    [
+      data?.annotated_srcdiff_xml,
+      xmlInput,
+      selectedNode?.xml_span,
+      selectedNode?.kind,
+    ],
+  );
+
   const beforeLines = useMemo(
     () =>
       buildSourceView(
@@ -103,6 +118,7 @@ export function useSrcDiffVisualizer() {
     selectedFileIndex,
     selectedNode,
     selectedNodeId,
+    xmlLines,
     beforeLines,
     afterLines,
     isLoading,

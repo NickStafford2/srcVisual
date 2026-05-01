@@ -14,6 +14,7 @@ export interface SrcDiffTreeNode {
   label: string;
   kind: HighlightKind;
   move_id?: string | null;
+  xml_span?: SourceSpan | null;
   before_span?: SourceSpan | null;
   after_span?: SourceSpan | null;
   children: SrcDiffTreeNode[];

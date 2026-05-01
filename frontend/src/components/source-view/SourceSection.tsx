@@ -4,6 +4,7 @@ import { SourcePane } from "./SourcePane";
 type SourceSectionProps = {
   filename: string | null;
   selectedNode: SrcDiffTreeNode | null;
+  xmlLines: ViewerLine[];
   beforeLines: ViewerLine[];
   afterLines: ViewerLine[];
 };
@@ -11,6 +12,7 @@ type SourceSectionProps = {
 export function SourceSection({
   filename,
   selectedNode,
+  xmlLines,
   beforeLines,
   afterLines,
 }: SourceSectionProps) {
@@ -18,11 +20,13 @@ export function SourceSection({
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-slate-50">Src</h2>
+          <h2 className="text-2xl font-semibold text-slate-50">
+            XML and source
+          </h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode
-              ? `Selected ${selectedNode.label} at ${selectedNode.path}`
-              : "Select a tree node to highlight its source span."}
+              ? `Selected ${selectedNode.label} at XML path ${selectedNode.path}`
+              : "Select a tree node to highlight its XML and source spans."}
           </p>
         </div>
 
@@ -31,6 +35,14 @@ export function SourceSection({
             move={selectedNode.move_id}
           </span>
         ) : null}
+      </div>
+
+      <div className="mt-6">
+        <SourcePane
+          title="srcDiff XML"
+          subtitle="Annotated XML returned by the backend"
+          lines={xmlLines}
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
