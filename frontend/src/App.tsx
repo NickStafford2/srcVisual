@@ -90,10 +90,10 @@ export default function App() {
         <section className="rounded-[28px] border border-white/10 bg-slate-950/65 p-7 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           <div className="grid gap-5">
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-sky-300">
+              <p className="mb-2 text-xs font-medium tracking-[0.14em] text-sky-300 uppercase">
                 srcVisual / srcMove / srcDiff
               </p>
-              <h1 className="max-w-[12ch] text-4xl leading-none font-semibold sm:text-5xl lg:text-7xl">
+              <h1 className="text-4xl leading-none font-semibold sm:text-2xl lg:text-4xl">
                 Upload a srcDiff file and let the backend reconstruct both
                 revisions.
               </h1>
@@ -173,7 +173,7 @@ export default function App() {
             </div>
 
             <textarea
-              className="mt-5 min-h-[280px] w-full resize-y rounded-3xl border border-white/10 bg-slate-950/80 px-5 py-4 font-mono text-[0.95rem] leading-6 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-300/40"
+              className="mt-5 min-h-[280px] w-full resize-y rounded-3xl border border-white/10 bg-slate-950/80 px-5 py-4 font-mono text-[0.95rem] leading-6 text-slate-100 transition outline-none placeholder:text-slate-500 focus:border-sky-300/40"
               spellCheck={false}
               value={xmlInput}
               onChange={(event) => {
@@ -284,10 +284,10 @@ function ViewerPane({
                 line.hasHighlight ? "bg-white/[0.04]" : "",
               ].join(" ")}
             >
-              <span className="select-none border-r border-white/5 py-2 pr-3 text-right text-sm text-slate-500">
+              <span className="border-r border-white/5 py-2 pr-3 text-right text-sm text-slate-500 select-none">
                 {line.number > 0 ? line.number : ""}
               </span>
-              <span className="block py-2 text-sm whitespace-pre-wrap break-words text-slate-100">
+              <span className="block py-2 text-sm break-words whitespace-pre-wrap text-slate-100">
                 <span className={segmentClasses(line.kind)}>
                   {line.text || " "}
                 </span>
