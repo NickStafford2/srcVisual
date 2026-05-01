@@ -37,6 +37,7 @@ export default function App() {
           xmlLines={srcDiff.xmlLines}
           beforeLines={srcDiff.beforeLines}
           afterLines={srcDiff.afterLines}
+          onSelectNode={srcDiff.setSelectedNodeId}
         />
       </div>
     </main>

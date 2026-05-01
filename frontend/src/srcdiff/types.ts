@@ -24,6 +24,7 @@ export interface ViewerLineSegment {
   text: string;
   kind: HighlightKind;
   highlighted: boolean;
+  nodeId?: string | null;
 }
 
 export interface ViewerLine {
