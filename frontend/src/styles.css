@@ -4,6 +4,10 @@
   --color-site-bg: rgb(59 58 64);
 }
 
+:root {
+  --site-bg-rgb: 59 58 64;
+}
+
 html,
 body {
   background-color: var(--color-site-bg);

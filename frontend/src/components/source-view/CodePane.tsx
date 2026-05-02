@@ -31,15 +31,27 @@ export function CodePane({
     () => buildSourceView(source, highlights),
     [source, highlights],
   );
+  const isRevisionAfter = revision === "after";
 
   return (
-    <article className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/45">
-      <header className="px-4 pt-3 pb-2">
+    <article
+      className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/45"
+      style={getCodePaneSurfaceStyle(revision)}
+    >
+      <header
+        className={[
+          "px-4 pt-3 pb-2",
+          isRevisionAfter ? "text-right" : "text-left",
+        ].join(" ")}
+      >
         <h3 className="text-base font-semibold text-slate-50">{title}</h3>
         <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
       </header>
 
-      <div className="max-h-[58vh] overflow-auto border-t border-white/10 bg-slate-950/85 font-mono">
+      <div
+        className="max-h-[58vh] overflow-auto border-t border-white/10 bg-slate-950/85 font-mono"
+        style={getCodePaneBodyStyle(revision)}
+      >
         {lines.length === 0 ? (
           <div className="px-5 py-5 text-sm text-slate-400">
             No source to render yet.
@@ -102,4 +114,24 @@ function CodeSegment({ segment }: { segment: ViewerLineSegment }) {
 
 function renderVisibleWhitespace(text: string): string {
   return text.replace(/ /g, "·").replace(/\t/g, "⇥");
+}
+
+function getCodePaneSurfaceStyle(revision: SourceRevision): {
+  backgroundImage: string;
+} {
+  const direction = revision === "before" ? "90deg" : "270deg";
+
+  return {
+    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.28) 0%, rgb(2 6 23 / 0) 70%)`,
+  };
+}
+
+function getCodePaneBodyStyle(revision: SourceRevision): {
+  backgroundImage: string;
+} {
+  const direction = revision === "before" ? "90deg" : "270deg";
+
+  return {
+    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.18) 0%, rgb(2 6 23 / 0) 75%)`,
+  };
 }
