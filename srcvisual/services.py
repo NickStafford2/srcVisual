@@ -70,7 +70,16 @@ def build_visualization_payload(*, filename: str, payload: bytes) -> dict[str, o
         positioned_path = tmpdir / "positioned.srcdiff.xml"
         annotated_path = tmpdir / "annotated.srcdiff.xml"
 
-        run_command(["srcdiff", "--position", str(revision_zero_dir), str(revision_one_dir), "-o", str(positioned_path)])
+        run_command(
+            [
+                "srcdiff",
+                "--position",
+                str(revision_zero_dir),
+                str(revision_one_dir),
+                "-o",
+                str(positioned_path),
+            ]
+        )
         run_command(["srcMove", str(positioned_path), str(annotated_path)])
 
         annotated_srcdiff_xml = annotated_path.read_text(encoding="utf-8")
@@ -101,18 +110,36 @@ def extract_revision_files(
     revision_zero_dir: Path,
     revision_one_dir: Path,
 ) -> list[dict[str, object]]:
-    archive_info = json.loads(run_command(["archive_reader", "--info", str(input_path)]).stdout)
+    archive_info = json.loads(
+        run_command(["archive_reader", "--info", str(input_path)]).stdout
+    )
     unit_count = int(archive_info["units"])
     files: list[dict[str, object]] = []
 
     for unit in range(1, unit_count + 1):
-        unit_info = json.loads(run_command(["archive_reader", "--info", f"--unit={unit}", str(input_path)]).stdout)
+        unit_info = json.loads(
+            run_command(
+                ["archive_reader", "--info", f"--unit={unit}", str(input_path)]
+            ).stdout
+        )
         filename = unit_info.get("filename", f"unit-{unit}.cpp")
         source_code_before = run_command(
-            ["archive_reader", f"--unit={unit}", "--revision=0", "--output-src", str(input_path)]
+            [
+                "archive_reader",
+                f"--unit={unit}",
+                "--revision=0",
+                "--output-src",
+                str(input_path),
+            ]
         ).stdout
         source_code_after = run_command(
-            ["archive_reader", f"--unit={unit}", "--revision=1", "--output-src", str(input_path)]
+            [
+                "archive_reader",
+                f"--unit={unit}",
+                "--revision=1",
+                "--output-src",
+                str(input_path),
+            ]
         ).stdout
 
         write_source_file(revision_zero_dir / filename, source_code_before)
@@ -131,7 +158,9 @@ def extract_revision_files(
     return files
 
 
-def build_tree_index(annotated_srcdiff_xml: str) -> tuple[dict[str, dict[str, object]], bool]:
+def build_tree_index(
+    annotated_srcdiff_xml: str,
+) -> tuple[dict[str, dict[str, object]], bool]:
     root = ET.fromstring(annotated_srcdiff_xml)
     unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
     xml_span_by_path = build_xml_span_index(annotated_srcdiff_xml)
@@ -144,7 +173,6 @@ def build_tree_index(annotated_srcdiff_xml: str) -> tuple[dict[str, dict[str, ob
             unit_element,
             path=f"/src:unit[{unit_number}]",
             inherited_diff_kind=None,
-            inherited_move_id=None,
             xml_span_by_path=xml_span_by_path,
         )
         index[filename] = tree
@@ -158,17 +186,17 @@ def build_tree_node(
     *,
     path: str,
     inherited_diff_kind: str | None,
-    inherited_move_id: str | None,
     xml_span_by_path: dict[str, SourceSpan],
 ) -> dict[str, object]:
     tag = prefixed_name(element.tag)
+
     current_diff_kind = inherited_diff_kind
     if tag == "diff:delete":
         current_diff_kind = "delete"
     elif tag == "diff:insert":
         current_diff_kind = "insert"
 
-    current_move_id = element.attrib.get(f"{{{MV_NS}}}id") or element.attrib.get("move") or inherited_move_id
+    current_move_id = element.attrib.get(f"{{{MV_NS}}}id") or element.attrib.get("move")
     current_kind = "move" if current_move_id else current_diff_kind or "plain"
 
     before_span, after_span = spans_for_element(element, current_diff_kind)
@@ -182,11 +210,11 @@ def build_tree_node(
         child_name = prefixed_name(child.tag)
         tag_counts[child_name] = tag_counts.get(child_name, 0) + 1
         child_path = f"{path}/{child_name}[{tag_counts[child_name]}]"
+
         child_node = build_tree_node(
             child,
             path=child_path,
             inherited_diff_kind=current_diff_kind,
-            inherited_move_id=current_move_id,
             xml_span_by_path=xml_span_by_path,
         )
         children.append(child_node)
@@ -203,14 +231,18 @@ def build_tree_node(
         "label": build_node_label(tag, element),
         "kind": current_kind,
         "move_id": current_move_id,
-        "xml_span": xml_span_by_path.get(path).to_dict() if path in xml_span_by_path else None,
+        "xml_span": xml_span_by_path.get(path).to_dict()
+        if path in xml_span_by_path
+        else None,
         "before_span": before_span.to_dict() if before_span else None,
         "after_span": after_span.to_dict() if after_span else None,
         "children": children,
     }
 
 
-def spans_for_element(element: ET.Element, diff_kind: str | None) -> tuple[SourceSpan | None, SourceSpan | None]:
+def spans_for_element(
+    element: ET.Element, diff_kind: str | None
+) -> tuple[SourceSpan | None, SourceSpan | None]:
     spans = parse_position_spans(element)
     if spans is None:
         return None, None
