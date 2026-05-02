@@ -1,7 +1,7 @@
 import type { VisualizedFile } from "../../types";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
-import { CodePane } from "./CodePane";
+import { CodePane } from "./code-pane/CodePane";
 
 type SourceFileCardProps = {
   fileIndex: number;
