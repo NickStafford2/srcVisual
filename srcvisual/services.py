@@ -48,7 +48,12 @@ class SourceSpan:
         }
 
 
-def build_visualization_payload(*, filename: str, payload: bytes) -> dict[str, object]:
+def build_visualization_payload(
+    *,
+    filename: str,
+    payload: bytes,
+    include_skipped_tags: bool = False,
+) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="srcvisual-") as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         input_path = tmpdir / sanitize_filename(filename)
@@ -83,7 +88,10 @@ def build_visualization_payload(*, filename: str, payload: bytes) -> dict[str, o
         run_command(["srcMove", str(positioned_path), str(annotated_path)])
 
         annotated_srcdiff_xml = annotated_path.read_text(encoding="utf-8")
-        tree_by_filename, has_position_data = build_tree_index(annotated_srcdiff_xml)
+        tree_by_filename, has_position_data = build_tree_index(
+            annotated_srcdiff_xml,
+            include_skipped_tags=include_skipped_tags,
+        )
 
         files: list[dict[str, object]] = []
         for file_info in original_files:
@@ -160,10 +168,15 @@ def extract_revision_files(
 
 def build_tree_index(
     annotated_srcdiff_xml: str,
+    *,
+    include_skipped_tags: bool = False,
 ) -> tuple[dict[str, dict[str, object]], bool]:
     root = ET.fromstring(annotated_srcdiff_xml)
     unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
-    xml_span_by_path = build_xml_span_index(annotated_srcdiff_xml)
+    xml_span_by_path = build_xml_span_index(
+        annotated_srcdiff_xml,
+        include_skipped_tags=include_skipped_tags,
+    )
     index: dict[str, dict[str, object]] = {}
     has_position_data = False
 
@@ -173,6 +186,7 @@ def build_tree_index(
             unit_element,
             path=f"/src:unit[{unit_number}]",
             xml_span_by_path=xml_span_by_path,
+            include_skipped_tags=include_skipped_tags,
         )
         index[filename] = tree
         has_position_data = has_position_data or tree_has_positions(tree)
@@ -185,6 +199,7 @@ def build_tree_node(
     *,
     path: str,
     xml_span_by_path: dict[str, SourceSpan],
+    include_skipped_tags: bool = False,
 ) -> dict[str, object]:
     tag = prefixed_name(element.tag)
 
@@ -208,7 +223,7 @@ def build_tree_node(
     tag_counts: dict[str, int] = {}
 
     for child in list(element):
-        if child.tag in SKIPPED_TREE_TAGS:
+        if not include_skipped_tags and child.tag in SKIPPED_TREE_TAGS:
             continue
 
         child_name = prefixed_name(child.tag)
@@ -219,6 +234,7 @@ def build_tree_node(
             child,
             path=child_path,
             xml_span_by_path=xml_span_by_path,
+            include_skipped_tags=include_skipped_tags,
         )
         children.append(child_node)
 
@@ -301,11 +317,15 @@ def parse_position_points(value: str) -> tuple[tuple[int, int], ...]:
     return tuple(parse_position_point(part) for part in value.split("|"))
 
 
-def build_xml_span_index(annotated_srcdiff_xml: str) -> dict[str, SourceSpan]:
+def build_xml_span_index(
+    annotated_srcdiff_xml: str,
+    *,
+    include_skipped_tags: bool = False,
+) -> dict[str, SourceSpan]:
     xml_bytes = annotated_srcdiff_xml.encode("utf-8")
     line_start_offsets = compute_line_start_offsets(xml_bytes)
     spans: dict[str, SourceSpan] = {}
-    skipped_names = skipped_tree_tag_names()
+    skipped_names = set() if include_skipped_tags else skipped_tree_tag_names()
 
     parser = expat.ParserCreate(namespace_separator="|")
     nested_unit_count = 0

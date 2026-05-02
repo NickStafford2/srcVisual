@@ -1,3 +1,4 @@
+import type { FormEvent } from "react";
 import {
   DELETE_INSERT_SAMPLE,
   NESTED_SAMPLE,
@@ -13,9 +14,11 @@ type InputPanelProps = {
   isLoading: boolean;
   error: string | null;
   data: VisualizeResponse | null;
+  includeSkippedTags: boolean;
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onIncludeSkippedTagsChange: (value: boolean) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 export function InputPanel({
@@ -24,8 +27,10 @@ export function InputPanel({
   isLoading,
   error,
   data,
+  includeSkippedTags,
   onUploadChange,
   onXmlInputChange,
+  onIncludeSkippedTagsChange,
   onSubmit,
 }: InputPanelProps) {
   return (
@@ -80,6 +85,28 @@ export function InputPanel({
             Load rename sample
           </SampleButton>
         </div>
+
+        <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.05]">
+          <input
+            type="checkbox"
+            checked={includeSkippedTags}
+            onChange={(event) =>
+              onIncludeSkippedTagsChange(event.target.checked)
+            }
+            className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950"
+          />
+
+          <span>
+            <span className="block font-medium text-slate-100">
+              Show every XML tag
+            </span>
+
+            <span className="block text-xs leading-5 text-slate-400">
+              Includes tags normally hidden from the Units tree, such as
+              diff:ws.
+            </span>
+          </span>
+        </label>
 
         <textarea
           className="mt-3 min-h-[140px] w-full resize-y rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 font-mono text-sm leading-5 text-slate-100 transition outline-none placeholder:text-slate-500 focus:border-sky-300/40"

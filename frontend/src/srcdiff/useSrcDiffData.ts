@@ -10,6 +10,7 @@ export function useSrcDiffData() {
   const [data, setData] = useState<VisualizeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
 
   function handleXmlInputChange(value: string) {
     setXmlInput(value);
@@ -31,6 +32,11 @@ export function useSrcDiffData() {
     } else {
       formData.append("srcdiff_xml", xmlInput);
     }
+
+    formData.append(
+      "include_skipped_tags",
+      includeSkippedTags ? "true" : "false",
+    );
 
     setIsLoading(true);
     setError(null);
@@ -56,7 +62,9 @@ export function useSrcDiffData() {
     data,
     isLoading,
     error,
+    includeSkippedTags,
     setSelectedUpload,
+    setIncludeSkippedTags,
     handleXmlInputChange,
     handleSubmit,
   };

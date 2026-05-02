@@ -20,16 +20,28 @@ def visualize() -> tuple[dict[str, object], int]:
     xml_text = request.form.get("srcdiff_xml", "").strip()
 
     if uploaded is None and not xml_text:
-        return {"error": "Expected a srcdiff upload in 'srcdiff' or raw XML in 'srcdiff_xml'."}, 400
+        return {
+            "error": "Expected a srcdiff upload in 'srcdiff' or raw XML in 'srcdiff_xml'."
+        }, 400
 
-    filename = (uploaded.filename or "uploaded.srcdiff.xml") if uploaded else "pasted.srcdiff.xml"
+    filename = (
+        (uploaded.filename or "uploaded.srcdiff.xml")
+        if uploaded
+        else "pasted.srcdiff.xml"
+    )
     payload = uploaded.read() if uploaded is not None else xml_text.encode("utf-8")
 
     if not payload:
         return {"error": "The uploaded srcdiff payload is empty."}, 400
 
     try:
-        result = build_visualization_payload(filename=filename, payload=payload)
+        include_skipped_tags = request.form.get("include_skipped_tags") == "true"
+
+        result = build_visualization_payload(
+            filename=filename,
+            payload=payload,
+            include_skipped_tags=include_skipped_tags,
+        )
     except FileNotFoundError as exc:
         return {"error": f"Required command not found on PATH: {exc.filename}"}, 500
     except subprocess.CalledProcessError as exc:

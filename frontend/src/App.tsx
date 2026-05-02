@@ -19,8 +19,10 @@ export default function App() {
           isLoading={srcDiffData.isLoading}
           error={srcDiffData.error}
           data={srcDiffData.data}
+          includeSkippedTags={srcDiffData.includeSkippedTags}
           onUploadChange={srcDiffData.setSelectedUpload}
           onXmlInputChange={srcDiffData.handleXmlInputChange}
+          onIncludeSkippedTagsChange={srcDiffData.setIncludeSkippedTags}
           onSubmit={srcDiffData.handleSubmit}
         />
 
