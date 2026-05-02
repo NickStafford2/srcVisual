@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
+import {
+  buildLineHref,
+  buildXmlLineTargetId,
+  jumpToLineTarget,
+} from "../../srcdiff/lineLinks";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type {
   HighlightKind,
@@ -102,6 +107,7 @@ export function XmlPane({
           lines.map((line) => (
             <div
               key={`${title}-${line.number}`}
+              id={buildXmlLineTargetId(line.number)}
               ref={(element) => {
                 if (element) {
                   lineRefs.current.set(line.number, element);
@@ -114,9 +120,17 @@ export function XmlPane({
                 line.hasHighlight ? "bg-white/[0.04]" : "",
               ].join(" ")}
             >
-              <span className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 select-none">
+              <a
+                href={buildLineHref(buildXmlLineTargetId(line.number))}
+                onClick={(event) => {
+                  event.preventDefault();
+                  jumpToLineTarget(buildXmlLineTargetId(line.number));
+                }}
+                className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 transition select-none hover:text-sky-200"
+                title={`Jump to XML line ${line.number}`}
+              >
                 {line.number}
-              </span>
+              </a>
 
               <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (

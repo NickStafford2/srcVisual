@@ -1,10 +1,18 @@
 import { useMemo } from "react";
+import {
+  buildLineHref,
+  buildSourceLineTargetId,
+  jumpToLineTarget,
+  type SourceRevision,
+} from "../../srcdiff/lineLinks";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type { ViewerLineSegment } from "../../srcdiff/types";
 import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
 
 type CodePaneProps = {
+  fileIndex: number;
+  revision: SourceRevision;
   title: string;
   subtitle: string;
   source?: string;
@@ -12,6 +20,8 @@ type CodePaneProps = {
 };
 
 export function CodePane({
+  fileIndex,
+  revision,
   title,
   subtitle,
   source = "",
@@ -38,14 +48,27 @@ export function CodePane({
           lines.map((line) => (
             <div
               key={`${title}-${line.number}`}
+              id={buildSourceLineTargetId(fileIndex, revision, line.number)}
               className={[
                 "grid grid-cols-[56px_1fr] gap-2 px-4",
                 line.hasHighlight ? "bg-white/[0.04]" : "",
               ].join(" ")}
             >
-              <span className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 select-none">
+              <a
+                href={buildLineHref(
+                  buildSourceLineTargetId(fileIndex, revision, line.number),
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  jumpToLineTarget(
+                    buildSourceLineTargetId(fileIndex, revision, line.number),
+                  );
+                }}
+                className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 transition select-none hover:text-sky-200"
+                title={`Jump to ${title} line ${line.number}`}
+              >
                 {line.number}
-              </span>
+              </a>
 
               <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (

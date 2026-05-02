@@ -34,6 +34,7 @@ export function UnitTree({
       <div className="px-1">
         {unit.tree ? (
           <TreeNodeRow
+            fileIndex={unitIndex}
             node={unit.tree}
             depth={0}
             expandedIds={expandedIds}

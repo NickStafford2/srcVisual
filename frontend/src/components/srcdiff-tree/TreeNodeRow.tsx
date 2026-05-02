@@ -1,6 +1,14 @@
-import type { SrcDiffTreeNode } from "../../srcdiff/types";
+import {
+  buildLineHref,
+  buildSourceLineTargetId,
+  buildXmlLineTargetId,
+  formatLineRange,
+  jumpToLineTarget,
+} from "../../srcdiff/lineLinks";
+import type { SourceCodeSpan, SrcDiffTreeNode } from "../../srcdiff/types";
 
 type TreeNodeRowProps = {
+  fileIndex: number;
   node: SrcDiffTreeNode;
   depth: number;
   expandedIds: Set<string>;
@@ -11,6 +19,7 @@ type TreeNodeRowProps = {
 };
 
 export function TreeNodeRow({
+  fileIndex,
   node,
   depth,
   expandedIds,
@@ -23,7 +32,7 @@ export function TreeNodeRow({
   const isSelected = selectedNodeId === node.id;
   const isHighlighted = highlightedNodeIds.has(node.id);
   const hasChildren = node.children.length > 0;
-  const lineBadges = getNodeLineBadges(node);
+  const lineBadges = getNodeLineBadges(node, fileIndex);
 
   return (
     <div>
@@ -65,20 +74,26 @@ export function TreeNodeRow({
               move={node.move_id}
             </span>
           ) : null}
-
-          {lineBadges.length > 0 ? (
-            <span className="ml-auto flex shrink-0 items-center gap-1">
-              {lineBadges.map((badge) => (
-                <span
-                  key={badge.label}
-                  className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300"
-                >
-                  {badge.label}
-                </span>
-              ))}
-            </span>
-          ) : null}
         </button>
+
+        {lineBadges.length > 0 ? (
+          <span className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+            {lineBadges.map((badge) => (
+              <a
+                key={`${badge.targetId}-${badge.label}`}
+                href={buildLineHref(badge.targetId)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  jumpToLineTarget(badge.targetId);
+                }}
+                className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-sky-100"
+                title={badge.title}
+              >
+                {badge.label}
+              </a>
+            ))}
+          </span>
+        ) : null}
       </div>
 
       {hasChildren && isExpanded ? (
@@ -86,6 +101,7 @@ export function TreeNodeRow({
           {node.children.map((child) => (
             <TreeNodeRow
               key={child.id}
+              fileIndex={fileIndex}
               node={child}
               depth={depth + 1}
               expandedIds={expandedIds}
@@ -103,42 +119,75 @@ export function TreeNodeRow({
 
 type LineBadge = {
   label: string;
+  targetId: string;
+  title: string;
 };
 
-function getNodeLineBadges(node: SrcDiffTreeNode): LineBadge[] {
-  const beforeLabel = formatLineRange(node.before_span);
-  const afterLabel = formatLineRange(node.after_span);
+function getNodeLineBadges(node: SrcDiffTreeNode, fileIndex: number): LineBadge[] {
+  const beforeBadge = buildSourceLineBadge(
+    node.before_span,
+    fileIndex,
+    "before",
+    "r0",
+  );
+  const afterBadge = buildSourceLineBadge(node.after_span, fileIndex, "after", "r1");
+  const beforeRange = formatLineRange(node.before_span);
+  const afterRange = formatLineRange(node.after_span);
 
-  if (beforeLabel && afterLabel) {
-    if (beforeLabel === afterLabel) {
-      return [{ label: `L${beforeLabel}` }];
+  if (beforeBadge && afterBadge) {
+    if (beforeRange && beforeRange === afterRange) {
+      return [
+        {
+          label: `L${beforeRange}`,
+          targetId: beforeBadge.targetId,
+          title: "Jump to revision 0 source line",
+        },
+      ];
     }
 
-    return [{ label: `r0 L${beforeLabel}` }, { label: `r1 L${afterLabel}` }];
+    return [beforeBadge, afterBadge];
   }
 
-  if (beforeLabel) {
-    return [{ label: `r0 L${beforeLabel}` }];
+  if (beforeBadge) {
+    return [beforeBadge];
   }
 
-  if (afterLabel) {
-    return [{ label: `r1 L${afterLabel}` }];
+  if (afterBadge) {
+    return [afterBadge];
   }
 
   const xmlLabel = formatLineRange(node.xml_span);
-  return xmlLabel ? [{ label: `xml L${xmlLabel}` }] : [];
+  return node.xml_span && xmlLabel
+    ? [
+        {
+          label: `xml L${xmlLabel}`,
+          targetId: buildXmlLineTargetId(node.xml_span.start_line),
+          title: "Jump to XML line",
+        },
+      ]
+    : [];
 }
 
-function formatLineRange(span: SrcDiffTreeNode["xml_span"]): string | null {
-  if (!span) {
+function buildSourceLineBadge(
+  span: SourceCodeSpan | null | undefined,
+  fileIndex: number,
+  revision: "before" | "after",
+  revisionLabel: "r0" | "r1",
+): LineBadge | null {
+  const lineLabel = formatLineRange(span);
+
+  if (!span || !lineLabel) {
     return null;
   }
 
-  if (span.start_line === span.end_line) {
-    return `${span.start_line}`;
-  }
-
-  return `${span.start_line}-${span.end_line}`;
+  return {
+    label: `${revisionLabel} L${lineLabel}`,
+    targetId: buildSourceLineTargetId(fileIndex, revision, span.start_line),
+    title:
+      revision === "before"
+        ? "Jump to revision 0 source line"
+        : "Jump to revision 1 source line",
+  };
 }
 
 export function getTreeNodeKindClasses(kind: SrcDiffTreeNode["kind"]): string {

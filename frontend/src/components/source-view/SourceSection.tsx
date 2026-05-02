@@ -1,4 +1,11 @@
 import type { VisualizedFile } from "../../types";
+import {
+  buildLineHref,
+  buildSourceLineTargetId,
+  buildXmlLineTargetId,
+  formatLineRange,
+  jumpToLineTarget,
+} from "../../srcdiff/lineLinks";
 import type {
   SrcDiffHighlight,
   SrcDiffSelectionSpans,
@@ -67,6 +74,27 @@ export function SourceSection({
             </p>
           ) : null}
 
+          {selectedNode && selectedNodeFileIndex !== null ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {buildSelectedNodeLinks(selectedSpans, selectedNodeFileIndex).map(
+                (link) => (
+                  <a
+                    key={`${link.targetId}-${link.label}`}
+                    href={buildLineHref(link.targetId)}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      jumpToLineTarget(link.targetId);
+                    }}
+                    className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 font-mono text-[11px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-sky-100"
+                    title={link.title}
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
+            </div>
+          ) : null}
+
           {highlightedSpans.length > 1 ? (
             <p className="mt-1 text-xs text-emerald-200">
               Highlighting {highlightedSpans.length} move partners with the same
@@ -108,6 +136,7 @@ export function SourceSection({
             return (
               <SourceFileCard
                 key={`${file.unit}-${file.filename}`}
+                fileIndex={index}
                 file={file}
                 isFocused={index === focusedFileIndex}
                 isSelectedNodeFile={index === selectedNodeFileIndex}
@@ -122,6 +151,7 @@ export function SourceSection({
 }
 
 type SourceFileCardProps = {
+  fileIndex: number;
   file: VisualizedFile;
   isFocused: boolean;
   isSelectedNodeFile: boolean;
@@ -129,6 +159,7 @@ type SourceFileCardProps = {
 };
 
 function SourceFileCard({
+  fileIndex,
   file,
   isFocused,
   isSelectedNodeFile,
@@ -208,6 +239,8 @@ function SourceFileCard({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <CodePane
+          fileIndex={fileIndex}
+          revision="before"
           title="Revision 0"
           subtitle={`${file.filename} before`}
           source={file.source_code_before}
@@ -215,6 +248,8 @@ function SourceFileCard({
         />
 
         <CodePane
+          fileIndex={fileIndex}
+          revision="after"
           title="Revision 1"
           subtitle={`${file.filename} after`}
           source={file.source_code_after}
@@ -223,4 +258,63 @@ function SourceFileCard({
       </div>
     </article>
   );
+}
+
+type SelectedNodeLink = {
+  label: string;
+  targetId: string;
+  title: string;
+};
+
+function buildSelectedNodeLinks(
+  selectedSpans: SrcDiffSelectionSpans,
+  fileIndex: number,
+): SelectedNodeLink[] {
+  const links: SelectedNodeLink[] = [];
+
+  if (selectedSpans.xmlSpan) {
+    const xmlRange = formatLineRange(selectedSpans.xmlSpan);
+
+    if (xmlRange) {
+      links.push({
+        label: `XML L${xmlRange}`,
+        targetId: buildXmlLineTargetId(selectedSpans.xmlSpan.start_line),
+        title: "Jump to selected XML line",
+      });
+    }
+  }
+
+  if (selectedSpans.sourceCodeSpanBefore) {
+    const beforeRange = formatLineRange(selectedSpans.sourceCodeSpanBefore);
+
+    if (beforeRange) {
+      links.push({
+        label: `r0 L${beforeRange}`,
+        targetId: buildSourceLineTargetId(
+          fileIndex,
+          "before",
+          selectedSpans.sourceCodeSpanBefore.start_line,
+        ),
+        title: "Jump to selected revision 0 line",
+      });
+    }
+  }
+
+  if (selectedSpans.sourceCodeSpanAfter) {
+    const afterRange = formatLineRange(selectedSpans.sourceCodeSpanAfter);
+
+    if (afterRange) {
+      links.push({
+        label: `r1 L${afterRange}`,
+        targetId: buildSourceLineTargetId(
+          fileIndex,
+          "after",
+          selectedSpans.sourceCodeSpanAfter.start_line,
+        ),
+        title: "Jump to selected revision 1 line",
+      });
+    }
+  }
+
+  return links;
 }
