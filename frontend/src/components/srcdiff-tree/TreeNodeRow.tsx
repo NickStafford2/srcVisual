@@ -86,7 +86,8 @@ export function TreeNodeRow({
                   event.preventDefault();
                   jumpToLineTarget(badge.targetId);
                 }}
-                className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-sky-100"
+                className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:text-sky-100"
+                style={getLineBadgeStyle(badge.variant)}
                 title={badge.title}
               >
                 {badge.label}
@@ -121,6 +122,7 @@ type LineBadge = {
   label: string;
   targetId: string;
   title: string;
+  variant: "before" | "after" | "xml";
 };
 
 function getNodeLineBadges(node: SrcDiffTreeNode, fileIndex: number): LineBadge[] {
@@ -141,6 +143,7 @@ function getNodeLineBadges(node: SrcDiffTreeNode, fileIndex: number): LineBadge[
           label: `L${beforeRange}`,
           targetId: beforeBadge.targetId,
           title: "Jump to revision 0 source line",
+          variant: "before",
         },
       ];
     }
@@ -163,6 +166,7 @@ function getNodeLineBadges(node: SrcDiffTreeNode, fileIndex: number): LineBadge[
           label: `xml L${xmlLabel}`,
           targetId: buildXmlLineTargetId(node.xml_span.start_line),
           title: "Jump to XML line",
+          variant: "xml",
         },
       ]
     : [];
@@ -187,6 +191,30 @@ function buildSourceLineBadge(
       revision === "before"
         ? "Jump to revision 0 source line"
         : "Jump to revision 1 source line",
+    variant: revision,
+  };
+}
+
+function getLineBadgeStyle(variant: LineBadge["variant"]): {
+  backgroundImage: string;
+} {
+  if (variant === "before") {
+    return {
+      backgroundImage:
+        "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.68) 38%, rgb(var(--site-bg-rgb) / 0.24) 72%, rgb(255 255 255 / 0.06) 100%)",
+    };
+  }
+
+  if (variant === "after") {
+    return {
+      backgroundImage:
+        "linear-gradient(270deg, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.68) 38%, rgb(var(--site-bg-rgb) / 0.24) 72%, rgb(255 255 255 / 0.06) 100%)",
+    };
+  }
+
+  return {
+    backgroundImage:
+      "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.42) 0%, rgb(var(--site-bg-rgb) / 0.18) 55%, rgb(255 255 255 / 0.06) 100%)",
   };
 }
 

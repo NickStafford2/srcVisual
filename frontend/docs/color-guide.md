@@ -47,6 +47,8 @@ Instead:
 - source panes may use stronger opposing horizontal gradients to reinforce
   revision directionality, using the site background color as the tinted side
   and fading into the existing pane background
+- revision-linked hyperlink pills may reuse those same opposing gradients for
+  quick directional recognition in the tree and navigation UI
 
 Revision identity should come from structure and labeling first, not from a
 second competing highlight palette. The directional gradient is a supporting
@@ -77,6 +79,8 @@ background treatment.
 
 - background tint: diff kind
 - opposing pane gradient: revision context in source panes only
+- directional gradient pill: revision-linked navigation targets such as `r0`
+  and `r1`
 - border or ring: selected or focused state
 - underline: move relationship or group membership
 - bold text: current primary target only
