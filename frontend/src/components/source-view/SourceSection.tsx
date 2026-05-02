@@ -1,11 +1,5 @@
 import type { VisualizedFile } from "../../types";
-import {
-  buildLineHref,
-  buildSourceLineTargetId,
-  buildXmlLineTargetId,
-  formatLineRange,
-  jumpToLineTarget,
-} from "../../srcdiff/lineLinks";
+import { buildLineHref, jumpToLineTarget } from "../../srcdiff/lineLinks";
 import type {
   SrcDiffHighlight,
   SrcDiffSelectionSpans,
@@ -13,6 +7,7 @@ import type {
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
 import { SourceFileCard } from "./SourceFileCard";
+import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { XmlPane } from "./XmlPane";
 
 type SourceSectionProps = {
@@ -55,10 +50,6 @@ export function SourceSection({
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="flex flex-col gap-2 border-b border-white/10 pb-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-50">
-            XML and source
-          </h2>
-
           <p className="mt-1 text-sm leading-5 text-slate-300">
             {selectedNode
               ? `Selected ${selectedNode.label} in ${selectedFile?.filename ?? "unknown file"} at XML path ${selectedNode.path}`
@@ -110,17 +101,15 @@ export function SourceSection({
         ) : null}
       </div>
 
-      <div className="mt-4">
-        <XmlPane
-          title="srcDiff XML"
-          subtitle="Annotated XML returned by the backend"
-          source={xmlSource}
-          selectedSpan={selectedSpans.xmlSpan}
-          selectedKind={selectedSpans.kind}
-          selectedNodeId={selectedNode?.id ?? null}
-          highlights={xmlHighlights}
-        />
-      </div>
+      <XmlPane
+        title="srcDiff XML"
+        subtitle="Annotated XML returned by the backend"
+        source={xmlSource}
+        selectedSpan={selectedSpans.xmlSpan}
+        selectedKind={selectedSpans.kind}
+        selectedNodeId={selectedNode?.id ?? null}
+        highlights={xmlHighlights}
+      />
 
       <div className="mt-4 space-y-4">
         {files.length === 0 ? (
@@ -148,63 +137,4 @@ export function SourceSection({
       </div>
     </section>
   );
-}
-
-type SelectedNodeLink = {
-  label: string;
-  targetId: string;
-  title: string;
-};
-
-function buildSelectedNodeLinks(
-  selectedSpans: SrcDiffSelectionSpans,
-  fileIndex: number,
-): SelectedNodeLink[] {
-  const links: SelectedNodeLink[] = [];
-
-  if (selectedSpans.xmlSpan) {
-    const xmlRange = formatLineRange(selectedSpans.xmlSpan);
-
-    if (xmlRange) {
-      links.push({
-        label: `XML L${xmlRange}`,
-        targetId: buildXmlLineTargetId(selectedSpans.xmlSpan.start_line),
-        title: "Jump to selected XML line",
-      });
-    }
-  }
-
-  if (selectedSpans.revision0Span) {
-    const revision0Range = formatLineRange(selectedSpans.revision0Span);
-
-    if (revision0Range) {
-      links.push({
-        label: `Revision 0 L${revision0Range}`,
-        targetId: buildSourceLineTargetId(
-          fileIndex,
-          "revision-0",
-          selectedSpans.revision0Span.start_line,
-        ),
-        title: "Jump to selected revision 0 line",
-      });
-    }
-  }
-
-  if (selectedSpans.revision1Span) {
-    const revision1Range = formatLineRange(selectedSpans.revision1Span);
-
-    if (revision1Range) {
-      links.push({
-        label: `Revision 1 L${revision1Range}`,
-        targetId: buildSourceLineTargetId(
-          fileIndex,
-          "revision-1",
-          selectedSpans.revision1Span.start_line,
-        ),
-        title: "Jump to selected revision 1 line",
-      });
-    }
-  }
-
-  return links;
 }
