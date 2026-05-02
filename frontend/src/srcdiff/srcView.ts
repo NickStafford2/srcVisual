@@ -11,12 +11,12 @@ type LineSlice = {
 };
 
 export function buildSourceView(
-  source: string = "",
-  span: SourceCodeSpan | null | undefined,
+  sourceCode: string = "",
+  sourceCodeSpan: SourceCodeSpan | null | undefined,
   kind: HighlightKind,
 ): ViewerLine[] {
-  const normalizedSource = source.replace(/\r\n/g, "\n");
-  const sourceLines = normalizedSource.split("\n");
+  const normalizedSourceCode = sourceCode.replace(/\r\n/g, "\n");
+  const sourceLines = normalizedSourceCode.split("\n");
 
   if (sourceLines.length > 0 && sourceLines[sourceLines.length - 1] === "") {
     sourceLines.pop();
@@ -24,7 +24,7 @@ export function buildSourceView(
 
   return sourceLines.map((lineText, index) => {
     const lineNumber = index + 1;
-    const lineSpan = getSpanForLine(lineNumber, lineText, span);
+    const lineSpan = getSpanForLine(lineNumber, lineText, sourceCodeSpan);
 
     if (!lineSpan) {
       return buildPlainViewerLine(lineNumber, lineText);

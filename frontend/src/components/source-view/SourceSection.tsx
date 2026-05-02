@@ -8,7 +8,7 @@ type SourceSectionProps = {
   selectedNode: SrcDiffTreeNode | null;
   selectedSpans: SrcDiffSelectionSpans;
   xmlSource: string;
-  sourceCodeBefore: string;
+  sourceCodeBefore: string; // is this really passing in all the source code before this? todo
   sourceCodeAfter: string;
 };
 
