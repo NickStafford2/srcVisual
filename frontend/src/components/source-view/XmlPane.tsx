@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type {
   HighlightKind,
   SourceCodeSpan,
@@ -22,10 +22,38 @@ export function XmlPane({
   span,
   kind,
 }: XmlPaneProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
   const lines = useMemo(
     () => buildSourceView(source, span, kind),
     [source, span, kind],
   );
+
+  useEffect(() => {
+    if (!span) return;
+
+    const scrollContainer = scrollContainerRef.current;
+    const highlightedLine = lineRefs.current.get(span.start_line);
+
+    if (!scrollContainer || !highlightedLine) return;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const lineRect = highlightedLine.getBoundingClientRect();
+
+    const lineTopInsideContainer =
+      lineRect.top - containerRect.top + scrollContainer.scrollTop;
+
+    const centeredScrollTop =
+      lineTopInsideContainer -
+      scrollContainer.clientHeight / 2 +
+      highlightedLine.clientHeight / 2;
+
+    scrollContainer.scrollTo({
+      top: Math.max(centeredScrollTop, 0),
+      behavior: "smooth",
+    });
+  }, [span?.start_line, span?.start_col, span?.end_line, span?.end_col]);
 
   return (
     <article className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55">
@@ -34,7 +62,10 @@ export function XmlPane({
         <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
       </header>
 
-      <div className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
+      <div
+        ref={scrollContainerRef}
+        className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono"
+      >
         {lines.length === 0 ? (
           <div className="px-5 py-5 text-sm text-slate-400">
             No XML to render yet.
@@ -43,6 +74,13 @@ export function XmlPane({
           lines.map((line) => (
             <div
               key={`${title}-${line.number}`}
+              ref={(element) => {
+                if (element) {
+                  lineRefs.current.set(line.number, element);
+                } else {
+                  lineRefs.current.delete(line.number);
+                }
+              }}
               className={[
                 "grid grid-cols-[56px_1fr] gap-2 px-4",
                 line.hasHighlight ? "bg-white/[0.04]" : "",
