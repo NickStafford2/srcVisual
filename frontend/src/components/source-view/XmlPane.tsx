@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildLineHref,
   buildXmlLineTargetId,
   jumpToLineTarget,
 } from "../../srcdiff/lineLinks";
+import { buildXmlDisplayModel } from "../../srcdiff/xmlDisplay";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type {
   HighlightKind,
@@ -34,6 +35,7 @@ export function XmlPane({
 }: XmlPaneProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const [showPositions, setShowPositions] = useState(false);
 
   const effectiveHighlights = useMemo(() => {
     if (highlights.length > 0) {
@@ -53,9 +55,14 @@ export function XmlPane({
     ];
   }, [highlights, selectedKind, selectedNodeId, selectedSpan]);
 
+  const displayModel = useMemo(
+    () => buildXmlDisplayModel(source, effectiveHighlights, showPositions),
+    [source, effectiveHighlights, showPositions],
+  );
+
   const lines = useMemo(
-    () => buildSourceView(source, effectiveHighlights),
-    [source, effectiveHighlights],
+    () => buildSourceView(displayModel.source, displayModel.highlights),
+    [displayModel],
   );
 
   useEffect(() => {
@@ -90,9 +97,19 @@ export function XmlPane({
 
   return (
     <article className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55">
-      <header className="px-4 pt-3 pb-2">
-        <h3 className="text-base font-semibold text-slate-50">{title}</h3>
-        <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
+      <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
+        <div>
+          <h3 className="text-base font-semibold text-slate-50">{title}</h3>
+          <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowPositions((current) => !current)}
+          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+        >
+          {showPositions ? "Hide positions" : "Show positions"}
+        </button>
       </header>
 
       <div
