@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SelectedNodeLink } from "./selectedNodeLinks";
-import { LineTargetPill } from "../LineTargetPill";
+import { LineTargetPill } from "../../LineTargetPill";
 
 export type NodeInfoPanelItem = {
   key: string;

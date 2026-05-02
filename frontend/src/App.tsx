@@ -1,6 +1,6 @@
-import { HighlightedNodeInfo } from "./components/source-view/HighlightedNodeInfo";
 import { InputPanel } from "./components/input-panel/InputPanel";
-import { SelectedNodeInfo } from "./components/source-view/SelectedNodeInfo";
+import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
+import { SelectedNodeInfo } from "./components/source-view/node-info/SelectedNodeInfo";
 import { SourceSection } from "./components/source-view/SourceSection";
 import { XmlPane } from "./components/source-view/XmlPane";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
@@ -32,7 +32,7 @@ export default function App() {
     });
 
   return (
-    <main className="min-h-screen bg-site-bg px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
+    <main className="bg-site-bg min-h-screen px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
         <InputPanel
           selectedUpload={srcDiffData.selectedUpload}

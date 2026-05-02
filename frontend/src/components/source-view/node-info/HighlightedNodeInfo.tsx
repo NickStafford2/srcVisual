@@ -1,6 +1,6 @@
-import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
-import { HighlightSelector } from "../srcdiff-tree/HighlightSelector";
-import { getSelectionSpans } from "../../srcdiff/selection";
+import { useSrcDiffHighlight } from "../../../srcdiff/highlightContext";
+import { HighlightSelector } from "../../srcdiff-tree/HighlightSelector";
+import { getSelectionSpans } from "../../../srcdiff/selection";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { NodeInfoPanel, type NodeInfoPanelItem } from "./NodeInfoPanel";
 

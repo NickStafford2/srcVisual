@@ -1,10 +1,10 @@
-import type { LineTargetPillVariant } from "../LineTargetPill";
+import type { LineTargetPillVariant } from "../../LineTargetPill";
 import {
   buildSourceLineTargetId,
   buildXmlLineTargetId,
   formatLineRange,
-} from "../../srcdiff/lineLinks";
-import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
+} from "../../../srcdiff/lineLinks";
+import type { SrcDiffSelectionSpans } from "../../../srcdiff/selection";
 
 export type SelectedNodeLink = {
   label: string;

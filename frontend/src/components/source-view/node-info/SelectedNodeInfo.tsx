@@ -1,5 +1,5 @@
-import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
-import type { SrcDiffTreeNode } from "../../srcdiff/types";
+import type { SrcDiffSelectionSpans } from "../../../srcdiff/selection";
+import type { SrcDiffTreeNode } from "../../../srcdiff/types";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { NodeInfoPanel, type NodeInfoPanelItem } from "./NodeInfoPanel";
 
