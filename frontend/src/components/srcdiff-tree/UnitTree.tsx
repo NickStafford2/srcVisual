@@ -61,9 +61,7 @@ export function UnitTree({
           </span>
         ) : null}
 
-        <span className="truncate bg-green-900 text-sm text-slate-100">
-          {unit.filename}
-        </span>
+        <span className="truncate text-sm text-slate-100">{unit.filename}</span>
 
         {unit.language ? (
           <span className="text-xs text-slate-500">{unit.language}</span>
