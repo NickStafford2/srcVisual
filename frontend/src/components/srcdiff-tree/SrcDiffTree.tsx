@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizedFile } from "../../types";
+import {
+  HighlightSelector,
+  type HighlightMode,
+} from "./HighlightSelector";
 import { UnitTree } from "./UnitTree";
-
-type HighlightMode = "selection" | "all-moves" | "all-inserts" | "all-deletes";
 
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
@@ -120,8 +122,8 @@ export default function SrcDiffTree({
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-row gap-2">
           <div>
-            <h2 className="text-xl font-semibold text-slate-50">
-              srcdiff Units
+            <h2 className="text-2xl font-semibold text-slate-50">
+              SrcDiff Tree
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-300">
@@ -140,36 +142,13 @@ export default function SrcDiffTree({
               {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
             </button>
 
-            <div className="grid grid-cols-2">
-              <BulkHighlightButton
-                label="Highlight all moves"
-                active={highlightMode === "all-moves"}
-                tone="move"
-                onClick={onHighlightAllMoves}
-              />
-
-              <BulkHighlightButton
-                label="Highlight all inserts"
-                active={highlightMode === "all-inserts"}
-                tone="insert"
-                onClick={onHighlightAllInserts}
-              />
-
-              <BulkHighlightButton
-                label="Highlight all deletes"
-                active={highlightMode === "all-deletes"}
-                tone="delete"
-                onClick={onHighlightAllDeletes}
-              />
-
-              <button
-                type="button"
-                onClick={onClearHighlights}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-              >
-                Clear highlights
-              </button>
-            </div>
+            <HighlightSelector
+              highlightMode={highlightMode}
+              onHighlightAllMoves={onHighlightAllMoves}
+              onHighlightAllInserts={onHighlightAllInserts}
+              onHighlightAllDeletes={onHighlightAllDeletes}
+              onClearHighlights={onClearHighlights}
+            />
           </div>
         </div>
       </div>
@@ -194,54 +173,4 @@ export default function SrcDiffTree({
       </div>
     </div>
   );
-}
-
-type BulkHighlightButtonProps = {
-  label: string;
-  active: boolean;
-  tone: "move" | "insert" | "delete";
-  onClick: () => void;
-};
-
-function BulkHighlightButton({
-  label,
-  active,
-  tone,
-  onClick,
-}: BulkHighlightButtonProps) {
-  const toneClasses = getBulkHighlightButtonClasses(tone, active);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "rounded-xl border px-3 py-2 text-xs font-medium transition hover:-translate-y-0.5",
-        toneClasses,
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
-
-function getBulkHighlightButtonClasses(
-  tone: BulkHighlightButtonProps["tone"],
-  active: boolean,
-): string {
-  if (tone === "move") {
-    return active
-      ? "border-amber-300/30 bg-amber-300/15 text-amber-100"
-      : "border-amber-300/20 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20";
-  }
-
-  if (tone === "insert") {
-    return active
-      ? "border-sky-300/30 bg-sky-300/15 text-sky-100"
-      : "border-sky-300/20 bg-sky-300/10 text-sky-100 hover:bg-sky-300/20";
-  }
-
-  return active
-    ? "border-red-300/30 bg-red-300/15 text-red-100"
-    : "border-red-300/20 bg-red-300/10 text-red-100 hover:bg-red-300/20";
 }
