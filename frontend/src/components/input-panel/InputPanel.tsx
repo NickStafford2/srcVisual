@@ -125,20 +125,6 @@ export function InputPanel({
               ? `Loaded ${data.files.length} file${data.files.length === 1 ? "" : "s"} from ${data.source_filename}`
               : "Waiting for upload"}
         </StatusPill>
-
-        {data ? (
-          <>
-            <span className="inline-flex items-center rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
-              {data.units} unit(s)
-            </span>
-
-            <span className="inline-flex items-center rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
-              {data.has_position_data
-                ? "position-aware highlights"
-                : "no position spans"}
-            </span>
-          </>
-        ) : null}
       </div>
     </section>
   );
