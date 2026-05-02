@@ -1,10 +1,10 @@
-import type { HighlightKind, SourceSpan, SrcDiffTreeNode } from "./types";
+import type { HighlightKind, SourceCodeSpan, SrcDiffTreeNode } from "./types";
 
 export type SrcDiffSelectionSpans = {
   kind: HighlightKind;
-  xmlSpan: SourceSpan | null;
-  beforeSpan: SourceSpan | null;
-  afterSpan: SourceSpan | null;
+  xmlSpan: SourceCodeSpan | null;
+  beforeSpan: SourceCodeSpan | null;
+  afterSpan: SourceCodeSpan | null;
 };
 
 export function getSelectionSpans(

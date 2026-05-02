@@ -1,13 +1,13 @@
 import type {
   HighlightKind,
-  SourceSpan,
+  SourceCodeSpan,
   ViewerLine,
   ViewerLineSegment,
 } from "./types";
 
 export function buildSourceView(
   source: string = "",
-  span: SourceSpan | null | undefined,
+  span: SourceCodeSpan | null | undefined,
   kind: HighlightKind,
 ): ViewerLine[] {
   const normalizedSource = source.replace(/\r\n/g, "\n");
@@ -52,7 +52,7 @@ function buildPlainViewerLine(
 
 function buildHighlightedSegments(
   lineText: string,
-  lineSpan: SourceSpan,
+  lineSpan: SourceCodeSpan,
   kind: HighlightKind,
 ): ViewerLineSegment[] {
   const startIndex = clamp(lineSpan.start_col - 1, 0, lineText.length);
@@ -88,8 +88,8 @@ function buildHighlightedSegments(
 function getSpanForLine(
   lineNumber: number,
   lineText: string,
-  span: SourceSpan | null | undefined,
-): SourceSpan | null {
+  span: SourceCodeSpan | null | undefined,
+): SourceCodeSpan | null {
   if (!span) {
     return null;
   }

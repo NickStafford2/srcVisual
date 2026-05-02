@@ -1,6 +1,6 @@
 export type HighlightKind = "plain" | "delete" | "insert" | "move";
 
-export interface SourceSpan {
+export interface SourceCodeSpan {
   start_line: number;
   start_col: number;
   end_line: number;
@@ -14,9 +14,9 @@ export interface SrcDiffTreeNode {
   label: string;
   kind: HighlightKind;
   move_id?: string | null;
-  xml_span?: SourceSpan | null;
-  before_span?: SourceSpan | null;
-  after_span?: SourceSpan | null;
+  xml_span?: SourceCodeSpan | null;
+  before_span?: SourceCodeSpan | null;
+  after_span?: SourceCodeSpan | null;
   children: SrcDiffTreeNode[];
 }
 

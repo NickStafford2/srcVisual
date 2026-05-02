@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type {
   HighlightKind,
-  SourceSpan,
+  SourceCodeSpan,
   ViewerLineSegment,
 } from "../../srcdiff/types";
 import { buildSourceView } from "../../srcdiff/srcView";
@@ -11,7 +11,7 @@ type CodePaneProps = {
   title: string;
   subtitle: string;
   source?: string;
-  span: SourceSpan | null | undefined;
+  span: SourceCodeSpan | null | undefined;
   kind: HighlightKind;
 };
 
