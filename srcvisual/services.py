@@ -41,7 +41,7 @@ def build_visualization_payload(
             tmpdir=tmpdir,
         )
 
-        tree_by_filename, has_position_data = build_tree_index(
+        tree_by_unit, has_position_data = build_tree_index(
             annotated_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
@@ -49,7 +49,7 @@ def build_visualization_payload(
         visualized_files = tuple(
             VisualizedFile(
                 revision_file=revision_file,
-                tree=tree_by_filename.get(revision_file.filename),
+                tree=tree_by_unit.get(revision_file.unit),
             )
             for revision_file in revision_files
         )

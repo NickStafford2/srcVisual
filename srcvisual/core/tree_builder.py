@@ -11,7 +11,7 @@ def build_tree_index(
     annotated_srcdiff_xml: str,
     *,
     include_skipped_tags: bool = False,
-) -> tuple[dict[str, dict[str, object]], bool]:
+) -> tuple[dict[int, dict[str, object]], bool]:
     root = ET.fromstring(annotated_srcdiff_xml)
     unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
 
@@ -20,12 +20,10 @@ def build_tree_index(
         include_skipped_tags=include_skipped_tags,
     )
 
-    index: dict[str, dict[str, object]] = {}
+    tree_by_unit: dict[int, dict[str, object]] = {}
     has_position_data = False
 
     for unit_number, unit_element in enumerate(unit_elements, start=1):
-        filename = unit_element.attrib.get("filename", f"unit-{unit_number}")
-
         tree = build_tree_node(
             unit_element,
             path=f"/src:unit[{unit_number}]",
@@ -33,10 +31,10 @@ def build_tree_index(
             include_skipped_tags=include_skipped_tags,
         )
 
-        index[filename] = tree.to_dict()
+        tree_by_unit[unit_number] = tree.to_dict()
         has_position_data = has_position_data or tree_has_positions(tree)
 
-    return index, has_position_data
+    return tree_by_unit, has_position_data
 
 
 def build_tree_node(
