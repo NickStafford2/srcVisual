@@ -122,7 +122,7 @@ function getCodePaneSurfaceStyle(revision: SourceRevision): {
   const direction = revision === "before" ? "90deg" : "270deg";
 
   return {
-    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.28) 0%, rgb(2 6 23 / 0) 70%)`,
+    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.72) 30%, rgb(var(--site-bg-rgb) / 0.36) 58%, rgb(2 6 23 / 0.08) 82%, rgb(2 6 23 / 0) 100%)`,
   };
 }
 
@@ -132,6 +132,6 @@ function getCodePaneBodyStyle(revision: SourceRevision): {
   const direction = revision === "before" ? "90deg" : "270deg";
 
   return {
-    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.18) 0%, rgb(2 6 23 / 0) 75%)`,
+    backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.82) 0%, rgb(var(--site-bg-rgb) / 0.54) 32%, rgb(var(--site-bg-rgb) / 0.24) 60%, rgb(2 6 23 / 0.1) 84%, rgb(2 6 23 / 0) 100%)`,
   };
 }
