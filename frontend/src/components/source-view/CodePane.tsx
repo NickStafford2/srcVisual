@@ -11,7 +11,7 @@ type CodePaneProps = {
   title: string;
   subtitle: string;
   source?: string;
-  span: SourceCodeSpan | null | undefined;
+  sourceCodeSpan: SourceCodeSpan | null | undefined;
   kind: HighlightKind;
 };
 
@@ -19,7 +19,7 @@ export function CodePane({
   title,
   subtitle,
   source = "",
-  span,
+  sourceCodeSpan: span,
   kind,
 }: CodePaneProps) {
   const lines = useMemo(
