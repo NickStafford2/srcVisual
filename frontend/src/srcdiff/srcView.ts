@@ -6,67 +6,77 @@ import type {
 } from "./types";
 
 export function buildSourceView(
-  source: string,
+  source: string = "",
   span: SourceSpan | null | undefined,
   kind: HighlightKind,
 ): ViewerLine[] {
-  const normalized = source.replace(/\r\n/g, "\n");
-  const lines = normalized.split("\n");
+  const normalizedSource = source.replace(/\r\n/g, "\n");
+  const sourceLines = normalizedSource.split("\n");
 
-  if (lines.length > 0 && lines[lines.length - 1] === "") {
-    lines.pop();
+  if (sourceLines.length > 0 && sourceLines[sourceLines.length - 1] === "") {
+    sourceLines.pop();
   }
 
-  return lines.map((line, index) => {
+  return sourceLines.map((lineText, index) => {
     const lineNumber = index + 1;
-    const lineSpan = spanForLine(lineNumber, line, span);
+    const highlightSpanForLine = getSpanForLine(lineNumber, lineText, span);
 
-    if (!lineSpan) {
-      return {
-        number: lineNumber,
-        segments: [{ text: line || " ", kind: "plain", highlighted: false }],
-        hasHighlight: false,
-      };
+    if (!highlightSpanForLine) {
+      return buildPlainViewerLine(lineNumber, lineText);
     }
 
     return {
       number: lineNumber,
-      segments: buildHighlightedSegments(line, lineSpan, kind),
+      segments: buildHighlightedSegments(lineText, highlightSpanForLine, kind),
       hasHighlight: true,
     };
   });
 }
 
+function buildPlainViewerLine(
+  lineNumber: number,
+  lineText: string,
+): ViewerLine {
+  return {
+    number: lineNumber,
+    segments: [
+      {
+        text: lineText || " ",
+        kind: "plain",
+        highlighted: false,
+      },
+    ],
+    hasHighlight: false,
+  };
+}
+
 function buildHighlightedSegments(
-  line: string,
+  lineText: string,
   lineSpan: SourceSpan,
   kind: HighlightKind,
 ): ViewerLineSegment[] {
-  const segments: ViewerLineSegment[] = [];
+  const startIndex = clamp(lineSpan.start_col - 1, 0, lineText.length);
+  const endIndex = clamp(lineSpan.end_col, startIndex, lineText.length);
 
-  const startIndex = Math.max(0, Math.min(line.length, lineSpan.start_col - 1));
-  const endExclusive = Math.max(
-    startIndex,
-    Math.min(line.length, lineSpan.end_col),
-  );
+  const segments: ViewerLineSegment[] = [];
 
   if (startIndex > 0) {
     segments.push({
-      text: line.slice(0, startIndex),
+      text: lineText.slice(0, startIndex),
       kind: "plain",
       highlighted: false,
     });
   }
 
   segments.push({
-    text: line.slice(startIndex, endExclusive) || " ",
+    text: lineText.slice(startIndex, endIndex) || " ",
     kind,
     highlighted: true,
   });
 
-  if (endExclusive < line.length) {
+  if (endIndex < lineText.length) {
     segments.push({
-      text: line.slice(endExclusive),
+      text: lineText.slice(endIndex),
       kind: "plain",
       highlighted: false,
     });
@@ -75,9 +85,9 @@ function buildHighlightedSegments(
   return segments;
 }
 
-function spanForLine(
+function getSpanForLine(
   lineNumber: number,
-  line: string,
+  lineText: string,
   span: SourceSpan | null | undefined,
 ): SourceSpan | null {
   if (!span) {
@@ -93,6 +103,12 @@ function spanForLine(
     start_col: lineNumber === span.start_line ? span.start_col : 1,
     end_line: lineNumber,
     end_col:
-      lineNumber === span.end_line ? span.end_col : Math.max(line.length, 1),
+      lineNumber === span.end_line
+        ? span.end_col
+        : Math.max(lineText.length, 1),
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max));
 }

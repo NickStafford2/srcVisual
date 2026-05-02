@@ -1,7 +1,7 @@
 import { Hero } from "./components/Hero";
+import { InputPanel } from "./components/input-panel/InputPanel";
 import { SourceSection } from "./components/source-view/SourceSection";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
-import { InputPanel } from "./components/input-panel/InputPanel";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 

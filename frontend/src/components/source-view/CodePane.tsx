@@ -10,7 +10,7 @@ import { getSourceSegmentClasses } from "./segmentStyles";
 type CodePaneProps = {
   title: string;
   subtitle: string;
-  source: string;
+  source?: string;
   span: SourceSpan | null | undefined;
   kind: HighlightKind;
 };
@@ -18,7 +18,7 @@ type CodePaneProps = {
 export function CodePane({
   title,
   subtitle,
-  source,
+  source = "",
   span,
   kind,
 }: CodePaneProps) {

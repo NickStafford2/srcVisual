@@ -1,5 +1,5 @@
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
-
+import { getSelectionSpans } from "../../srcdiff/selection";
 import { CodePane } from "./CodePane";
 import { XmlPane } from "./XmlPane";
 
@@ -15,10 +15,10 @@ export function SourceSection({
   filename,
   selectedNode,
   xmlSource,
-  sourceCodeBefore: beforeSource,
-  sourceCodeAfter: afterSource,
+  sourceCodeBefore,
+  sourceCodeAfter,
 }: SourceSectionProps) {
-  const selectedKind = selectedNode?.kind ?? "plain";
+  const selection = getSelectionSpans(selectedNode);
 
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
@@ -30,15 +30,15 @@ export function SourceSection({
 
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode
-              ? `Selected ${selectedNode.xml_label} at XML path ${selectedNode.path}`
+              ? `Selected ${selectedNode.label} at XML path ${selectedNode.path}`
               : "Select a tree node to highlight its XML and source spans."}
           </p>
 
           {selectedNode ? (
             <p className="mt-1 font-mono text-xs text-slate-400">
               xml_span:{" "}
-              {selectedNode.xml_span
-                ? `${selectedNode.xml_span.start_line}:${selectedNode.xml_span.start_col} → ${selectedNode.xml_span.end_line}:${selectedNode.xml_span.end_col}`
+              {selection.xmlSpan
+                ? `${selection.xmlSpan.start_line}:${selection.xmlSpan.start_col} → ${selection.xmlSpan.end_line}:${selection.xmlSpan.end_col}`
                 : "missing"}
             </p>
           ) : null}
@@ -56,8 +56,8 @@ export function SourceSection({
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
           source={xmlSource}
-          span={selectedNode?.xml_span}
-          kind={selectedKind}
+          span={selection.xmlSpan}
+          kind={selection.kind}
         />
       </div>
 
@@ -65,17 +65,17 @@ export function SourceSection({
         <CodePane
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
-          source={beforeSource}
-          span={selectedNode?.before_span}
-          kind={selectedKind}
+          source={sourceCodeBefore}
+          span={selection.beforeSpan}
+          kind={selection.kind}
         />
 
         <CodePane
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
-          source={afterSource}
-          span={selectedNode?.after_span}
-          kind={selectedKind}
+          source={sourceCodeAfter}
+          span={selection.afterSpan}
+          kind={selection.kind}
         />
       </div>
     </section>

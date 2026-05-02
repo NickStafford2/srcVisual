@@ -10,12 +10,18 @@ import { getSourceSegmentClasses } from "./segmentStyles";
 type XmlPaneProps = {
   title: string;
   subtitle: string;
-  source: string;
+  source?: string;
   span: SourceSpan | null | undefined;
   kind: HighlightKind;
 };
 
-export function XmlPane({ title, subtitle, source, span, kind }: XmlPaneProps) {
+export function XmlPane({
+  title,
+  subtitle,
+  source = "",
+  span,
+  kind,
+}: XmlPaneProps) {
   const lines = useMemo(
     () => buildSourceView(source, span, kind),
     [source, span, kind],
@@ -39,7 +45,7 @@ export function XmlPane({ title, subtitle, source, span, kind }: XmlPaneProps) {
               key={`${title}-${line.number}`}
               className={[
                 "grid grid-cols-[72px_1fr] gap-3 px-5",
-                line.hasHighlight ? "bg-red-500/10" : "",
+                line.hasHighlight ? "bg-white/[0.04]" : "",
               ].join(" ")}
             >
               <span className="border-r border-white/5 py-2 pr-3 text-right text-sm text-slate-500 select-none">
