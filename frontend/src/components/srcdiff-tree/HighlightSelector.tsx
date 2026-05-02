@@ -1,8 +1,4 @@
-export type HighlightMode =
-  | "selection"
-  | "all-moves"
-  | "all-inserts"
-  | "all-deletes";
+import type { HighlightMode } from "../../srcdiff/highlightContext";
 
 type HighlightSelectorProps = {
   highlightMode: HighlightMode;

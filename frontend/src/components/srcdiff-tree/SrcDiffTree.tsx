@@ -1,38 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizedFile } from "../../types";
-import {
-  HighlightSelector,
-  type HighlightMode,
-} from "./HighlightSelector";
+import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
+import { HighlightSelector } from "./HighlightSelector";
 import { UnitTree } from "./UnitTree";
 
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
   selectedFileIndex: number;
   selectedNodeId: string | null;
-  highlightedNodeIds: Set<string>;
-  highlightMode: HighlightMode;
   onSelectFileIndex: (index: number) => void;
   onSelectNode: (nodeId: string) => void;
-  onHighlightAllMoves: () => void;
-  onHighlightAllInserts: () => void;
-  onHighlightAllDeletes: () => void;
-  onClearHighlights: () => void;
 };
 
 export default function SrcDiffTree({
   files,
   selectedFileIndex,
   selectedNodeId,
-  highlightedNodeIds,
-  highlightMode,
   onSelectFileIndex,
   onSelectNode,
-  onHighlightAllMoves,
-  onHighlightAllInserts,
-  onHighlightAllDeletes,
-  onClearHighlights,
 }: SrcDiffTreeProps) {
+  const {
+    highlightedNodeIds,
+    highlightMode,
+    highlightAllMoves,
+    highlightAllInserts,
+    highlightAllDeletes,
+    clearHighlights,
+  } = useSrcDiffHighlight();
+
   const { allExpandableIds, initialExpandedIds } = useMemo(() => {
     const allIds = new Set<string>();
     const ids = new Set<string>();
@@ -144,10 +139,10 @@ export default function SrcDiffTree({
 
             <HighlightSelector
               highlightMode={highlightMode}
-              onHighlightAllMoves={onHighlightAllMoves}
-              onHighlightAllInserts={onHighlightAllInserts}
-              onHighlightAllDeletes={onHighlightAllDeletes}
-              onClearHighlights={onClearHighlights}
+              onHighlightAllMoves={highlightAllMoves}
+              onHighlightAllInserts={highlightAllInserts}
+              onHighlightAllDeletes={highlightAllDeletes}
+              onClearHighlights={clearHighlights}
             />
           </div>
         </div>

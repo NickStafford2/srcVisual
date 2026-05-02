@@ -1,20 +1,20 @@
 import type { VisualizedFile } from "../../types";
-import type { SrcDiffHighlight } from "../../srcdiff/selection";
+import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
 import { SourceFileCard } from "./SourceFileCard";
 
 type SourceSectionProps = {
   files: VisualizedFile[];
   focusedFileIndex: number;
   selectedNodeFileIndex: number | null;
-  highlightedSpans: SrcDiffHighlight[];
 };
 
 export function SourceSection({
   files,
   focusedFileIndex,
   selectedNodeFileIndex,
-  highlightedSpans,
 }: SourceSectionProps) {
+  const { highlightedSpans } = useSrcDiffHighlight();
+
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="space-y-4">

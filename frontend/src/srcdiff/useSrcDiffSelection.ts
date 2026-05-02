@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizeResponse, VisualizedFile } from "../types";
+import type { HighlightMode } from "./highlightContext";
 import type { HighlightKind, SrcDiffTreeNode } from "./types";
 import {
   getNodeHighlight,
@@ -8,8 +9,6 @@ import {
   type SrcDiffSelectionSpans,
 } from "./selection";
 import { buildForestTreeIndex } from "./treeIndex";
-
-type HighlightMode = "selection" | "all-moves" | "all-inserts" | "all-deletes";
 
 export type SrcDiffSelectionState = {
   selectedFile: VisualizedFile | null;

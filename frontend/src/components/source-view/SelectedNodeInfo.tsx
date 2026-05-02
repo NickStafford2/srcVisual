@@ -1,3 +1,4 @@
+import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
 import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
 import { LineTargetPill } from "../LineTargetPill";
@@ -8,7 +9,6 @@ type SelectedNodeInfoProps = {
   selectedFilename: string | null;
   selectedNodeFileIndex: number | null;
   selectedSpans: SrcDiffSelectionSpans;
-  highlightedCount: number;
 };
 
 export function SelectedNodeInfo({
@@ -16,8 +16,10 @@ export function SelectedNodeInfo({
   selectedFilename,
   selectedNodeFileIndex,
   selectedSpans,
-  highlightedCount,
 }: SelectedNodeInfoProps) {
+  const { highlightedSpans } = useSrcDiffHighlight();
+  const highlightedCount = highlightedSpans.length;
+
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
