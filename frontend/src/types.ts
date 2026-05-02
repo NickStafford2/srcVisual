@@ -4,8 +4,8 @@ export interface VisualizedFile {
   unit: number;
   filename: string;
   language?: string;
-  before_source: string;
-  after_source: string;
+  source_code_before: string;
+  source_code_after: string;
   tree: SrcDiffTreeNode | null;
 }
 

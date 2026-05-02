@@ -60,21 +60,21 @@ export function useSrcDiffVisualizer() {
   const beforeLines = useMemo(
     () =>
       buildSourceView(
-        selectedFile?.before_source ?? "",
+        selectedFile?.source_code_before ?? "",
         selectedNode?.before_span,
         selectedNode?.kind ?? "plain",
       ),
-    [selectedFile?.before_source, selectedNode],
+    [selectedFile?.source_code_before, selectedNode],
   );
 
   const afterLines = useMemo(
     () =>
       buildSourceView(
-        selectedFile?.after_source ?? "",
+        selectedFile?.source_code_after ?? "",
         selectedNode?.after_span,
         selectedNode?.kind ?? "plain",
       ),
-    [selectedFile?.after_source, selectedNode],
+    [selectedFile?.source_code_after, selectedNode],
   );
 
   useEffect(() => {

@@ -108,23 +108,23 @@ def extract_revision_files(
     for unit in range(1, unit_count + 1):
         unit_info = json.loads(run_command(["archive_reader", "--info", f"--unit={unit}", str(input_path)]).stdout)
         filename = unit_info.get("filename", f"unit-{unit}.cpp")
-        before_source = run_command(
+        source_code_before = run_command(
             ["archive_reader", f"--unit={unit}", "--revision=0", "--output-src", str(input_path)]
         ).stdout
-        after_source = run_command(
+        source_code_after = run_command(
             ["archive_reader", f"--unit={unit}", "--revision=1", "--output-src", str(input_path)]
         ).stdout
 
-        write_source_file(revision_zero_dir / filename, before_source)
-        write_source_file(revision_one_dir / filename, after_source)
+        write_source_file(revision_zero_dir / filename, source_code_before)
+        write_source_file(revision_one_dir / filename, source_code_after)
 
         files.append(
             {
                 "unit": unit,
                 "filename": filename,
                 "language": unit_info.get("language"),
-                "before_source": before_source,
-                "after_source": after_source,
+                "source_code_before": source_code_before,
+                "source_code_after": source_code_after,
             }
         )
 
