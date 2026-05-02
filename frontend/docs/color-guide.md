@@ -16,6 +16,7 @@ The key rule is to assign different visual channels to different meanings.
 
 - Use hue for diff type.
 - Use layout and labels for revision identity.
+- Use directional gradients sparingly for revision context in source panes.
 - Use border or ring for selection and focus.
 - Use underline or a side marker for move-group relationships.
 - Use badges for metadata such as move ids.
@@ -41,9 +42,15 @@ Instead:
 
 - `Revision 0`: fixed left placement, fixed label, fixed badge
 - `Revision 1`: fixed right placement, fixed label, fixed badge
+- `Revision 0` source pane: left-aligned header text
+- `Revision 1` source pane: right-aligned header text
+- source panes may use stronger opposing horizontal gradients to reinforce
+  revision directionality, using the site background color as the tinted side
+  and fading into the existing pane background
 
 Revision identity should come from structure and labeling first, not from a
-second competing highlight palette.
+second competing highlight palette. The directional gradient is a supporting
+cue, not the primary meaning carrier.
 
 ## Interaction State
 
@@ -69,6 +76,7 @@ background treatment.
 ## Practical Mapping
 
 - background tint: diff kind
+- opposing pane gradient: revision context in source panes only
 - border or ring: selected or focused state
 - underline: move relationship or group membership
 - bold text: current primary target only
@@ -77,6 +85,7 @@ background treatment.
 ## What To Avoid
 
 - Do not use one color to mean both diff type and revision.
+- Do not let revision gradients overpower diff colors inside highlighted text.
 - Do not use bold for multiple overlapping states.
 - Do not rely only on background color; pair it with shape or typography.
 - Do not make normal nodes visually loud.
@@ -87,8 +96,9 @@ Define the UI in four layers:
 
 1. Semantic colors for `insert`, `delete`, `move`, and `plain`
 2. Structural labels for `revision 0` and `revision 1`
-3. Interaction styles for `selected`, `hovered`, and `highlighted`
-4. Relationship styles for `move group` and `move partners`
+3. Directional pane treatment for revision context where needed
+4. Interaction styles for `selected`, `hovered`, and `highlighted`
+5. Relationship styles for `move group` and `move partners`
 
 If this policy is followed consistently, the interface should stay readable
 even when several states are visible at once.
