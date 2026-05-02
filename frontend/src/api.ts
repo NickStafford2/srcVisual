@@ -9,9 +9,7 @@ export async function visualizeSrcDiff(
     body: formData,
   });
 
-  const payload = (await response.json()) as
-    | VisualizeResponse
-    | { error: string };
+  const payload = await parseVisualizeResponse(response);
 
   if (!response.ok || "error" in payload) {
     throw new Error("error" in payload ? payload.error : "Upload failed.");
@@ -20,6 +18,21 @@ export async function visualizeSrcDiff(
   assertVisualizeResponseHasXmlSpans(payload);
 
   return payload;
+}
+
+async function parseVisualizeResponse(
+  response: Response,
+): Promise<VisualizeResponse | { error: string }> {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as VisualizeResponse | { error: string };
+  }
+
+  const text = await response.text();
+  return {
+    error: text.trim() || `Upload failed with status ${response.status}.`,
+  };
 }
 
 function assertVisualizeResponseHasXmlSpans(
