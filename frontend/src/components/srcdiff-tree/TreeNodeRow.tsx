@@ -23,6 +23,7 @@ export function TreeNodeRow({
   const isSelected = selectedNodeId === node.id;
   const isHighlighted = highlightedNodeIds.has(node.id);
   const hasChildren = node.children.length > 0;
+  const lineBadges = getNodeLineBadges(node);
 
   return (
     <div>
@@ -64,6 +65,19 @@ export function TreeNodeRow({
               move={node.move_id}
             </span>
           ) : null}
+
+          {lineBadges.length > 0 ? (
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              {lineBadges.map((badge) => (
+                <span
+                  key={badge.label}
+                  className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300"
+                >
+                  {badge.label}
+                </span>
+              ))}
+            </span>
+          ) : null}
         </button>
       </div>
 
@@ -85,6 +99,46 @@ export function TreeNodeRow({
       ) : null}
     </div>
   );
+}
+
+type LineBadge = {
+  label: string;
+};
+
+function getNodeLineBadges(node: SrcDiffTreeNode): LineBadge[] {
+  const beforeLabel = formatLineRange(node.before_span);
+  const afterLabel = formatLineRange(node.after_span);
+
+  if (beforeLabel && afterLabel) {
+    if (beforeLabel === afterLabel) {
+      return [{ label: `L${beforeLabel}` }];
+    }
+
+    return [{ label: `r0 L${beforeLabel}` }, { label: `r1 L${afterLabel}` }];
+  }
+
+  if (beforeLabel) {
+    return [{ label: `r0 L${beforeLabel}` }];
+  }
+
+  if (afterLabel) {
+    return [{ label: `r1 L${afterLabel}` }];
+  }
+
+  const xmlLabel = formatLineRange(node.xml_span);
+  return xmlLabel ? [{ label: `xml L${xmlLabel}` }] : [];
+}
+
+function formatLineRange(span: SrcDiffTreeNode["xml_span"]): string | null {
+  if (!span) {
+    return null;
+  }
+
+  if (span.start_line === span.end_line) {
+    return `${span.start_line}`;
+  }
+
+  return `${span.start_line}-${span.end_line}`;
 }
 
 export function getTreeNodeKindClasses(kind: SrcDiffTreeNode["kind"]): string {
