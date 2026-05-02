@@ -11,7 +11,7 @@ export interface SrcDiffTreeNode {
   id: string;
   path: string;
   tag: string;
-  label: string;
+  xml_label: string;
   kind: HighlightKind;
   move_id?: string | null;
   xml_span?: SourceSpan | null;

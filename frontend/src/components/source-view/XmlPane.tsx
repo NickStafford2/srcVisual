@@ -1,17 +1,26 @@
+import { useMemo } from "react";
 import type {
   HighlightKind,
-  ViewerLine,
+  SourceSpan,
   ViewerLineSegment,
 } from "../../srcdiff/types";
-
+import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
+
 type XmlPaneProps = {
   title: string;
   subtitle: string;
-  lines: ViewerLine[];
+  source: string;
+  span: SourceSpan | null | undefined;
+  kind: HighlightKind;
 };
 
-export function XmlPane({ title, subtitle, lines }: XmlPaneProps) {
+export function XmlPane({ title, subtitle, source, span, kind }: XmlPaneProps) {
+  const lines = useMemo(
+    () => buildSourceView(source, span, kind),
+    [source, span, kind],
+  );
+
   return (
     <article className="overflow-hidden rounded-[24px] border border-purple-300/15 bg-slate-950/55">
       <header className="px-5 pt-5 pb-4">

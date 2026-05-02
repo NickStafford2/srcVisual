@@ -49,7 +49,7 @@ function assertTreeHasXmlSpans(
           `id=${node.id}`,
           `path=${node.path}`,
           `tag=${node.tag}`,
-          `label=${node.label}`,
+          `label=${node.xml_label}`,
         ].join(" "),
       );
     }

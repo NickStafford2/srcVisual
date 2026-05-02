@@ -1,16 +1,32 @@
+import { useMemo } from "react";
 import type {
   HighlightKind,
-  ViewerLine,
+  SourceSpan,
   ViewerLineSegment,
 } from "../../srcdiff/types";
+import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
+
 type CodePaneProps = {
   title: string;
   subtitle: string;
-  lines: ViewerLine[];
+  source: string;
+  span: SourceSpan | null | undefined;
+  kind: HighlightKind;
 };
 
-export function CodePane({ title, subtitle, lines }: CodePaneProps) {
+export function CodePane({
+  title,
+  subtitle,
+  source,
+  span,
+  kind,
+}: CodePaneProps) {
+  const lines = useMemo(
+    () => buildSourceView(source, span, kind),
+    [source, span, kind],
+  );
+
   return (
     <article className="overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/45">
       <header className="px-5 pt-5 pb-4">

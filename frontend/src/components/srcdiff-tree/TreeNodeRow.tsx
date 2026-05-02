@@ -50,7 +50,7 @@ export function TreeNodeRow({
         >
           <span className={getTreeNodeKindClasses(node.kind)}>{node.kind}</span>
 
-          <span className="truncate text-slate-100">{node.label}</span>
+          <span className="truncate text-slate-100">{node.xml_label}</span>
 
           {node.move_id ? (
             <span className="text-xs text-emerald-300">

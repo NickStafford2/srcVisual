@@ -1,4 +1,4 @@
-import type { SrcDiffTreeNode, ViewerLine } from "../../srcdiff/types";
+import type { SrcDiffTreeNode } from "../../srcdiff/types";
 
 import { CodePane } from "./CodePane";
 import { XmlPane } from "./XmlPane";
@@ -6,18 +6,20 @@ import { XmlPane } from "./XmlPane";
 type SourceSectionProps = {
   filename: string | null;
   selectedNode: SrcDiffTreeNode | null;
-  xmlLines: ViewerLine[];
-  beforeLines: ViewerLine[];
-  afterLines: ViewerLine[];
+  xmlSource: string;
+  beforeSource: string;
+  afterSource: string;
 };
 
 export function SourceSection({
   filename,
   selectedNode,
-  xmlLines,
-  beforeLines,
-  afterLines,
+  xmlSource,
+  beforeSource,
+  afterSource,
 }: SourceSectionProps) {
+  const selectedKind = selectedNode?.kind ?? "plain";
+
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
@@ -28,7 +30,7 @@ export function SourceSection({
 
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode
-              ? `Selected ${selectedNode.label} at XML path ${selectedNode.path}`
+              ? `Selected ${selectedNode.xml_label} at XML path ${selectedNode.path}`
               : "Select a tree node to highlight its XML and source spans."}
           </p>
 
@@ -53,7 +55,9 @@ export function SourceSection({
         <XmlPane
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
-          lines={xmlLines}
+          source={xmlSource}
+          span={selectedNode?.xml_span}
+          kind={selectedKind}
         />
       </div>
 
@@ -61,13 +65,17 @@ export function SourceSection({
         <CodePane
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
-          lines={beforeLines}
+          source={beforeSource}
+          span={selectedNode?.before_span}
+          kind={selectedKind}
         />
 
         <CodePane
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
-          lines={afterLines}
+          source={afterSource}
+          span={selectedNode?.after_span}
+          kind={selectedKind}
         />
       </div>
     </section>
