@@ -1,25 +1,36 @@
+import type { VisualizedFile } from "../../types";
 import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
 import { CodePane } from "./CodePane";
 import { XmlPane } from "./XmlPane";
 
 type SourceSectionProps = {
-  filename: string | null;
+  files: VisualizedFile[];
+  focusedFileIndex: number;
   selectedNode: SrcDiffTreeNode | null;
+  selectedNodeFileIndex: number | null;
   selectedSpans: SrcDiffSelectionSpans;
   xmlSource: string;
-  sourceCodeBefore: string; // is this really passing in all the source code before this? todo
-  sourceCodeAfter: string;
+};
+
+const EMPTY_SELECTION_SPANS: SrcDiffSelectionSpans = {
+  kind: "plain",
+  xmlSpan: null,
+  sourceCodeSpanBefore: null,
+  sourceCodeSpanAfter: null,
 };
 
 export function SourceSection({
-  filename,
+  files,
+  focusedFileIndex,
   selectedNode,
-  selectedSpans: selectedSpans,
+  selectedNodeFileIndex,
+  selectedSpans,
   xmlSource,
-  sourceCodeBefore,
-  sourceCodeAfter,
 }: SourceSectionProps) {
+  const selectedFile =
+    selectedNodeFileIndex === null ? null : files[selectedNodeFileIndex];
+
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
@@ -30,7 +41,7 @@ export function SourceSection({
 
           <p className="mt-2 text-sm leading-6 text-slate-300">
             {selectedNode
-              ? `Selected ${selectedNode.label} at XML path ${selectedNode.path}`
+              ? `Selected ${selectedNode.label} in ${selectedFile?.filename ?? "unknown file"} at XML path ${selectedNode.path}`
               : "Select a tree node to highlight its XML and source spans."}
           </p>
 
@@ -61,23 +72,102 @@ export function SourceSection({
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 space-y-6">
+        {files.length === 0 ? (
+          <div className="rounded-[24px] border border-white/10 bg-slate-950/45 px-6 py-8 text-sm text-slate-400">
+            No source files to render yet.
+          </div>
+        ) : (
+          files.map((file, index) => {
+            const fileSpans =
+              index === selectedNodeFileIndex
+                ? selectedSpans
+                : EMPTY_SELECTION_SPANS;
+
+            return (
+              <SourceFileCard
+                key={`${file.unit}-${file.filename}`}
+                file={file}
+                isFocused={index === focusedFileIndex}
+                isSelectedNodeFile={index === selectedNodeFileIndex}
+                selectedSpans={fileSpans}
+              />
+            );
+          })
+        )}
+      </div>
+    </section>
+  );
+}
+
+type SourceFileCardProps = {
+  file: VisualizedFile;
+  isFocused: boolean;
+  isSelectedNodeFile: boolean;
+  selectedSpans: SrcDiffSelectionSpans;
+};
+
+function SourceFileCard({
+  file,
+  isFocused,
+  isSelectedNodeFile,
+  selectedSpans,
+}: SourceFileCardProps) {
+  return (
+    <article
+      className={[
+        "rounded-[28px] border p-4 transition",
+        isSelectedNodeFile
+          ? "border-emerald-300/25 bg-emerald-300/8"
+          : isFocused
+            ? "border-sky-300/25 bg-sky-300/8"
+            : "border-white/10 bg-white/[0.03]",
+      ].join(" ")}
+    >
+      <header className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-50">
+            {file.filename}
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-400">
+            unit {file.unit}
+            {file.language ? ` · ${file.language}` : ""}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {isFocused ? (
+            <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1.5 text-xs text-sky-100">
+              focused file
+            </span>
+          ) : null}
+
+          {isSelectedNodeFile ? (
+            <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-100">
+              selected node source
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <CodePane
           title="Revision 0"
-          subtitle={filename ? `${filename} before` : "Upload a file to begin"}
-          source={sourceCodeBefore}
+          subtitle={`${file.filename} before`}
+          source={file.source_code_before}
           sourceCodeSpan={selectedSpans.sourceCodeSpanBefore}
           kind={selectedSpans.kind}
         />
 
         <CodePane
           title="Revision 1"
-          subtitle={filename ? `${filename} after` : "Upload a file to begin"}
-          source={sourceCodeAfter}
+          subtitle={`${file.filename} after`}
+          source={file.source_code_after}
           sourceCodeSpan={selectedSpans.sourceCodeSpanAfter}
           kind={selectedSpans.kind}
         />
       </div>
-    </section>
+    </article>
   );
 }

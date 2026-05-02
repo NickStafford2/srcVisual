@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { VisualizeResponse, VisualizedFile } from "../types";
 import type { SrcDiffTreeNode } from "./types";
 import { getSelectionSpans, type SrcDiffSelectionSpans } from "./selection";
-import { buildTreeIndex } from "./treeIndex";
+import { buildForestTreeIndex } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
   selectedFile: VisualizedFile | null;
   selectedFileIndex: number;
   selectedNode: SrcDiffTreeNode | null;
   selectedNodeId: string | null;
+  selectedNodeFileIndex: number | null;
   selectedSpans: SrcDiffSelectionSpans;
   setSelectedFileIndex: (index: number) => void;
   setSelectedNodeId: (nodeId: string) => void;
@@ -22,18 +23,19 @@ export function useSrcDiffSelection(
     null,
   );
 
-  const selectedFile = data?.files[selectedFileIndex] ?? null;
+  const files = data?.files ?? [];
+  const selectedFile = files[selectedFileIndex] ?? null;
 
-  const treeIndex = useMemo(
-    () => buildTreeIndex(selectedFile?.tree ?? null),
-    [selectedFile?.tree],
-  );
+  const treeIndex = useMemo(() => buildForestTreeIndex(files), [files]);
 
-  const selectedNode = selectedNodeId
+  const selectedNodeEntry = selectedNodeId
     ? (treeIndex.get(selectedNodeId) ?? null)
     : null;
 
-  const selection = useMemo(
+  const selectedNode = selectedNodeEntry?.node ?? null;
+  const selectedNodeFileIndex = selectedNodeEntry?.fileIndex ?? null;
+
+  const selectedSpans = useMemo(
     () => getSelectionSpans(selectedNode),
     [selectedNode],
   );
@@ -48,21 +50,28 @@ export function useSrcDiffSelection(
 
     if (selectedFileIndex >= data.files.length) {
       setSelectedFileIndexState(0);
-      setSelectedNodeIdState(null);
     }
   }, [data, selectedFileIndex]);
 
   useEffect(() => {
-    setSelectedNodeIdState(null);
-  }, [selectedFile?.tree]);
+    if (!selectedNodeId) return;
+
+    if (!treeIndex.has(selectedNodeId)) {
+      setSelectedNodeIdState(null);
+    }
+  }, [selectedNodeId, treeIndex]);
 
   function setSelectedFileIndex(index: number) {
     setSelectedFileIndexState(index);
-    setSelectedNodeIdState(null);
   }
 
   function setSelectedNodeId(nodeId: string) {
     setSelectedNodeIdState(nodeId);
+
+    const entry = treeIndex.get(nodeId);
+    if (entry) {
+      setSelectedFileIndexState(entry.fileIndex);
+    }
   }
 
   return {
@@ -70,7 +79,8 @@ export function useSrcDiffSelection(
     selectedFileIndex,
     selectedNode,
     selectedNodeId,
-    selectedSpans: selection,
+    selectedNodeFileIndex,
+    selectedSpans,
     setSelectedFileIndex,
     setSelectedNodeId,
   };
