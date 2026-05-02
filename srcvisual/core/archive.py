@@ -12,8 +12,8 @@ from .source_files import write_source_file
 def extract_revision_files(
     *,
     input_path: Path,
-    revision_zero_dir: Path,
-    revision_one_dir: Path,
+    revision_0_dir: Path,
+    revision_1_dir: Path,
 ) -> tuple[RevisionFile, ...]:
     archive_info = read_archive_info(input_path)
     unit_count = int(archive_info["units"])
@@ -36,8 +36,8 @@ def extract_revision_files(
             revision=1,
         )
 
-        write_source_file(revision_zero_dir / filename, revision_0_source_code)
-        write_source_file(revision_one_dir / filename, revision_1_source_code)
+        write_source_file(revision_0_dir / filename, revision_0_source_code)
+        write_source_file(revision_1_dir / filename, revision_1_source_code)
 
         files.append(
             RevisionFile(

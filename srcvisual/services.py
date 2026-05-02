@@ -21,23 +21,23 @@ def build_visualization_payload(
         input_path = tmpdir / sanitize_filename(filename)
         input_path.write_bytes(payload)
 
-        revision_zero_dir = tmpdir / "revision_0"
-        revision_one_dir = tmpdir / "revision_1"
-        revision_zero_dir.mkdir()
-        revision_one_dir.mkdir()
+        revision_0_dir = tmpdir / "revision_0"
+        revision_1_dir = tmpdir / "revision_1"
+        revision_0_dir.mkdir()
+        revision_1_dir.mkdir()
 
         revision_files = extract_revision_files(
             input_path=input_path,
-            revision_zero_dir=revision_zero_dir,
-            revision_one_dir=revision_one_dir,
+            revision_0_dir=revision_0_dir,
+            revision_1_dir=revision_1_dir,
         )
 
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
         annotated_srcdiff_xml = build_annotated_srcdiff_xml(
-            revision_zero_dir=revision_zero_dir,
-            revision_one_dir=revision_one_dir,
+            revision_0_dir=revision_0_dir,
+            revision_1_dir=revision_1_dir,
             tmpdir=tmpdir,
         )
 
@@ -64,8 +64,8 @@ def build_visualization_payload(
 
 def build_annotated_srcdiff_xml(
     *,
-    revision_zero_dir: Path,
-    revision_one_dir: Path,
+    revision_0_dir: Path,
+    revision_1_dir: Path,
     tmpdir: Path,
 ) -> str:
     positioned_path = tmpdir / "positioned.srcdiff.xml"
@@ -75,8 +75,8 @@ def build_annotated_srcdiff_xml(
         [
             "srcdiff",
             "--position",
-            str(revision_zero_dir),
-            str(revision_one_dir),
+            str(revision_0_dir),
+            str(revision_1_dir),
             "-o",
             str(positioned_path),
         ]

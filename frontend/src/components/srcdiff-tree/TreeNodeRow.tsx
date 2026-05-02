@@ -133,13 +133,13 @@ function getNodeLineBadges(
     node.revision_0_span,
     fileIndex,
     "revision-0",
-    "r0",
+    "Revision 0",
   );
   const revision1Badge = buildSourceLineBadge(
     node.revision_1_span,
     fileIndex,
     "revision-1",
-    "r1",
+    "Revision 1",
   );
   const revision0Range = formatLineRange(node.revision_0_span);
   const revision1Range = formatLineRange(node.revision_1_span);
@@ -184,7 +184,7 @@ function buildSourceLineBadge(
   span: SourceCodeSpan | null | undefined,
   fileIndex: number,
   revision: "revision-0" | "revision-1",
-  revisionLabel: "r0" | "r1",
+  revisionLabel: "Revision 0" | "Revision 1",
 ): LineBadge | null {
   const lineLabel = formatLineRange(span);
 

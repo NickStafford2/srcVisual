@@ -79,12 +79,12 @@ background treatment.
 
 - background tint: diff kind
 - opposing pane gradient: revision context in source panes only
-- directional gradient pill: revision-linked navigation targets such as `r0`
-  and `r1`
+- directional gradient pill: revision-linked navigation targets such as
+  `Revision 0` and `Revision 1`
 - border or ring: selected or focused state
 - underline: move relationship or group membership
 - bold text: current primary target only
-- badge or pill: metadata like `move=12`, `r0`, `r1`
+- badge or pill: metadata like `move=12`, `Revision 0`, `Revision 1`
 
 ## What To Avoid
 

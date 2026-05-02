@@ -289,7 +289,7 @@ function buildSelectedNodeLinks(
 
     if (revision0Range) {
       links.push({
-        label: `r0 L${revision0Range}`,
+        label: `Revision 0 L${revision0Range}`,
         targetId: buildSourceLineTargetId(
           fileIndex,
           "revision-0",
@@ -305,7 +305,7 @@ function buildSelectedNodeLinks(
 
     if (revision1Range) {
       links.push({
-        label: `r1 L${revision1Range}`,
+        label: `Revision 1 L${revision1Range}`,
         targetId: buildSourceLineTargetId(
           fileIndex,
           "revision-1",
