@@ -84,17 +84,17 @@ function getBulkHighlightButtonClasses(
 ): string {
   if (tone === "move") {
     return active
-      ? "border-amber-300/30 bg-amber-300/15 text-amber-100"
-      : "border-amber-300/20 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20";
+      ? "border-diff-move-1/30 bg-diff-move-1/15 text-diff-move-1"
+      : "border-diff-move-1/20 bg-diff-move-1/10 text-diff-move-1 hover:bg-diff-move-1/20";
   }
 
   if (tone === "insert") {
     return active
-      ? "border-sky-300/30 bg-sky-300/15 text-sky-100"
-      : "border-sky-300/20 bg-sky-300/10 text-sky-100 hover:bg-sky-300/20";
+      ? "border-diff-insert/30 bg-diff-insert/15 text-diff-insert"
+      : "border-diff-insert/20 bg-diff-insert/10 text-diff-insert hover:bg-diff-insert/20";
   }
 
   return active
-    ? "border-red-300/30 bg-red-300/15 text-red-100"
-    : "border-red-300/20 bg-red-300/10 text-red-100 hover:bg-red-300/20";
+    ? "border-diff-delete/30 bg-diff-delete/15 text-diff-delete"
+    : "border-diff-delete/20 bg-diff-delete/10 text-diff-delete hover:bg-diff-delete/20";
 }

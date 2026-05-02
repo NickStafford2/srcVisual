@@ -10,12 +10,12 @@ export function getSourceSegmentClasses(
 
   switch (kind) {
     case "delete":
-      return "rounded-md bg-red-300/25 px-0.5";
+      return "rounded-md bg-diff-delete/25 px-0.5";
     case "insert":
-      return "rounded-md bg-sky-300/25 px-0.5";
+      return "rounded-md bg-diff-insert/25 px-0.5";
     case "move":
-      return "rounded-md bg-amber-300/25 px-0.5";
+      return "rounded-md bg-diff-move-1/25 px-0.5";
     default:
-      return "rounded-md bg-emerald-300/25 px-0.5";
+      return "rounded-md bg-diff-plain/25 px-0.5";
   }
 }

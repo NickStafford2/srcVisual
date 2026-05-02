@@ -2,6 +2,11 @@
 
 @theme {
   --color-site-bg: rgb(59 58 64);
+  --color-diff-insert: rgb(74 222 128);
+  --color-diff-delete: rgb(248 113 113);
+  --color-diff-move-1: rgb(251 191 36);
+  --color-diff-move-2: rgb(249 115 22);
+  --color-diff-plain: rgb(148 163 184);
 }
 
 :root {

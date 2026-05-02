@@ -200,25 +200,25 @@ function buildSourceLineBadge(
 export function getTreeNodeKindClasses(kind: SrcDiffTreeNode["kind"]): string {
   switch (kind) {
     case "delete":
-      return "rounded-full bg-red-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-red-100 uppercase";
+      return "rounded-full bg-diff-delete/20 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-delete uppercase";
     case "insert":
-      return "rounded-full bg-sky-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-sky-100 uppercase";
+      return "rounded-full bg-diff-insert/20 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-insert uppercase";
     case "move":
-      return "rounded-full bg-amber-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-amber-100 uppercase";
+      return "rounded-full bg-diff-move-1/20 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-move-1 uppercase";
     default:
-      return "rounded-full bg-white/8 px-1.5 py-0.5 text-[9px] tracking-wide text-slate-300 uppercase";
+      return "rounded-full bg-diff-plain/15 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-plain uppercase";
   }
 }
 
 function getTreeNodeHighlightClasses(kind: SrcDiffTreeNode["kind"]): string {
   switch (kind) {
     case "delete":
-      return "bg-red-300/12 ring-1 ring-red-300/20";
+      return "bg-diff-delete/12 ring-1 ring-diff-delete/20";
     case "insert":
-      return "bg-sky-300/12 ring-1 ring-sky-300/20";
+      return "bg-diff-insert/12 ring-1 ring-diff-insert/20";
     case "move":
-      return "bg-amber-300/12 ring-1 ring-amber-300/20";
+      return "bg-diff-move-1/12 ring-1 ring-diff-move-1/20";
     default:
-      return "bg-emerald-300/12 ring-1 ring-emerald-300/20";
+      return "bg-diff-plain/12 ring-1 ring-diff-plain/20";
   }
 }
