@@ -10,6 +10,7 @@ export type NodeInfoPanelItem = {
   moveId: string | null | undefined;
   xmlSpanText: string;
   links: SelectedNodeLink[];
+  actions?: ReactNode;
 };
 
 type NodeInfoPanelProps = {
@@ -81,9 +82,15 @@ export function NodeInfoPanel({
                 </div>
 
                 {item.moveId ? (
-                  <span className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200">
-                    move={item.moveId}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {item.actions}
+
+                    <span className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200">
+                      move={item.moveId}
+                    </span>
+                  </div>
+                ) : item.actions ? (
+                  <div>{item.actions}</div>
                 ) : null}
               </div>
             </article>

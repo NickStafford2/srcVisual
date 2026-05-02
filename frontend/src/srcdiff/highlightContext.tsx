@@ -17,6 +17,7 @@ export type SrcDiffHighlightContextValue = {
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
   highlightMode: HighlightMode;
+  unhighlightNode: (nodeId: string) => void;
   highlightAllMoves: () => void;
   highlightAllInserts: () => void;
   highlightAllDeletes: () => void;

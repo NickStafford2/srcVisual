@@ -12,6 +12,7 @@ export function HighlightedNodeInfo() {
     highlightAllInserts,
     highlightAllDeletes,
     clearHighlights,
+    unhighlightNode,
   } = useSrcDiffHighlight();
 
   const items: NodeInfoPanelItem[] = highlightedNodes.map((highlightedNode) => {
@@ -27,6 +28,15 @@ export function HighlightedNodeInfo() {
         ? `${spans.xmlSpan.start_line}:${spans.xmlSpan.start_col} → ${spans.xmlSpan.end_line}:${spans.xmlSpan.end_col}`
         : "missing",
       links: buildSelectedNodeLinks(spans, highlightedNode.fileIndex),
+      actions: (
+        <button
+          type="button"
+          onClick={() => unhighlightNode(highlightedNode.node.id)}
+          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+        >
+          Unhighlight
+        </button>
+      ),
     };
   });
 

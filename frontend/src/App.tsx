@@ -53,6 +53,7 @@ export default function App() {
             highlightedNodeIds: srcDiffSelection.highlightedNodeIds,
             highlightedSpans: srcDiffSelection.highlightedSpans,
             highlightMode: srcDiffSelection.highlightMode,
+            unhighlightNode: srcDiffSelection.unhighlightNode,
             highlightAllMoves: srcDiffSelection.highlightAllMoves,
             highlightAllInserts: srcDiffSelection.highlightAllInserts,
             highlightAllDeletes: srcDiffSelection.highlightAllDeletes,
