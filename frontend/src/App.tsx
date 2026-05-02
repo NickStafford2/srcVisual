@@ -1,6 +1,9 @@
 import { InputPanel } from "./components/input-panel/InputPanel";
+import { SelectedNodeInfo } from "./components/source-view/SelectedNodeInfo";
 import { SourceSection } from "./components/source-view/SourceSection";
+import { XmlPane } from "./components/source-view/XmlPane";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
+import type { SourceViewHighlight } from "./srcdiff/srcView";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 
@@ -9,6 +12,22 @@ export default function App() {
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
 
   const files = srcDiffData.data?.files ?? [];
+  const selectedFile =
+    srcDiffSelection.selectedNodeFileIndex === null
+      ? null
+      : files[srcDiffSelection.selectedNodeFileIndex];
+  const xmlHighlights: SourceViewHighlight[] =
+    srcDiffSelection.highlightedSpans.flatMap((highlight) => {
+      if (!highlight.xmlSpan) return [];
+
+      return [
+        {
+          nodeId: highlight.nodeId,
+          kind: highlight.kind,
+          span: highlight.xmlSpan,
+        },
+      ];
+    });
 
   return (
     <main className="min-h-screen bg-site-bg px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
@@ -40,16 +59,31 @@ export default function App() {
           onClearHighlights={srcDiffSelection.clearHighlights}
         />
 
+        <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+          <SelectedNodeInfo
+            selectedNode={srcDiffSelection.selectedNode}
+            selectedFilename={selectedFile?.filename ?? null}
+            selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
+            selectedSpans={srcDiffSelection.selectedSpans}
+            highlightedCount={srcDiffSelection.highlightedSpans.length}
+          />
+        </section>
+
+        <XmlPane
+          title="srcDiff XML"
+          subtitle="Annotated XML returned by the backend"
+          source={srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput}
+          selectedSpan={srcDiffSelection.selectedSpans.xmlSpan}
+          selectedKind={srcDiffSelection.selectedSpans.kind}
+          selectedNodeId={srcDiffSelection.selectedNode?.id ?? null}
+          highlights={xmlHighlights}
+        />
+
         <SourceSection
           files={files}
           focusedFileIndex={srcDiffSelection.selectedFileIndex}
-          selectedNode={srcDiffSelection.selectedNode}
           selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
-          selectedSpans={srcDiffSelection.selectedSpans}
           highlightedSpans={srcDiffSelection.highlightedSpans}
-          xmlSource={
-            srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
-          }
         />
       </div>
     </main>

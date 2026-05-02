@@ -19,7 +19,7 @@ export function SelectedNodeInfo({
   highlightedCount,
 }: SelectedNodeInfoProps) {
   return (
-    <div className="flex flex-col gap-2 border-b border-white/10 pb-3 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
       <div>
         <p className="mt-1 text-sm leading-5 text-slate-300">
           {selectedNode
