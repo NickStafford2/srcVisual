@@ -25,34 +25,10 @@ export function UnitTree({
   return (
     <section
       className={[
-        "px-3 py-2.5 transition",
+        "flex flex-row px-3 py-2.5 transition",
         isFocused ? "bg-sky-300/[0.06]" : "",
       ].join(" ")}
     >
-      <button
-        type="button"
-        className="mb-1.5 flex w-full cursor-pointer items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition hover:bg-white/5"
-        onClick={() => onSelectUnitIndex(unitIndex)}
-      >
-        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] tracking-wide text-slate-300 uppercase">
-          unit {unit.unit}
-        </span>
-
-        <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
-          {unit.filename}
-        </span>
-
-        {unit.language ? (
-          <span className="text-xs text-slate-500">{unit.language}</span>
-        ) : null}
-
-        {isFocused ? (
-          <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] tracking-wide text-sky-100 uppercase">
-            focused
-          </span>
-        ) : null}
-      </button>
-
       <div className="px-1">
         {unit.tree ? (
           <TreeNodeRow
@@ -69,6 +45,29 @@ export function UnitTree({
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        className="flex w-full cursor-pointer flex-row items-start justify-end gap-2 rounded-xl px-2.5 py-1.5 text-left transition hover:bg-white/5"
+        onClick={() => onSelectUnitIndex(unitIndex)}
+      >
+        {isFocused ? (
+          <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] tracking-wide text-sky-100 uppercase">
+            focused
+          </span>
+        ) : null}
+        <span className="truncate bg-green-900 text-sm text-slate-100">
+          {unit.filename}
+        </span>
+
+        {unit.language ? (
+          <span className="text-xs text-slate-500">{unit.language}</span>
+        ) : null}
+
+        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] tracking-wide text-slate-300 uppercase">
+          unit {unit.unit}
+        </span>
+      </button>
     </section>
   );
 }
