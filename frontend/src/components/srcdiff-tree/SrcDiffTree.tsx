@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizedFile } from "../../types";
 import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
-import { HighlightSelector } from "./HighlightSelector";
 import { UnitTree } from "./UnitTree";
 
 type SrcDiffTreeProps = {
@@ -21,11 +20,6 @@ export default function SrcDiffTree({
 }: SrcDiffTreeProps) {
   const {
     highlightedNodeIds,
-    highlightMode,
-    highlightAllMoves,
-    highlightAllInserts,
-    highlightAllDeletes,
-    clearHighlights,
   } = useSrcDiffHighlight();
 
   const { allExpandableIds, initialExpandedIds } = useMemo(() => {
@@ -136,14 +130,6 @@ export default function SrcDiffTree({
             >
               {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
             </button>
-
-            <HighlightSelector
-              highlightMode={highlightMode}
-              onHighlightAllMoves={highlightAllMoves}
-              onHighlightAllInserts={highlightAllInserts}
-              onHighlightAllDeletes={highlightAllDeletes}
-              onClearHighlights={clearHighlights}
-            />
           </div>
         </div>
       </div>

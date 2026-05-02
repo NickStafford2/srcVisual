@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { SelectedNodeLink } from "./selectedNodeLinks";
 import { LineTargetPill } from "../LineTargetPill";
 
@@ -15,20 +16,26 @@ type NodeInfoPanelProps = {
   title: string;
   emptyMessage: string;
   items: NodeInfoPanelItem[];
+  actions?: ReactNode;
 };
 
 export function NodeInfoPanel({
   title,
   emptyMessage,
   items,
+  actions,
 }: NodeInfoPanelProps) {
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-      <header className="border-b border-white/10 pb-3">
-        <h2 className="text-lg font-semibold text-slate-50">{title}</h2>
-        <p className="mt-1 text-xs text-slate-400">
-          {items.length} item{items.length === 1 ? "" : "s"}
-        </p>
+      <header className="flex flex-col gap-3 border-b border-white/10 pb-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-50">{title}</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            {items.length} item{items.length === 1 ? "" : "s"}
+          </p>
+        </div>
+
+        {actions ? <div className="shrink-0">{actions}</div> : null}
       </header>
 
       {items.length === 0 ? (

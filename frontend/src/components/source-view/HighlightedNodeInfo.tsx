@@ -1,10 +1,18 @@
 import { useSrcDiffHighlight } from "../../srcdiff/highlightContext";
+import { HighlightSelector } from "../srcdiff-tree/HighlightSelector";
 import { getSelectionSpans } from "../../srcdiff/selection";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { NodeInfoPanel, type NodeInfoPanelItem } from "./NodeInfoPanel";
 
 export function HighlightedNodeInfo() {
-  const { highlightedNodes } = useSrcDiffHighlight();
+  const {
+    highlightedNodes,
+    highlightMode,
+    highlightAllMoves,
+    highlightAllInserts,
+    highlightAllDeletes,
+    clearHighlights,
+  } = useSrcDiffHighlight();
 
   const items: NodeInfoPanelItem[] = highlightedNodes.map((highlightedNode) => {
     const spans = getSelectionSpans(highlightedNode.node);
@@ -27,6 +35,15 @@ export function HighlightedNodeInfo() {
       title="Highlighted Nodes"
       emptyMessage="No nodes are highlighted right now."
       items={items}
+      actions={
+        <HighlightSelector
+          highlightMode={highlightMode}
+          onHighlightAllMoves={highlightAllMoves}
+          onHighlightAllInserts={highlightAllInserts}
+          onHighlightAllDeletes={highlightAllDeletes}
+          onClearHighlights={clearHighlights}
+        />
+      }
     />
   );
 }
