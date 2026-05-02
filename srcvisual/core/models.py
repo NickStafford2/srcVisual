@@ -55,3 +55,50 @@ class TreeNode:
             "after_span": self.after_span.to_dict() if self.after_span else None,
             "children": [child.to_dict() for child in self.children],
         }
+
+
+@dataclass(frozen=True)
+class RevisionFile:
+    unit: int
+    filename: str
+    language: str | None
+    source_code_before: str
+    source_code_after: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "unit": self.unit,
+            "filename": self.filename,
+            "language": self.language,
+            "source_code_before": self.source_code_before,
+            "source_code_after": self.source_code_after,
+        }
+
+
+@dataclass(frozen=True)
+class VisualizedFile:
+    revision_file: RevisionFile
+    tree: dict[str, object] | None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            **self.revision_file.to_dict(),
+            "tree": self.tree,
+        }
+
+
+@dataclass(frozen=True)
+class VisualizationPayload:
+    source_filename: str
+    annotated_srcdiff_xml: str
+    has_position_data: bool
+    files: tuple[VisualizedFile, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "source_filename": self.source_filename,
+            "annotated_srcdiff_xml": self.annotated_srcdiff_xml,
+            "units": str(len(self.files)),
+            "has_position_data": self.has_position_data,
+            "files": [file.to_dict() for file in self.files],
+        }
