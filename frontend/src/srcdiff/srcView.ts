@@ -5,6 +5,11 @@ import type {
   ViewerLineSegment,
 } from "./types";
 
+type LineSlice = {
+  startIndex: number;
+  endIndex: number;
+};
+
 export function buildSourceView(
   source: string = "",
   span: SourceCodeSpan | null | undefined,
@@ -19,15 +24,15 @@ export function buildSourceView(
 
   return sourceLines.map((lineText, index) => {
     const lineNumber = index + 1;
-    const highlightSpanForLine = getSpanForLine(lineNumber, lineText, span);
+    const lineSpan = getSpanForLine(lineNumber, lineText, span);
 
-    if (!highlightSpanForLine) {
+    if (!lineSpan) {
       return buildPlainViewerLine(lineNumber, lineText);
     }
 
     return {
       number: lineNumber,
-      segments: buildHighlightedSegments(lineText, highlightSpanForLine, kind),
+      segments: buildHighlightedSegments(lineText, lineSpan, kind),
       hasHighlight: true,
     };
   });
@@ -55,8 +60,7 @@ function buildHighlightedSegments(
   lineSpan: SourceCodeSpan,
   kind: HighlightKind,
 ): ViewerLineSegment[] {
-  const startIndex = clamp(lineSpan.start_col - 1, 0, lineText.length);
-  const endIndex = clamp(lineSpan.end_col, startIndex, lineText.length);
+  const { startIndex, endIndex } = sourceSpanToLineSlice(lineText, lineSpan);
 
   const segments: ViewerLineSegment[] = [];
 
@@ -107,6 +111,20 @@ function getSpanForLine(
         ? span.end_col
         : Math.max(lineText.length, 1),
   };
+}
+
+function sourceSpanToLineSlice(
+  lineText: string,
+  lineSpan: SourceCodeSpan,
+): LineSlice {
+  const startIndex = clamp(lineSpan.start_col - 1, 0, lineText.length);
+
+  // JavaScript string.slice(start, end) treats endIndex as exclusive.
+  // This keeps the current behavior unchanged while isolating the
+  // source-span-to-string-index conversion in one place.
+  const endIndex = clamp(lineSpan.end_col, startIndex, lineText.length);
+
+  return { startIndex, endIndex };
 }
 
 function clamp(value: number, min: number, max: number): number {
