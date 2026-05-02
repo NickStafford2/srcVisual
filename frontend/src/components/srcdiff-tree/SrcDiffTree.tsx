@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizedFile } from "../../types";
-import { TreeNodeRow } from "./TreeNodeRow";
+import { UnitTree } from "./UnitTree";
 
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
@@ -17,15 +17,15 @@ export default function SrcDiffTree({
   onSelectFileIndex,
   onSelectNode,
 }: SrcDiffTreeProps) {
-  const initialExpanded = useMemo(() => {
+  const initialExpandedIds = useMemo(() => {
     const ids = new Set<string>();
 
-    for (const file of files) {
-      if (!file.tree) continue;
+    for (const unit of files) {
+      if (!unit.tree) continue;
 
-      ids.add(file.tree.id);
+      ids.add(unit.tree.id);
 
-      for (const child of file.tree.children) {
+      for (const child of unit.tree.children) {
         ids.add(child.id);
       }
     }
@@ -33,11 +33,12 @@ export default function SrcDiffTree({
     return ids;
   }, [files]);
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(initialExpanded);
+  const [expandedIds, setExpandedIds] =
+    useState<Set<string>>(initialExpandedIds);
 
   useEffect(() => {
-    setExpandedIds(initialExpanded);
-  }, [initialExpanded]);
+    setExpandedIds(initialExpandedIds);
+  }, [initialExpandedIds]);
 
   function handleToggleNode(nodeId: string) {
     setExpandedIds((current) => {
@@ -64,7 +65,7 @@ export default function SrcDiffTree({
   return (
     <div className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-xl font-semibold text-slate-50">srcDiff Units</h2>
+        <h2 className="text-xl font-semibold text-slate-50">srcdiff Units</h2>
 
         <p className="mt-1 text-sm leading-5 text-slate-300">
           Units are shown in srcdiff order. Each unit has one root tree.
@@ -73,15 +74,15 @@ export default function SrcDiffTree({
 
       <div className="max-h-[48vh] overflow-auto font-mono text-sm">
         <div className="divide-y divide-white/10">
-          {files.map((file, index) => (
+          {files.map((unit, unitIndex) => (
             <UnitTree
-              key={`${file.unit}-${file.filename}`}
-              file={file}
-              fileIndex={index}
-              isFocused={index === selectedFileIndex}
+              key={`${unit.unit}-${unit.filename}`}
+              unit={unit}
+              unitIndex={unitIndex}
+              isFocused={unitIndex === selectedFileIndex}
               selectedNodeId={selectedNodeId}
               expandedIds={expandedIds}
-              onSelectFileIndex={onSelectFileIndex}
+              onSelectUnitIndex={onSelectFileIndex}
               onSelectNode={onSelectNode}
               onToggleNode={handleToggleNode}
             />
@@ -89,77 +90,5 @@ export default function SrcDiffTree({
         </div>
       </div>
     </div>
-  );
-}
-
-type UnitTreeProps = {
-  file: VisualizedFile;
-  fileIndex: number;
-  isFocused: boolean;
-  selectedNodeId: string | null;
-  expandedIds: Set<string>;
-  onSelectFileIndex: (index: number) => void;
-  onSelectNode: (nodeId: string) => void;
-  onToggleNode: (nodeId: string) => void;
-};
-
-function UnitTree({
-  file,
-  fileIndex,
-  isFocused,
-  selectedNodeId,
-  expandedIds,
-  onSelectFileIndex,
-  onSelectNode,
-  onToggleNode,
-}: UnitTreeProps) {
-  return (
-    <section
-      className={[
-        "px-3 py-2.5 transition",
-        isFocused ? "bg-sky-300/[0.06]" : "",
-      ].join(" ")}
-    >
-      <button
-        type="button"
-        className="mb-1.5 flex w-full cursor-pointer items-center gap-2 rounded-xl px-2.5 py-1.5 text-left transition hover:bg-white/5"
-        onClick={() => onSelectFileIndex(fileIndex)}
-      >
-        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] tracking-wide text-slate-300 uppercase">
-          unit {file.unit}
-        </span>
-
-        <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
-          {file.filename}
-        </span>
-
-        {file.language ? (
-          <span className="text-xs text-slate-500">{file.language}</span>
-        ) : null}
-
-        {isFocused ? (
-          <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] tracking-wide text-sky-100 uppercase">
-            focused
-          </span>
-        ) : null}
-      </button>
-
-      <div className="px-1">
-        {file.tree ? (
-          <TreeNodeRow
-            node={file.tree}
-            depth={0}
-            expandedIds={expandedIds}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={onSelectNode}
-            onToggleNode={onToggleNode}
-          />
-        ) : (
-          <div className="px-3 py-2 text-sm text-slate-400">
-            No tree returned for this unit.
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
