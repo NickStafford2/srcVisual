@@ -86,8 +86,6 @@ export default function App() {
               srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
             }
             selectedSpan={srcDiffSelection.selectedSpans.xmlSpan}
-            selectedKind={srcDiffSelection.selectedSpans.kind}
-            selectedNodeId={srcDiffSelection.selectedNode?.id ?? null}
             highlights={xmlHighlights}
           />
 

@@ -6,11 +6,7 @@ import {
 } from "../../srcdiff/lineLinks";
 import { buildXmlDisplayModel } from "../../srcdiff/xmlDisplay";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
-import type {
-  HighlightKind,
-  SourceCodeSpan,
-  ViewerLineSegment,
-} from "../../srcdiff/types";
+import type { SourceCodeSpan, ViewerLineSegment } from "../../srcdiff/types";
 import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
 
@@ -19,8 +15,6 @@ type XmlPaneProps = {
   subtitle: string;
   source?: string;
   selectedSpan: SourceCodeSpan | null | undefined;
-  selectedKind: HighlightKind;
-  selectedNodeId: string | null;
   highlights: SourceViewHighlight[];
 };
 
@@ -29,35 +23,15 @@ export function XmlPane({
   subtitle,
   source = "",
   selectedSpan,
-  selectedKind,
-  selectedNodeId,
   highlights,
 }: XmlPaneProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [showPositions, setShowPositions] = useState(false);
 
-  const effectiveHighlights = useMemo(() => {
-    if (highlights.length > 0) {
-      return highlights;
-    }
-
-    if (!selectedSpan || !selectedNodeId) {
-      return [];
-    }
-
-    return [
-      {
-        nodeId: selectedNodeId,
-        kind: selectedKind,
-        span: selectedSpan,
-      },
-    ];
-  }, [highlights, selectedKind, selectedNodeId, selectedSpan]);
-
   const displayModel = useMemo(
-    () => buildXmlDisplayModel(source, effectiveHighlights, showPositions),
-    [source, effectiveHighlights, showPositions],
+    () => buildXmlDisplayModel(source, highlights, showPositions),
+    [source, highlights, showPositions],
   );
 
   const lines = useMemo(
