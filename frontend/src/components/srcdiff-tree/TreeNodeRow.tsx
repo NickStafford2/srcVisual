@@ -1,11 +1,10 @@
 import {
-  buildLineHref,
   buildSourceLineTargetId,
   buildXmlLineTargetId,
   formatLineRange,
-  jumpToLineTarget,
 } from "../../srcdiff/lineLinks";
 import type { SourceCodeSpan, SrcDiffTreeNode } from "../../srcdiff/types";
+import { LineTargetPill } from "../LineTargetPill";
 
 type TreeNodeRowProps = {
   fileIndex: number;
@@ -79,19 +78,14 @@ export function TreeNodeRow({
         {lineBadges.length > 0 ? (
           <span className="ml-auto flex shrink-0 items-center gap-1 pl-2">
             {lineBadges.map((badge) => (
-              <a
+              <LineTargetPill
                 key={`${badge.targetId}-${badge.label}`}
-                href={buildLineHref(badge.targetId)}
-                onClick={(event) => {
-                  event.preventDefault();
-                  jumpToLineTarget(badge.targetId);
-                }}
-                className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:text-sky-100"
-                style={getLineBadgeStyle(badge.variant)}
+                label={badge.label}
+                targetId={badge.targetId}
                 title={badge.title}
-              >
-                {badge.label}
-              </a>
+                variant={badge.variant}
+                size="compact"
+              />
             ))}
           </span>
         ) : null}
@@ -200,29 +194,6 @@ function buildSourceLineBadge(
         ? "Jump to revision 0 source line"
         : "Jump to revision 1 source line",
     variant: revision,
-  };
-}
-
-function getLineBadgeStyle(variant: LineBadge["variant"]): {
-  backgroundImage: string;
-} {
-  if (variant === "revision-0") {
-    return {
-      backgroundImage:
-        "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",
-    };
-  }
-
-  if (variant === "revision-1") {
-    return {
-      backgroundImage:
-        "linear-gradient(270deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",
-    };
-  }
-
-  return {
-    backgroundImage:
-      "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.52) 0%, rgb(var(--site-bg-rgb) / 0.28) 55%, rgb(15 23 42 / 0.78) 100%)",
   };
 }
 

@@ -1,3 +1,4 @@
+import type { LineTargetPillVariant } from "../LineTargetPill";
 import {
   buildSourceLineTargetId,
   buildXmlLineTargetId,
@@ -9,6 +10,7 @@ export type SelectedNodeLink = {
   label: string;
   targetId: string;
   title: string;
+  variant: LineTargetPillVariant;
 };
 
 export function buildSelectedNodeLinks(
@@ -25,6 +27,7 @@ export function buildSelectedNodeLinks(
         label: `XML L${xmlRange}`,
         targetId: buildXmlLineTargetId(selectedSpans.xmlSpan.start_line),
         title: "Jump to selected XML line",
+        variant: "xml",
       });
     }
   }
@@ -41,6 +44,7 @@ export function buildSelectedNodeLinks(
           selectedSpans.revision0Span.start_line,
         ),
         title: "Jump to selected revision 0 line",
+        variant: "revision-0",
       });
     }
   }
@@ -57,6 +61,7 @@ export function buildSelectedNodeLinks(
           selectedSpans.revision1Span.start_line,
         ),
         title: "Jump to selected revision 1 line",
+        variant: "revision-1",
       });
     }
   }

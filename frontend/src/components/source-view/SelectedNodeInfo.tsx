@@ -1,6 +1,6 @@
-import { buildLineHref, jumpToLineTarget } from "../../srcdiff/lineLinks";
 import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
+import { LineTargetPill } from "../LineTargetPill";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 
 type SelectedNodeInfoProps = {
@@ -40,18 +40,13 @@ export function SelectedNodeInfo({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {buildSelectedNodeLinks(selectedSpans, selectedNodeFileIndex).map(
               (link) => (
-                <a
+                <LineTargetPill
                   key={`${link.targetId}-${link.label}`}
-                  href={buildLineHref(link.targetId)}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    jumpToLineTarget(link.targetId);
-                  }}
-                  className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 font-mono text-[11px] tracking-wide text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-sky-100"
+                  label={link.label}
+                  targetId={link.targetId}
                   title={link.title}
-                >
-                  {link.label}
-                </a>
+                  variant={link.variant}
+                />
               ),
             )}
           </div>
