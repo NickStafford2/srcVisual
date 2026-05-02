@@ -13,7 +13,7 @@ export function FileTabs({
 }: FileTabsProps) {
   return (
     <div
-      className="mt-5 flex flex-wrap gap-3"
+      className="mt-3 flex flex-wrap gap-2"
       role="tablist"
       aria-label="Archive files"
     >
@@ -22,7 +22,7 @@ export function FileTabs({
           key={`${file.unit}-${file.filename}`}
           type="button"
           className={[
-            "cursor-pointer rounded-full border px-4 py-2.5 text-sm transition",
+            "cursor-pointer rounded-full border px-3 py-1.5 text-xs transition",
             index === selectedFileIndex
               ? "border-sky-300/30 bg-sky-300/15 text-slate-50"
               : "border-white/8 bg-white/5 text-slate-300 hover:border-sky-300/20 hover:bg-sky-300/8",

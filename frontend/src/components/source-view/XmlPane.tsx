@@ -28,15 +28,15 @@ export function XmlPane({
   );
 
   return (
-    <article className="overflow-hidden rounded-[24px] border border-purple-300/15 bg-slate-950/55">
-      <header className="px-5 pt-5 pb-4">
-        <h3 className="text-xl font-semibold text-slate-50">{title}</h3>
-        <p className="mt-2 text-sm text-slate-300">{subtitle}</p>
+    <article className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55">
+      <header className="px-4 pt-3 pb-2">
+        <h3 className="text-base font-semibold text-slate-50">{title}</h3>
+        <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
       </header>
 
-      <div className="max-h-[44vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
+      <div className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
         {lines.length === 0 ? (
-          <div className="px-6 py-8 text-sm text-slate-400">
+          <div className="px-5 py-5 text-sm text-slate-400">
             No XML to render yet.
           </div>
         ) : (
@@ -44,15 +44,15 @@ export function XmlPane({
             <div
               key={`${title}-${line.number}`}
               className={[
-                "grid grid-cols-[72px_1fr] gap-3 px-5",
+                "grid grid-cols-[56px_1fr] gap-2 px-4",
                 line.hasHighlight ? "bg-white/[0.04]" : "",
               ].join(" ")}
             >
-              <span className="border-r border-white/5 py-2 pr-3 text-right text-sm text-slate-500 select-none">
+              <span className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 select-none">
                 {line.number}
               </span>
 
-              <span className="block py-2 text-sm break-words whitespace-pre-wrap text-slate-100">
+              <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (
                   <XmlSegment key={segmentIndex} segment={segment} />
                 ))}
