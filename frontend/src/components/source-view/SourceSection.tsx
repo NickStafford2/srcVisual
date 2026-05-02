@@ -66,7 +66,7 @@ export function SourceSection({
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
           source={sourceCodeBefore}
-          span={selectedSpans.beforeSpan}
+          sourceCodeSpan={selectedSpans.sourceCodeSpanBefore}
           kind={selectedSpans.kind}
         />
 
@@ -74,7 +74,7 @@ export function SourceSection({
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
           source={sourceCodeAfter}
-          span={selectedSpans.afterSpan}
+          sourceCodeSpan={selectedSpans.sourceCodeSpanAfter}
           kind={selectedSpans.kind}
         />
       </div>
