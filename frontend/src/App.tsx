@@ -22,11 +22,9 @@ export default function App() {
           isLoading={srcDiffData.isLoading}
           error={srcDiffData.error}
           data={srcDiffData.data}
-          selectedFileIndex={srcDiffSelection.selectedFileIndex}
           onUploadChange={srcDiffData.setSelectedUpload}
           onXmlInputChange={srcDiffData.handleXmlInputChange}
           onSubmit={srcDiffData.handleSubmit}
-          onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
         />
 
         <SrcDiffTree

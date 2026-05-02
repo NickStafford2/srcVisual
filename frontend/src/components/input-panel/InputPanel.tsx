@@ -4,7 +4,6 @@ import {
   SIMPLE_MOVE_SAMPLE,
 } from "../../samples";
 import type { VisualizeResponse } from "../../types";
-import { FileTabs } from "./FileTabs";
 import { SampleButton } from "./SampleButton";
 import { StatusPill } from "./StatusPill";
 
@@ -14,11 +13,9 @@ type InputPanelProps = {
   isLoading: boolean;
   error: string | null;
   data: VisualizeResponse | null;
-  selectedFileIndex: number;
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onSelectFileIndex: (index: number) => void;
 };
 
 export function InputPanel({
@@ -27,11 +24,9 @@ export function InputPanel({
   isLoading,
   error,
   data,
-  selectedFileIndex,
   onUploadChange,
   onXmlInputChange,
   onSubmit,
-  onSelectFileIndex,
 }: InputPanelProps) {
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
@@ -118,14 +113,6 @@ export function InputPanel({
           </>
         ) : null}
       </div>
-
-      {data ? (
-        <FileTabs
-          files={data.files}
-          selectedFileIndex={selectedFileIndex}
-          onSelectFileIndex={onSelectFileIndex}
-        />
-      ) : null}
     </section>
   );
 }
