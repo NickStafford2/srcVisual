@@ -9,6 +9,8 @@ import {
 } from "./selection";
 import { buildForestTreeIndex } from "./treeIndex";
 
+type HighlightMode = "selection" | "all-moves";
+
 export type SrcDiffSelectionState = {
   selectedFile: VisualizedFile | null;
   selectedFileIndex: number;
@@ -18,7 +20,7 @@ export type SrcDiffSelectionState = {
   selectedSpans: SrcDiffSelectionSpans;
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
-  hasMoveHighlights: boolean;
+  highlightMode: HighlightMode;
   setSelectedFileIndex: (index: number) => void;
   setSelectedNodeId: (nodeId: string) => void;
   highlightAllMoves: () => void;
@@ -32,16 +34,14 @@ export function useSrcDiffSelection(
   const [selectedNodeId, setSelectedNodeIdState] = useState<string | null>(
     null,
   );
-  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [highlightMode, setHighlightMode] =
+    useState<HighlightMode>("selection");
 
   const files = data?.files ?? [];
   const selectedFile = files[selectedFileIndex] ?? null;
 
   const treeIndex = useMemo(() => buildForestTreeIndex(files), [files]);
-
-  const allTreeEntries = useMemo(
+  const treeEntries = useMemo(
     () => Array.from(treeIndex.entries()),
     [treeIndex],
   );
@@ -58,23 +58,41 @@ export function useSrcDiffSelection(
     [selectedNode],
   );
 
-  const highlightedSpans = useMemo(() => {
-    return Array.from(highlightedNodeIds).flatMap((nodeId) => {
-      const entry = treeIndex.get(nodeId);
-      if (!entry) return [];
+  const highlightedEntries = useMemo(() => {
+    if (highlightMode === "all-moves") {
+      return treeEntries.filter(([, entry]) => entry.node.kind === "move");
+    }
 
-      return [getNodeHighlight(entry.node, entry.fileIndex)];
-    });
-  }, [highlightedNodeIds, treeIndex]);
+    if (!selectedNodeId || !selectedNodeEntry) {
+      return [];
+    }
 
-  const hasMoveHighlights = highlightedSpans.some(
-    (highlight) => highlight.kind === "move",
-  );
+    const selectedMoveId = selectedNodeEntry.node.move_id;
+
+    if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
+      return treeEntries.filter(
+        ([, entry]) =>
+          entry.node.kind === "move" && entry.node.move_id === selectedMoveId,
+      );
+    }
+
+    return [[selectedNodeId, selectedNodeEntry]] as typeof treeEntries;
+  }, [highlightMode, selectedNodeId, selectedNodeEntry, treeEntries]);
+
+  const highlightedNodeIds = useMemo(() => {
+    return new Set(highlightedEntries.map(([nodeId]) => nodeId));
+  }, [highlightedEntries]);
+
+  const highlightedSpans = useMemo<SrcDiffHighlight[]>(() => {
+    return highlightedEntries.map(([, entry]) =>
+      getNodeHighlight(entry.node, entry.fileIndex),
+    );
+  }, [highlightedEntries]);
 
   useEffect(() => {
     setSelectedFileIndexState(0);
     setSelectedNodeIdState(null);
-    setHighlightedNodeIds(new Set());
+    setHighlightMode("selection");
   }, [data]);
 
   useEffect(() => {
@@ -93,27 +111,13 @@ export function useSrcDiffSelection(
     }
   }, [selectedNodeId, treeIndex]);
 
-  useEffect(() => {
-    setHighlightedNodeIds((current) => {
-      const next = new Set<string>();
-
-      for (const nodeId of current) {
-        if (treeIndex.has(nodeId)) {
-          next.add(nodeId);
-        }
-      }
-
-      return next;
-    });
-  }, [treeIndex]);
-
   function setSelectedFileIndex(index: number) {
     setSelectedFileIndexState(index);
   }
 
   function setSelectedNodeId(nodeId: string) {
+    setHighlightMode("selection");
     setSelectedNodeIdState(nodeId);
-    setHighlightedNodeIds(new Set([nodeId]));
 
     const entry = treeIndex.get(nodeId);
     if (entry) {
@@ -122,26 +126,23 @@ export function useSrcDiffSelection(
   }
 
   function highlightAllMoves() {
-    const moveEntries = allTreeEntries.filter(
+    setHighlightMode("all-moves");
+
+    const firstMoveEntry = treeEntries.find(
       ([, entry]) => entry.node.kind === "move",
     );
 
-    const moveNodeIds = moveEntries.map(([nodeId]) => nodeId);
+    if (!firstMoveEntry) return;
 
-    setHighlightedNodeIds(new Set(moveNodeIds));
+    const [firstMoveNodeId, firstMove] = firstMoveEntry;
 
-    const firstMoveEntry = moveEntries[0];
-
-    if (firstMoveEntry) {
-      const [firstMoveNodeId, firstMove] = firstMoveEntry;
-
-      setSelectedNodeIdState(firstMoveNodeId);
-      setSelectedFileIndexState(firstMove.fileIndex);
-    }
+    setSelectedNodeIdState(firstMoveNodeId);
+    setSelectedFileIndexState(firstMove.fileIndex);
   }
 
   function clearHighlights() {
-    setHighlightedNodeIds(new Set());
+    setHighlightMode("selection");
+    setSelectedNodeIdState(null);
   }
 
   return {
@@ -153,7 +154,7 @@ export function useSrcDiffSelection(
     selectedSpans,
     highlightedNodeIds,
     highlightedSpans,
-    hasMoveHighlights,
+    highlightMode,
     setSelectedFileIndex,
     setSelectedNodeId,
     highlightAllMoves,

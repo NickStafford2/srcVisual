@@ -53,22 +53,6 @@ export function buildSourceView(
   });
 }
 
-export function singleSourceHighlight(
-  nodeId: string,
-  kind: HighlightKind,
-  span: SourceCodeSpan | null | undefined,
-): SourceViewHighlight[] {
-  if (!span) return [];
-
-  return [
-    {
-      nodeId,
-      kind,
-      span,
-    },
-  ];
-}
-
 function buildPlainViewerLine(
   lineNumber: number,
   lineText: string,
@@ -105,7 +89,6 @@ function buildHighlightedSegments(
         endIndex,
       };
     })
-    .filter((slice) => slice.endIndex >= slice.startIndex)
     .sort((a, b) => a.startIndex - b.startIndex || b.endIndex - a.endIndex);
 
   const segments: ViewerLineSegment[] = [];
@@ -144,15 +127,6 @@ function buildHighlightedSegments(
       kind: "plain",
       highlighted: false,
       nodeId: null,
-    });
-  }
-
-  if (segments.length === 0) {
-    segments.push({
-      text: lineText || " ",
-      kind: lineHighlights[0]?.kind ?? "plain",
-      highlighted: true,
-      nodeId: lineHighlights[0]?.nodeId ?? null,
     });
   }
 

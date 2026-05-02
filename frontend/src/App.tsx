@@ -29,7 +29,7 @@ export default function App() {
           selectedFileIndex={srcDiffSelection.selectedFileIndex}
           selectedNodeId={srcDiffSelection.selectedNodeId}
           highlightedNodeIds={srcDiffSelection.highlightedNodeIds}
-          hasMoveHighlights={srcDiffSelection.hasMoveHighlights}
+          highlightMode={srcDiffSelection.highlightMode}
           onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
           onSelectNode={srcDiffSelection.setSelectedNodeId}
           onHighlightAllMoves={srcDiffSelection.highlightAllMoves}

@@ -55,9 +55,7 @@ export function SourceSection({
           <p className="mt-1 text-sm leading-5 text-slate-300">
             {selectedNode
               ? `Selected ${selectedNode.label} in ${selectedFile?.filename ?? "unknown file"} at XML path ${selectedNode.path}`
-              : highlightedSpans.length > 0
-                ? `Highlighting ${highlightedSpans.length} nodes.`
-                : "Select a tree node to highlight its XML and source spans."}
+              : "Select a tree node to highlight its XML and source spans."}
           </p>
 
           {selectedNode ? (
@@ -66,6 +64,13 @@ export function SourceSection({
               {selectedSpans.xmlSpan
                 ? `${selectedSpans.xmlSpan.start_line}:${selectedSpans.xmlSpan.start_col} → ${selectedSpans.xmlSpan.end_line}:${selectedSpans.xmlSpan.end_col}`
                 : "missing"}
+            </p>
+          ) : null}
+
+          {highlightedSpans.length > 1 ? (
+            <p className="mt-1 text-xs text-emerald-200">
+              Highlighting {highlightedSpans.length} move partners with the same
+              move id.
             </p>
           ) : null}
         </div>

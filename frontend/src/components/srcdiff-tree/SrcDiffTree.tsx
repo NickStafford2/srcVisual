@@ -7,7 +7,7 @@ type SrcDiffTreeProps = {
   selectedFileIndex: number;
   selectedNodeId: string | null;
   highlightedNodeIds: Set<string>;
-  hasMoveHighlights: boolean;
+  highlightMode: "selection" | "all-moves";
   onSelectFileIndex: (index: number) => void;
   onSelectNode: (nodeId: string) => void;
   onHighlightAllMoves: () => void;
@@ -19,7 +19,7 @@ export default function SrcDiffTree({
   selectedFileIndex,
   selectedNodeId,
   highlightedNodeIds,
-  hasMoveHighlights,
+  highlightMode,
   onSelectFileIndex,
   onSelectNode,
   onHighlightAllMoves,
@@ -77,7 +77,8 @@ export default function SrcDiffTree({
           <h2 className="text-xl font-semibold text-slate-50">srcdiff Units</h2>
 
           <p className="mt-1 text-sm leading-5 text-slate-300">
-            Units are shown in srcdiff order. Each unit has one root tree.
+            Selecting a moved node highlights its move partners. You can also
+            highlight every move in the forest.
           </p>
         </div>
 
@@ -87,7 +88,7 @@ export default function SrcDiffTree({
             onClick={onHighlightAllMoves}
             className={[
               "rounded-xl border px-3 py-2 text-xs font-medium transition hover:-translate-y-0.5",
-              hasMoveHighlights
+              highlightMode === "all-moves"
                 ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100"
                 : "border-emerald-300/20 bg-emerald-300/10 text-emerald-100 hover:bg-emerald-300/20",
             ].join(" ")}
