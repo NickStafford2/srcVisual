@@ -28,8 +28,12 @@ export default function App() {
           files={files}
           selectedFileIndex={srcDiffSelection.selectedFileIndex}
           selectedNodeId={srcDiffSelection.selectedNodeId}
+          highlightedNodeIds={srcDiffSelection.highlightedNodeIds}
+          hasMoveHighlights={srcDiffSelection.hasMoveHighlights}
           onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
           onSelectNode={srcDiffSelection.setSelectedNodeId}
+          onHighlightAllMoves={srcDiffSelection.highlightAllMoves}
+          onClearHighlights={srcDiffSelection.clearHighlights}
         />
 
         <SourceSection
@@ -38,6 +42,7 @@ export default function App() {
           selectedNode={srcDiffSelection.selectedNode}
           selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
           selectedSpans={srcDiffSelection.selectedSpans}
+          highlightedSpans={srcDiffSelection.highlightedSpans}
           xmlSource={
             srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
           }

@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import type {
-  HighlightKind,
-  SourceCodeSpan,
-  ViewerLineSegment,
-} from "../../srcdiff/types";
+import type { SourceViewHighlight } from "../../srcdiff/srcView";
+import type { ViewerLineSegment } from "../../srcdiff/types";
 import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
 
@@ -11,20 +8,18 @@ type CodePaneProps = {
   title: string;
   subtitle: string;
   source?: string;
-  sourceCodeSpan: SourceCodeSpan | null | undefined;
-  kind: HighlightKind;
+  highlights: SourceViewHighlight[];
 };
 
 export function CodePane({
   title,
   subtitle,
   source = "",
-  sourceCodeSpan: span,
-  kind,
+  highlights,
 }: CodePaneProps) {
   const lines = useMemo(
-    () => buildSourceView(source, span, kind),
-    [source, span, kind],
+    () => buildSourceView(source, highlights),
+    [source, highlights],
   );
 
   return (
@@ -54,7 +49,10 @@ export function CodePane({
 
               <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (
-                  <CodeSegment key={segmentIndex} segment={segment} />
+                  <CodeSegment
+                    key={`${segment.nodeId ?? "plain"}-${segmentIndex}`}
+                    segment={segment}
+                  />
                 ))}
               </span>
             </div>

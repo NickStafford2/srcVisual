@@ -5,15 +5,26 @@ import type {
   ViewerLineSegment,
 } from "./types";
 
+export type SourceViewHighlight = {
+  nodeId: string;
+  kind: HighlightKind;
+  span: SourceCodeSpan | null | undefined;
+};
+
 type LineSlice = {
   startIndex: number;
   endIndex: number;
 };
 
+type LineHighlight = {
+  nodeId: string;
+  kind: HighlightKind;
+  span: SourceCodeSpan;
+};
+
 export function buildSourceView(
   sourceCode: string = "",
-  sourceCodeSpan: SourceCodeSpan | null | undefined,
-  kind: HighlightKind,
+  highlights: SourceViewHighlight[],
 ): ViewerLine[] {
   const normalizedSourceCode = sourceCode.replace(/\r\n/g, "\n");
   const sourceLines = normalizedSourceCode.split("\n");
@@ -24,18 +35,38 @@ export function buildSourceView(
 
   return sourceLines.map((lineText, index) => {
     const lineNumber = index + 1;
-    const lineSpan = getSpanForLine(lineNumber, lineText, sourceCodeSpan);
+    const lineHighlights = getHighlightsForLine(
+      lineNumber,
+      lineText,
+      highlights,
+    );
 
-    if (!lineSpan) {
+    if (lineHighlights.length === 0) {
       return buildPlainViewerLine(lineNumber, lineText);
     }
 
     return {
       number: lineNumber,
-      segments: buildHighlightedSegments(lineText, lineSpan, kind),
+      segments: buildHighlightedSegments(lineText, lineHighlights),
       hasHighlight: true,
     };
   });
+}
+
+export function singleSourceHighlight(
+  nodeId: string,
+  kind: HighlightKind,
+  span: SourceCodeSpan | null | undefined,
+): SourceViewHighlight[] {
+  if (!span) return [];
+
+  return [
+    {
+      nodeId,
+      kind,
+      span,
+    },
+  ];
 }
 
 function buildPlainViewerLine(
@@ -49,6 +80,7 @@ function buildPlainViewerLine(
         text: lineText || " ",
         kind: "plain",
         highlighted: false,
+        nodeId: null,
       },
     ],
     hasHighlight: false,
@@ -57,60 +89,110 @@ function buildPlainViewerLine(
 
 function buildHighlightedSegments(
   lineText: string,
-  lineSpan: SourceCodeSpan,
-  kind: HighlightKind,
+  lineHighlights: LineHighlight[],
 ): ViewerLineSegment[] {
-  const { startIndex, endIndex } = sourceSpanToLineSlice(lineText, lineSpan);
+  const slices = lineHighlights
+    .map((highlight) => {
+      const { startIndex, endIndex } = sourceSpanToLineSlice(
+        lineText,
+        highlight.span,
+      );
+
+      return {
+        nodeId: highlight.nodeId,
+        kind: highlight.kind,
+        startIndex,
+        endIndex,
+      };
+    })
+    .filter((slice) => slice.endIndex >= slice.startIndex)
+    .sort((a, b) => a.startIndex - b.startIndex || b.endIndex - a.endIndex);
 
   const segments: ViewerLineSegment[] = [];
+  let cursor = 0;
 
-  if (startIndex > 0) {
+  for (const slice of slices) {
+    if (slice.endIndex < cursor) {
+      continue;
+    }
+
+    if (slice.startIndex > cursor) {
+      segments.push({
+        text: lineText.slice(cursor, slice.startIndex),
+        kind: "plain",
+        highlighted: false,
+        nodeId: null,
+      });
+    }
+
+    const highlightStart = Math.max(slice.startIndex, cursor);
+    const highlightEnd = Math.max(slice.endIndex, highlightStart);
+
     segments.push({
-      text: lineText.slice(0, startIndex),
+      text: lineText.slice(highlightStart, highlightEnd) || " ",
+      kind: slice.kind,
+      highlighted: true,
+      nodeId: slice.nodeId,
+    });
+
+    cursor = highlightEnd;
+  }
+
+  if (cursor < lineText.length) {
+    segments.push({
+      text: lineText.slice(cursor),
       kind: "plain",
       highlighted: false,
+      nodeId: null,
     });
   }
 
-  segments.push({
-    text: lineText.slice(startIndex, endIndex) || " ",
-    kind,
-    highlighted: true,
-  });
-
-  if (endIndex < lineText.length) {
+  if (segments.length === 0) {
     segments.push({
-      text: lineText.slice(endIndex),
-      kind: "plain",
-      highlighted: false,
+      text: lineText || " ",
+      kind: lineHighlights[0]?.kind ?? "plain",
+      highlighted: true,
+      nodeId: lineHighlights[0]?.nodeId ?? null,
     });
   }
 
   return segments;
 }
 
-function getSpanForLine(
+function getHighlightsForLine(
   lineNumber: number,
   lineText: string,
-  span: SourceCodeSpan | null | undefined,
-): SourceCodeSpan | null {
-  if (!span) {
-    return null;
-  }
+  highlights: SourceViewHighlight[],
+): LineHighlight[] {
+  return highlights.flatMap((highlight) => {
+    if (!highlight.span) return [];
 
-  if (lineNumber < span.start_line || lineNumber > span.end_line) {
-    return null;
-  }
+    if (
+      lineNumber < highlight.span.start_line ||
+      lineNumber > highlight.span.end_line
+    ) {
+      return [];
+    }
 
-  return {
-    start_line: lineNumber,
-    start_col: lineNumber === span.start_line ? span.start_col : 1,
-    end_line: lineNumber,
-    end_col:
-      lineNumber === span.end_line
-        ? span.end_col
-        : Math.max(lineText.length, 1),
-  };
+    return [
+      {
+        nodeId: highlight.nodeId,
+        kind: highlight.kind,
+        span: {
+          start_line: lineNumber,
+          start_col:
+            lineNumber === highlight.span.start_line
+              ? highlight.span.start_col
+              : 1,
+          end_line: lineNumber,
+          end_col:
+            lineNumber === highlight.span.end_line
+              ? highlight.span.end_col
+              : Math.max(lineText.length, 1),
+        },
+      },
+    ];
+  });
 }
 
 function sourceSpanToLineSlice(
@@ -118,10 +200,6 @@ function sourceSpanToLineSlice(
   lineSpan: SourceCodeSpan,
 ): LineSlice {
   const startIndex = clamp(lineSpan.start_col - 1, 0, lineText.length);
-
-  // JavaScript string.slice(start, end) treats endIndex as exclusive.
-  // This keeps the current behavior unchanged while isolating the
-  // source-span-to-string-index conversion in one place.
   const endIndex = clamp(lineSpan.end_col, startIndex, lineText.length);
 
   return { startIndex, endIndex };

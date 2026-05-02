@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type {
   HighlightKind,
   SourceCodeSpan,
@@ -11,30 +12,52 @@ type XmlPaneProps = {
   title: string;
   subtitle: string;
   source?: string;
-  span: SourceCodeSpan | null | undefined;
-  kind: HighlightKind;
+  selectedSpan: SourceCodeSpan | null | undefined;
+  selectedKind: HighlightKind;
+  selectedNodeId: string | null;
+  highlights: SourceViewHighlight[];
 };
 
 export function XmlPane({
   title,
   subtitle,
   source = "",
-  span,
-  kind,
+  selectedSpan,
+  selectedKind,
+  selectedNodeId,
+  highlights,
 }: XmlPaneProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
+  const effectiveHighlights = useMemo(() => {
+    if (highlights.length > 0) {
+      return highlights;
+    }
+
+    if (!selectedSpan || !selectedNodeId) {
+      return [];
+    }
+
+    return [
+      {
+        nodeId: selectedNodeId,
+        kind: selectedKind,
+        span: selectedSpan,
+      },
+    ];
+  }, [highlights, selectedKind, selectedNodeId, selectedSpan]);
+
   const lines = useMemo(
-    () => buildSourceView(source, span, kind),
-    [source, span, kind],
+    () => buildSourceView(source, effectiveHighlights),
+    [source, effectiveHighlights],
   );
 
   useEffect(() => {
-    if (!span) return;
+    if (!selectedSpan) return;
 
     const scrollContainer = scrollContainerRef.current;
-    const highlightedLine = lineRefs.current.get(span.start_line);
+    const highlightedLine = lineRefs.current.get(selectedSpan.start_line);
 
     if (!scrollContainer || !highlightedLine) return;
 
@@ -53,7 +76,12 @@ export function XmlPane({
       top: Math.max(centeredScrollTop, 0),
       behavior: "smooth",
     });
-  }, [span?.start_line, span?.start_col, span?.end_line, span?.end_col]);
+  }, [
+    selectedSpan?.start_line,
+    selectedSpan?.start_col,
+    selectedSpan?.end_line,
+    selectedSpan?.end_col,
+  ]);
 
   return (
     <article className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55">
@@ -92,7 +120,10 @@ export function XmlPane({
 
               <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
                 {line.segments.map((segment, segmentIndex) => (
-                  <XmlSegment key={segmentIndex} segment={segment} />
+                  <XmlSegment
+                    key={`${segment.nodeId ?? "plain"}-${segmentIndex}`}
+                    segment={segment}
+                  />
                 ))}
               </span>
             </div>

@@ -1,5 +1,9 @@
 import type { VisualizedFile } from "../../types";
-import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
+import type {
+  SrcDiffHighlight,
+  SrcDiffSelectionSpans,
+} from "../../srcdiff/selection";
+import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
 import { CodePane } from "./CodePane";
 import { XmlPane } from "./XmlPane";
@@ -10,14 +14,8 @@ type SourceSectionProps = {
   selectedNode: SrcDiffTreeNode | null;
   selectedNodeFileIndex: number | null;
   selectedSpans: SrcDiffSelectionSpans;
+  highlightedSpans: SrcDiffHighlight[];
   xmlSource: string;
-};
-
-const EMPTY_SELECTION_SPANS: SrcDiffSelectionSpans = {
-  kind: "plain",
-  xmlSpan: null,
-  sourceCodeSpanBefore: null,
-  sourceCodeSpanAfter: null,
 };
 
 export function SourceSection({
@@ -26,10 +24,25 @@ export function SourceSection({
   selectedNode,
   selectedNodeFileIndex,
   selectedSpans,
+  highlightedSpans,
   xmlSource,
 }: SourceSectionProps) {
   const selectedFile =
     selectedNodeFileIndex === null ? null : files[selectedNodeFileIndex];
+
+  const xmlHighlights: SourceViewHighlight[] = highlightedSpans.flatMap(
+    (highlight) => {
+      if (!highlight.xmlSpan) return [];
+
+      return [
+        {
+          nodeId: highlight.nodeId,
+          kind: highlight.kind,
+          span: highlight.xmlSpan,
+        },
+      ];
+    },
+  );
 
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
@@ -42,7 +55,9 @@ export function SourceSection({
           <p className="mt-1 text-sm leading-5 text-slate-300">
             {selectedNode
               ? `Selected ${selectedNode.label} in ${selectedFile?.filename ?? "unknown file"} at XML path ${selectedNode.path}`
-              : "Select a tree node to highlight its XML and source spans."}
+              : highlightedSpans.length > 0
+                ? `Highlighting ${highlightedSpans.length} nodes.`
+                : "Select a tree node to highlight its XML and source spans."}
           </p>
 
           {selectedNode ? (
@@ -67,8 +82,10 @@ export function SourceSection({
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
           source={xmlSource}
-          span={selectedSpans.xmlSpan}
-          kind={selectedSpans.kind}
+          selectedSpan={selectedSpans.xmlSpan}
+          selectedKind={selectedSpans.kind}
+          selectedNodeId={selectedNode?.id ?? null}
+          highlights={xmlHighlights}
         />
       </div>
 
@@ -79,10 +96,9 @@ export function SourceSection({
           </div>
         ) : (
           files.map((file, index) => {
-            const fileSpans =
-              index === selectedNodeFileIndex
-                ? selectedSpans
-                : EMPTY_SELECTION_SPANS;
+            const fileHighlights = highlightedSpans.filter(
+              (highlight) => highlight.fileIndex === index,
+            );
 
             return (
               <SourceFileCard
@@ -90,7 +106,7 @@ export function SourceSection({
                 file={file}
                 isFocused={index === focusedFileIndex}
                 isSelectedNodeFile={index === selectedNodeFileIndex}
-                selectedSpans={fileSpans}
+                highlightedSpans={fileHighlights}
               />
             );
           })
@@ -104,15 +120,43 @@ type SourceFileCardProps = {
   file: VisualizedFile;
   isFocused: boolean;
   isSelectedNodeFile: boolean;
-  selectedSpans: SrcDiffSelectionSpans;
+  highlightedSpans: SrcDiffHighlight[];
 };
 
 function SourceFileCard({
   file,
   isFocused,
   isSelectedNodeFile,
-  selectedSpans,
+  highlightedSpans,
 }: SourceFileCardProps) {
+  const beforeHighlights: SourceViewHighlight[] = highlightedSpans.flatMap(
+    (highlight) => {
+      if (!highlight.sourceCodeSpanBefore) return [];
+
+      return [
+        {
+          nodeId: highlight.nodeId,
+          kind: highlight.kind,
+          span: highlight.sourceCodeSpanBefore,
+        },
+      ];
+    },
+  );
+
+  const afterHighlights: SourceViewHighlight[] = highlightedSpans.flatMap(
+    (highlight) => {
+      if (!highlight.sourceCodeSpanAfter) return [];
+
+      return [
+        {
+          nodeId: highlight.nodeId,
+          kind: highlight.kind,
+          span: highlight.sourceCodeSpanAfter,
+        },
+      ];
+    },
+  );
+
   return (
     <article
       className={[
@@ -148,6 +192,12 @@ function SourceFileCard({
               selected source
             </span>
           ) : null}
+
+          {highlightedSpans.length > 0 ? (
+            <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
+              {highlightedSpans.length} highlighted
+            </span>
+          ) : null}
         </div>
       </header>
 
@@ -156,16 +206,14 @@ function SourceFileCard({
           title="Revision 0"
           subtitle={`${file.filename} before`}
           source={file.source_code_before}
-          sourceCodeSpan={selectedSpans.sourceCodeSpanBefore}
-          kind={selectedSpans.kind}
+          highlights={beforeHighlights}
         />
 
         <CodePane
           title="Revision 1"
           subtitle={`${file.filename} after`}
           source={file.source_code_after}
-          sourceCodeSpan={selectedSpans.sourceCodeSpanAfter}
-          kind={selectedSpans.kind}
+          highlights={afterHighlights}
         />
       </div>
     </article>

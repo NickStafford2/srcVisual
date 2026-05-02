@@ -6,6 +6,7 @@ type UnitTreeProps = {
   unitIndex: number;
   isFocused: boolean;
   selectedNodeId: string | null;
+  highlightedNodeIds: Set<string>;
   expandedIds: Set<string>;
   onSelectUnitIndex: (index: number) => void;
   onSelectNode: (nodeId: string) => void;
@@ -17,6 +18,7 @@ export function UnitTree({
   unitIndex,
   isFocused,
   selectedNodeId,
+  highlightedNodeIds,
   expandedIds,
   onSelectUnitIndex,
   onSelectNode,
@@ -36,6 +38,7 @@ export function UnitTree({
             depth={0}
             expandedIds={expandedIds}
             selectedNodeId={selectedNodeId}
+            highlightedNodeIds={highlightedNodeIds}
             onSelectNode={onSelectNode}
             onToggleNode={onToggleNode}
           />
@@ -56,6 +59,7 @@ export function UnitTree({
             focused
           </span>
         ) : null}
+
         <span className="truncate bg-green-900 text-sm text-slate-100">
           {unit.filename}
         </span>
