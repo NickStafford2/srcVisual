@@ -36,6 +36,7 @@ export default function App() {
         <SourceSection
           filename={srcDiffSelection.selectedFile?.filename ?? null}
           selectedNode={srcDiffSelection.selectedNode}
+          selectedSpans={srcDiffSelection.selectedSpans}
           xmlSource={
             srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
           }

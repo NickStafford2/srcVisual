@@ -1,11 +1,12 @@
+import type { SrcDiffSelectionSpans } from "../../srcdiff/selection";
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
-import { getSelectionSpans } from "../../srcdiff/selection";
 import { CodePane } from "./CodePane";
 import { XmlPane } from "./XmlPane";
 
 type SourceSectionProps = {
   filename: string | null;
   selectedNode: SrcDiffTreeNode | null;
+  selectedSpans: SrcDiffSelectionSpans;
   xmlSource: string;
   sourceCodeBefore: string;
   sourceCodeAfter: string;
@@ -14,12 +15,11 @@ type SourceSectionProps = {
 export function SourceSection({
   filename,
   selectedNode,
+  selectedSpans: selectedSpans,
   xmlSource,
   sourceCodeBefore,
   sourceCodeAfter,
 }: SourceSectionProps) {
-  const selection = getSelectionSpans(selectedNode);
-
   return (
     <section className="rounded-[24px] border border-white/10 bg-slate-950/65 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-end md:justify-between">
@@ -37,8 +37,8 @@ export function SourceSection({
           {selectedNode ? (
             <p className="mt-1 font-mono text-xs text-slate-400">
               xml_span:{" "}
-              {selection.xmlSpan
-                ? `${selection.xmlSpan.start_line}:${selection.xmlSpan.start_col} → ${selection.xmlSpan.end_line}:${selection.xmlSpan.end_col}`
+              {selectedSpans.xmlSpan
+                ? `${selectedSpans.xmlSpan.start_line}:${selectedSpans.xmlSpan.start_col} → ${selectedSpans.xmlSpan.end_line}:${selectedSpans.xmlSpan.end_col}`
                 : "missing"}
             </p>
           ) : null}
@@ -56,8 +56,8 @@ export function SourceSection({
           title="srcDiff XML"
           subtitle="Annotated XML returned by the backend"
           source={xmlSource}
-          span={selection.xmlSpan}
-          kind={selection.kind}
+          span={selectedSpans.xmlSpan}
+          kind={selectedSpans.kind}
         />
       </div>
 
@@ -66,16 +66,16 @@ export function SourceSection({
           title="Revision 0"
           subtitle={filename ? `${filename} before` : "Upload a file to begin"}
           source={sourceCodeBefore}
-          span={selection.beforeSpan}
-          kind={selection.kind}
+          span={selectedSpans.beforeSpan}
+          kind={selectedSpans.kind}
         />
 
         <CodePane
           title="Revision 1"
           subtitle={filename ? `${filename} after` : "Upload a file to begin"}
           source={sourceCodeAfter}
-          span={selection.afterSpan}
-          kind={selection.kind}
+          span={selectedSpans.afterSpan}
+          kind={selectedSpans.kind}
         />
       </div>
     </section>

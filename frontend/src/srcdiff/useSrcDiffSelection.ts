@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizeResponse, VisualizedFile } from "../types";
 import type { SrcDiffTreeNode } from "./types";
+import { getSelectionSpans, type SrcDiffSelectionSpans } from "./selection";
 import { buildTreeIndex } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
@@ -8,6 +9,7 @@ export type SrcDiffSelectionState = {
   selectedFileIndex: number;
   selectedNode: SrcDiffTreeNode | null;
   selectedNodeId: string | null;
+  selectedSpans: SrcDiffSelectionSpans;
   setSelectedFileIndex: (index: number) => void;
   setSelectedNodeId: (nodeId: string) => void;
 };
@@ -30,6 +32,11 @@ export function useSrcDiffSelection(
   const selectedNode = selectedNodeId
     ? (treeIndex.get(selectedNodeId) ?? null)
     : null;
+
+  const selection = useMemo(
+    () => getSelectionSpans(selectedNode),
+    [selectedNode],
+  );
 
   useEffect(() => {
     setSelectedFileIndexState(0);
@@ -63,6 +70,7 @@ export function useSrcDiffSelection(
     selectedFileIndex,
     selectedNode,
     selectedNodeId,
+    selectedSpans: selection,
     setSelectedFileIndex,
     setSelectedNodeId,
   };
