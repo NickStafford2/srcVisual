@@ -1,13 +1,11 @@
-# srcvisual/routes.py
-
 from __future__ import annotations
 
-import subprocess
 from dataclasses import dataclass
 
 from flask import Blueprint, request
 from werkzeug.datastructures import FileStorage
 
+from .core.models import BackendCommandError
 from .services import build_visualization_payload
 
 api = Blueprint("api", __name__)
@@ -38,17 +36,12 @@ def visualize() -> tuple[dict[str, object], int]:
             payload=visualization_request.payload,
             include_skipped_tags=visualization_request.include_skipped_tags,
         )
-    except FileNotFoundError as exc:
-        return {"error": f"Required command not found on PATH: {exc.filename}"}, 500
-    except subprocess.CalledProcessError as exc:
-        stderr = exc.stderr.strip() if exc.stderr else ""
-        stdout = exc.stdout.strip() if exc.stdout else ""
-        details = stderr or stdout or str(exc)
-        return {"error": f"Backend command failed: {details}"}, 500
+    except BackendCommandError as exc:
+        return {"error": exc.user_message()}, 500
     except ValueError as exc:
         return {"error": str(exc)}, 400
 
-    return result, 200
+    return result.to_dict(), 200
 
 
 def parse_visualization_request() -> VisualizationRequest:

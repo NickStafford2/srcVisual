@@ -15,7 +15,7 @@ def build_visualization_payload(
     filename: str,
     payload: bytes,
     include_skipped_tags: bool = False,
-) -> dict[str, object]:
+) -> VisualizationPayload:
     with tempfile.TemporaryDirectory(prefix="srcvisual-") as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         input_path = tmpdir / sanitize_filename(filename)
@@ -59,7 +59,7 @@ def build_visualization_payload(
             annotated_srcdiff_xml=annotated_srcdiff_xml,
             has_position_data=has_position_data,
             files=visualized_files,
-        ).to_dict()
+        )
 
 
 def build_annotated_srcdiff_xml(
