@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from .models import SourceSpan, TreeNode
+from .models import SourceSpan, TreeNode, TreeNodeKind
 from .namespaces import DIFF_NS, MV_NS, SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index, parse_position_spans
 
@@ -11,7 +11,7 @@ def build_tree_index(
     annotated_srcdiff_xml: str,
     *,
     include_skipped_tags: bool = False,
-) -> tuple[dict[str, TreeNode], bool]:
+) -> tuple[dict[str, dict[str, object]], bool]:
     root = ET.fromstring(annotated_srcdiff_xml)
     unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
 
@@ -20,7 +20,7 @@ def build_tree_index(
         include_skipped_tags=include_skipped_tags,
     )
 
-    index: dict[str, TreeNode] = {}
+    index: dict[str, dict[str, object]] = {}
     has_position_data = False
 
     for unit_number, unit_element in enumerate(unit_elements, start=1):
@@ -33,7 +33,7 @@ def build_tree_index(
             include_skipped_tags=include_skipped_tags,
         )
 
-        index[filename] = tree
+        index[filename] = tree.to_dict()
         has_position_data = has_position_data or tree_has_positions(tree)
 
     return index, has_position_data
@@ -76,26 +76,26 @@ def build_tree_node(
             )
         )
 
+    child_tuple = tuple(children)
+
     if before_span is None:
-        before_span = merge_child_spans(children, "before_span")
+        before_span = merge_child_spans(child_tuple, "before_span")
 
     if after_span is None:
-        after_span = merge_child_spans(children, "after_span")
+        after_span = merge_child_spans(child_tuple, "after_span")
 
-    xml_span = xml_span_by_path.get(path)
-
-    return {
-        "id": path,
-        "path": path,
-        "tag": tag,
-        "label": build_node_label(tag, element),
-        "kind": current_kind,
-        "move_id": current_move_id,
-        "xml_span": xml_span.to_dict() if xml_span else None,
-        "before_span": before_span.to_dict() if before_span else None,
-        "after_span": after_span.to_dict() if after_span else None,
-        "children": children,
-    }
+    return TreeNode(
+        id=path,
+        path=path,
+        tag=tag,
+        label=build_node_label(tag, element),
+        kind=current_kind,
+        move_id=current_move_id,
+        xml_span=xml_span_by_path.get(path),
+        before_span=before_span,
+        after_span=after_span,
+        children=child_tuple,
+    )
 
 
 def get_current_diff_kind(tag: str) -> str | None:
@@ -108,12 +108,19 @@ def get_current_diff_kind(tag: str) -> str | None:
     return None
 
 
-def get_current_kind(*, diff_kind: str | None, move_id: str | None) -> str:
+def get_current_kind(
+    *,
+    diff_kind: str | None,
+    move_id: str | None,
+) -> TreeNodeKind:
     if move_id:
         return "move"
 
-    if diff_kind:
-        return diff_kind
+    if diff_kind == "delete":
+        return "delete"
+
+    if diff_kind == "insert":
+        return "insert"
 
     return "plain"
 
@@ -147,23 +154,17 @@ def spans_for_element(
     return spans[0], spans[1]
 
 
-def merge_child_spans(children: list[TreeNode], key: str) -> SourceSpan | None:
+def merge_child_spans(
+    children: tuple[TreeNode, ...],
+    key: str,
+) -> SourceSpan | None:
     spans: list[SourceSpan] = []
 
     for child in children:
-        span_dict = child.get(key)
+        span = get_node_span(child, key)
 
-        if not span_dict:
-            continue
-
-        spans.append(
-            SourceSpan(
-                start_line=int(span_dict["start_line"]),
-                start_col=int(span_dict["start_col"]),
-                end_line=int(span_dict["end_line"]),
-                end_col=int(span_dict["end_col"]),
-            )
-        )
+        if span is not None:
+            spans.append(span)
 
     if not spans:
         return None
@@ -177,6 +178,19 @@ def merge_child_spans(children: list[TreeNode], key: str) -> SourceSpan | None:
         end_line=end.end_line,
         end_col=end.end_col,
     )
+
+
+def get_node_span(node: TreeNode, key: str) -> SourceSpan | None:
+    if key == "before_span":
+        return node.before_span
+
+    if key == "after_span":
+        return node.after_span
+
+    if key == "xml_span":
+        return node.xml_span
+
+    raise ValueError(f"Unsupported span key: {key}")
 
 
 def build_node_label(tag: str, element: ET.Element) -> str:
@@ -207,7 +221,7 @@ def build_text_preview(element: ET.Element) -> str | None:
 
 
 def tree_has_positions(node: TreeNode) -> bool:
-    if node.get("before_span") or node.get("after_span"):
+    if node.before_span or node.after_span:
         return True
 
-    return any(tree_has_positions(child) for child in node.get("children", []))
+    return any(tree_has_positions(child) for child in node.children)
