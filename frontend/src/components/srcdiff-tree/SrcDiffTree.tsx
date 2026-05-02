@@ -31,12 +31,28 @@ export default function SrcDiffTree({
   onHighlightAllDeletes,
   onClearHighlights,
 }: SrcDiffTreeProps) {
-  const initialExpandedIds = useMemo(() => {
+  const { allExpandableIds, initialExpandedIds } = useMemo(() => {
+    const allIds = new Set<string>();
     const ids = new Set<string>();
+
+    function collectExpandableIds(node: VisualizedFile["tree"]) {
+      if (!node) {
+        return;
+      }
+
+      if (node.children.length > 0) {
+        allIds.add(node.id);
+      }
+
+      for (const child of node.children) {
+        collectExpandableIds(child);
+      }
+    }
 
     for (const unit of files) {
       if (!unit.tree) continue;
 
+      collectExpandableIds(unit.tree);
       ids.add(unit.tree.id);
 
       for (const child of unit.tree.children) {
@@ -44,7 +60,10 @@ export default function SrcDiffTree({
       }
     }
 
-    return ids;
+    return {
+      allExpandableIds: allIds,
+      initialExpandedIds: ids,
+    };
   }, [files]);
 
   const [expandedIds, setExpandedIds] =
@@ -53,6 +72,20 @@ export default function SrcDiffTree({
   useEffect(() => {
     setExpandedIds(initialExpandedIds);
   }, [initialExpandedIds]);
+
+  const areAllNodesExpanded = useMemo(() => {
+    if (allExpandableIds.size === 0) {
+      return false;
+    }
+
+    for (const nodeId of allExpandableIds) {
+      if (!expandedIds.has(nodeId)) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [allExpandableIds, expandedIds]);
 
   function handleToggleNode(nodeId: string) {
     setExpandedIds((current) => {
@@ -66,6 +99,12 @@ export default function SrcDiffTree({
 
       return next;
     });
+  }
+
+  function handleToggleAllNodes() {
+    setExpandedIds(
+      areAllNodesExpanded ? new Set<string>() : new Set(allExpandableIds),
+    );
   }
 
   if (files.length === 0) {
@@ -89,6 +128,14 @@ export default function SrcDiffTree({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleToggleAllNodes}
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+          >
+            {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
+          </button>
+
           <BulkHighlightButton
             label="Highlight all moves"
             active={highlightMode === "all-moves"}
