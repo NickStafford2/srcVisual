@@ -11,6 +11,26 @@ class CommandResult:
 
 
 @dataclass(frozen=True)
+class BackendCommandError(Exception):
+    argv: tuple[str, ...]
+    returncode: int | None
+    stdout: str
+    stderr: str
+    missing_command: str | None = None
+
+    def user_message(self) -> str:
+        if self.missing_command:
+            return f"Required command not found on PATH: {self.missing_command}"
+
+        details = (
+            self.stderr.strip() or self.stdout.strip() or "Unknown command failure."
+        )
+        command = " ".join(self.argv)
+
+        return f"Backend command failed while running `{command}`: {details}"
+
+
+@dataclass(frozen=True)
 class SourceSpan:
     start_line: int
     start_col: int
