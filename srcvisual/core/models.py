@@ -118,7 +118,7 @@ class VisualizationPayload:
         return {
             "source_filename": self.source_filename,
             "annotated_srcdiff_xml": self.annotated_srcdiff_xml,
-            "units": str(len(self.files)),
+            "units": len(self.files),
             "has_position_data": self.has_position_data,
             "files": [file.to_dict() for file in self.files],
         }
