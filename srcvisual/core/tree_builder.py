@@ -52,7 +52,7 @@ def build_tree_node(
         move_id=current_move_id,
     )
 
-    before_span, after_span = spans_for_element(element, current_diff_kind)
+    revision_0_span, revision_1_span = spans_for_element(element, current_diff_kind)
 
     children: list[TreeNode] = []
     tag_counts: dict[str, int] = {}
@@ -76,11 +76,11 @@ def build_tree_node(
 
     child_tuple = tuple(children)
 
-    if before_span is None:
-        before_span = merge_child_spans(child_tuple, "before_span")
+    if revision_0_span is None:
+        revision_0_span = merge_child_spans(child_tuple, "revision_0_span")
 
-    if after_span is None:
-        after_span = merge_child_spans(child_tuple, "after_span")
+    if revision_1_span is None:
+        revision_1_span = merge_child_spans(child_tuple, "revision_1_span")
 
     return TreeNode(
         id=path,
@@ -90,8 +90,8 @@ def build_tree_node(
         kind=current_kind,
         move_id=current_move_id,
         xml_span=xml_span_by_path.get(path),
-        before_span=before_span,
-        after_span=after_span,
+        revision_0_span=revision_0_span,
+        revision_1_span=revision_1_span,
         children=child_tuple,
     )
 
@@ -179,11 +179,11 @@ def merge_child_spans(
 
 
 def get_node_span(node: TreeNode, key: str) -> SourceSpan | None:
-    if key == "before_span":
-        return node.before_span
+    if key == "revision_0_span":
+        return node.revision_0_span
 
-    if key == "after_span":
-        return node.after_span
+    if key == "revision_1_span":
+        return node.revision_1_span
 
     if key == "xml_span":
         return node.xml_span
@@ -219,7 +219,7 @@ def build_text_preview(element: ET.Element) -> str | None:
 
 
 def tree_has_positions(node: TreeNode) -> bool:
-    if node.before_span or node.after_span:
+    if node.revision_0_span or node.revision_1_span:
         return True
 
     return any(tree_has_positions(child) for child in node.children)

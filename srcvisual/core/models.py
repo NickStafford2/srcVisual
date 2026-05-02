@@ -58,8 +58,8 @@ class TreeNode:
     kind: TreeNodeKind
     move_id: str | None
     xml_span: SourceSpan | None
-    before_span: SourceSpan | None
-    after_span: SourceSpan | None
+    revision_0_span: SourceSpan | None
+    revision_1_span: SourceSpan | None
     children: tuple["TreeNode", ...]
 
     def to_dict(self) -> dict[str, object]:
@@ -71,8 +71,12 @@ class TreeNode:
             "kind": self.kind,
             "move_id": self.move_id,
             "xml_span": self.xml_span.to_dict() if self.xml_span else None,
-            "before_span": self.before_span.to_dict() if self.before_span else None,
-            "after_span": self.after_span.to_dict() if self.after_span else None,
+            "revision_0_span": self.revision_0_span.to_dict()
+            if self.revision_0_span
+            else None,
+            "revision_1_span": self.revision_1_span.to_dict()
+            if self.revision_1_span
+            else None,
             "children": [child.to_dict() for child in self.children],
         }
 
@@ -82,16 +86,16 @@ class RevisionFile:
     unit: int
     filename: str
     language: str | None
-    source_code_before: str
-    source_code_after: str
+    revision_0_source_code: str
+    revision_1_source_code: str
 
     def to_dict(self) -> dict[str, object]:
         return {
             "unit": self.unit,
             "filename": self.filename,
             "language": self.language,
-            "source_code_before": self.source_code_before,
-            "source_code_after": self.source_code_after,
+            "revision_0_source_code": self.revision_0_source_code,
+            "revision_1_source_code": self.revision_1_source_code,
         }
 
 

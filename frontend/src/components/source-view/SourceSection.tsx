@@ -165,29 +165,29 @@ function SourceFileCard({
   isSelectedNodeFile,
   highlightedSpans,
 }: SourceFileCardProps) {
-  const beforeHighlights: SourceViewHighlight[] = highlightedSpans.flatMap(
+  const revision0Highlights: SourceViewHighlight[] = highlightedSpans.flatMap(
     (highlight) => {
-      if (!highlight.sourceCodeSpanBefore) return [];
+      if (!highlight.revision0Span) return [];
 
       return [
         {
           nodeId: highlight.nodeId,
           kind: highlight.kind,
-          span: highlight.sourceCodeSpanBefore,
+          span: highlight.revision0Span,
         },
       ];
     },
   );
 
-  const afterHighlights: SourceViewHighlight[] = highlightedSpans.flatMap(
+  const revision1Highlights: SourceViewHighlight[] = highlightedSpans.flatMap(
     (highlight) => {
-      if (!highlight.sourceCodeSpanAfter) return [];
+      if (!highlight.revision1Span) return [];
 
       return [
         {
           nodeId: highlight.nodeId,
           kind: highlight.kind,
-          span: highlight.sourceCodeSpanAfter,
+          span: highlight.revision1Span,
         },
       ];
     },
@@ -240,20 +240,20 @@ function SourceFileCard({
       <div className="grid gap-4 lg:grid-cols-2">
         <CodePane
           fileIndex={fileIndex}
-          revision="before"
+          revision="revision-0"
           title="Revision 0"
-          subtitle={`${file.filename} before`}
-          source={file.source_code_before}
-          highlights={beforeHighlights}
+          subtitle={`${file.filename} revision 0`}
+          source={file.revision_0_source_code}
+          highlights={revision0Highlights}
         />
 
         <CodePane
           fileIndex={fileIndex}
-          revision="after"
+          revision="revision-1"
           title="Revision 1"
-          subtitle={`${file.filename} after`}
-          source={file.source_code_after}
-          highlights={afterHighlights}
+          subtitle={`${file.filename} revision 1`}
+          source={file.revision_1_source_code}
+          highlights={revision1Highlights}
         />
       </div>
     </article>
@@ -284,32 +284,32 @@ function buildSelectedNodeLinks(
     }
   }
 
-  if (selectedSpans.sourceCodeSpanBefore) {
-    const beforeRange = formatLineRange(selectedSpans.sourceCodeSpanBefore);
+  if (selectedSpans.revision0Span) {
+    const revision0Range = formatLineRange(selectedSpans.revision0Span);
 
-    if (beforeRange) {
+    if (revision0Range) {
       links.push({
-        label: `r0 L${beforeRange}`,
+        label: `r0 L${revision0Range}`,
         targetId: buildSourceLineTargetId(
           fileIndex,
-          "before",
-          selectedSpans.sourceCodeSpanBefore.start_line,
+          "revision-0",
+          selectedSpans.revision0Span.start_line,
         ),
         title: "Jump to selected revision 0 line",
       });
     }
   }
 
-  if (selectedSpans.sourceCodeSpanAfter) {
-    const afterRange = formatLineRange(selectedSpans.sourceCodeSpanAfter);
+  if (selectedSpans.revision1Span) {
+    const revision1Range = formatLineRange(selectedSpans.revision1Span);
 
-    if (afterRange) {
+    if (revision1Range) {
       links.push({
-        label: `r1 L${afterRange}`,
+        label: `r1 L${revision1Range}`,
         targetId: buildSourceLineTargetId(
           fileIndex,
-          "after",
-          selectedSpans.sourceCodeSpanAfter.start_line,
+          "revision-1",
+          selectedSpans.revision1Span.start_line,
         ),
         title: "Jump to selected revision 1 line",
       });

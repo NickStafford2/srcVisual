@@ -1,6 +1,6 @@
 import type { SourceCodeSpan } from "./types";
 
-export type SourceRevision = "before" | "after";
+export type SourceRevision = "revision-0" | "revision-1";
 
 export function buildXmlLineTargetId(lineNumber: number): string {
   return `xml-line-${lineNumber}`;

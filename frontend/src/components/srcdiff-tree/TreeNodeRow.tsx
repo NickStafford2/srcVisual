@@ -122,49 +122,49 @@ type LineBadge = {
   label: string;
   targetId: string;
   title: string;
-  variant: "before" | "after" | "xml";
+  variant: "revision-0" | "revision-1" | "xml";
 };
 
 function getNodeLineBadges(
   node: SrcDiffTreeNode,
   fileIndex: number,
 ): LineBadge[] {
-  const beforeBadge = buildSourceLineBadge(
-    node.before_span,
+  const revision0Badge = buildSourceLineBadge(
+    node.revision_0_span,
     fileIndex,
-    "before",
+    "revision-0",
     "r0",
   );
-  const afterBadge = buildSourceLineBadge(
-    node.after_span,
+  const revision1Badge = buildSourceLineBadge(
+    node.revision_1_span,
     fileIndex,
-    "after",
+    "revision-1",
     "r1",
   );
-  const beforeRange = formatLineRange(node.before_span);
-  const afterRange = formatLineRange(node.after_span);
+  const revision0Range = formatLineRange(node.revision_0_span);
+  const revision1Range = formatLineRange(node.revision_1_span);
 
-  if (beforeBadge && afterBadge) {
-    if (beforeRange && beforeRange === afterRange) {
+  if (revision0Badge && revision1Badge) {
+    if (revision0Range && revision0Range === revision1Range) {
       return [
         {
-          label: `L${beforeRange}`,
-          targetId: beforeBadge.targetId,
+          label: `L${revision0Range}`,
+          targetId: revision0Badge.targetId,
           title: "Jump to revision 0 source line",
-          variant: "before",
+          variant: "revision-0",
         },
       ];
     }
 
-    return [beforeBadge, afterBadge];
+    return [revision0Badge, revision1Badge];
   }
 
-  if (beforeBadge) {
-    return [beforeBadge];
+  if (revision0Badge) {
+    return [revision0Badge];
   }
 
-  if (afterBadge) {
-    return [afterBadge];
+  if (revision1Badge) {
+    return [revision1Badge];
   }
 
   const xmlLabel = formatLineRange(node.xml_span);
@@ -183,7 +183,7 @@ function getNodeLineBadges(
 function buildSourceLineBadge(
   span: SourceCodeSpan | null | undefined,
   fileIndex: number,
-  revision: "before" | "after",
+  revision: "revision-0" | "revision-1",
   revisionLabel: "r0" | "r1",
 ): LineBadge | null {
   const lineLabel = formatLineRange(span);
@@ -196,7 +196,7 @@ function buildSourceLineBadge(
     label: `${revisionLabel} L${lineLabel}`,
     targetId: buildSourceLineTargetId(fileIndex, revision, span.start_line),
     title:
-      revision === "before"
+      revision === "revision-0"
         ? "Jump to revision 0 source line"
         : "Jump to revision 1 source line",
     variant: revision,
@@ -206,14 +206,14 @@ function buildSourceLineBadge(
 function getLineBadgeStyle(variant: LineBadge["variant"]): {
   backgroundImage: string;
 } {
-  if (variant === "before") {
+  if (variant === "revision-0") {
     return {
       backgroundImage:
         "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",
     };
   }
 
-  if (variant === "after") {
+  if (variant === "revision-1") {
     return {
       backgroundImage:
         "linear-gradient(270deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",

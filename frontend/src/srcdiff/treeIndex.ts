@@ -41,8 +41,8 @@ export function buildTreeIndex(root: SrcDiffTreeNode | null): TreeIndex {
       unit: 0,
       filename: "",
       language: null,
-      source_code_before: "",
-      source_code_after: "",
+      revision_0_source_code: "",
+      revision_1_source_code: "",
       tree: root,
     },
   ]);

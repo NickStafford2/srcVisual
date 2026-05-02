@@ -94,12 +94,12 @@ def test_parse_position_spans_parses_multiple_spans() -> None:
 def test_build_xml_span_index_uses_srcdiff_unit_paths() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src">
-  <unit filename="before.cpp">
+  <unit filename="revision-0.cpp">
     <function>
       <name>main</name>
     </function>
   </unit>
-  <unit filename="after.cpp">
+  <unit filename="revision-1.cpp">
     <function>
       <name>main</name>
     </function>

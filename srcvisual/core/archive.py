@@ -25,27 +25,27 @@ def extract_revision_files(
         filename = get_unit_filename(unit_info, unit)
         language = get_unit_language(unit_info)
 
-        source_code_before = read_unit_revision(
+        revision_0_source_code = read_unit_revision(
             input_path=input_path,
             unit=unit,
             revision=0,
         )
-        source_code_after = read_unit_revision(
+        revision_1_source_code = read_unit_revision(
             input_path=input_path,
             unit=unit,
             revision=1,
         )
 
-        write_source_file(revision_zero_dir / filename, source_code_before)
-        write_source_file(revision_one_dir / filename, source_code_after)
+        write_source_file(revision_zero_dir / filename, revision_0_source_code)
+        write_source_file(revision_one_dir / filename, revision_1_source_code)
 
         files.append(
             RevisionFile(
                 unit=unit,
                 filename=filename,
                 language=language,
-                source_code_before=source_code_before,
-                source_code_after=source_code_after,
+                revision_0_source_code=revision_0_source_code,
+                revision_1_source_code=revision_1_source_code,
             )
         )
 

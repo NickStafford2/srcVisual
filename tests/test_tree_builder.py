@@ -70,7 +70,7 @@ def test_build_tree_index_detects_move_nodes_from_plain_move_attribute() -> None
     assert function["move_id"] == "move-1"
 
 
-def test_build_tree_index_maps_delete_span_to_before_span_only() -> None:
+def test_build_tree_index_maps_delete_span_to_revision_0_span_only() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:diff="http://www.srcML.org/srcDiff"
@@ -90,16 +90,16 @@ def test_build_tree_index_maps_delete_span_to_before_span_only() -> None:
 
     assert has_position_data is True
     assert delete_node["kind"] == "delete"
-    assert delete_node["before_span"] == {
+    assert delete_node["revision_0_span"] == {
         "start_line": 10,
         "start_col": 2,
         "end_line": 10,
         "end_col": 8,
     }
-    assert delete_node["after_span"] is None
+    assert delete_node["revision_1_span"] is None
 
 
-def test_build_tree_index_maps_insert_span_to_after_span_only() -> None:
+def test_build_tree_index_maps_insert_span_to_revision_1_span_only() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:diff="http://www.srcML.org/srcDiff"
@@ -119,8 +119,8 @@ def test_build_tree_index_maps_insert_span_to_after_span_only() -> None:
 
     assert has_position_data is True
     assert insert_node["kind"] == "insert"
-    assert insert_node["before_span"] is None
-    assert insert_node["after_span"] == {
+    assert insert_node["revision_0_span"] is None
+    assert insert_node["revision_1_span"] == {
         "start_line": 12,
         "start_col": 4,
         "end_line": 12,
@@ -128,7 +128,7 @@ def test_build_tree_index_maps_insert_span_to_after_span_only() -> None:
     }
 
 
-def test_build_tree_index_maps_two_position_spans_to_before_and_after() -> None:
+def test_build_tree_index_maps_two_position_spans_to_revision_0_and_revision_1() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:pos="http://www.srcML.org/srcML/position">
@@ -147,13 +147,13 @@ def test_build_tree_index_maps_two_position_spans_to_before_and_after() -> None:
 
     assert has_position_data is True
     assert function["kind"] == "plain"
-    assert function["before_span"] == {
+    assert function["revision_0_span"] == {
         "start_line": 1,
         "start_col": 1,
         "end_line": 5,
         "end_col": 2,
     }
-    assert function["after_span"] == {
+    assert function["revision_1_span"] == {
         "start_line": 20,
         "start_col": 1,
         "end_line": 25,
@@ -180,13 +180,13 @@ def test_build_tree_index_merges_child_spans_when_parent_has_no_position() -> No
     function = unit["children"][0]
 
     assert has_position_data is True
-    assert function["before_span"] == {
+    assert function["revision_0_span"] == {
         "start_line": 1,
         "start_col": 1,
         "end_line": 1,
         "end_col": 9,
     }
-    assert function["after_span"] == {
+    assert function["revision_1_span"] == {
         "start_line": 1,
         "start_col": 1,
         "end_line": 1,

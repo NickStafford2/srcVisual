@@ -31,7 +31,7 @@ export function CodePane({
     () => buildSourceView(source, highlights),
     [source, highlights],
   );
-  const isRevisionAfter = revision === "after";
+  const isRevisionOne = revision === "revision-1";
 
   return (
     <article
@@ -41,7 +41,7 @@ export function CodePane({
       <header
         className={[
           "px-4 pt-3 pb-2",
-          isRevisionAfter ? "text-right" : "text-left",
+          isRevisionOne ? "text-right" : "text-left",
         ].join(" ")}
       >
         <h3 className="text-base font-semibold text-slate-50">{title}</h3>
@@ -119,7 +119,7 @@ function renderVisibleWhitespace(text: string): string {
 function getCodePaneSurfaceStyle(revision: SourceRevision): {
   backgroundImage: string;
 } {
-  const direction = revision === "before" ? "90deg" : "270deg";
+  const direction = revision === "revision-0" ? "90deg" : "270deg";
 
   return {
     backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.72) 30%, rgb(var(--site-bg-rgb) / 0.36) 58%, rgb(2 6 23 / 0.08) 82%, rgb(2 6 23 / 0) 100%)`,
@@ -129,7 +129,7 @@ function getCodePaneSurfaceStyle(revision: SourceRevision): {
 function getCodePaneBodyStyle(revision: SourceRevision): {
   backgroundImage: string;
 } {
-  const direction = revision === "before" ? "90deg" : "270deg";
+  const direction = revision === "revision-0" ? "90deg" : "270deg";
 
   return {
     backgroundImage: `linear-gradient(${direction}, rgb(var(--site-bg-rgb) / 0.82) 0%, rgb(var(--site-bg-rgb) / 0.54) 32%, rgb(var(--site-bg-rgb) / 0.24) 60%, rgb(2 6 23 / 0.1) 84%, rgb(2 6 23 / 0) 100%)`,
