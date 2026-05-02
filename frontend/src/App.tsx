@@ -33,6 +33,8 @@ export default function App() {
           onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
           onSelectNode={srcDiffSelection.setSelectedNodeId}
           onHighlightAllMoves={srcDiffSelection.highlightAllMoves}
+          onHighlightAllInserts={srcDiffSelection.highlightAllInserts}
+          onHighlightAllDeletes={srcDiffSelection.highlightAllDeletes}
           onClearHighlights={srcDiffSelection.clearHighlights}
         />
 

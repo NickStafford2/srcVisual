@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizeResponse, VisualizedFile } from "../types";
-import type { SrcDiffTreeNode } from "./types";
+import type { HighlightKind, SrcDiffTreeNode } from "./types";
 import {
   getNodeHighlight,
   getSelectionSpans,
@@ -9,7 +9,7 @@ import {
 } from "./selection";
 import { buildForestTreeIndex } from "./treeIndex";
 
-type HighlightMode = "selection" | "all-moves";
+type HighlightMode = "selection" | "all-moves" | "all-inserts" | "all-deletes";
 
 export type SrcDiffSelectionState = {
   selectedFile: VisualizedFile | null;
@@ -24,6 +24,8 @@ export type SrcDiffSelectionState = {
   setSelectedFileIndex: (index: number) => void;
   setSelectedNodeId: (nodeId: string) => void;
   highlightAllMoves: () => void;
+  highlightAllInserts: () => void;
+  highlightAllDeletes: () => void;
   clearHighlights: () => void;
 };
 
@@ -61,6 +63,14 @@ export function useSrcDiffSelection(
   const highlightedEntries = useMemo(() => {
     if (highlightMode === "all-moves") {
       return treeEntries.filter(([, entry]) => entry.node.kind === "move");
+    }
+
+    if (highlightMode === "all-inserts") {
+      return treeEntries.filter(([, entry]) => entry.node.kind === "insert");
+    }
+
+    if (highlightMode === "all-deletes") {
+      return treeEntries.filter(([, entry]) => entry.node.kind === "delete");
     }
 
     if (!selectedNodeId || !selectedNodeEntry) {
@@ -126,18 +136,33 @@ export function useSrcDiffSelection(
   }
 
   function highlightAllMoves() {
-    setHighlightMode("all-moves");
+    highlightAllByKind("move", "all-moves");
+  }
 
-    const firstMoveEntry = treeEntries.find(
-      ([, entry]) => entry.node.kind === "move",
+  function highlightAllInserts() {
+    highlightAllByKind("insert", "all-inserts");
+  }
+
+  function highlightAllDeletes() {
+    highlightAllByKind("delete", "all-deletes");
+  }
+
+  function highlightAllByKind(kind: HighlightKind, mode: HighlightMode) {
+    setHighlightMode(mode);
+
+    const firstMatchingEntry = treeEntries.find(
+      ([, entry]) => entry.node.kind === kind,
     );
 
-    if (!firstMoveEntry) return;
+    if (!firstMatchingEntry) {
+      setSelectedNodeIdState(null);
+      return;
+    }
 
-    const [firstMoveNodeId, firstMove] = firstMoveEntry;
+    const [firstMatchingNodeId, firstMatchingEntryValue] = firstMatchingEntry;
 
-    setSelectedNodeIdState(firstMoveNodeId);
-    setSelectedFileIndexState(firstMove.fileIndex);
+    setSelectedNodeIdState(firstMatchingNodeId);
+    setSelectedFileIndexState(firstMatchingEntryValue.fileIndex);
   }
 
   function clearHighlights() {
@@ -158,6 +183,8 @@ export function useSrcDiffSelection(
     setSelectedFileIndex,
     setSelectedNodeId,
     highlightAllMoves,
+    highlightAllInserts,
+    highlightAllDeletes,
     clearHighlights,
   };
 }

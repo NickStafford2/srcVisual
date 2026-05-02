@@ -2,15 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import type { VisualizedFile } from "../../types";
 import { UnitTree } from "./UnitTree";
 
+type HighlightMode = "selection" | "all-moves" | "all-inserts" | "all-deletes";
+
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
   selectedFileIndex: number;
   selectedNodeId: string | null;
   highlightedNodeIds: Set<string>;
-  highlightMode: "selection" | "all-moves";
+  highlightMode: HighlightMode;
   onSelectFileIndex: (index: number) => void;
   onSelectNode: (nodeId: string) => void;
   onHighlightAllMoves: () => void;
+  onHighlightAllInserts: () => void;
+  onHighlightAllDeletes: () => void;
   onClearHighlights: () => void;
 };
 
@@ -23,6 +27,8 @@ export default function SrcDiffTree({
   onSelectFileIndex,
   onSelectNode,
   onHighlightAllMoves,
+  onHighlightAllInserts,
+  onHighlightAllDeletes,
   onClearHighlights,
 }: SrcDiffTreeProps) {
   const initialExpandedIds = useMemo(() => {
@@ -77,24 +83,32 @@ export default function SrcDiffTree({
           <h2 className="text-xl font-semibold text-slate-50">srcdiff Units</h2>
 
           <p className="mt-1 text-sm leading-5 text-slate-300">
-            Selecting a moved node highlights its move partners. You can also
-            highlight every move in the forest.
+            Select a node to highlight it, select a moved node to highlight its
+            move partners, or bulk-highlight all moves, inserts, or deletes.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
+          <BulkHighlightButton
+            label="Highlight all moves"
+            active={highlightMode === "all-moves"}
+            tone="move"
             onClick={onHighlightAllMoves}
-            className={[
-              "rounded-xl border px-3 py-2 text-xs font-medium transition hover:-translate-y-0.5",
-              highlightMode === "all-moves"
-                ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100"
-                : "border-emerald-300/20 bg-emerald-300/10 text-emerald-100 hover:bg-emerald-300/20",
-            ].join(" ")}
-          >
-            Highlight all moves
-          </button>
+          />
+
+          <BulkHighlightButton
+            label="Highlight all inserts"
+            active={highlightMode === "all-inserts"}
+            tone="insert"
+            onClick={onHighlightAllInserts}
+          />
+
+          <BulkHighlightButton
+            label="Highlight all deletes"
+            active={highlightMode === "all-deletes"}
+            tone="delete"
+            onClick={onHighlightAllDeletes}
+          />
 
           <button
             type="button"
@@ -126,4 +140,54 @@ export default function SrcDiffTree({
       </div>
     </div>
   );
+}
+
+type BulkHighlightButtonProps = {
+  label: string;
+  active: boolean;
+  tone: "move" | "insert" | "delete";
+  onClick: () => void;
+};
+
+function BulkHighlightButton({
+  label,
+  active,
+  tone,
+  onClick,
+}: BulkHighlightButtonProps) {
+  const toneClasses = getBulkHighlightButtonClasses(tone, active);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-xl border px-3 py-2 text-xs font-medium transition hover:-translate-y-0.5",
+        toneClasses,
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
+}
+
+function getBulkHighlightButtonClasses(
+  tone: BulkHighlightButtonProps["tone"],
+  active: boolean,
+): string {
+  if (tone === "move") {
+    return active
+      ? "border-amber-300/30 bg-amber-300/15 text-amber-100"
+      : "border-amber-300/20 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20";
+  }
+
+  if (tone === "insert") {
+    return active
+      ? "border-sky-300/30 bg-sky-300/15 text-sky-100"
+      : "border-sky-300/20 bg-sky-300/10 text-sky-100 hover:bg-sky-300/20";
+  }
+
+  return active
+    ? "border-red-300/30 bg-red-300/15 text-red-100"
+    : "border-red-300/20 bg-red-300/10 text-red-100 hover:bg-red-300/20";
 }

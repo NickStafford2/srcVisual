@@ -32,7 +32,7 @@ export function TreeNodeRow({
           isSelected
             ? "bg-sky-300/20 ring-1 ring-sky-300/30"
             : isHighlighted
-              ? "bg-emerald-300/12 ring-1 ring-emerald-300/20"
+              ? getTreeNodeHighlightClasses(node.kind)
               : "hover:bg-white/5",
         ].join(" ")}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
@@ -90,12 +90,25 @@ export function TreeNodeRow({
 export function getTreeNodeKindClasses(kind: SrcDiffTreeNode["kind"]): string {
   switch (kind) {
     case "delete":
-      return "rounded-full bg-amber-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-amber-100 uppercase";
+      return "rounded-full bg-red-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-red-100 uppercase";
     case "insert":
       return "rounded-full bg-sky-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-sky-100 uppercase";
     case "move":
-      return "rounded-full bg-emerald-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-emerald-100 uppercase";
+      return "rounded-full bg-amber-300/20 px-1.5 py-0.5 text-[9px] tracking-wide text-amber-100 uppercase";
     default:
       return "rounded-full bg-white/8 px-1.5 py-0.5 text-[9px] tracking-wide text-slate-300 uppercase";
+  }
+}
+
+function getTreeNodeHighlightClasses(kind: SrcDiffTreeNode["kind"]): string {
+  switch (kind) {
+    case "delete":
+      return "bg-red-300/12 ring-1 ring-red-300/20";
+    case "insert":
+      return "bg-sky-300/12 ring-1 ring-sky-300/20";
+    case "move":
+      return "bg-amber-300/12 ring-1 ring-amber-300/20";
+    default:
+      return "bg-emerald-300/12 ring-1 ring-emerald-300/20";
   }
 }
