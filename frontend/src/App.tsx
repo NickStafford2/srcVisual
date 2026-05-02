@@ -39,8 +39,12 @@ export default function App() {
           xmlSource={
             srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
           }
-          beforeSource={srcDiffSelection.selectedFile?.before_source ?? ""}
-          afterSource={srcDiffSelection.selectedFile?.after_source ?? ""}
+          sourceCodeBefore={
+            srcDiffSelection.selectedFile?.source_code_before ?? ""
+          }
+          sourceCodeAfter={
+            srcDiffSelection.selectedFile?.source_code_after ?? ""
+          }
         />
       </div>
     </main>

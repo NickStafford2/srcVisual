@@ -7,16 +7,16 @@ type SourceSectionProps = {
   filename: string | null;
   selectedNode: SrcDiffTreeNode | null;
   xmlSource: string;
-  beforeSource: string;
-  afterSource: string;
+  sourceCodeBefore: string;
+  sourceCodeAfter: string;
 };
 
 export function SourceSection({
   filename,
   selectedNode,
   xmlSource,
-  beforeSource,
-  afterSource,
+  sourceCodeBefore: beforeSource,
+  sourceCodeAfter: afterSource,
 }: SourceSectionProps) {
   const selectedKind = selectedNode?.kind ?? "plain";
 
