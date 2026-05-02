@@ -172,7 +172,6 @@ def build_tree_index(
         tree = build_tree_node(
             unit_element,
             path=f"/src:unit[{unit_number}]",
-            inherited_diff_kind=None,
             xml_span_by_path=xml_span_by_path,
         )
         index[filename] = tree
@@ -185,19 +184,24 @@ def build_tree_node(
     element: ET.Element,
     *,
     path: str,
-    inherited_diff_kind: str | None,
     xml_span_by_path: dict[str, SourceSpan],
 ) -> dict[str, object]:
     tag = prefixed_name(element.tag)
 
-    current_diff_kind = inherited_diff_kind
+    current_diff_kind: str | None = None
     if tag == "diff:delete":
         current_diff_kind = "delete"
     elif tag == "diff:insert":
         current_diff_kind = "insert"
 
     current_move_id = element.attrib.get(f"{{{MV_NS}}}id") or element.attrib.get("move")
-    current_kind = "move" if current_move_id else current_diff_kind or "plain"
+
+    if current_move_id:
+        current_kind = "move"
+    elif current_diff_kind:
+        current_kind = current_diff_kind
+    else:
+        current_kind = "plain"
 
     before_span, after_span = spans_for_element(element, current_diff_kind)
     children: list[dict[str, object]] = []
@@ -214,7 +218,6 @@ def build_tree_node(
         child_node = build_tree_node(
             child,
             path=child_path,
-            inherited_diff_kind=current_diff_kind,
             xml_span_by_path=xml_span_by_path,
         )
         children.append(child_node)
