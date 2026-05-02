@@ -125,14 +125,22 @@ type LineBadge = {
   variant: "before" | "after" | "xml";
 };
 
-function getNodeLineBadges(node: SrcDiffTreeNode, fileIndex: number): LineBadge[] {
+function getNodeLineBadges(
+  node: SrcDiffTreeNode,
+  fileIndex: number,
+): LineBadge[] {
   const beforeBadge = buildSourceLineBadge(
     node.before_span,
     fileIndex,
     "before",
     "r0",
   );
-  const afterBadge = buildSourceLineBadge(node.after_span, fileIndex, "after", "r1");
+  const afterBadge = buildSourceLineBadge(
+    node.after_span,
+    fileIndex,
+    "after",
+    "r1",
+  );
   const beforeRange = formatLineRange(node.before_span);
   const afterRange = formatLineRange(node.after_span);
 
@@ -201,20 +209,20 @@ function getLineBadgeStyle(variant: LineBadge["variant"]): {
   if (variant === "before") {
     return {
       backgroundImage:
-        "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.68) 38%, rgb(var(--site-bg-rgb) / 0.24) 72%, rgb(255 255 255 / 0.06) 100%)",
+        "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",
     };
   }
 
   if (variant === "after") {
     return {
       backgroundImage:
-        "linear-gradient(270deg, rgb(var(--site-bg-rgb) / 0.92) 0%, rgb(var(--site-bg-rgb) / 0.68) 38%, rgb(var(--site-bg-rgb) / 0.24) 72%, rgb(255 255 255 / 0.06) 100%)",
+        "linear-gradient(270deg, rgb(var(--site-bg-rgb) / 0.96) 0%, rgb(15 23 42 / 0.8) 100%)",
     };
   }
 
   return {
     backgroundImage:
-      "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.42) 0%, rgb(var(--site-bg-rgb) / 0.18) 55%, rgb(255 255 255 / 0.06) 100%)",
+      "linear-gradient(90deg, rgb(var(--site-bg-rgb) / 0.52) 0%, rgb(var(--site-bg-rgb) / 0.28) 55%, rgb(15 23 42 / 0.78) 100%)",
   };
 }
 
