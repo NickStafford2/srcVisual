@@ -17,6 +17,11 @@ export type SrcDiffSelectionState = {
   selectedNodeId: string | null;
   selectedNodeFileIndex: number | null;
   selectedSpans: SrcDiffSelectionSpans;
+  highlightedNodes: {
+    node: SrcDiffTreeNode;
+    fileIndex: number;
+    filename: string | null;
+  }[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
   highlightMode: HighlightMode;
@@ -91,6 +96,14 @@ export function useSrcDiffSelection(
   const highlightedNodeIds = useMemo(() => {
     return new Set(highlightedEntries.map(([nodeId]) => nodeId));
   }, [highlightedEntries]);
+
+  const highlightedNodes = useMemo(() => {
+    return highlightedEntries.map(([, entry]) => ({
+      node: entry.node,
+      fileIndex: entry.fileIndex,
+      filename: files[entry.fileIndex]?.filename ?? null,
+    }));
+  }, [files, highlightedEntries]);
 
   const highlightedSpans = useMemo<SrcDiffHighlight[]>(() => {
     return highlightedEntries.map(([, entry]) =>
@@ -176,6 +189,7 @@ export function useSrcDiffSelection(
     selectedNodeId,
     selectedNodeFileIndex,
     selectedSpans,
+    highlightedNodes,
     highlightedNodeIds,
     highlightedSpans,
     highlightMode,

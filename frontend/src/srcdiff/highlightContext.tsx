@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { SrcDiffHighlight } from "./selection";
+import type { SrcDiffTreeNode } from "./types";
 
 export type HighlightMode =
   | "selection"
@@ -8,6 +9,11 @@ export type HighlightMode =
   | "all-deletes";
 
 export type SrcDiffHighlightContextValue = {
+  highlightedNodes: {
+    node: SrcDiffTreeNode;
+    fileIndex: number;
+    filename: string | null;
+  }[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
   highlightMode: HighlightMode;

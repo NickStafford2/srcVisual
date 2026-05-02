@@ -1,0 +1,88 @@
+import type { SelectedNodeLink } from "./selectedNodeLinks";
+import { LineTargetPill } from "../LineTargetPill";
+
+export type NodeInfoPanelItem = {
+  key: string;
+  label: string;
+  filename: string | null;
+  path: string;
+  moveId: string | null | undefined;
+  xmlSpanText: string;
+  links: SelectedNodeLink[];
+};
+
+type NodeInfoPanelProps = {
+  title: string;
+  emptyMessage: string;
+  items: NodeInfoPanelItem[];
+};
+
+export function NodeInfoPanel({
+  title,
+  emptyMessage,
+  items,
+}: NodeInfoPanelProps) {
+  return (
+    <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+      <header className="border-b border-white/10 pb-3">
+        <h2 className="text-lg font-semibold text-slate-50">{title}</h2>
+        <p className="mt-1 text-xs text-slate-400">
+          {items.length} item{items.length === 1 ? "" : "s"}
+        </p>
+      </header>
+
+      {items.length === 0 ? (
+        <div className="pt-4 text-sm text-slate-400">{emptyMessage}</div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {items.map((item) => (
+            <article
+              key={item.key}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
+            >
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-100">
+                    {item.label}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    {item.filename ?? "unknown file"}
+                  </p>
+
+                  <p className="mt-1 font-mono text-[11px] text-slate-500">
+                    {item.path}
+                  </p>
+
+                  <p className="mt-1 font-mono text-[11px] text-slate-400">
+                    xml_span: {item.xmlSpanText}
+                  </p>
+
+                  {item.links.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {item.links.map((link) => (
+                        <LineTargetPill
+                          key={`${item.key}-${link.targetId}-${link.label}`}
+                          label={link.label}
+                          targetId={link.targetId}
+                          title={link.title}
+                          variant={link.variant}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {item.moveId ? (
+                  <span className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200">
+                    move={item.moveId}
+                  </span>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

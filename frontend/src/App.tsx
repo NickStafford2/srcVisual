@@ -1,3 +1,4 @@
+import { HighlightedNodeInfo } from "./components/source-view/HighlightedNodeInfo";
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { SelectedNodeInfo } from "./components/source-view/SelectedNodeInfo";
 import { SourceSection } from "./components/source-view/SourceSection";
@@ -48,6 +49,7 @@ export default function App() {
 
         <SrcDiffHighlightProvider
           value={{
+            highlightedNodes: srcDiffSelection.highlightedNodes,
             highlightedNodeIds: srcDiffSelection.highlightedNodeIds,
             highlightedSpans: srcDiffSelection.highlightedSpans,
             highlightMode: srcDiffSelection.highlightMode,
@@ -65,14 +67,16 @@ export default function App() {
             onSelectNode={srcDiffSelection.setSelectedNodeId}
           />
 
-          <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+          <div className="grid gap-4 xl:grid-cols-2">
             <SelectedNodeInfo
               selectedNode={srcDiffSelection.selectedNode}
               selectedFilename={selectedFile?.filename ?? null}
               selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
               selectedSpans={srcDiffSelection.selectedSpans}
             />
-          </section>
+
+            <HighlightedNodeInfo />
+          </div>
 
           <XmlPane
             title="srcDiff XML"
