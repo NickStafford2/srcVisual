@@ -118,52 +118,59 @@ export default function SrcDiffTree({
   return (
     <div className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-50">srcdiff Units</h2>
+        <div className="flex flex-row gap-2">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-50">
+              srcdiff Units
+            </h2>
 
-          <p className="mt-1 text-sm leading-5 text-slate-300">
-            Select a node to highlight it, select a moved node to highlight its
-            move partners, or bulk-highlight all moves, inserts, or deletes.
-          </p>
-        </div>
+            <p className="mt-1 text-sm leading-5 text-slate-300">
+              Select a node to highlight it, select a moved node to highlight
+              its move partners, or bulk-highlight all moves, inserts, or
+              deletes.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={handleToggleAllNodes}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-          >
-            {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
-          </button>
+          <div className="flex flex-row flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleToggleAllNodes}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+            >
+              {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
+            </button>
 
-          <BulkHighlightButton
-            label="Highlight all moves"
-            active={highlightMode === "all-moves"}
-            tone="move"
-            onClick={onHighlightAllMoves}
-          />
+            <div className="grid grid-cols-2">
+              <BulkHighlightButton
+                label="Highlight all moves"
+                active={highlightMode === "all-moves"}
+                tone="move"
+                onClick={onHighlightAllMoves}
+              />
 
-          <BulkHighlightButton
-            label="Highlight all inserts"
-            active={highlightMode === "all-inserts"}
-            tone="insert"
-            onClick={onHighlightAllInserts}
-          />
+              <BulkHighlightButton
+                label="Highlight all inserts"
+                active={highlightMode === "all-inserts"}
+                tone="insert"
+                onClick={onHighlightAllInserts}
+              />
 
-          <BulkHighlightButton
-            label="Highlight all deletes"
-            active={highlightMode === "all-deletes"}
-            tone="delete"
-            onClick={onHighlightAllDeletes}
-          />
+              <BulkHighlightButton
+                label="Highlight all deletes"
+                active={highlightMode === "all-deletes"}
+                tone="delete"
+                onClick={onHighlightAllDeletes}
+              />
 
-          <button
-            type="button"
-            onClick={onClearHighlights}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-          >
-            Clear highlights
-          </button>
+              <button
+                type="button"
+                onClick={onClearHighlights}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+              >
+                Clear highlights
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
