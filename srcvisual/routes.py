@@ -1,12 +1,23 @@
+# srcvisual/routes.py
+
 from __future__ import annotations
 
 import subprocess
+from dataclasses import dataclass
 
 from flask import Blueprint, request
+from werkzeug.datastructures import FileStorage
 
 from .services import build_visualization_payload
 
 api = Blueprint("api", __name__)
+
+
+@dataclass(frozen=True)
+class VisualizationRequest:
+    filename: str
+    payload: bytes
+    include_skipped_tags: bool
 
 
 @api.get("/health")
@@ -16,31 +27,16 @@ def health() -> tuple[dict[str, str], int]:
 
 @api.post("/visualize")
 def visualize() -> tuple[dict[str, object], int]:
-    uploaded = request.files.get("srcdiff")
-    xml_text = request.form.get("srcdiff_xml", "").strip()
-
-    if uploaded is None and not xml_text:
-        return {
-            "error": "Expected a srcdiff upload in 'srcdiff' or raw XML in 'srcdiff_xml'."
-        }, 400
-
-    filename = (
-        (uploaded.filename or "uploaded.srcdiff.xml")
-        if uploaded
-        else "pasted.srcdiff.xml"
-    )
-    payload = uploaded.read() if uploaded is not None else xml_text.encode("utf-8")
-
-    if not payload:
-        return {"error": "The uploaded srcdiff payload is empty."}, 400
+    try:
+        visualization_request = parse_visualization_request()
+    except ValueError as exc:
+        return {"error": str(exc)}, 400
 
     try:
-        include_skipped_tags = request.form.get("include_skipped_tags") == "true"
-
         result = build_visualization_payload(
-            filename=filename,
-            payload=payload,
-            include_skipped_tags=include_skipped_tags,
+            filename=visualization_request.filename,
+            payload=visualization_request.payload,
+            include_skipped_tags=visualization_request.include_skipped_tags,
         )
     except FileNotFoundError as exc:
         return {"error": f"Required command not found on PATH: {exc.filename}"}, 500
@@ -53,3 +49,39 @@ def visualize() -> tuple[dict[str, object], int]:
         return {"error": str(exc)}, 400
 
     return result, 200
+
+
+def parse_visualization_request() -> VisualizationRequest:
+    uploaded = request.files.get("srcdiff")
+    xml_text = request.form.get("srcdiff_xml", "").strip()
+
+    if uploaded is None and not xml_text:
+        raise ValueError(
+            "Expected a srcdiff upload in 'srcdiff' or raw XML in 'srcdiff_xml'."
+        )
+
+    filename = get_request_filename(uploaded)
+    payload = get_request_payload(uploaded, xml_text)
+
+    if not payload:
+        raise ValueError("The uploaded srcdiff payload is empty.")
+
+    return VisualizationRequest(
+        filename=filename,
+        payload=payload,
+        include_skipped_tags=request.form.get("include_skipped_tags") == "true",
+    )
+
+
+def get_request_filename(uploaded: FileStorage | None) -> str:
+    if uploaded is None:
+        return "pasted.srcdiff.xml"
+
+    return uploaded.filename or "uploaded.srcdiff.xml"
+
+
+def get_request_payload(uploaded: FileStorage | None, xml_text: str) -> bytes:
+    if uploaded is not None:
+        return uploaded.read()
+
+    return xml_text.encode("utf-8")

@@ -1,3 +1,5 @@
+# srcvisual/app.py
+
 from __future__ import annotations
 
 import os
@@ -20,8 +22,10 @@ def create_app() -> Flask:
         error: RequestEntityTooLarge,
     ) -> tuple[dict[str, str], int]:
         del error
+
         limit_bytes = int(app.config["MAX_CONTENT_LENGTH"])
         limit_mb = limit_bytes // (1024 * 1024)
+
         return {
             "error": (
                 "The uploaded srcdiff payload is too large. "
@@ -46,9 +50,7 @@ def get_max_content_length_bytes() -> int:
         ) from exc
 
     if limit_mb <= 0:
-        raise ValueError(
-            "SRCVISUAL_MAX_CONTENT_LENGTH_MB must be greater than zero."
-        )
+        raise ValueError("SRCVISUAL_MAX_CONTENT_LENGTH_MB must be greater than zero.")
 
     return limit_mb * 1024 * 1024
 
