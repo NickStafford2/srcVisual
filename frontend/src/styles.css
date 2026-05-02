@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+@theme {
+  --color-site-bg: rgb(59 58 64);
+}
+
+html,
+body {
+  background-color: var(--color-site-bg);
+}
