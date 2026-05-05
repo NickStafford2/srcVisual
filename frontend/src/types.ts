@@ -1,7 +1,7 @@
 import type { SrcDiffTreeNode } from "./srcdiff/types";
 
 export interface VisualizedFile {
-  unit: number;
+  unit_id: number;
   filename: string;
   language: string | null;
   revision_0_source_code: string;

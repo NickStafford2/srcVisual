@@ -38,7 +38,7 @@ export function buildTreeIndex(root: SrcDiffTreeNode | null): TreeIndex {
 
   return buildForestTreeIndex([
     {
-      unit: 0,
+      unit_id: 0,
       filename: "",
       language: null,
       revision_0_source_code: "",

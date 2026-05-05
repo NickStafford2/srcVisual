@@ -64,7 +64,7 @@ export function SourceFileCard({
           </h3>
 
           <p className="mt-0.5 text-xs text-slate-400">
-            unit {file.unit}
+            unit {file.unit_id}
             {file.language ? ` · ${file.language}` : ""}
           </p>
         </div>

@@ -68,7 +68,7 @@ export function UnitTree({
         ) : null}
 
         <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] tracking-wide text-slate-300 uppercase">
-          unit {unit.unit}
+          unit {unit.unit_id}
         </span>
       </button>
     </section>

@@ -58,7 +58,7 @@ def build_visualization_payload(
         visualized_files = tuple(
             VisualizedFile(
                 revision_file=revision_file,
-                tree=tree_by_unit.get(revision_file.unit),
+                tree=tree_by_unit.get(revision_file.unit_id),
             )
             for revision_file in revision_files
         )

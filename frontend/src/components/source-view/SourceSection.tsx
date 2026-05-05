@@ -25,7 +25,7 @@ export function SourceSection({
 
           return (
             <SourceFileCard
-              key={`${file.unit}-${file.filename}`}
+              key={`${file.unit_id}-${file.filename}`}
               fileIndex={index}
               file={file}
               isFocused={index === focusedFileIndex}

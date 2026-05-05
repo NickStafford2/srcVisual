@@ -18,9 +18,7 @@ export default function SrcDiffTree({
   onSelectFileIndex,
   onSelectNode,
 }: SrcDiffTreeProps) {
-  const {
-    highlightedNodeIds,
-  } = useSrcDiffHighlight();
+  const { highlightedNodeIds } = useSrcDiffHighlight();
 
   const { allExpandableIds, initialExpandedIds } = useMemo(() => {
     const allIds = new Set<string>();
@@ -130,7 +128,7 @@ export default function SrcDiffTree({
         <div className="divide-y divide-white/10">
           {files.map((unit, unitIndex) => (
             <UnitTree
-              key={`${unit.unit}-${unit.filename}`}
+              key={`${unit.unit_id}-${unit.filename}`}
               unit={unit}
               unitIndex={unitIndex}
               isFocused={unitIndex === selectedFileIndex}

@@ -94,7 +94,7 @@ class TreeNode:
 
 @dataclass(frozen=True)
 class RevisionFile:
-    unit: int
+    unit_id: int
     filename: str
     language: str | None
     revision_0_source_code: str
@@ -102,7 +102,7 @@ class RevisionFile:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            "unit": self.unit,
+            "unit_id": self.unit_id,
             "filename": self.filename,
             "language": self.language,
             "revision_0_source_code": self.revision_0_source_code,

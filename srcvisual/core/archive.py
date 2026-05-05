@@ -41,7 +41,7 @@ def extract_revision_files(
 
         files.append(
             RevisionFile(
-                unit=unit,
+                unit_id=unit,
                 filename=filename,
                 language=language,
                 revision_0_source_code=revision_0_source_code,
