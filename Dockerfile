@@ -47,7 +47,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv/bin:/opt/srcML-install/bin:/opt/srcDiff/bin:/opt/srcMove/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin"
 ENV SRCVISUAL_FRONTEND_DIST="/app/frontend/dist"
 ENV PORT=5000
 
