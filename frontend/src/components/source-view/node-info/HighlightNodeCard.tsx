@@ -79,14 +79,12 @@ export function HighlightedNodeCard({
       </dl>
 
       {node.move_id ? (
-        <div className="mt-3">
-          <MoveDetails
-            moveId={node.move_id}
-            selectedNodeId={node.id}
-            nodes={moveNodes}
-            moveResults={moveResults}
-          />
-        </div>
+        <MoveDetails
+          moveId={node.move_id}
+          selectedNodeId={node.id}
+          nodes={moveNodes}
+          moveResults={moveResults}
+        />
       ) : null}
     </article>
   );
