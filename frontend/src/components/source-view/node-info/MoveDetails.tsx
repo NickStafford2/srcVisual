@@ -30,7 +30,7 @@ export function MoveDetails({
   return (
     <section className="flex flex-row rounded-[20px] border border-emerald-300/15 bg-emerald-500/[0.04] p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="flex w-fit flex-row">
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+        <article className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3">
           <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
             Summary
           </p>
@@ -45,10 +45,6 @@ export function MoveDetails({
             <p>after texts: {move.toRawTexts.length}</p>
           </div>
 
-          <p className="text-xs text-nowrap text-slate-400">
-            {move.nodes.length} node{move.nodes.length === 1 ? "" : "s"} across{" "}
-            {move.files.length} file{move.files.length === 1 ? "" : "s"}
-          </p>
           <div className="flex flex-wrap gap-2">
             {move.files.map((file) => (
               <span
