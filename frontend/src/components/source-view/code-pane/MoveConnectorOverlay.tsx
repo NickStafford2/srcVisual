@@ -8,13 +8,12 @@ type MoveConnectorOverlayProps = {
 };
 
 export function MoveConnectorOverlay({ paths }: MoveConnectorOverlayProps) {
-  console.log("move connector paths", paths);
   if (paths.length === 0) {
     return null;
   }
 
   return (
-    <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible">
+    <svg className="pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible">
       {paths.map((path) => (
         <path
           key={path.key}
