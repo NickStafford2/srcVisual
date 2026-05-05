@@ -83,9 +83,6 @@ def get_endpoint_span(
     if spans is not None:
         return spans[0]
 
-    print(f"Move endpoint missing direct position data at xpath: {path}", flush=True)
-    print(annotated_srcdiff_xml, flush=True)
-
     child_spans: list[SourceSpan] = []
 
     tag_counts: dict[str, int] = {}
