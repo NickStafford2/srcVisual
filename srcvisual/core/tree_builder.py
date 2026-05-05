@@ -46,7 +46,7 @@ def build_tree_node(
 ) -> TreeNode:
     tag = prefixed_name(element.tag)
     current_diff_kind = get_current_diff_kind(tag)
-    current_move_id = element.attrib.get(f"{{{MV_NS}}}id") or element.attrib.get("move")
+    current_move_id = get_current_move_id(element)
     current_kind = get_current_kind(
         diff_kind=current_diff_kind,
         move_id=current_move_id,
@@ -76,11 +76,26 @@ def build_tree_node(
 
     child_tuple = tuple(children)
 
-    if revision_0_span is None:
+    if revision_0_span is None and should_merge_missing_span(
+        diff_kind=current_diff_kind,
+        revision="revision_0",
+    ):
         revision_0_span = merge_child_spans(child_tuple, "revision_0_span")
 
-    if revision_1_span is None:
+    if revision_1_span is None and should_merge_missing_span(
+        diff_kind=current_diff_kind,
+        revision="revision_1",
+    ):
         revision_1_span = merge_child_spans(child_tuple, "revision_1_span")
+
+    assert_expected_spans(
+        tag=tag,
+        path=path,
+        diff_kind=current_diff_kind,
+        revision_0_span=revision_0_span,
+        revision_1_span=revision_1_span,
+        children=child_tuple,
+    )
 
     return TreeNode(
         id=path,
@@ -104,6 +119,10 @@ def get_current_diff_kind(tag: str) -> str | None:
         return "insert"
 
     return None
+
+
+def get_current_move_id(element: ET.Element) -> str | None:
+    return element.attrib.get(f"{{{MV_NS}}}id")
 
 
 def get_current_kind(
@@ -141,15 +160,35 @@ def spans_for_element(
         return None, None
 
     if diff_kind == "delete":
+        assert len(spans) >= 1, "diff:delete must have at least one position span."
         return spans[0], None
 
     if diff_kind == "insert":
+        assert len(spans) >= 1, "diff:insert must have at least one position span."
         return None, spans[0]
+
+    assert len(spans) in {1, 2}, (
+        f"Expected one or two position spans for unchanged/move node; got {len(spans)}."
+    )
 
     if len(spans) == 1:
         return spans[0], spans[0]
 
     return spans[0], spans[1]
+
+
+def should_merge_missing_span(
+    *,
+    diff_kind: str | None,
+    revision: str,
+) -> bool:
+    if diff_kind == "delete":
+        return revision == "revision_0"
+
+    if diff_kind == "insert":
+        return revision == "revision_1"
+
+    return True
 
 
 def merge_child_spans(
@@ -176,6 +215,55 @@ def merge_child_spans(
         end_line=end.end_line,
         end_col=end.end_col,
     )
+
+
+def assert_expected_spans(
+    *,
+    tag: str,
+    path: str,
+    diff_kind: str | None,
+    revision_0_span: SourceSpan | None,
+    revision_1_span: SourceSpan | None,
+    children: tuple[TreeNode, ...],
+) -> None:
+    child_has_revision_0 = any(child.revision_0_span is not None for child in children)
+    child_has_revision_1 = any(child.revision_1_span is not None for child in children)
+
+    if (
+        revision_0_span is None
+        and revision_1_span is None
+        and not child_has_revision_0
+        and not child_has_revision_1
+    ):
+        return
+
+    if diff_kind == "delete":
+        assert revision_0_span is not None, (
+            f"Deleted node {tag} at {path} must have a revision_0_span."
+        )
+        assert revision_1_span is None, (
+            f"Deleted node {tag} at {path} must not have a revision_1_span."
+        )
+        return
+
+    if diff_kind == "insert":
+        assert revision_0_span is None, (
+            f"Inserted node {tag} at {path} must not have a revision_0_span."
+        )
+        assert revision_1_span is not None, (
+            f"Inserted node {tag} at {path} must have a revision_1_span."
+        )
+        return
+
+    if child_has_revision_0:
+        assert revision_0_span is not None, (
+            f"Node {tag} at {path} has revision 0 children but no revision_0_span."
+        )
+
+    if child_has_revision_1:
+        assert revision_1_span is not None, (
+            f"Node {tag} at {path} has revision 1 children but no revision_1_span."
+        )
 
 
 def get_node_span(node: TreeNode, key: str) -> SourceSpan | None:

@@ -74,6 +74,7 @@ def test_build_tree_index_maps_delete_span_to_revision_0_span_only() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:mv="http://www.srcML.org/srcMove"
       xmlns:pos="http://www.srcML.org/srcML/position">
   <unit filename="example.cpp">
     <diff:delete pos:start="10:2" pos:end="10:8">
@@ -103,6 +104,7 @@ def test_build_tree_index_maps_insert_span_to_revision_1_span_only() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:mv="http://www.srcML.org/srcMove"
       xmlns:pos="http://www.srcML.org/srcML/position">
   <unit filename="example.cpp">
     <diff:insert pos:start="12:4" pos:end="12:12">
@@ -125,6 +127,66 @@ def test_build_tree_index_maps_insert_span_to_revision_1_span_only() -> None:
         "start_col": 4,
         "end_line": 12,
         "end_col": 12,
+    }
+
+
+def test_build_tree_index_does_not_merge_revision_1_into_delete_nodes() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:mv="http://www.srcML.org/srcMove"
+      xmlns:pos="http://www.srcML.org/srcML/position">
+  <unit filename="main.cpp">
+    <diff:delete mv:id="move-1" pos:start="1:1" pos:end="5:1">
+      <function pos:start="1:1|20:1" pos:end="5:1|24:1">
+        <name>changed_function</name>
+      </function>
+    </diff:delete>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    delete_node = tree_by_unit[1]["children"][0]
+
+    assert has_position_data is True
+    assert delete_node["revision_0_span"] == {
+        "start_line": 1,
+        "start_col": 1,
+        "end_line": 5,
+        "end_col": 1,
+    }
+    assert delete_node["revision_1_span"] is None
+
+
+def test_build_tree_index_does_not_merge_revision_0_into_insert_nodes() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:mv="http://www.srcML.org/srcMove"
+      xmlns:pos="http://www.srcML.org/srcML/position">
+  <unit filename="foo.hpp">
+    <diff:insert mv:id="move-1" pos:start="30:1" pos:end="34:1">
+      <function pos:start="10:1|30:1" pos:end="14:1|34:1">
+        <name>changed_function</name>
+      </function>
+    </diff:insert>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    insert_node = tree_by_unit[1]["children"][0]
+
+    assert has_position_data is True
+    assert insert_node["revision_0_span"] is None
+    assert insert_node["revision_1_span"] == {
+        "start_line": 30,
+        "start_col": 1,
+        "end_line": 34,
+        "end_col": 1,
     }
 
 

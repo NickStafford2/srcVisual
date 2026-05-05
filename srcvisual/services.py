@@ -89,7 +89,7 @@ def build_annotated_srcdiff_xml(
     results_path = tmpdir / "results.json"
 
     notify_progress(progress, "Running srcdiff with position data.")
-    run_command(
+    _ = run_command(
         [
             "srcdiff",
             "--position",
@@ -101,7 +101,7 @@ def build_annotated_srcdiff_xml(
     )
 
     notify_progress(progress, "Running srcMove annotations.")
-    run_command(
+    _ = run_command(
         [
             "srcMove",
             str(positioned_path),
