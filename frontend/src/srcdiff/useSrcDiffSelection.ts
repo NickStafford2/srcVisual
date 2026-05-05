@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SrcMoveRecord, VisualizeResponse, VisualizedFile } from "../types";
+import type {
+  SrcMoveRecord,
+  VisualizeResponse,
+  VisualizedFile,
+} from "../types";
 import type { HighlightMode } from "./highlightContext";
 import type { HighlightKind, SrcDiffTreeNode } from "./types";
 import {
@@ -63,7 +67,10 @@ export function useSrcDiffSelection(
   const files = data?.files ?? [];
   const selectedFile = files[selectedFileIndex] ?? null;
   const treeIndex = useMemo(() => buildForestTreeIndex(files), [files]);
-  const treeEntries = useMemo(() => Array.from(treeIndex.entries()), [treeIndex]);
+  const treeEntries = useMemo(
+    () => Array.from(treeIndex.entries()),
+    [treeIndex],
+  );
 
   const selectedNodeEntry = selectedNodeId
     ? (treeIndex.get(selectedNodeId) ?? null)
@@ -77,8 +84,9 @@ export function useSrcDiffSelection(
   );
 
   const moveEntriesById = useMemo(
-    () => buildMoveEntriesById(data?.move_results.moves ?? [], treeIndex),
-    [data?.move_results.moves, treeIndex],
+    () =>
+      buildMoveEntriesById(data?.move_results.moves ?? [], treeIndex, files),
+    [data?.move_results.moves, files, treeIndex],
   );
 
   const moveNodesById = useMemo(() => {
@@ -249,7 +257,9 @@ export function useSrcDiffSelection(
 
     const firstMatchingEntry =
       kind === "move"
-        ? dedupeEntries(Array.from(moveEntriesById.values()).flatMap((entries) => entries))[0]
+        ? dedupeEntries(
+            Array.from(moveEntriesById.values()).flatMap((entries) => entries),
+          )[0]
         : treeEntries.find(([, entry]) => entry.node.kind === kind)?.[1];
 
     if (!firstMatchingEntry) {
@@ -302,6 +312,7 @@ export function useSrcDiffSelection(
 function buildMoveEntriesById(
   moves: SrcMoveRecord[],
   treeIndex: TreeIndex,
+  files: VisualizedFile[],
 ): Map<string, TreeIndexEntry[]> {
   const next = new Map<string, TreeIndexEntry[]>();
 
@@ -313,7 +324,7 @@ function buildMoveEntriesById(
     const nodeIds = dedupeNodeIds([
       ...(move.from_node_ids ?? move.from_xpaths),
       ...(move.to_node_ids ?? move.to_xpaths),
-    ]);
+    ]).map((nodeId) => normalizeNodeId(nodeId, files));
 
     next.set(
       move.move_id,
@@ -356,6 +367,25 @@ function dedupeEntries(entries: TreeIndexEntry[]): TreeIndexEntry[] {
 
 function dedupeNodeIds(nodeIds: string[]): string[] {
   return Array.from(new Set(nodeIds));
+}
+
+function normalizeNodeId(nodeId: string, files: VisualizedFile[]): string {
+  const match = nodeId.match(/^\/src:unit\[@filename=(['"])(.*?)\1\](\/.*)?$/);
+
+  if (!match) {
+    return nodeId;
+  }
+
+  const filename = match[2];
+  const rest = match[3] ?? "";
+  const file =
+    files.find((candidate) => candidate.filename === filename) ?? null;
+
+  if (!file) {
+    throw new Error(`Unable to normalize node_id for filename="${filename}".`);
+  }
+
+  return `/src:unit[${file.unit_id}]${rest}`;
 }
 
 function assertMatchingFilename(

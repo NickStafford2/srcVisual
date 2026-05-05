@@ -139,6 +139,8 @@ def augment_move_results_with_node_ids(
         normalized_moves.append(
             {
                 **original_move,
+                "from_xpaths": list(parsed_move.from_xpaths),
+                "to_xpaths": list(parsed_move.to_xpaths),
                 "from_node_ids": list(parsed_move.from_xpaths),
                 "to_node_ids": list(parsed_move.to_xpaths),
             }
