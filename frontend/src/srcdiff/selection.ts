@@ -40,77 +40,7 @@ export function getNodeHighlight(
     filename,
     kind: node.kind,
     xmlSpan: node.xml_span ?? null,
-    revision0Span: resolvePreferredSourceSpan(node, "revision_0_span"),
-    revision1Span: resolvePreferredSourceSpan(node, "revision_1_span"),
+    revision0Span: node.revision_0_span ?? null,
+    revision1Span: node.revision_1_span ?? null,
   };
-}
-
-function resolvePreferredSourceSpan(
-  node: SrcDiffTreeNode,
-  key: "revision_0_span" | "revision_1_span",
-): SourceCodeSpan | null {
-  const directSpan =
-    key === "revision_0_span"
-      ? (node.revision_0_span ?? null)
-      : (node.revision_1_span ?? null);
-
-  if (node.kind !== "move") {
-    return directSpan;
-  }
-
-  // srcMove marks the diff wrapper itself as the move region. A moved
-  // diff:delete must only highlight revision 0, and a moved diff:insert
-  // must only highlight revision 1.
-  if (node.tag === "diff:delete" || node.tag === "diff:insert") {
-    return directSpan;
-  }
-
-  const childSpans = node.children.flatMap((child) => {
-    const span = resolvePreferredSourceSpan(child, key);
-    return span ? [span] : [];
-  });
-
-  if (childSpans.length === 0) {
-    return directSpan;
-  }
-
-  return mergeSpans(childSpans);
-}
-
-function mergeSpans(spans: SourceCodeSpan[]): SourceCodeSpan {
-  const start = spans.reduce((best, span) =>
-    compareSpanPoints(
-      [span.start_line, span.start_col],
-      [best.start_line, best.start_col],
-    ) < 0
-      ? span
-      : best,
-  );
-
-  const end = spans.reduce((best, span) =>
-    compareSpanPoints(
-      [span.end_line, span.end_col],
-      [best.end_line, best.end_col],
-    ) > 0
-      ? span
-      : best,
-  );
-
-  return {
-    start_line: start.start_line,
-    start_col: start.start_col,
-    end_line: end.end_line,
-    end_col: end.end_col,
-  };
-}
-
-function compareSpanPoints(
-  left: [number, number],
-  right: [number, number],
-): number {
-  if (left[0] !== right[0]) {
-    return left[0] - right[0];
-  }
-
-  return left[1] - right[1];
 }
