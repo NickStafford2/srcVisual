@@ -1,11 +1,21 @@
+import type { SrcMoveResults } from "../../../types";
 import { useSrcDiffHighlight } from "../../../srcdiff/highlightContext";
 import { HighlightSelector } from "../../srcdiff-tree/HighlightSelector";
 import { getSelectionSpans } from "../../../srcdiff/selection";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { MoveDetails } from "./MoveDetails";
 import { NodeInfoPanel, type NodeInfoPanelItem } from "./NodeInfoPanel";
+import type { MoveNodeEntry } from "./moveInfo";
 
-export function HighlightedNodeInfo() {
+type HighlightedNodeInfoProps = {
+  moveResults: SrcMoveResults;
+  moveNodesById: Map<string, MoveNodeEntry[]>;
+};
+
+export function HighlightedNodeInfo({
+  moveResults,
+  moveNodesById,
+}: HighlightedNodeInfoProps) {
   const {
     highlightedNodes,
     highlightMode,
@@ -19,9 +29,7 @@ export function HighlightedNodeInfo() {
   const items: NodeInfoPanelItem[] = highlightedNodes.map((highlightedNode) => {
     const spans = getSelectionSpans(highlightedNode.node);
     const moveNodes = highlightedNode.node.move_id
-      ? highlightedNodes.filter(
-          (candidate) => candidate.node.move_id === highlightedNode.node.move_id,
-        )
+      ? (moveNodesById.get(highlightedNode.node.move_id) ?? [])
       : [];
 
     return {
@@ -39,6 +47,7 @@ export function HighlightedNodeInfo() {
           moveId={highlightedNode.node.move_id}
           selectedNodeId={highlightedNode.node.id}
           nodes={moveNodes}
+          moveResults={moveResults}
           variant="embedded"
         />
       ) : undefined,

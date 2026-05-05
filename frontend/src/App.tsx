@@ -1,5 +1,6 @@
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
+import { MoveSummary } from "./components/source-view/node-info/MoveSummary";
 import { SelectedNodeInfo } from "./components/source-view/node-info/SelectedNodeInfo";
 import { SourceSection } from "./components/source-view/SourceSection";
 import { XmlPane } from "./components/source-view/XmlPane";
@@ -85,8 +86,18 @@ export default function App() {
                 selectedSpans={srcDiffSelection.selectedSpans}
               />
 
-              <HighlightedNodeInfo />
+              <HighlightedNodeInfo
+                moveResults={data.move_results}
+                moveNodesById={srcDiffSelection.moveNodesById}
+              />
             </div>
+
+            <MoveSummary
+              moveResults={data.move_results}
+              moveNodesById={srcDiffSelection.moveNodesById}
+              selectedMoveId={srcDiffSelection.selectedMoveId}
+              onSelectNode={srcDiffSelection.setSelectedNodeId}
+            />
 
             <XmlPane
               title="srcDiff XML"

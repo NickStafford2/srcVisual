@@ -11,12 +11,15 @@ import {
 import { buildForestTreeIndex } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
+  moveNodesById: Map<
+    string,
+    {
+      node: SrcDiffTreeNode;
+      fileIndex: number;
+      filename: string | null;
+    }[]
+  >;
   selectedMoveId: string | null;
-  selectedMoveNodes: {
-    node: SrcDiffTreeNode;
-    fileIndex: number;
-    filename: string | null;
-  }[];
   selectedFile: VisualizedFile | null;
   selectedFileIndex: number;
   selectedNode: SrcDiffTreeNode | null;
@@ -74,23 +77,32 @@ export function useSrcDiffSelection(
     [selectedNode],
   );
 
-  const selectedMoveEntries = useMemo(() => {
-    if (!selectedMoveId) {
-      return [];
+  const moveNodesById = useMemo(() => {
+    const next = new Map<
+      string,
+      {
+        node: SrcDiffTreeNode;
+        fileIndex: number;
+        filename: string | null;
+      }[]
+    >();
+
+    for (const [, entry] of treeEntries) {
+      if (!entry.node.move_id) {
+        continue;
+      }
+
+      const nodes = next.get(entry.node.move_id) ?? [];
+      nodes.push({
+        node: entry.node,
+        fileIndex: entry.fileIndex,
+        filename: files[entry.fileIndex]?.filename ?? null,
+      });
+      next.set(entry.node.move_id, nodes);
     }
 
-    return treeEntries.filter(
-      ([, entry]) => entry.node.move_id === selectedMoveId,
-    );
-  }, [selectedMoveId, treeEntries]);
-
-  const selectedMoveNodes = useMemo(() => {
-    return selectedMoveEntries.map(([, entry]) => ({
-      node: entry.node,
-      fileIndex: entry.fileIndex,
-      filename: files[entry.fileIndex]?.filename ?? null,
-    }));
-  }, [files, selectedMoveEntries]);
+    return next;
+  }, [files, treeEntries]);
 
   const baseHighlightedEntries = useMemo(() => {
     if (highlightMode === "all-moves") {
@@ -233,8 +245,8 @@ export function useSrcDiffSelection(
   }
 
   return {
+    moveNodesById,
     selectedMoveId,
-    selectedMoveNodes,
     selectedFile,
     selectedFileIndex,
     selectedNode,
