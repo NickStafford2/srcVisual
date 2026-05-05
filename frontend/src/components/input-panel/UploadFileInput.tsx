@@ -30,27 +30,9 @@ export function UploadFileInput({
         <code className="text-slate-300">.srcdiff</code>.
       </p>
 
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-300/30 bg-sky-300/[0.06] px-5 py-8 text-center transition hover:border-sky-300/45 hover:bg-sky-300/[0.1]">
-        <input
-          className="hidden"
-          type="file"
-          accept=".xml,.srcdiff"
-          disabled={disabled}
-          onChange={(event) => onUploadChange(event.target.files?.[0] ?? null)}
-        />
-
-        <span className="text-sm font-semibold text-slate-100">
-          {selectedUpload ? "Replace selected file" : "Choose srcdiff file"}
-        </span>
-
-        <span className="text-xs leading-5 text-slate-400">
-          Click to browse for a file to send to the backend.
-        </span>
-      </label>
-
-      <div className="w-fit rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+      <div className="flex flex-row justify-center rounded-2xl border border-dashed border-sky-300/30 bg-sky-300/[0.06] px-5 py-8 text-center transition hover:border-sky-300/45 hover:bg-sky-300/[0.1]">
         {selectedUpload ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-fit flex-col gap-3 rounded-4xl border border-white/40 p-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-row flex-nowrap gap-3">
               <p className="text-sm font-medium text-slate-100">
                 {selectedUpload.name}
@@ -70,7 +52,25 @@ export function UploadFileInput({
             </button>
           </div>
         ) : (
-          <p className="text-sm text-slate-400">No file selected yet.</p>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+            <input
+              className="hidden"
+              type="file"
+              accept=".xml,.srcdiff"
+              disabled={disabled}
+              onChange={(event) =>
+                onUploadChange(event.target.files?.[0] ?? null)
+              }
+            />
+
+            <span className="text-sm font-semibold text-slate-100">
+              {selectedUpload ? "Replace selected file" : "Choose srcdiff file"}
+            </span>
+
+            <span className="text-xs leading-5 text-slate-400">
+              Click to browse for a file to send to the backend.
+            </span>
+          </label>
         )}
       </div>
     </div>
