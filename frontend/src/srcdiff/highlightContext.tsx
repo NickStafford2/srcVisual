@@ -1,6 +1,6 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext } from "react";
 import type { SrcDiffHighlight } from "./selection";
-import type { SrcDiffTreeNode } from "./types";
+import type { SrcDiffNodeEntry } from "./treeIndex";
 
 export type HighlightMode =
   | "selection"
@@ -9,11 +9,7 @@ export type HighlightMode =
   | "all-deletes";
 
 export type SrcDiffHighlightContextValue = {
-  highlightedNodes: {
-    node: SrcDiffTreeNode;
-    fileIndex: number;
-    filename: string | null;
-  }[];
+  highlightedNodes: SrcDiffNodeEntry[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
   highlightMode: HighlightMode;
@@ -24,31 +20,29 @@ export type SrcDiffHighlightContextValue = {
   clearHighlights: () => void;
 };
 
-const srcDiffHighlightContext =
+const SrcDiffHighlightContext =
   createContext<SrcDiffHighlightContextValue | null>(null);
-
-type SrcDiffHighlightProviderProps = {
-  value: SrcDiffHighlightContextValue;
-  children: ReactNode;
-};
 
 export function SrcDiffHighlightProvider({
   value,
   children,
-}: SrcDiffHighlightProviderProps) {
+}: {
+  value: SrcDiffHighlightContextValue;
+  children: React.ReactNode;
+}) {
   return (
-    <srcDiffHighlightContext.Provider value={value}>
+    <SrcDiffHighlightContext.Provider value={value}>
       {children}
-    </srcDiffHighlightContext.Provider>
+    </SrcDiffHighlightContext.Provider>
   );
 }
 
 export function useSrcDiffHighlight(): SrcDiffHighlightContextValue {
-  const value = useContext(srcDiffHighlightContext);
+  const value = useContext(SrcDiffHighlightContext);
 
   if (!value) {
     throw new Error(
-      "useSrcDiffHighlight must be used within a SrcDiffHighlightProvider.",
+      "useSrcDiffHighlight must be used inside SrcDiffHighlightProvider.",
     );
   }
 

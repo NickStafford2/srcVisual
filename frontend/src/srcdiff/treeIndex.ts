@@ -1,40 +1,32 @@
 import type { VisualizedFile } from "../types";
 import type { SrcDiffTreeNode } from "./types";
 
-export type TreeIndexEntry = {
+export type SrcDiffNodeEntry = {
   node: SrcDiffTreeNode;
   fileIndex: number;
   unitId: number;
   filename: string;
 };
 
-export type TreeIndex = Map<string, TreeIndexEntry>;
+export type TreeIndex = Map<string, SrcDiffNodeEntry>;
 
 export function buildForestTreeIndex(files: VisualizedFile[]): TreeIndex {
-  const map: TreeIndex = new Map();
+  const index: TreeIndex = new Map();
 
   files.forEach((file, fileIndex) => {
     if (!file.tree) return;
 
-    const stack: SrcDiffTreeNode[] = [file.tree];
-
-    while (stack.length > 0) {
-      const node = stack.pop()!;
-
-      map.set(node.id, {
+    for (const node of walkTree(file.tree)) {
+      index.set(node.id, {
         node,
         fileIndex,
         unitId: file.unit_id,
         filename: file.filename,
       });
-
-      for (const child of node.children) {
-        stack.push(child);
-      }
     }
   });
 
-  return map;
+  return index;
 }
 
 export function buildTreeIndex(root: SrcDiffTreeNode | null): TreeIndex {
@@ -50,4 +42,20 @@ export function buildTreeIndex(root: SrcDiffTreeNode | null): TreeIndex {
       tree: root,
     },
   ]);
+}
+
+function walkTree(root: SrcDiffTreeNode): SrcDiffTreeNode[] {
+  const nodes: SrcDiffTreeNode[] = [];
+  const stack: SrcDiffTreeNode[] = [root];
+
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    nodes.push(node);
+
+    for (let index = node.children.length - 1; index >= 0; index -= 1) {
+      stack.push(node.children[index]);
+    }
+  }
+
+  return nodes;
 }

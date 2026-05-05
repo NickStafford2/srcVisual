@@ -1,11 +1,8 @@
 import type { SrcMoveResults } from "../../../types";
 import { useSrcDiffHighlight } from "../../../srcdiff/highlightContext";
 import { HighlightSelector } from "../../srcdiff-tree/HighlightSelector";
-import { getSelectionSpans } from "../../../srcdiff/selection";
-import { buildSelectedNodeLinks } from "./selectedNodeLinks";
-import { MoveDetails } from "./MoveDetails";
-import { NodeInfoPanel, type NodeInfoPanelItem } from "./NodeInfoPanel";
 import type { MoveNodeEntry } from "./moveInfo";
+import { HighlightedNodeCard } from "./HighlightNodeCard";
 
 type HighlightedNodeInfoProps = {
   moveResults: SrcMoveResults;
@@ -26,49 +23,18 @@ export function HighlightedNodeInfo({
     unhighlightNode,
   } = useSrcDiffHighlight();
 
-  const items: NodeInfoPanelItem[] = highlightedNodes.map((highlightedNode) => {
-    const spans = getSelectionSpans(highlightedNode.node);
-    const moveNodes = highlightedNode.node.move_id
-      ? (moveNodesById.get(highlightedNode.node.move_id) ?? [])
-      : [];
-
-    return {
-      key: `${highlightedNode.fileIndex}-${highlightedNode.node.id}`,
-      label: highlightedNode.node.label,
-      filename: highlightedNode.filename,
-      path: highlightedNode.node.path,
-      moveId: highlightedNode.node.move_id,
-      xmlSpanText: spans.xmlSpan
-        ? `${spans.xmlSpan.start_line}:${spans.xmlSpan.start_col} → ${spans.xmlSpan.end_line}:${spans.xmlSpan.end_col}`
-        : "missing",
-      links: buildSelectedNodeLinks(spans, highlightedNode.fileIndex),
-      details: highlightedNode.node.move_id ? (
-        <MoveDetails
-          moveId={highlightedNode.node.move_id}
-          selectedNodeId={highlightedNode.node.id}
-          nodes={moveNodes}
-          moveResults={moveResults}
-          variant="embedded"
-        />
-      ) : undefined,
-      actions: (
-        <button
-          type="button"
-          onClick={() => unhighlightNode(highlightedNode.node.id)}
-          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-        >
-          Unhighlight
-        </button>
-      ),
-    };
-  });
-
   return (
-    <NodeInfoPanel
-      title="Highlighted Nodes"
-      emptyMessage="No nodes are highlighted right now."
-      items={items}
-      actions={
+    <section className="rounded-[18px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-100">
+            Highlighted Nodes
+          </h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Nodes currently highlighted in the XML and source views.
+          </p>
+        </div>
+
         <HighlightSelector
           highlightMode={highlightMode}
           onHighlightAllMoves={highlightAllMoves}
@@ -76,7 +42,25 @@ export function HighlightedNodeInfo({
           onHighlightAllDeletes={highlightAllDeletes}
           onClearHighlights={clearHighlights}
         />
-      }
-    />
+      </div>
+
+      {highlightedNodes.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-3 py-4 text-sm text-slate-400">
+          No nodes are highlighted right now.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {highlightedNodes.map((entry) => (
+            <HighlightedNodeCard
+              key={`${entry.fileIndex}-${entry.node.id}`}
+              entry={entry}
+              moveResults={moveResults}
+              moveNodesById={moveNodesById}
+              onUnhighlight={unhighlightNode}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

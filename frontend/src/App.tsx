@@ -13,13 +13,10 @@ import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 export default function App() {
   const srcDiffData = useSrcDiffData();
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
-  const data = srcDiffData.data;
 
+  const data = srcDiffData.data;
   const files = data?.files ?? [];
-  const selectedFile =
-    srcDiffSelection.selectedNodeFileIndex === null
-      ? null
-      : files[srcDiffSelection.selectedNodeFileIndex];
+
   const xmlHighlights: SourceViewHighlight[] =
     srcDiffSelection.highlightedSpans.flatMap((highlight) => {
       if (!highlight.xmlSpan) return [];
@@ -81,7 +78,9 @@ export default function App() {
             <div className="grid gap-4 xl:grid-cols-2">
               <SelectedNodeInfo
                 selectedNode={srcDiffSelection.selectedNode}
-                selectedFilename={selectedFile?.filename ?? null}
+                selectedFilename={
+                  srcDiffSelection.selectedFile?.filename ?? null
+                }
                 selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
                 selectedSpans={srcDiffSelection.selectedSpans}
               />

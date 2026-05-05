@@ -1,12 +1,9 @@
 import { getSelectionSpans } from "../../../srcdiff/selection";
+import type { SrcDiffNodeEntry } from "../../../srcdiff/treeIndex";
 import type { SrcDiffTreeNode } from "../../../srcdiff/types";
 import type { SrcMoveRecord, SrcMoveResults } from "../../../types";
 
-export type MoveNodeEntry = {
-  node: SrcDiffTreeNode;
-  fileIndex: number;
-  filename: string | null;
-};
+export type MoveNodeEntry = SrcDiffNodeEntry;
 
 export type MoveInfo = {
   moveId: string;
@@ -26,11 +23,12 @@ export function buildMoveInfo(
 ): MoveInfo {
   const record =
     moveResults.moves.find((candidate) => candidate.move_id === moveId) ?? null;
+
   const files = Array.from(
     new Set([
       ...extractFilenamesFromXpaths(record?.from_xpaths ?? []),
       ...extractFilenamesFromXpaths(record?.to_xpaths ?? []),
-      ...nodes.map((node) => node.filename ?? `file ${node.fileIndex + 1}`),
+      ...nodes.map((node) => node.filename),
     ]),
   );
 
@@ -52,7 +50,9 @@ export function buildMoveIds(
 ): string[] {
   return Array.from(
     new Set([
-      ...moveResults.moves.flatMap((move) => (move.move_id ? [move.move_id] : [])),
+      ...moveResults.moves.flatMap((move) =>
+        move.move_id ? [move.move_id] : [],
+      ),
       ...moveNodesById.keys(),
     ]),
   );
@@ -64,6 +64,7 @@ export function formatNodeSpanText(node: SrcDiffTreeNode) {
   const rev0 = spans.revision0Span
     ? `${spans.revision0Span.start_line}:${spans.revision0Span.start_col}-${spans.revision0Span.end_line}:${spans.revision0Span.end_col}`
     : "missing";
+
   const rev1 = spans.revision1Span
     ? `${spans.revision1Span.start_line}:${spans.revision1Span.start_col}-${spans.revision1Span.end_line}:${spans.revision1Span.end_col}`
     : "missing";
@@ -90,17 +91,20 @@ function extractFilenamesFromXpaths(xpaths: string[]): string[] {
 
   for (const xpath of xpaths) {
     const start = xpath.indexOf(needle);
+
     if (start === -1) {
       continue;
     }
 
     const fileStart = start + needle.length;
     const fileEnd = xpath.indexOf("']", fileStart);
+
     if (fileEnd === -1) {
       continue;
     }
 
     const filename = xpath.slice(fileStart, fileEnd);
+
     if (seen.has(filename)) {
       continue;
     }
