@@ -278,6 +278,7 @@ def build_filename_to_unit_index(annotated_srcdiff_xml: str) -> dict[str, int]:
     unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
 
     filename_to_unit_index: dict[str, int] = {}
+    duplicate_filenames: set[str] = set()
 
     for unit_index, unit_element in enumerate(unit_elements, start=1):
         filename = unit_element.attrib.get("filename")
@@ -285,12 +286,14 @@ def build_filename_to_unit_index(annotated_srcdiff_xml: str) -> dict[str, int]:
         if filename is None:
             continue
 
-        assert filename not in filename_to_unit_index, (
-            f"Duplicate unit filename in annotated srcdiff XML: {filename!r}. "
-            "Cannot normalize filename-based srcMove xpaths."
-        )
+        if filename in filename_to_unit_index:
+            duplicate_filenames.add(filename)
+            continue
 
         filename_to_unit_index[filename] = unit_index
+
+    for filename in duplicate_filenames:
+        del filename_to_unit_index[filename]
 
     return filename_to_unit_index
 
@@ -310,7 +313,9 @@ def normalize_srcmove_xpath(
 
     assert filename in filename_to_unit_index, (
         f"srcMove xpath references filename {filename!r}, but that filename "
-        "does not exist in the annotated srcdiff XML units."
+        "is missing or ambiguous in the annotated srcdiff XML units. "
+        "Prefer /src:unit[index] paths for srcMove references when duplicate "
+        "filenames exist."
     )
 
     return f"/src:unit[{filename_to_unit_index[filename]}]{rest}"
