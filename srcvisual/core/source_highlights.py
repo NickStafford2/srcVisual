@@ -3,7 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from .models import SourceHighlightRegion, SourceSpan
-from .namespaces import MV_NS, SRC_NS, prefixed_name
+from .namespaces import MV_NS, SKIPPED_TREE_TAGS, SRC_NS, prefixed_name
 from .spans import parse_position_spans
 
 MV_ID = f"{{{MV_NS}}}id"
@@ -91,6 +91,8 @@ def get_endpoint_span(
     tag_counts: dict[str, int] = {}
 
     for child in list(element):
+        if child.tag in SKIPPED_TREE_TAGS:
+            continue
         child_name = prefixed_name(child.tag)
         tag_counts[child_name] = tag_counts.get(child_name, 0) + 1
         child_path = f"{path}/{child_name}[{tag_counts[child_name]}]"
@@ -101,7 +103,7 @@ def get_endpoint_span(
         )
         child_spans.append(child_span)
 
-    assert child_spans, f"Move endpoint is missing position data."
+    assert child_spans, f"Move endpoint is missing position data at xpath: {path}"
 
     start = min(child_spans, key=lambda span: (span.start_line, span.start_col))
     end = max(child_spans, key=lambda span: (span.end_line, span.end_col))

@@ -53,3 +53,29 @@ def test_build_move_source_highlights_merges_child_positions_when_endpoint_has_n
         "end_line": 3,
         "end_col": 6,
     }
+
+
+def test_build_move_source_highlights_skips_diff_ws_when_merging_child_positions() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:mv="http://www.srcML.org/srcMove"
+      xmlns:pos="http://www.srcML.org/srcML/position">
+  <unit filename="example.cpp">
+    <diff:insert mv:id="move-1">
+      <diff:ws> </diff:ws>
+      <name pos:start="8:3" pos:end="8:7">main</name>
+    </diff:insert>
+  </unit>
+</unit>
+"""
+
+    highlights = build_move_source_highlights(xml)
+
+    assert len(highlights) == 1
+    assert highlights[0].span.to_dict() == {
+        "start_line": 8,
+        "start_col": 3,
+        "end_line": 8,
+        "end_col": 7,
+    }
