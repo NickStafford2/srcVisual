@@ -44,7 +44,11 @@ export default function App() {
           progressMessage={srcDiffData.progressMessage}
           data={srcDiffData.data}
           includeSkippedTags={srcDiffData.includeSkippedTags}
+          exampleFilenames={srcDiffData.exampleFilenames}
+          examplesError={srcDiffData.examplesError}
+          isLoadingExample={srcDiffData.isLoadingExample}
           onInputModeChange={srcDiffData.setInputMode}
+          onLoadExample={srcDiffData.handleLoadExample}
           onUploadChange={srcDiffData.setSelectedUpload}
           onXmlInputChange={srcDiffData.handleXmlInputChange}
           onIncludeSkippedTagsChange={srcDiffData.setIncludeSkippedTags}

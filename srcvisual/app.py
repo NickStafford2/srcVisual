@@ -21,6 +21,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = get_max_content_length_bytes()
     app.config["COMMAND_TIMEOUT_SECONDS"] = get_command_timeout_seconds()
+    app.config["EXAMPLES_DIR"] = get_examples_dir()
     app.register_blueprint(api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 
@@ -106,6 +107,20 @@ def get_frontend_dist() -> Path | None:
         return candidate
 
     return None
+
+
+def get_examples_dir() -> Path:
+    raw_examples_dir = os.environ.get("SRCVISUAL_EXAMPLES_DIR")
+
+    if raw_examples_dir:
+        examples_dir = Path(raw_examples_dir).expanduser().resolve()
+        if not examples_dir.is_dir():
+            raise ValueError(
+                "SRCVISUAL_EXAMPLES_DIR must point to an existing directory."
+            )
+        return examples_dir
+
+    return Path(__file__).resolve().parents[1] / "examples"
 
 
 def get_dev_host() -> str:

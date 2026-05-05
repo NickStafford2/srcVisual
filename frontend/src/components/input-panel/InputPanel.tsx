@@ -15,7 +15,11 @@ type InputPanelProps = {
   progressMessage: string | null;
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
+  exampleFilenames: string[];
+  examplesError: string | null;
+  isLoadingExample: boolean;
   onInputModeChange: (mode: InputMode) => void;
+  onLoadExample: (filename: string) => void;
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
   onIncludeSkippedTagsChange: (value: boolean) => void;
@@ -31,7 +35,11 @@ export function InputPanel({
   progressMessage,
   data,
   includeSkippedTags,
+  exampleFilenames,
+  examplesError,
+  isLoadingExample,
   onInputModeChange,
+  onLoadExample,
   onUploadChange,
   onXmlInputChange,
   onIncludeSkippedTagsChange,
@@ -52,8 +60,12 @@ export function InputPanel({
 
         {inputMode === "paste" ? (
           <PasteXmlInput
+            exampleFilenames={exampleFilenames}
+            examplesError={examplesError}
+            isLoadingExample={isLoadingExample}
             xmlInput={xmlInput}
             disabled={isLoading}
+            onLoadExample={onLoadExample}
             onXmlInputChange={onXmlInputChange}
           />
         ) : (
@@ -102,7 +114,7 @@ export function InputPanel({
                 ? progressMessage
                 : data
                   ? `Loaded ${data.files.length} file${data.files.length === 1 ? "" : "s"} from ${data.source_filename}`
-                  : "Waiting for upload"}
+                  : "Waiting for input"}
           </StatusPill>
         </div>
       </form>

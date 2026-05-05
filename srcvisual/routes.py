@@ -6,6 +6,7 @@ from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
 from .core.models import BackendCommandError
+from .examples import list_example_filenames, read_example_file
 from .progress import progress_broker
 from .services import build_visualization_payload
 
@@ -23,6 +24,21 @@ class VisualizationRequest:
 @api.get("/health")
 def health() -> tuple[dict[str, str], int]:
     return {"status": "ok"}, 200
+
+
+@api.get("/examples")
+def list_examples() -> tuple[dict[str, list[str]], int]:
+    return {"examples": list_example_filenames()}, 200
+
+
+@api.get("/examples/<path:filename>")
+def get_example(filename: str) -> tuple[dict[str, str], int]:
+    try:
+        content = read_example_file(filename)
+    except ValueError as exc:
+        return {"error": str(exc)}, 404
+
+    return {"filename": filename, "content": content}, 200
 
 
 @api.get("/visualize/events")

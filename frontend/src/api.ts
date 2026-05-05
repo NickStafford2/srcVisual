@@ -6,6 +6,31 @@ export type VisualizationProgressEvent = {
   message: string;
 };
 
+export async function fetchExampleList(): Promise<string[]> {
+  const response = await fetch("/api/examples");
+  const payload = (await response.json()) as { examples?: string[]; error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Unable to load examples.");
+  }
+
+  return payload.examples ?? [];
+}
+
+export async function fetchExampleContent(filename: string): Promise<string> {
+  const response = await fetch(`/api/examples/${encodeURIComponent(filename)}`);
+  const payload = (await response.json()) as {
+    content?: string;
+    error?: string;
+  };
+
+  if (!response.ok || typeof payload.content !== "string") {
+    throw new Error(payload.error ?? "Unable to load example content.");
+  }
+
+  return payload.content;
+}
+
 export async function visualizeSrcDiff(
   formData: FormData,
 ): Promise<VisualizeResponse> {

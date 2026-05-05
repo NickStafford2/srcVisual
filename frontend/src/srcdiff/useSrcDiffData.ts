@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { openVisualizationProgressStream, visualizeSrcDiff } from "../api";
-import { NESTED_SAMPLE } from "../samples";
+import {
+  fetchExampleContent,
+  fetchExampleList,
+  openVisualizationProgressStream,
+  visualizeSrcDiff,
+} from "../api";
 import type { VisualizeResponse } from "../types";
 
 export type InputMode = "paste" | "upload";
@@ -9,12 +13,43 @@ export type InputMode = "paste" | "upload";
 export function useSrcDiffData() {
   const [inputMode, setInputMode] = useState<InputMode>("paste");
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
-  const [xmlInput, setXmlInput] = useState(NESTED_SAMPLE);
+  const [xmlInput, setXmlInput] = useState("");
   const [data, setData] = useState<VisualizeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
+  const [examplesError, setExamplesError] = useState<string | null>(null);
+  const [isLoadingExample, setIsLoadingExample] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadExamples() {
+      try {
+        const filenames = await fetchExampleList();
+        if (!isActive) return;
+
+        setExampleFilenames(filenames);
+        setExamplesError(null);
+      } catch (loadError) {
+        if (!isActive) return;
+
+        setExamplesError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load examples.",
+        );
+      }
+    }
+
+    void loadExamples();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   function handleXmlInputChange(value: string) {
     setXmlInput(value);
@@ -32,6 +67,26 @@ export function useSrcDiffData() {
     }
   }
 
+  async function handleLoadExample(filename: string) {
+    setIsLoadingExample(true);
+    setError(null);
+
+    try {
+      const content = await fetchExampleContent(filename);
+      setXmlInput(content);
+      setInputMode("paste");
+      setExamplesError(null);
+    } catch (loadError) {
+      setExamplesError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load example content.",
+      );
+    } finally {
+      setIsLoadingExample(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -41,7 +96,7 @@ export function useSrcDiffData() {
     }
 
     if (inputMode === "paste" && !xmlInput.trim()) {
-      setError("Choose a srcDiff file or paste srcdiff XML first.");
+      setError("Paste srcdiff XML or load an example before submitting.");
       return;
     }
 
@@ -99,10 +154,14 @@ export function useSrcDiffData() {
     error,
     progressMessage,
     includeSkippedTags,
+    exampleFilenames,
+    examplesError,
+    isLoadingExample,
     setInputMode: handleInputModeChange,
     setIncludeSkippedTags,
     setSelectedUpload: handleUploadChange,
     handleXmlInputChange,
+    handleLoadExample,
     handleSubmit,
   };
 }
