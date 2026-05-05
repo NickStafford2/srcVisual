@@ -23,7 +23,7 @@ export function CodePaneBody({
     >
       {lines.length === 0 ? (
         <div className="px-5 py-5 text-sm text-slate-400">
-          No source to render yet.
+          No source to render.
         </div>
       ) : (
         lines.map((line) => (
