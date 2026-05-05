@@ -3,22 +3,30 @@ import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { getSourceSegmentClasses } from "../segmentStyles";
 import type { RegisterMoveSegment } from "./moveConnectors";
+import { MoveTooltip, type MoveTooltipInfo } from "./MoveTooltip";
 import { renderVisibleWhitespace } from "./renderVisibleWhitespace";
 
 type CodeSegmentProps = {
   revision: SourceRevision;
   segment: ViewerLineSegment;
   registerMoveSegment?: RegisterMoveSegment;
+  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
 };
 
 export function CodeSegment({
   revision,
   segment,
   registerMoveSegment,
+  moveTooltipInfoById,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
+
   const isMoveHighlight =
     segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
+
+  const moveTooltipInfo = segment.moveId
+    ? moveTooltipInfoById?.get(segment.moveId)
+    : undefined;
 
   const text = segment.highlighted
     ? renderVisibleWhitespace(segment.text)
@@ -65,9 +73,13 @@ export function CodeSegment({
     >
       {text}
 
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-slate-950 px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-slate-100 shadow-xl group-hover:block">
-        move_id: {segment.moveId}
-      </span>
+      {moveTooltipInfo ? (
+        <MoveTooltip move={moveTooltipInfo} />
+      ) : (
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-2 hidden -translate-x-1/2 rounded-xl border border-white/10 bg-slate-950/98 px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-slate-100 shadow-2xl group-hover:block">
+          move_id: {segment.moveId}
+        </span>
+      )}
     </span>
   );
 }

@@ -3,6 +3,7 @@ import type { SourceViewLine } from "./CodeLine";
 import { CodeLine } from "./CodeLine";
 import { getCodePaneBodyStyle } from "./codePaneStyles";
 import type { RegisterMoveSegment } from "./moveConnectors";
+import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneBodyProps = {
   fileIndex: number;
@@ -10,6 +11,7 @@ type CodePaneBodyProps = {
   title: string;
   lines: SourceViewLine[];
   registerMoveSegment?: RegisterMoveSegment;
+  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
 };
 
 export function CodePaneBody({
@@ -18,6 +20,7 @@ export function CodePaneBody({
   title,
   lines,
   registerMoveSegment,
+  moveTooltipInfoById,
 }: CodePaneBodyProps) {
   return (
     <div
@@ -37,6 +40,7 @@ export function CodePaneBody({
             title={title}
             line={line}
             registerMoveSegment={registerMoveSegment}
+            moveTooltipInfoById={moveTooltipInfoById}
           />
         ))
       )}

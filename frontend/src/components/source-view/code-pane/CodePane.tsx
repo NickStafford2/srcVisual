@@ -6,6 +6,7 @@ import { CodePaneBody } from "./CodePaneBody";
 import { CodePaneHeader } from "./CodePaneHeader";
 import { getCodePaneSurfaceStyle } from "./codePaneStyles";
 import type { RegisterMoveSegment } from "./moveConnectors";
+import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneProps = {
   fileIndex: number;
@@ -14,6 +15,7 @@ type CodePaneProps = {
   subtitle: string;
   source?: string;
   highlights: SourceViewHighlight[];
+  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
 };
 
@@ -24,6 +26,7 @@ export function CodePane({
   subtitle,
   source = "",
   highlights,
+  moveTooltipInfoById,
   registerMoveSegment,
 }: CodePaneProps) {
   const lines = useMemo(
@@ -44,6 +47,7 @@ export function CodePane({
         title={title}
         lines={lines}
         registerMoveSegment={registerMoveSegment}
+        moveTooltipInfoById={moveTooltipInfoById}
       />
     </article>
   );

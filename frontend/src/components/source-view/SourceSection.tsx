@@ -1,4 +1,4 @@
-import type { VisualizedFile } from "../../types";
+import type { SrcMoveResults, VisualizedFile } from "../../types";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import { SourceFileCard } from "./SourceFileCard";
 
@@ -7,6 +7,7 @@ type SourceSectionProps = {
   focusedFileIndex: number;
   selectedNodeFileIndex: number | null;
   highlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
+  moveResults?: SrcMoveResults;
 };
 
 export function SourceSection({
@@ -14,21 +15,24 @@ export function SourceSection({
   focusedFileIndex,
   selectedNodeFileIndex,
   highlightedSpansByUnitId,
+  moveResults,
 }: SourceSectionProps) {
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="space-y-4">
-        {files.map((file, index) => {
-          const fileHighlights = highlightedSpansByUnitId.get(file.unit_id) ?? [];
+        {files.map((file, fileIndex) => {
+          const highlightedSpans =
+            highlightedSpansByUnitId.get(file.unit_id) ?? [];
 
           return (
             <SourceFileCard
               key={`${file.unit_id}-${file.filename}`}
-              fileIndex={index}
+              fileIndex={fileIndex}
               file={file}
-              isFocused={index === focusedFileIndex}
-              isSelectedNodeFile={index === selectedNodeFileIndex}
-              highlightedSpans={fileHighlights}
+              isFocused={fileIndex === focusedFileIndex}
+              isSelectedNodeFile={fileIndex === selectedNodeFileIndex}
+              highlightedSpans={highlightedSpans}
+              moveResults={moveResults}
             />
           );
         })}

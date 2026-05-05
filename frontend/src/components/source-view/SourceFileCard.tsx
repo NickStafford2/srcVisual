@@ -1,8 +1,10 @@
-import type { VisualizedFile } from "../../types";
+import { useMemo } from "react";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
+import type { SrcMoveResults, VisualizedFile } from "../../types";
 import { CodePane } from "./code-pane/CodePane";
 import { MoveConnectorOverlay } from "./code-pane/MoveConnectorOverlay";
+import { buildMoveTooltipInfoById } from "./code-pane/MoveTooltip";
 import { useMoveConnectorOverlay } from "./code-pane/useMoveConnectorOverlay";
 
 type SourceFileCardProps = {
@@ -11,6 +13,7 @@ type SourceFileCardProps = {
   isFocused: boolean;
   isSelectedNodeFile: boolean;
   highlightedSpans: SrcDiffHighlight[];
+  moveResults?: SrcMoveResults;
 };
 
 export function SourceFileCard({
@@ -19,9 +22,15 @@ export function SourceFileCard({
   isFocused,
   isSelectedNodeFile,
   highlightedSpans,
+  moveResults,
 }: SourceFileCardProps) {
   const { containerRef, paths, registerMoveSegment } =
     useMoveConnectorOverlay();
+
+  const moveTooltipInfoById = useMemo(
+    () => buildMoveTooltipInfoById(moveResults?.moves ?? []),
+    [moveResults?.moves],
+  );
 
   for (const highlight of highlightedSpans) {
     if (highlight.unitId !== file.unit_id) {
@@ -123,6 +132,7 @@ export function SourceFileCard({
             source={file.revision_0_source_code}
             highlights={revision0Highlights}
             registerMoveSegment={registerMoveSegment}
+            moveTooltipInfoById={moveTooltipInfoById}
           />
 
           <CodePane
@@ -133,6 +143,7 @@ export function SourceFileCard({
             source={file.revision_1_source_code}
             highlights={revision1Highlights}
             registerMoveSegment={registerMoveSegment}
+            moveTooltipInfoById={moveTooltipInfoById}
           />
         </div>
       </div>

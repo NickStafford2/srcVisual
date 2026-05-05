@@ -7,6 +7,7 @@ import {
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { CodeSegment } from "./CodeSegment";
 import type { RegisterMoveSegment } from "./moveConnectors";
+import type { MoveTooltipInfo } from "./MoveTooltip";
 
 export type SourceViewLine = {
   number: number;
@@ -19,6 +20,7 @@ type CodeLineProps = {
   revision: SourceRevision;
   title: string;
   line: SourceViewLine;
+  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
 };
 
@@ -27,6 +29,7 @@ export function CodeLine({
   revision,
   title,
   line,
+  moveTooltipInfoById,
   registerMoveSegment,
 }: CodeLineProps) {
   const lineTargetId = buildSourceLineTargetId(
@@ -62,6 +65,7 @@ export function CodeLine({
             revision={revision}
             segment={segment}
             registerMoveSegment={registerMoveSegment}
+            moveTooltipInfoById={moveTooltipInfoById}
           />
         ))}
       </span>
