@@ -143,7 +143,10 @@ def validate_annotated_srcdiff_and_tree(
         include_skipped_tags=include_skipped_tags,
         filename_to_unit_index=filename_to_unit_index,
     )
-    tree_moves = collect_tree_move_nodes(visualized_files)
+    tree_moves = collect_tree_move_nodes(
+        visualized_files,
+        filename_to_unit_index=filename_to_unit_index,
+    )
 
     assert set(xml_regions) == set(tree_moves), (
         "Move node paths differ between annotated srcdiff XML and tree payload. "
@@ -500,6 +503,8 @@ def validate_single_srcmove_result_move(
 
 def collect_tree_move_nodes(
     visualized_files: tuple[VisualizedFile, ...],
+    *,
+    filename_to_unit_index: dict[str, int],
 ) -> dict[str, TreeMoveNode]:
     moves: dict[str, TreeMoveNode] = {}
 
@@ -509,7 +514,11 @@ def collect_tree_move_nodes(
             f"({visualized_file.revision_file.filename})."
         )
 
-        collect_tree_move_nodes_from_node(visualized_file.tree, moves)
+        collect_tree_move_nodes_from_node(
+            visualized_file.tree,
+            moves,
+            filename_to_unit_index=filename_to_unit_index,
+        )
 
     return moves
 
@@ -517,6 +526,8 @@ def collect_tree_move_nodes(
 def collect_tree_move_nodes_from_node(
     node: dict[str, object],
     moves: dict[str, TreeMoveNode],
+    *,
+    filename_to_unit_index: dict[str, int],
 ) -> None:
     assert isinstance(node.get("path"), str), f"Tree node has invalid path: {node!r}."
     assert isinstance(node.get("tag"), str), f"Tree node has invalid tag: {node!r}."
@@ -593,8 +604,14 @@ def collect_tree_move_nodes_from_node(
             tag=tag,
             move_id=move_id,
             kind=kind,
-            from_paths=tuple(from_paths),
-            to_paths=tuple(to_paths),
+            from_paths=normalize_srcmove_xpath_tuple(
+                tuple(from_paths),
+                filename_to_unit_index=filename_to_unit_index,
+            ),
+            to_paths=normalize_srcmove_xpath_tuple(
+                tuple(to_paths),
+                filename_to_unit_index=filename_to_unit_index,
+            ),
             position_start=position_start if isinstance(position_start, str) else None,
             position_end=position_end if isinstance(position_end, str) else None,
             xml_span=expect_optional_span_dict(node.get("xml_span"), path, "xml_span"),
@@ -615,7 +632,11 @@ def collect_tree_move_nodes_from_node(
 
     for child in children:
         assert isinstance(child, dict), f"Tree node at {path} has non-dict child."
-        collect_tree_move_nodes_from_node(child, moves)
+        collect_tree_move_nodes_from_node(
+            child,
+            moves,
+            filename_to_unit_index=filename_to_unit_index,
+        )
 
 
 def assert_move_groups_match(
