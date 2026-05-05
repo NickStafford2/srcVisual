@@ -48,10 +48,10 @@ export function UploadFileInput({
         </span>
       </label>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+      <div className="w-fit rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
         {selectedUpload ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="flex flex-row flex-nowrap gap-3">
               <p className="text-sm font-medium text-slate-100">
                 {selectedUpload.name}
               </p>
@@ -66,7 +66,7 @@ export function UploadFileInput({
               onClick={() => onUploadChange(null)}
               className="rounded-xl border border-white/12 bg-white/[0.04] px-3 py-2 text-xs text-slate-200 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Remove file
+              X
             </button>
           </div>
         ) : (
