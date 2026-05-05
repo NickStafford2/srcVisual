@@ -45,7 +45,9 @@ def get_example(filename: str) -> tuple[dict[str, str], int]:
 def visualize_events() -> Response | tuple[dict[str, str], int]:
     token = request.args.get("token", "").strip()
     if not token:
-        return {"error": "Expected progress stream token in 'token' query parameter."}, 400
+        return {
+            "error": "Expected progress stream token in 'token' query parameter."
+        }, 400
 
     return Response(
         progress_broker.stream(token),
@@ -61,6 +63,7 @@ def visualize_events() -> Response | tuple[dict[str, str], int]:
 def visualize() -> tuple[dict[str, object], int]:
     try:
         visualization_request = parse_visualization_request()
+
     except ValueError as exc:
         return {"error": str(exc)}, 400
 
@@ -89,6 +92,12 @@ def visualize() -> tuple[dict[str, object], int]:
             progress_broker.publish_error(progress_token, str(exc))
         return {"error": str(exc)}, 400
 
+    except AssertionError as exc:
+        message = f"Backend validation failed: {exc}"
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, message)
+
+        return {"error": message}, 500
     if progress_token is not None:
         progress_broker.publish_complete(progress_token, "Visualization complete.")
 

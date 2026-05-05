@@ -95,7 +95,7 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
             files=(
                 VisualizedFile(
                     revision_file=RevisionFile(
-                        unit=1,
+                        unit_id=1,
                         filename="a.cpp",
                         language="C++",
                         revision_0_source_code="int a;\n",
