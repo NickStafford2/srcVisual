@@ -58,6 +58,13 @@ function resolvePreferredSourceSpan(
     return directSpan;
   }
 
+  // srcMove marks the diff wrapper itself as the move region. A moved
+  // diff:delete must only highlight revision 0, and a moved diff:insert
+  // must only highlight revision 1.
+  if (node.tag === "diff:delete" || node.tag === "diff:insert") {
+    return directSpan;
+  }
+
   const childSpans = node.children.flatMap((child) => {
     const span = resolvePreferredSourceSpan(child, key);
     return span ? [span] : [];
