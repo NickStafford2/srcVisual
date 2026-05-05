@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { visualizeSrcDiff } from "../api";
+import { openVisualizationProgressStream, visualizeSrcDiff } from "../api";
 import { NESTED_SAMPLE } from "../samples";
 import type { VisualizeResponse } from "../types";
 
@@ -11,6 +11,7 @@ export function useSrcDiffData() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
+  const [progressMessage, setProgressMessage] = useState<string | null>(null);
 
   function handleXmlInputChange(value: string) {
     setXmlInput(value);
@@ -38,12 +39,24 @@ export function useSrcDiffData() {
       includeSkippedTags ? "true" : "false",
     );
 
+    const progressToken = crypto.randomUUID();
+    formData.append("progress_token", progressToken);
+
+    const progressStream = openVisualizationProgressStream(
+      progressToken,
+      (event) => {
+        setProgressMessage(event.message);
+      },
+    );
+
     setIsLoading(true);
     setError(null);
+    setProgressMessage("Connecting to backend progress stream.");
 
     try {
       const payload = await visualizeSrcDiff(formData);
       setData(payload);
+      setProgressMessage("Visualization complete.");
     } catch (submissionError) {
       setData(null);
       setError(
@@ -51,8 +64,10 @@ export function useSrcDiffData() {
           ? submissionError.message
           : "Unable to visualize the uploaded srcdiff.",
       );
+      setProgressMessage(null);
     } finally {
       setIsLoading(false);
+      progressStream.close();
     }
   }
 
@@ -62,6 +77,7 @@ export function useSrcDiffData() {
     data,
     isLoading,
     error,
+    progressMessage,
     includeSkippedTags,
     setSelectedUpload,
     setIncludeSkippedTags,

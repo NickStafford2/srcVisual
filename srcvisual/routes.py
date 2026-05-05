@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from flask import Blueprint, request
+from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
 from .core.models import BackendCommandError
+from .progress import progress_broker
 from .services import build_visualization_payload
 
 api = Blueprint("api", __name__)
@@ -16,11 +17,28 @@ class VisualizationRequest:
     filename: str
     payload: bytes
     include_skipped_tags: bool
+    progress_token: str | None
 
 
 @api.get("/health")
 def health() -> tuple[dict[str, str], int]:
     return {"status": "ok"}, 200
+
+
+@api.get("/visualize/events")
+def visualize_events() -> Response | tuple[dict[str, str], int]:
+    token = request.args.get("token", "").strip()
+    if not token:
+        return {"error": "Expected progress stream token in 'token' query parameter."}, 400
+
+    return Response(
+        progress_broker.stream(token),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @api.post("/visualize")
@@ -30,16 +48,33 @@ def visualize() -> tuple[dict[str, object], int]:
     except ValueError as exc:
         return {"error": str(exc)}, 400
 
+    progress_token = visualization_request.progress_token
+
     try:
         result = build_visualization_payload(
             filename=visualization_request.filename,
             payload=visualization_request.payload,
             include_skipped_tags=visualization_request.include_skipped_tags,
+            progress=(
+                None
+                if progress_token is None
+                else lambda message: progress_broker.publish_progress(
+                    progress_token,
+                    message,
+                )
+            ),
         )
     except BackendCommandError as exc:
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, exc.user_message())
         return {"error": exc.user_message()}, 500
     except ValueError as exc:
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, str(exc))
         return {"error": str(exc)}, 400
+
+    if progress_token is not None:
+        progress_broker.publish_complete(progress_token, "Visualization complete.")
 
     return result.to_dict(), 200
 
@@ -63,6 +98,7 @@ def parse_visualization_request() -> VisualizationRequest:
         filename=filename,
         payload=payload,
         include_skipped_tags=request.form.get("include_skipped_tags") == "true",
+        progress_token=get_progress_token(),
     )
 
 
@@ -78,3 +114,12 @@ def get_request_payload(uploaded: FileStorage | None, xml_text: str) -> bytes:
         return uploaded.read()
 
     return xml_text.encode("utf-8")
+
+
+def get_progress_token() -> str | None:
+    token = request.form.get("progress_token", "").strip()
+
+    if not token:
+        return None
+
+    return token

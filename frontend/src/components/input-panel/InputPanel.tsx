@@ -13,6 +13,7 @@ type InputPanelProps = {
   xmlInput: string;
   isLoading: boolean;
   error: string | null;
+  progressMessage: string | null;
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
   onUploadChange: (file: File | null) => void;
@@ -26,6 +27,7 @@ export function InputPanel({
   xmlInput,
   isLoading,
   error,
+  progressMessage,
   data,
   includeSkippedTags,
   onUploadChange,
@@ -121,6 +123,8 @@ export function InputPanel({
         <StatusPill error={error}>
           {error
             ? error
+            : isLoading && progressMessage
+              ? progressMessage
             : data
               ? `Loaded ${data.files.length} file${data.files.length === 1 ? "" : "s"} from ${data.source_filename}`
               : "Waiting for upload"}

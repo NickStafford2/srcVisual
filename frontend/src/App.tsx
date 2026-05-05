@@ -39,6 +39,7 @@ export default function App() {
           xmlInput={srcDiffData.xmlInput}
           isLoading={srcDiffData.isLoading}
           error={srcDiffData.error}
+          progressMessage={srcDiffData.progressMessage}
           data={srcDiffData.data}
           includeSkippedTags={srcDiffData.includeSkippedTags}
           onUploadChange={srcDiffData.setSelectedUpload}

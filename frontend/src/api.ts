@@ -1,6 +1,11 @@
 import type { VisualizeResponse } from "./types";
 import type { SrcDiffTreeNode } from "./srcdiff/types";
 
+export type VisualizationProgressEvent = {
+  type: "connected" | "progress" | "complete" | "error";
+  message: string;
+};
+
 export async function visualizeSrcDiff(
   formData: FormData,
 ): Promise<VisualizeResponse> {
@@ -43,6 +48,24 @@ function assertVisualizeResponseHasXmlSpans(
 
     assertTreeHasXmlSpans(file.tree, file.filename);
   }
+}
+
+export function openVisualizationProgressStream(
+  token: string,
+  onEvent: (event: VisualizationProgressEvent) => void,
+): { close: () => void } {
+  const eventSource = new EventSource(
+    `/api/visualize/events?token=${encodeURIComponent(token)}`,
+  );
+
+  eventSource.onmessage = (event) => {
+    const payload = JSON.parse(event.data) as VisualizationProgressEvent;
+    onEvent(payload);
+  };
+
+  return {
+    close: () => eventSource.close(),
+  };
 }
 
 function assertTreeHasXmlSpans(
