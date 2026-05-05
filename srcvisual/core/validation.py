@@ -759,13 +759,13 @@ def validate_visualization_payload(payload: VisualizationPayload) -> None:
             f"files[{file_index}] must be a dictionary."
         )
 
-        assert isinstance(file_payload.get("unit"), int), (
-            f"files[{file_index}].unit must be an integer."
+        assert isinstance(file_payload.get("unit_id"), int), (
+            f"files[{file_index}].unit_id must be an integer."
         )
 
-        assert file_payload["unit"] == file_index + 1, (
-            f"files[{file_index}].unit must be {file_index + 1}; "
-            f"got {file_payload['unit']}."
+        assert file_payload["unit_id"] == file_index + 1, (
+            f"files[{file_index}].unit_id must be {file_index + 1}; "
+            f"got {file_payload['unit_id']}."
         )
 
         assert isinstance(file_payload.get("filename"), str), (
