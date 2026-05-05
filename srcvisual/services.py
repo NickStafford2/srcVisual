@@ -3,17 +3,20 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 import xml.etree.ElementTree as ET
 
 from .core.archive import extract_revision_files
 from .core.commands import run_command
 from .core.filenames import sanitize_filename
 from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
-from .core.namespaces import SRC_NS
+from .core.namespaces import POS_END, POS_START, SRC_NS
+from .core.srcdiff_attributes import MV_ID
 from .core.tree_builder import build_tree_index
 from .core.validation import (
     augment_move_results_with_node_ids,
+    build_filename_to_unit_index,
+    collect_xml_move_regions,
     validate_annotated_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
@@ -40,8 +43,8 @@ def build_visualization_payload(
         revision_1_dir = tmpdir / "revision_1"
         revision_0_dir.mkdir()
         revision_1_dir.mkdir()
-        notify_progress(progress, "Extracting revision sources from srcdiff.")
 
+        notify_progress(progress, "Extracting revision sources from srcdiff.")
         revision_files = extract_revision_files(
             input_path=input_path,
             revision_0_dir=revision_0_dir,
@@ -52,9 +55,11 @@ def build_visualization_payload(
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
         annotated_srcdiff_xml, move_results = build_annotated_srcdiff_xml(
+            input_path=input_path,
             revision_0_dir=revision_0_dir,
             revision_1_dir=revision_1_dir,
             tmpdir=tmpdir,
+            include_skipped_tags=include_skipped_tags,
             progress=progress,
         )
 
@@ -97,7 +102,7 @@ def build_visualization_payload(
             include_skipped_tags=include_skipped_tags,
         )
 
-        result = VisualizationPayload(
+        payload_result = VisualizationPayload(
             source_filename=filename,
             annotated_srcdiff_xml=annotated_srcdiff_xml,
             move_results=move_results,
@@ -105,92 +110,70 @@ def build_visualization_payload(
             files=visualized_files,
         )
 
-        notify_progress(progress, "Validating frontend payload contract.")
-        validate_visualization_payload(result)
+        notify_progress(progress, "Validating visualization payload.")
+        validate_visualization_payload(payload_result)
 
-        return result
-
-
-def notify_progress(progress: ProgressCallback | None, message: str) -> None:
-    if progress is not None:
-        progress(message)
-
-
-def build_visualized_files(
-    *,
-    annotated_srcdiff_xml: str,
-    revision_files: tuple[RevisionFile, ...],
-    tree_by_unit: dict[int, dict[str, object]],
-) -> tuple[VisualizedFile, ...]:
-    annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
-    revision_file_by_filename: dict[str, RevisionFile] = {}
-
-    for revision_file in revision_files:
-        assert revision_file.filename not in revision_file_by_filename, (
-            f"Duplicate extracted revision filename: {revision_file.filename!r}."
-        )
-        revision_file_by_filename[revision_file.filename] = revision_file
-
-    visualized_files: list[VisualizedFile] = []
-
-    for unit_id, filename in enumerate(annotated_filenames, start=1):
-        revision_file = revision_file_by_filename.pop(filename, None)
-
-        assert revision_file is not None, (
-            "Annotated srcdiff unit filename is missing from extracted revisions: "
-            f"{filename!r}."
-        )
-
-        visualized_files.append(
-            VisualizedFile(
-                revision_file=RevisionFile(
-                    unit_id=unit_id,
-                    filename=revision_file.filename,
-                    language=revision_file.language,
-                    revision_0_source_code=revision_file.revision_0_source_code,
-                    revision_1_source_code=revision_file.revision_1_source_code,
-                ),
-                tree=tree_by_unit.get(unit_id),
-            )
-        )
-
-    assert not revision_file_by_filename, (
-        "Extracted revision files were not all present in the annotated srcdiff "
-        f"output: {sorted(revision_file_by_filename)}."
-    )
-
-    return tuple(visualized_files)
-
-
-def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
-    root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
-
-    filenames: list[str] = []
-
-    for unit_index, unit_element in enumerate(unit_elements, start=1):
-        filename = unit_element.attrib.get("filename")
-
-        assert isinstance(filename, str) and filename, (
-            "Annotated srcdiff unit is missing a filename attribute at "
-            f"index {unit_index}."
-        )
-
-        filenames.append(filename)
-
-    return tuple(filenames)
+        return payload_result
 
 
 def build_annotated_srcdiff_xml(
+    *,
+    input_path: Path,
+    revision_0_dir: Path,
+    revision_1_dir: Path,
+    tmpdir: Path,
+    include_skipped_tags: bool,
+    progress: ProgressCallback | None = None,
+) -> tuple[str, dict[str, Any]]:
+    uploaded_srcdiff_xml = input_path.read_text(encoding="utf-8")
+
+    if has_srcmove_annotations(uploaded_srcdiff_xml):
+        notify_progress(
+            progress,
+            "Uploaded srcdiff already has srcMove annotations. Skipping srcdiff and srcMove.",
+        )
+
+        move_results = build_move_results_from_annotated_xml(
+            annotated_srcdiff_xml=uploaded_srcdiff_xml,
+            include_skipped_tags=include_skipped_tags,
+        )
+
+        return uploaded_srcdiff_xml, move_results
+
+    if has_position_annotations(uploaded_srcdiff_xml):
+        notify_progress(
+            progress,
+            "Uploaded srcdiff already has position data. Skipping srcdiff.",
+        )
+
+        return run_srcmove(
+            positioned_path=input_path,
+            tmpdir=tmpdir,
+            progress=progress,
+        )
+
+    positioned_path = run_srcdiff_with_positions(
+        revision_0_dir=revision_0_dir,
+        revision_1_dir=revision_1_dir,
+        tmpdir=tmpdir,
+        progress=progress,
+    )
+
+    return run_srcmove(
+        positioned_path=positioned_path,
+        tmpdir=tmpdir,
+        progress=progress,
+    )
+
+
+def run_srcdiff_with_positions(
     *,
     revision_0_dir: Path,
     revision_1_dir: Path,
     tmpdir: Path,
     progress: ProgressCallback | None = None,
-) -> tuple[str, dict[str, object]]:
+) -> Path:
     positioned_path = tmpdir / "positioned.srcdiff.xml"
-    annotated_path = tmpdir / "annotated.srcdiff.xml"
-    results_path = tmpdir / "results.json"
 
     notify_progress(progress, "Running srcdiff with position data.")
     _ = run_command(
@@ -211,6 +194,18 @@ def build_annotated_srcdiff_xml(
     assert positioned_path.read_text(encoding="utf-8").strip(), (
         f"srcdiff created an empty positioned output: {positioned_path}"
     )
+
+    return positioned_path
+
+
+def run_srcmove(
+    *,
+    positioned_path: Path,
+    tmpdir: Path,
+    progress: ProgressCallback | None = None,
+) -> tuple[str, dict[str, Any]]:
+    annotated_path = tmpdir / "annotated.srcdiff.xml"
+    results_path = tmpdir / "results.json"
 
     notify_progress(progress, "Running srcMove annotations.")
     _ = run_command(
@@ -251,3 +246,128 @@ def build_annotated_srcdiff_xml(
     notify_progress(progress, "Reading annotated srcdiff output.")
 
     return annotated_srcdiff_xml, move_results
+
+
+def has_position_annotations(srcdiff_xml: str) -> bool:
+    root = ET.fromstring(srcdiff_xml)
+
+    return any(
+        POS_START in element.attrib and POS_END in element.attrib
+        for element in root.iter()
+    )
+
+
+def has_srcmove_annotations(srcdiff_xml: str) -> bool:
+    root = ET.fromstring(srcdiff_xml)
+
+    return any(MV_ID in element.attrib for element in root.iter())
+
+
+def build_move_results_from_annotated_xml(
+    *,
+    annotated_srcdiff_xml: str,
+    include_skipped_tags: bool,
+) -> dict[str, Any]:
+    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+
+    xml_regions = collect_xml_move_regions(
+        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        include_skipped_tags=include_skipped_tags,
+        filename_to_unit_index=filename_to_unit_index,
+    )
+
+    grouped_regions: dict[str, list[Any]] = {}
+
+    for region in xml_regions.values():
+        grouped_regions.setdefault(region.move_id, []).append(region)
+
+    moves: list[dict[str, Any]] = []
+
+    for move_id in sorted(grouped_regions):
+        regions = sorted(grouped_regions[move_id], key=lambda region: region.path)
+
+        from_regions = [region for region in regions if region.tag == "diff:delete"]
+        to_regions = [region for region in regions if region.tag == "diff:insert"]
+
+        assert from_regions, (
+            f"Existing srcMove annotation {move_id!r} has no diff:delete region."
+        )
+        assert to_regions, (
+            f"Existing srcMove annotation {move_id!r} has no diff:insert region."
+        )
+
+        moves.append(
+            {
+                "move_id": move_id,
+                "from_xpaths": [region.path for region in from_regions],
+                "to_xpaths": [region.path for region in to_regions],
+                "from_raw_texts": [region.raw_text for region in from_regions],
+                "to_raw_texts": [region.raw_text for region in to_regions],
+            }
+        )
+
+    return {
+        "move_count": len(moves),
+        "annotated_regions": len(xml_regions),
+        "moves": moves,
+    }
+
+
+def build_visualized_files(
+    *,
+    annotated_srcdiff_xml: str,
+    revision_files: tuple[RevisionFile, ...],
+    tree_by_unit: dict[int, dict[str, object]],
+) -> tuple[VisualizedFile, ...]:
+    annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
+    visualized_files: list[VisualizedFile] = []
+
+    for revision_file, annotated_filename in zip(
+        revision_files,
+        annotated_filenames,
+        strict=True,
+    ):
+        if revision_file.filename != annotated_filename:
+            revision_file = RevisionFile(
+                unit_id=revision_file.unit_id,
+                filename=annotated_filename,
+                language=revision_file.language,
+                revision_0_source_code=revision_file.revision_0_source_code,
+                revision_1_source_code=revision_file.revision_1_source_code,
+            )
+
+        visualized_files.append(
+            VisualizedFile(
+                revision_file=revision_file,
+                tree=tree_by_unit.get(revision_file.unit_id),
+            )
+        )
+
+    return tuple(visualized_files)
+
+
+def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
+    root = ET.fromstring(annotated_srcdiff_xml)
+    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+
+    filenames: list[str] = []
+
+    for unit_index, unit_element in enumerate(unit_elements, start=1):
+        filename = unit_element.attrib.get("filename")
+
+        assert isinstance(filename, str) and filename, (
+            "Annotated srcdiff unit is missing a filename attribute at "
+            f"index {unit_index}."
+        )
+
+        filenames.append(filename)
+
+    return tuple(filenames)
+
+
+def notify_progress(
+    progress: ProgressCallback | None,
+    message: str,
+) -> None:
+    if progress is not None:
+        progress(message)
