@@ -13,13 +13,13 @@ const OPTIONS: ReadonlyArray<{
 }> = [
   {
     mode: "paste",
-    label: "Paste srcdiff XML",
+    label: "Input srcDiff XML",
     description: "Paste raw srcdiff XML directly into the page.",
   },
   {
     mode: "upload",
     label: "Upload File",
-    description: "Choose a srcdiff file from disk to visualize.",
+    description: "Choose a srcDiff file from disk to visualize.",
   },
 ];
 

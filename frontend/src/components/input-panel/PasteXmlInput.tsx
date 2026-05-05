@@ -48,7 +48,7 @@ export function PasteXmlInput({
         disabled={disabled}
         value={xmlInput}
         onChange={(event) => onXmlInputChange(event.target.value)}
-        placeholder="Paste srcdiff XML here"
+        placeholder="Paste srcDiff XML here"
       />
     </div>
   );

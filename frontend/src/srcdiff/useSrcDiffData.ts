@@ -36,12 +36,12 @@ export function useSrcDiffData() {
     event.preventDefault();
 
     if (inputMode === "upload" && !selectedUpload) {
-      setError("Choose a srcdiff file before submitting.");
+      setError("Choose a srcDiff file before submitting.");
       return;
     }
 
     if (inputMode === "paste" && !xmlInput.trim()) {
-      setError("Choose a srcdiff file or paste srcdiff XML first.");
+      setError("Choose a srcDiff file or paste srcdiff XML first.");
       return;
     }
 

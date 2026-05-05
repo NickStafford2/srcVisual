@@ -24,7 +24,7 @@ export function UploadFileInput({
 }: UploadFileInputProps) {
   return (
     <div className="space-y-3">
-      <p className="mt-1 text-xs leading-5 text-slate-400">
+      <p className="mt-1 leading-5 text-slate-400">
         Supported file types include{" "}
         <code className="text-slate-300">.xml</code> and{" "}
         <code className="text-slate-300">.srcdiff</code>.

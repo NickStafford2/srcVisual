@@ -40,13 +40,9 @@ export function InputPanel({
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start">
-          <h2 className="text-xl font-semibold text-slate-50">srcDiff Input</h2>
-
-          <p className="mt-1 text-sm leading-5 text-slate-300">
-            Pick one input path, then send that srcdiff data to the backend.
-          </p>
-        </div>
+        <h2 className="text-xl font-semibold text-slate-50">
+          srcDiff Visualizer
+        </h2>
 
         <InputModeToggle
           mode={inputMode}
