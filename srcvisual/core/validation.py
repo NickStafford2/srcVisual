@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from .models import RevisionFile, VisualizedFile, VisualizationPayload
 from .namespaces import POS_END, POS_START, SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index
+from .srcmove_paths import split_srcmove_path_list
 from .srcdiff_attributes import MV_FROM, MV_ID, MV_TO
 
 
@@ -416,10 +417,7 @@ def collect_xml_move_regions_from_element(
 
 
 def parse_xml_move_reference_list(value: str | None) -> tuple[str, ...]:
-    if value is None:
-        return ()
-
-    return tuple(part.strip() for part in value.split("|") if part.strip())
+    return split_srcmove_path_list(value)
 
 
 def extract_raw_text(element: ET.Element) -> str:
@@ -699,6 +697,33 @@ def validate_visualization_payload(payload: VisualizationPayload) -> None:
     assert payload_dict["annotated_srcdiff_xml"].strip()
 
     assert isinstance(payload_dict["move_results"], dict)
+    assert isinstance(payload_dict["move_source_highlights"], list)
+
+    for index, region in enumerate(payload_dict["move_source_highlights"]):
+        assert isinstance(region, dict), (
+            f"move_source_highlights[{index}] must be a dictionary."
+        )
+        assert isinstance(region.get("path"), str), (
+            f"move_source_highlights[{index}].path must be a string."
+        )
+        assert isinstance(region.get("unit_id"), int), (
+            f"move_source_highlights[{index}].unit_id must be an integer."
+        )
+        assert isinstance(region.get("move_id"), str), (
+            f"move_source_highlights[{index}].move_id must be a string."
+        )
+        assert region.get("revision") in {"revision_0", "revision_1"}, (
+            f"move_source_highlights[{index}].revision must be "
+            "'revision_0' or 'revision_1'."
+        )
+        assert region.get("span") is not None, (
+            f"move_source_highlights[{index}].span must be present."
+        )
+        _ = expect_optional_span_dict(
+            region.get("span"),
+            region.get("path", f"move_source_highlights[{index}]"),
+            "span",
+        )
 
     assert isinstance(payload_dict["has_position_data"], bool)
 

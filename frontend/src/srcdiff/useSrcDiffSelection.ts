@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { VisualizeResponse, VisualizedFile } from "../types";
+import type {
+  MoveSourceHighlight,
+  VisualizeResponse,
+  VisualizedFile,
+} from "../types";
 import type { HighlightMode } from "./highlightContext";
 import type { HighlightKind, SrcDiffTreeNode } from "./types";
 import {
@@ -33,6 +37,7 @@ export type SrcDiffSelectionState = {
   }[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
+  sourceHighlightedSpansByFileIndex: Map<number, SrcDiffHighlight[]>;
   highlightMode: HighlightMode;
   unhighlightNode: (nodeId: string) => void;
   setSelectedFileIndex: (index: number) => void;
@@ -161,6 +166,47 @@ export function useSrcDiffSelection(
     );
   }, [highlightedEntries]);
 
+  const canonicalMoveSourceHighlights = useMemo(
+    () =>
+      (data?.move_source_highlights ?? []).map(
+        convertMoveSourceHighlightToSelectionHighlight,
+      ),
+    [data?.move_source_highlights],
+  );
+
+  const sourceHighlightedSpansByFileIndex = useMemo(() => {
+    const next = new Map<number, SrcDiffHighlight[]>();
+
+    const sourceHighlights =
+      highlightMode === "all-moves"
+        ? canonicalMoveSourceHighlights
+        : highlightMode === "selection" &&
+            selectedNodeEntry?.node.kind === "move" &&
+            selectedMoveId
+          ? canonicalMoveSourceHighlights.filter(
+              (highlight) => highlight.moveId === selectedMoveId,
+            )
+          : highlightedEntries.map(([, entry]) => ({
+              moveId: entry.node.move_id ?? entry.node.id,
+              fileIndex: entry.fileIndex,
+              value: getNodeHighlight(entry.node, entry.fileIndex),
+            }));
+
+    for (const highlight of sourceHighlights) {
+      const fileHighlights = next.get(highlight.fileIndex) ?? [];
+      fileHighlights.push(highlight.value);
+      next.set(highlight.fileIndex, fileHighlights);
+    }
+
+    return next;
+  }, [
+    canonicalMoveSourceHighlights,
+    highlightMode,
+    highlightedEntries,
+    selectedMoveId,
+    selectedNodeEntry,
+  ]);
+
   useEffect(() => {
     setSelectedFileIndexState(0);
     setSelectedNodeIdState(null);
@@ -256,6 +302,7 @@ export function useSrcDiffSelection(
     highlightedNodes,
     highlightedNodeIds,
     highlightedSpans,
+    sourceHighlightedSpansByFileIndex,
     highlightMode,
     unhighlightNode,
     setSelectedFileIndex,
@@ -265,4 +312,40 @@ export function useSrcDiffSelection(
     highlightAllDeletes,
     clearHighlights,
   };
+}
+
+function convertMoveSourceHighlightToSelectionHighlight(
+  highlight: MoveSourceHighlight,
+): {
+  moveId: string;
+  fileIndex: number;
+  value: SrcDiffHighlight;
+} {
+  return (
+    highlight.revision === "revision_0"
+      ? {
+          moveId: highlight.move_id,
+          fileIndex: highlight.unit_id - 1,
+          value: {
+            nodeId: highlight.path,
+            fileIndex: highlight.unit_id - 1,
+            kind: "move",
+            xmlSpan: null,
+            revision0Span: highlight.span,
+            revision1Span: null,
+          },
+        }
+      : {
+          moveId: highlight.move_id,
+          fileIndex: highlight.unit_id - 1,
+          value: {
+            nodeId: highlight.path,
+            fileIndex: highlight.unit_id - 1,
+            kind: "move",
+            xmlSpan: null,
+            revision0Span: null,
+            revision1Span: highlight.span,
+          },
+        }
+  );
 }

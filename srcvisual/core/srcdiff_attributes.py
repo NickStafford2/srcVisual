@@ -4,13 +4,17 @@ from dataclasses import asdict, dataclass
 import xml.etree.ElementTree as ET
 
 from .namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
+from .srcmove_paths import split_srcmove_path_list
 
 POS_START = f"{{{POS_NS}}}start"
 POS_END = f"{{{POS_NS}}}end"
+POS_TABS = f"{{{POS_NS}}}tabs"
 
 MV_ID = f"{{{MV_NS}}}id"
 MV_FROM = f"{{{MV_NS}}}from"
 MV_TO = f"{{{MV_NS}}}to"
+PLAIN_MOVE = "move"
+PLAIN_TYPE = "type"
 
 
 @dataclass(frozen=True)
@@ -52,6 +56,7 @@ class UnitAttributes:
 @dataclass(frozen=True)
 class DiffAttributes:
     revision: str | None = None
+    type: str | None = None
 
     def to_dict(self) -> dict[str, str | None]:
         return asdict(self)
@@ -76,9 +81,12 @@ class SrcDiffAttributes:
 KNOWN_COMMON_ATTRIBUTES = {
     POS_START,
     POS_END,
+    POS_TABS,
     MV_ID,
     MV_FROM,
     MV_TO,
+    PLAIN_MOVE,
+    PLAIN_TYPE,
 }
 
 KNOWN_UNIT_ATTRIBUTES = {
@@ -92,6 +100,7 @@ KNOWN_UNIT_ATTRIBUTES = {
 
 KNOWN_DIFF_ATTRIBUTES = {
     "revision",
+    "type",
 }
 
 
@@ -120,11 +129,13 @@ def parse_position_attributes(element: ET.Element) -> PositionAttributes | None:
 
 
 def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
-    move_id = element.attrib.get(MV_ID)
+    namespaced_move_id = element.attrib.get(MV_ID)
+    plain_move_id = element.attrib.get(PLAIN_MOVE)
+    move_id = namespaced_move_id or plain_move_id
     from_value = element.attrib.get(MV_FROM)
     to_value = element.attrib.get(MV_TO)
 
-    if move_id is None and from_value is None and to_value is None:
+    if namespaced_move_id is None and plain_move_id is None and from_value is None and to_value is None:
         return None
 
     assert move_id is not None, (
@@ -134,11 +145,6 @@ def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
 
     from_paths = parse_move_path_list(from_value)
     to_paths = parse_move_path_list(to_value)
-
-    assert from_paths or to_paths, (
-        f"Move node {prefixed_name(element.tag)} with mv:id={move_id!r} "
-        "must have mv:from or mv:to."
-    )
 
     return MoveAttributes(
         id=move_id,
@@ -151,7 +157,7 @@ def parse_move_path_list(value: str | None) -> tuple[str, ...]:
     if value is None:
         return ()
 
-    paths = tuple(part.strip() for part in value.split("|") if part.strip())
+    paths = split_srcmove_path_list(value)
 
     assert paths, f"Empty srcMove path list: {value!r}."
 
@@ -183,6 +189,7 @@ def parse_diff_attributes(element: ET.Element) -> DiffAttributes | None:
 
     return DiffAttributes(
         revision=element.attrib.get("revision"),
+        type=element.attrib.get("type"),
     )
 
 

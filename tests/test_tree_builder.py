@@ -29,6 +29,49 @@ def test_build_tree_index_keys_trees_by_unit_number() -> None:
     assert tree_by_unit[2]["label"] == "unit: second.cpp"
 
 
+def test_build_tree_index_accepts_pos_tabs_on_unit() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:pos="http://www.srcML.org/srcML/position">
+  <unit filename="example.cpp" pos:tabs="4">
+    <function>
+      <name>main</name>
+    </function>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    assert set(tree_by_unit) == {1}
+    assert tree_by_unit[1]["label"] == "unit: example.cpp"
+    assert has_position_data is False
+
+
+def test_build_tree_index_accepts_type_attribute_on_diff_nodes() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff">
+  <unit filename="example.cpp">
+    <diff:delete type="move">
+      <name>main</name>
+    </diff:delete>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    delete_node = tree_by_unit[1]["children"][0]
+
+    assert delete_node["kind"] == "delete"
+    assert delete_node["srcdiff_attributes"]["diff"] == {
+        "revision": None,
+        "type": "move",
+    }
+    assert has_position_data is False
+
+
 def test_build_tree_index_detects_move_nodes_from_srcmove_id() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
