@@ -12,10 +12,41 @@ type MoveSegmentElements = {
   "revision-1": Set<HTMLElement>;
 };
 
+type RectLike = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+  height: number;
+};
+
 function createMoveSegmentElements(): MoveSegmentElements {
   return {
     "revision-0": new Set<HTMLElement>(),
     "revision-1": new Set<HTMLElement>(),
+  };
+}
+
+function getCombinedRect(elements: HTMLElement[]): RectLike | null {
+  if (elements.length === 0) {
+    return null;
+  }
+
+  const rects = elements.map((element) => element.getBoundingClientRect());
+
+  const left = Math.min(...rects.map((rect) => rect.left));
+  const right = Math.max(...rects.map((rect) => rect.right));
+  const top = Math.min(...rects.map((rect) => rect.top));
+  const bottom = Math.max(...rects.map((rect) => rect.bottom));
+
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    width: right - left,
+    height: bottom - top,
   };
 }
 
@@ -29,11 +60,6 @@ export function useMoveConnectorOverlay() {
   const updatePaths = useCallback(() => {
     const container = containerRef.current;
 
-    console.log("updatePaths called", {
-      hasContainer: Boolean(container),
-      registeredMoveIds: Array.from(segmentElementsByMoveIdRef.current.keys()),
-    });
-
     if (!container) {
       setPaths([]);
       return;
@@ -43,64 +69,35 @@ export function useMoveConnectorOverlay() {
     const nextPaths: MoveConnectorPath[] = [];
 
     for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
-      const fromElements = Array.from(elements["revision-0"]);
-      const toElements = Array.from(elements["revision-1"]);
+      const fromRect = getCombinedRect(Array.from(elements["revision-0"]));
+      const toRect = getCombinedRect(Array.from(elements["revision-1"]));
 
-      console.log("move connector candidate", {
-        moveId,
-        revision0Count: fromElements.length,
-        revision1Count: toElements.length,
-      });
-
-      if (fromElements.length === 0 || toElements.length === 0) {
+      if (!fromRect || !toRect) {
         continue;
       }
 
-      for (const [fromIndex, from] of fromElements.entries()) {
-        for (const [toIndex, to] of toElements.entries()) {
-          const fromRect = from.getBoundingClientRect();
-          const toRect = to.getBoundingClientRect();
+      const start = {
+        x: fromRect.right - containerRect.left,
+        y: fromRect.top + fromRect.height / 2 - containerRect.top,
+      };
 
-          const start = {
-            x: fromRect.right - containerRect.left,
-            y: fromRect.top + fromRect.height / 2 - containerRect.top,
-          };
+      const end = {
+        x: toRect.left - containerRect.left,
+        y: toRect.top + toRect.height / 2 - containerRect.top,
+      };
 
-          const end = {
-            x: toRect.left - containerRect.left,
-            y: toRect.top + toRect.height / 2 - containerRect.top,
-          };
+      const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
 
-          const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
-
-          const d = [
-            `M ${start.x} ${start.y}`,
-            `C ${start.x + controlOffset} ${start.y}`,
-            `${end.x - controlOffset} ${end.y}`,
-            `${end.x} ${end.y}`,
-          ].join(" ");
-
-          console.log("created move connector path", {
-            moveId,
-            fromIndex,
-            toIndex,
-            fromRect,
-            toRect,
-            containerRect,
-            start,
-            end,
-            d,
-          });
-
-          nextPaths.push({
-            key: `${moveId}-${fromIndex}-${toIndex}`,
-            d,
-          });
-        }
-      }
+      nextPaths.push({
+        key: moveId,
+        d: [
+          `M ${start.x} ${start.y}`,
+          `C ${start.x + controlOffset} ${start.y}`,
+          `${end.x - controlOffset} ${end.y}`,
+          `${end.x} ${end.y}`,
+        ].join(" "),
+      });
     }
-
-    console.log("next move connector paths", nextPaths);
 
     setPaths(nextPaths);
   }, []);
@@ -114,14 +111,6 @@ export function useMoveConnectorOverlay() {
       current[revision].add(element);
       segmentElementsByMoveIdRef.current.set(moveId, current);
 
-      console.log("registered move segment", {
-        moveId,
-        revision,
-        revision0Count: current["revision-0"].size,
-        revision1Count: current["revision-1"].size,
-        element,
-      });
-
       requestAnimationFrame(updatePaths);
     },
     [updatePaths],
@@ -132,11 +121,6 @@ export function useMoveConnectorOverlay() {
       const current = segmentElementsByMoveIdRef.current.get(moveId);
 
       if (!current) {
-        console.log("unregister skipped; move id missing", {
-          moveId,
-          revision,
-          element,
-        });
         return;
       }
 
@@ -150,14 +134,6 @@ export function useMoveConnectorOverlay() {
       } else {
         segmentElementsByMoveIdRef.current.set(moveId, current);
       }
-
-      console.log("unregistered move segment", {
-        moveId,
-        revision,
-        revision0Count: current["revision-0"].size,
-        revision1Count: current["revision-1"].size,
-        element,
-      });
 
       requestAnimationFrame(updatePaths);
     },
