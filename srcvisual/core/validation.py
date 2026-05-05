@@ -174,6 +174,41 @@ def validate_annotated_srcdiff_and_tree(
         f"visualized_files={len(visualized_files)}, revision_files={len(revision_files)}."
     )
 
+    for unit_index, (unit_element, visualized_file) in enumerate(
+        zip(unit_elements, visualized_files, strict=True),
+        start=1,
+    ):
+        expected_filename = unit_element.attrib.get("filename")
+
+        assert visualized_file.revision_file.unit_id == unit_index, (
+            "Visualized file unit_id does not match annotated srcdiff unit order. "
+            f"expected unit_id={unit_index}, "
+            f"got {visualized_file.revision_file.unit_id}."
+        )
+
+        if expected_filename is not None:
+            assert visualized_file.revision_file.filename == expected_filename, (
+                "Visualized file filename does not match annotated srcdiff unit. "
+                f"unit {unit_index} expected filename={expected_filename!r}, "
+                f"got {visualized_file.revision_file.filename!r}."
+            )
+
+        tree = visualized_file.tree
+
+        if tree is not None:
+            assert tree.get("path") == f"/src:unit[{unit_index}]", (
+                "Visualized tree root path does not match annotated srcdiff unit "
+                f"order for filename {visualized_file.revision_file.filename!r}. "
+                f"tree path={tree.get('path')!r}."
+            )
+
+            if expected_filename is not None:
+                assert tree.get("label") == f"unit: {expected_filename}", (
+                    "Visualized tree root label does not match annotated srcdiff "
+                    f"unit filename {expected_filename!r}. "
+                    f"tree label={tree.get('label')!r}."
+                )
+
     filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
 
     xml_regions = collect_xml_move_regions(

@@ -4,11 +4,13 @@ import json
 import tempfile
 from pathlib import Path
 from typing import Callable
+import xml.etree.ElementTree as ET
 
 from .core.archive import extract_revision_files
 from .core.commands import run_command
 from .core.filenames import sanitize_filename
-from .core.models import VisualizationPayload, VisualizedFile
+from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
+from .core.namespaces import SRC_NS
 from .core.tree_builder import build_tree_index
 from .core.validation import (
     augment_move_results_with_node_ids,
@@ -81,12 +83,10 @@ def build_visualization_payload(
             include_skipped_tags=include_skipped_tags,
         )
 
-        visualized_files = tuple(
-            VisualizedFile(
-                revision_file=revision_file,
-                tree=tree_by_unit.get(revision_file.unit_id),
-            )
-            for revision_file in revision_files
+        visualized_files = build_visualized_files(
+            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            revision_files=revision_files,
+            tree_by_unit=tree_by_unit,
         )
 
         notify_progress(progress, "Validating annotated XML against tree data.")
@@ -114,6 +114,71 @@ def build_visualization_payload(
 def notify_progress(progress: ProgressCallback | None, message: str) -> None:
     if progress is not None:
         progress(message)
+
+
+def build_visualized_files(
+    *,
+    annotated_srcdiff_xml: str,
+    revision_files: tuple[RevisionFile, ...],
+    tree_by_unit: dict[int, dict[str, object]],
+) -> tuple[VisualizedFile, ...]:
+    annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
+    revision_file_by_filename: dict[str, RevisionFile] = {}
+
+    for revision_file in revision_files:
+        assert revision_file.filename not in revision_file_by_filename, (
+            f"Duplicate extracted revision filename: {revision_file.filename!r}."
+        )
+        revision_file_by_filename[revision_file.filename] = revision_file
+
+    visualized_files: list[VisualizedFile] = []
+
+    for unit_id, filename in enumerate(annotated_filenames, start=1):
+        revision_file = revision_file_by_filename.pop(filename, None)
+
+        assert revision_file is not None, (
+            "Annotated srcdiff unit filename is missing from extracted revisions: "
+            f"{filename!r}."
+        )
+
+        visualized_files.append(
+            VisualizedFile(
+                revision_file=RevisionFile(
+                    unit_id=unit_id,
+                    filename=revision_file.filename,
+                    language=revision_file.language,
+                    revision_0_source_code=revision_file.revision_0_source_code,
+                    revision_1_source_code=revision_file.revision_1_source_code,
+                ),
+                tree=tree_by_unit.get(unit_id),
+            )
+        )
+
+    assert not revision_file_by_filename, (
+        "Extracted revision files were not all present in the annotated srcdiff "
+        f"output: {sorted(revision_file_by_filename)}."
+    )
+
+    return tuple(visualized_files)
+
+
+def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
+    root = ET.fromstring(annotated_srcdiff_xml)
+    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+
+    filenames: list[str] = []
+
+    for unit_index, unit_element in enumerate(unit_elements, start=1):
+        filename = unit_element.attrib.get("filename")
+
+        assert isinstance(filename, str) and filename, (
+            "Annotated srcdiff unit is missing a filename attribute at "
+            f"index {unit_index}."
+        )
+
+        filenames.append(filename)
+
+    return tuple(filenames)
 
 
 def build_annotated_srcdiff_xml(
