@@ -8,6 +8,7 @@ type MoveConnectorOverlayProps = {
 };
 
 export function MoveConnectorOverlay({ paths }: MoveConnectorOverlayProps) {
+  console.log("move connector paths", paths);
   if (paths.length === 0) {
     return null;
   }

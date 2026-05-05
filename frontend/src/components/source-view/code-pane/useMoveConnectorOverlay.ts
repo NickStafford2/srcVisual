@@ -1,8 +1,9 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type {
   MoveSegmentRegistration,
+  MoveSegmentUnregistration,
   RegisterMoveSegment,
+  UnregisterMoveSegment,
 } from "./moveConnectors";
 import type { MoveConnectorPath } from "./MoveConnectorOverlay";
 
@@ -28,6 +29,11 @@ export function useMoveConnectorOverlay() {
   const updatePaths = useCallback(() => {
     const container = containerRef.current;
 
+    console.log("updatePaths called", {
+      hasContainer: Boolean(container),
+      registeredMoveIds: Array.from(segmentElementsByMoveIdRef.current.keys()),
+    });
+
     if (!container) {
       setPaths([]);
       return;
@@ -39,6 +45,12 @@ export function useMoveConnectorOverlay() {
     for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
       const fromElements = Array.from(elements["revision-0"]);
       const toElements = Array.from(elements["revision-1"]);
+
+      console.log("move connector candidate", {
+        moveId,
+        revision0Count: fromElements.length,
+        revision1Count: toElements.length,
+      });
 
       if (fromElements.length === 0 || toElements.length === 0) {
         continue;
@@ -61,18 +73,34 @@ export function useMoveConnectorOverlay() {
 
           const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
 
+          const d = [
+            `M ${start.x} ${start.y}`,
+            `C ${start.x + controlOffset} ${start.y}`,
+            `${end.x - controlOffset} ${end.y}`,
+            `${end.x} ${end.y}`,
+          ].join(" ");
+
+          console.log("created move connector path", {
+            moveId,
+            fromIndex,
+            toIndex,
+            fromRect,
+            toRect,
+            containerRect,
+            start,
+            end,
+            d,
+          });
+
           nextPaths.push({
             key: `${moveId}-${fromIndex}-${toIndex}`,
-            d: [
-              `M ${start.x} ${start.y}`,
-              `C ${start.x + controlOffset} ${start.y}`,
-              `${end.x - controlOffset} ${end.y}`,
-              `${end.x} ${end.y}`,
-            ].join(" "),
+            d,
           });
         }
       }
     }
+
+    console.log("next move connector paths", nextPaths);
 
     setPaths(nextPaths);
   }, []);
@@ -83,24 +111,53 @@ export function useMoveConnectorOverlay() {
         segmentElementsByMoveIdRef.current.get(moveId) ??
         createMoveSegmentElements();
 
-      if (element) {
-        current[revision].add(element);
-        segmentElementsByMoveIdRef.current.set(moveId, current);
-      } else {
-        // React cleanup cannot reliably identify which old element was removed
-        // because this API only receives null. Clear this revision and let the
-        // next mounted highlighted spans re-register themselves.
-        current[revision].clear();
+      current[revision].add(element);
+      segmentElementsByMoveIdRef.current.set(moveId, current);
 
-        if (
-          current["revision-0"].size === 0 &&
-          current["revision-1"].size === 0
-        ) {
-          segmentElementsByMoveIdRef.current.delete(moveId);
-        } else {
-          segmentElementsByMoveIdRef.current.set(moveId, current);
-        }
+      console.log("registered move segment", {
+        moveId,
+        revision,
+        revision0Count: current["revision-0"].size,
+        revision1Count: current["revision-1"].size,
+        element,
+      });
+
+      requestAnimationFrame(updatePaths);
+    },
+    [updatePaths],
+  );
+
+  const unregisterMoveSegment = useCallback(
+    ({ moveId, revision, element }: MoveSegmentUnregistration) => {
+      const current = segmentElementsByMoveIdRef.current.get(moveId);
+
+      if (!current) {
+        console.log("unregister skipped; move id missing", {
+          moveId,
+          revision,
+          element,
+        });
+        return;
       }
+
+      current[revision].delete(element);
+
+      if (
+        current["revision-0"].size === 0 &&
+        current["revision-1"].size === 0
+      ) {
+        segmentElementsByMoveIdRef.current.delete(moveId);
+      } else {
+        segmentElementsByMoveIdRef.current.set(moveId, current);
+      }
+
+      console.log("unregistered move segment", {
+        moveId,
+        revision,
+        revision0Count: current["revision-0"].size,
+        revision1Count: current["revision-1"].size,
+        element,
+      });
 
       requestAnimationFrame(updatePaths);
     },
@@ -130,6 +187,7 @@ export function useMoveConnectorOverlay() {
     containerRef,
     paths,
     registerMoveSegment: registerMoveSegment as RegisterMoveSegment,
+    unregisterMoveSegment: unregisterMoveSegment as UnregisterMoveSegment,
     updatePaths,
   };
 }

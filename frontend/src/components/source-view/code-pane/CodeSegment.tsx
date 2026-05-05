@@ -29,6 +29,17 @@ export function CodeSegment({
   const isMoveHighlight =
     segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
 
+  if (segment.highlighted || segment.kind === "move" || segment.moveId) {
+    console.log("source segment debug", {
+      revision,
+      text: segment.text,
+      highlighted: segment.highlighted,
+      kind: segment.kind,
+      moveId: segment.moveId,
+      isMoveHighlight,
+    });
+  }
+
   const moveTooltipInfo = segment.moveId
     ? moveTooltipInfoById?.get(segment.moveId)
     : undefined;
@@ -45,6 +56,13 @@ export function CodeSegment({
     const element = ref.current;
     const moveId = segment.moveId;
 
+    console.log("registering move segment", {
+      moveId,
+      revision,
+      text: segment.text,
+      element,
+    });
+
     registerMoveSegment?.({
       moveId,
       revision,
@@ -52,6 +70,13 @@ export function CodeSegment({
     });
 
     return () => {
+      console.log("unregistering move segment", {
+        moveId,
+        revision,
+        text: segment.text,
+        element,
+      });
+
       unregisterMoveSegment?.({
         moveId,
         revision,
@@ -64,6 +89,7 @@ export function CodeSegment({
     unregisterMoveSegment,
     revision,
     segment.moveId,
+    segment.text,
   ]);
 
   if (!isMoveHighlight) {
@@ -80,6 +106,7 @@ export function CodeSegment({
     <span
       ref={ref}
       data-move-id={segment.moveId}
+      data-source-revision={revision}
       className={[
         "group relative inline rounded-md",
         getSourceSegmentClasses(segment.kind, segment.highlighted),
