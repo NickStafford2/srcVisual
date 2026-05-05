@@ -12,7 +12,7 @@ from .core.commands import run_command
 from .core.filenames import sanitize_filename
 from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
 from .core.namespaces import POS_END, POS_START, SRC_NS
-from .core.pruning import prune_unchanged_visualized_files
+from .core.pruning import prune_visualized_files_to_edited_branches
 from .core.srcdiff_attributes import MV_ID
 from .core.tree_builder import build_tree_index
 from .core.validation import (
@@ -128,13 +128,16 @@ def build_visualization_payload(
 
     original_file_count = len(visualized_files)
 
-    notify_progress(progress, "Pruning unchanged files from visualization payload.")
-    visualized_files = prune_unchanged_visualized_files(visualized_files)
+    notify_progress(
+        progress,
+        "Pruning unchanged files and unchanged tree branches from visualization payload.",
+    )
+    visualized_files = prune_visualized_files_to_edited_branches(visualized_files)
 
     pruned_file_count = original_file_count - len(visualized_files)
     notify_progress(
         progress,
-        f"Pruned {pruned_file_count} unchanged file(s).",
+        f"Pruned {pruned_file_count} unchanged file(s) and removed unchanged tree branches.",
     )
 
     return VisualizationPayload(
