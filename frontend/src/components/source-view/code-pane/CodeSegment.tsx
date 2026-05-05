@@ -17,12 +17,15 @@ export function CodeSegment({
   registerMoveSegment,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
+  const isMoveHighlight =
+    segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
+
   const text = segment.highlighted
     ? renderVisibleWhitespace(segment.text)
     : segment.text;
 
   useEffect(() => {
-    if (!segment.highlighted || segment.kind !== "move" || !segment.moveId) {
+    if (!isMoveHighlight || !segment.moveId) {
       return;
     }
 
@@ -39,21 +42,32 @@ export function CodeSegment({
         element: null,
       });
     };
-  }, [
-    registerMoveSegment,
-    revision,
-    segment.highlighted,
-    segment.kind,
-    segment.moveId,
-  ]);
+  }, [isMoveHighlight, registerMoveSegment, revision, segment.moveId]);
+
+  if (!isMoveHighlight) {
+    return (
+      <span
+        className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
+      >
+        {text}
+      </span>
+    );
+  }
 
   return (
     <span
       ref={ref}
       data-move-id={segment.moveId ?? undefined}
-      className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
+      className={[
+        "group relative inline rounded-md",
+        getSourceSegmentClasses(segment.kind, segment.highlighted),
+      ].join(" ")}
     >
       {text}
+
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-slate-950 px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-slate-100 shadow-xl group-hover:block">
+        move_id: {segment.moveId}
+      </span>
     </span>
   );
 }
