@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from .srcdiff_attributes import SrcDiffAttributes
+
 
 @dataclass(frozen=True)
 class CommandResult:
@@ -64,7 +66,7 @@ class TreeNode:
     label: str
     kind: TreeNodeKind
     move_id: str | None
-    attributes: dict[str, str]
+    srcdiff_attributes: SrcDiffAttributes
     xml_span: SourceSpan | None
     revision_0_span: SourceSpan | None
     revision_1_span: SourceSpan | None
@@ -78,7 +80,7 @@ class TreeNode:
             "label": self.label,
             "kind": self.kind,
             "move_id": self.move_id,
-            "attributes": self.attributes,
+            "srcdiff_attributes": self.srcdiff_attributes.to_dict(),
             "xml_span": self.xml_span.to_dict() if self.xml_span else None,
             "revision_0_span": self.revision_0_span.to_dict()
             if self.revision_0_span

@@ -3,8 +3,9 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from .models import SourceSpan, TreeNode, TreeNodeKind
-from .namespaces import MV_NS, SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
+from .namespaces import SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index, parse_position_spans
+from .srcdiff_attributes import parse_srcdiff_attributes
 
 
 def build_tree_index(
@@ -45,8 +46,12 @@ def build_tree_node(
     include_skipped_tags: bool = False,
 ) -> TreeNode:
     tag = prefixed_name(element.tag)
+    srcdiff_attributes = parse_srcdiff_attributes(element)
+
     current_diff_kind = get_current_diff_kind(tag)
-    current_move_id = get_current_move_id(element)
+    current_move_id = (
+        srcdiff_attributes.move.id if srcdiff_attributes.move is not None else None
+    )
     current_kind = get_current_kind(
         diff_kind=current_diff_kind,
         move_id=current_move_id,
@@ -104,7 +109,7 @@ def build_tree_node(
         label=build_node_label(tag, element),
         kind=current_kind,
         move_id=current_move_id,
-        attributes=build_attribute_map(element),
+        srcdiff_attributes=srcdiff_attributes,
         xml_span=xml_span_by_path.get(path),
         revision_0_span=revision_0_span,
         revision_1_span=revision_1_span,
@@ -122,10 +127,6 @@ def get_current_diff_kind(tag: str) -> str | None:
     return None
 
 
-def get_current_move_id(element: ET.Element) -> str | None:
-    return element.attrib.get(f"{{{MV_NS}}}id")
-
-
 def get_current_kind(
     *,
     diff_kind: str | None,
@@ -141,13 +142,6 @@ def get_current_kind(
         return "insert"
 
     return "plain"
-
-
-def build_attribute_map(element: ET.Element) -> dict[str, str]:
-    return {
-        prefixed_name(attribute_name): attribute_value
-        for attribute_name, attribute_value in sorted(element.attrib.items())
-    }
 
 
 def should_skip_child(
@@ -176,7 +170,7 @@ def spans_for_element(
         return None, spans[0]
 
     assert len(spans) in {1, 2}, (
-        f"Expected one or two position spans for unchanged/move node; got {len(spans)}."
+        f"Expected one or two position spans for plain/move node; got {len(spans)}."
     )
 
     if len(spans) == 1:
