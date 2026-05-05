@@ -15,6 +15,12 @@ from .core.validation import (
     validate_visualization_payload,
     validate_xml_span_index,
 )
+from .core.validation import (
+    validate_annotated_srcdiff_and_tree,
+    validate_srcmove_results_match_xml,
+    validate_visualization_payload,
+    validate_xml_span_index,
+)
 
 ProgressCallback = Callable[[str], None]
 
@@ -52,6 +58,13 @@ def build_visualization_payload(
             revision_1_dir=revision_1_dir,
             tmpdir=tmpdir,
             progress=progress,
+        )
+
+        notify_progress(progress, "Validating srcMove results against annotated XML.")
+        validate_srcmove_results_match_xml(
+            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            move_results=move_results,
+            include_skipped_tags=include_skipped_tags,
         )
 
         notify_progress(progress, "Validating annotated srcdiff XML.")
