@@ -13,7 +13,7 @@ import { getSourceSegmentClasses } from "./segmentStyles";
 type XmlPaneProps = {
   title: string;
   subtitle: string;
-  source?: string;
+  source: string;
   selectedSpan: SourceCodeSpan | null | undefined;
   highlights: SourceViewHighlight[];
 };
@@ -21,7 +21,7 @@ type XmlPaneProps = {
 export function XmlPane({
   title,
   subtitle,
-  source = "",
+  source,
   selectedSpan,
   highlights,
 }: XmlPaneProps) {

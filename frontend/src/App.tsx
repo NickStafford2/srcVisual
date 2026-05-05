@@ -12,8 +12,9 @@ import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 export default function App() {
   const srcDiffData = useSrcDiffData();
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
+  const data = srcDiffData.data;
 
-  const files = srcDiffData.data?.files ?? [];
+  const files = data?.files ?? [];
   const selectedFile =
     srcDiffSelection.selectedNodeFileIndex === null
       ? null
@@ -50,54 +51,54 @@ export default function App() {
           onSubmit={srcDiffData.handleSubmit}
         />
 
-        <SrcDiffHighlightProvider
-          value={{
-            highlightedNodes: srcDiffSelection.highlightedNodes,
-            highlightedNodeIds: srcDiffSelection.highlightedNodeIds,
-            highlightedSpans: srcDiffSelection.highlightedSpans,
-            highlightMode: srcDiffSelection.highlightMode,
-            unhighlightNode: srcDiffSelection.unhighlightNode,
-            highlightAllMoves: srcDiffSelection.highlightAllMoves,
-            highlightAllInserts: srcDiffSelection.highlightAllInserts,
-            highlightAllDeletes: srcDiffSelection.highlightAllDeletes,
-            clearHighlights: srcDiffSelection.clearHighlights,
-          }}
-        >
-          <SrcDiffTree
-            files={files}
-            selectedFileIndex={srcDiffSelection.selectedFileIndex}
-            selectedNodeId={srcDiffSelection.selectedNodeId}
-            onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
-            onSelectNode={srcDiffSelection.setSelectedNodeId}
-          />
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SelectedNodeInfo
-              selectedNode={srcDiffSelection.selectedNode}
-              selectedFilename={selectedFile?.filename ?? null}
-              selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
-              selectedSpans={srcDiffSelection.selectedSpans}
+        {data ? (
+          <SrcDiffHighlightProvider
+            value={{
+              highlightedNodes: srcDiffSelection.highlightedNodes,
+              highlightedNodeIds: srcDiffSelection.highlightedNodeIds,
+              highlightedSpans: srcDiffSelection.highlightedSpans,
+              highlightMode: srcDiffSelection.highlightMode,
+              unhighlightNode: srcDiffSelection.unhighlightNode,
+              highlightAllMoves: srcDiffSelection.highlightAllMoves,
+              highlightAllInserts: srcDiffSelection.highlightAllInserts,
+              highlightAllDeletes: srcDiffSelection.highlightAllDeletes,
+              clearHighlights: srcDiffSelection.clearHighlights,
+            }}
+          >
+            <SrcDiffTree
+              files={files}
+              selectedFileIndex={srcDiffSelection.selectedFileIndex}
+              selectedNodeId={srcDiffSelection.selectedNodeId}
+              onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
+              onSelectNode={srcDiffSelection.setSelectedNodeId}
             />
 
-            <HighlightedNodeInfo />
-          </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <SelectedNodeInfo
+                selectedNode={srcDiffSelection.selectedNode}
+                selectedFilename={selectedFile?.filename ?? null}
+                selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
+                selectedSpans={srcDiffSelection.selectedSpans}
+              />
 
-          <XmlPane
-            title="srcDiff XML"
-            subtitle="Annotated XML returned by the backend"
-            source={
-              srcDiffData.data?.annotated_srcdiff_xml ?? srcDiffData.xmlInput
-            }
-            selectedSpan={srcDiffSelection.selectedSpans.xmlSpan}
-            highlights={xmlHighlights}
-          />
+              <HighlightedNodeInfo />
+            </div>
 
-          <SourceSection
-            files={files}
-            focusedFileIndex={srcDiffSelection.selectedFileIndex}
-            selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
-          />
-        </SrcDiffHighlightProvider>
+            <XmlPane
+              title="srcDiff XML"
+              subtitle="Annotated XML returned by the backend"
+              source={data.annotated_srcdiff_xml}
+              selectedSpan={srcDiffSelection.selectedSpans.xmlSpan}
+              highlights={xmlHighlights}
+            />
+
+            <SourceSection
+              files={files}
+              focusedFileIndex={srcDiffSelection.selectedFileIndex}
+              selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
+            />
+          </SrcDiffHighlightProvider>
+        ) : null}
       </div>
     </main>
   );
