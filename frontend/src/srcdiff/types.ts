@@ -55,6 +55,7 @@ export interface ViewerLineSegment {
   kind: HighlightKind;
   highlighted: boolean;
   nodeId?: string | null;
+  moveId?: string | null;
 }
 
 export interface ViewerLine {

@@ -1,0 +1,116 @@
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import type { SourceRevision } from "../../../srcdiff/lineLinks";
+import type {
+  MoveSegmentRegistration,
+  RegisterMoveSegment,
+} from "./moveConnectors";
+import type { MoveConnectorPath } from "./MoveConnectorOverlay";
+
+type MoveSegmentElements = {
+  "revision-0"?: HTMLElement;
+  "revision-1"?: HTMLElement;
+};
+
+export function useMoveConnectorOverlay() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const segmentElementsByMoveIdRef = useRef<Map<string, MoveSegmentElements>>(
+    new Map(),
+  );
+  const [paths, setPaths] = useState<MoveConnectorPath[]>([]);
+
+  const updatePaths = useCallback(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      setPaths([]);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const nextPaths: MoveConnectorPath[] = [];
+
+    for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
+      const from = elements["revision-0"];
+      const to = elements["revision-1"];
+
+      if (!from || !to) {
+        continue;
+      }
+
+      const fromRect = from.getBoundingClientRect();
+      const toRect = to.getBoundingClientRect();
+
+      const start = {
+        x: fromRect.right - containerRect.left,
+        y: fromRect.top + fromRect.height / 2 - containerRect.top,
+      };
+
+      const end = {
+        x: toRect.left - containerRect.left,
+        y: toRect.top + toRect.height / 2 - containerRect.top,
+      };
+
+      const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
+
+      nextPaths.push({
+        key: moveId,
+        d: [
+          `M ${start.x} ${start.y}`,
+          `C ${start.x + controlOffset} ${start.y}`,
+          `${end.x - controlOffset} ${end.y}`,
+          `${end.x} ${end.y}`,
+        ].join(" "),
+      });
+    }
+
+    setPaths(nextPaths);
+  }, []);
+
+  const registerMoveSegment = useCallback(
+    ({ moveId, revision, element }: MoveSegmentRegistration) => {
+      const current = segmentElementsByMoveIdRef.current.get(moveId) ?? {};
+
+      if (element) {
+        current[revision] = element;
+        segmentElementsByMoveIdRef.current.set(moveId, current);
+      } else {
+        delete current[revision];
+
+        if (!current["revision-0"] && !current["revision-1"]) {
+          segmentElementsByMoveIdRef.current.delete(moveId);
+        } else {
+          segmentElementsByMoveIdRef.current.set(moveId, current);
+        }
+      }
+
+      requestAnimationFrame(updatePaths);
+    },
+    [updatePaths],
+  );
+
+  useLayoutEffect(() => {
+    updatePaths();
+
+    window.addEventListener("resize", updatePaths);
+    window.addEventListener("scroll", updatePaths, true);
+
+    const resizeObserver = new ResizeObserver(updatePaths);
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updatePaths);
+      window.removeEventListener("scroll", updatePaths, true);
+      resizeObserver.disconnect();
+    };
+  }, [updatePaths]);
+
+  return {
+    containerRef,
+    paths,
+    registerMoveSegment: registerMoveSegment as RegisterMoveSegment,
+    updatePaths,
+  };
+}

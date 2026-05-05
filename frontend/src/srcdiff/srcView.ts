@@ -7,6 +7,7 @@ import type {
 
 export type SourceViewHighlight = {
   nodeId: string;
+  moveId?: string | null;
   kind: HighlightKind;
   span: SourceCodeSpan | null | undefined;
 };
@@ -18,6 +19,7 @@ type LineSlice = {
 
 type LineHighlight = {
   nodeId: string;
+  moveId?: string | null;
   kind: HighlightKind;
   span: SourceCodeSpan;
 };
@@ -65,6 +67,7 @@ function buildPlainViewerLine(
         kind: "plain",
         highlighted: false,
         nodeId: null,
+        moveId: null,
       },
     ],
     hasHighlight: false,
@@ -84,6 +87,7 @@ function buildHighlightedSegments(
 
       return {
         nodeId: highlight.nodeId,
+        moveId: highlight.moveId ?? null,
         kind: highlight.kind,
         startIndex,
         endIndex,
@@ -105,6 +109,7 @@ function buildHighlightedSegments(
         kind: "plain",
         highlighted: false,
         nodeId: null,
+        moveId: null,
       });
     }
 
@@ -116,6 +121,7 @@ function buildHighlightedSegments(
       kind: slice.kind,
       highlighted: true,
       nodeId: slice.nodeId,
+      moveId: slice.moveId,
     });
 
     cursor = highlightEnd;
@@ -127,6 +133,7 @@ function buildHighlightedSegments(
       kind: "plain",
       highlighted: false,
       nodeId: null,
+      moveId: null,
     });
   }
 
@@ -151,6 +158,7 @@ function getHighlightsForLine(
     return [
       {
         nodeId: highlight.nodeId,
+        moveId: highlight.moveId ?? null,
         kind: highlight.kind,
         span: {
           start_line: lineNumber,

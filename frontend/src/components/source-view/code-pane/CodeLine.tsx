@@ -6,6 +6,7 @@ import {
 } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { CodeSegment } from "./CodeSegment";
+import type { RegisterMoveSegment } from "./moveConnectors";
 
 export type SourceViewLine = {
   number: number;
@@ -18,9 +19,16 @@ type CodeLineProps = {
   revision: SourceRevision;
   title: string;
   line: SourceViewLine;
+  registerMoveSegment?: RegisterMoveSegment;
 };
 
-export function CodeLine({ fileIndex, revision, title, line }: CodeLineProps) {
+export function CodeLine({
+  fileIndex,
+  revision,
+  title,
+  line,
+  registerMoveSegment,
+}: CodeLineProps) {
   const lineTargetId = buildSourceLineTargetId(
     fileIndex,
     revision,
@@ -51,7 +59,9 @@ export function CodeLine({ fileIndex, revision, title, line }: CodeLineProps) {
         {line.segments.map((segment, segmentIndex) => (
           <CodeSegment
             key={`${segment.nodeId ?? "plain"}-${segmentIndex}`}
+            revision={revision}
             segment={segment}
+            registerMoveSegment={registerMoveSegment}
           />
         ))}
       </span>

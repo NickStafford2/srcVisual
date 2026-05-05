@@ -9,6 +9,7 @@ export type SrcDiffSelectionSpans = {
 
 export type SrcDiffHighlight = SrcDiffSelectionSpans & {
   nodeId: string;
+  moveId: string | null;
   fileIndex: number;
   unitId: number;
   filename: string;
@@ -33,6 +34,7 @@ export function getNodeHighlight(
 ): SrcDiffHighlight {
   return {
     nodeId: node.id,
+    moveId: node.move_id ?? null,
     fileIndex,
     unitId,
     filename,
@@ -77,8 +79,12 @@ function mergeSpans(spans: SourceCodeSpan[]): SourceCodeSpan {
       ? span
       : best,
   );
+
   const end = spans.reduce((best, span) =>
-    compareSpanPoints([span.end_line, span.end_col], [best.end_line, best.end_col]) > 0
+    compareSpanPoints(
+      [span.end_line, span.end_col],
+      [best.end_line, best.end_col],
+    ) > 0
       ? span
       : best,
   );

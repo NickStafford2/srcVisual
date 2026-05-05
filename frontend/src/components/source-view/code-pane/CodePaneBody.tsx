@@ -2,12 +2,14 @@ import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { SourceViewLine } from "./CodeLine";
 import { CodeLine } from "./CodeLine";
 import { getCodePaneBodyStyle } from "./codePaneStyles";
+import type { RegisterMoveSegment } from "./moveConnectors";
 
 type CodePaneBodyProps = {
   fileIndex: number;
   revision: SourceRevision;
   title: string;
   lines: SourceViewLine[];
+  registerMoveSegment?: RegisterMoveSegment;
 };
 
 export function CodePaneBody({
@@ -15,6 +17,7 @@ export function CodePaneBody({
   revision,
   title,
   lines,
+  registerMoveSegment,
 }: CodePaneBodyProps) {
   return (
     <div
@@ -33,6 +36,7 @@ export function CodePaneBody({
             revision={revision}
             title={title}
             line={line}
+            registerMoveSegment={registerMoveSegment}
           />
         ))
       )}

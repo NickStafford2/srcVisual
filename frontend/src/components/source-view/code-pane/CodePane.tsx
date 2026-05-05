@@ -5,6 +5,7 @@ import { buildSourceView } from "../../../srcdiff/srcView";
 import { CodePaneBody } from "./CodePaneBody";
 import { CodePaneHeader } from "./CodePaneHeader";
 import { getCodePaneSurfaceStyle } from "./codePaneStyles";
+import type { RegisterMoveSegment } from "./moveConnectors";
 
 type CodePaneProps = {
   fileIndex: number;
@@ -13,6 +14,7 @@ type CodePaneProps = {
   subtitle: string;
   source?: string;
   highlights: SourceViewHighlight[];
+  registerMoveSegment?: RegisterMoveSegment;
 };
 
 export function CodePane({
@@ -22,6 +24,7 @@ export function CodePane({
   subtitle,
   source = "",
   highlights,
+  registerMoveSegment,
 }: CodePaneProps) {
   const lines = useMemo(
     () => buildSourceView(source, highlights),
@@ -40,6 +43,7 @@ export function CodePane({
         revision={revision}
         title={title}
         lines={lines}
+        registerMoveSegment={registerMoveSegment}
       />
     </article>
   );

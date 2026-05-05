@@ -2,6 +2,8 @@ import type { VisualizedFile } from "../../types";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
 import { CodePane } from "./code-pane/CodePane";
+import { MoveConnectorOverlay } from "./code-pane/MoveConnectorOverlay";
+import { useMoveConnectorOverlay } from "./code-pane/useMoveConnectorOverlay";
 
 type SourceFileCardProps = {
   fileIndex: number;
@@ -18,6 +20,9 @@ export function SourceFileCard({
   isSelectedNodeFile,
   highlightedSpans,
 }: SourceFileCardProps) {
+  const { containerRef, paths, registerMoveSegment } =
+    useMoveConnectorOverlay();
+
   for (const highlight of highlightedSpans) {
     if (highlight.unitId !== file.unit_id) {
       throw new Error(
@@ -39,6 +44,7 @@ export function SourceFileCard({
       return [
         {
           nodeId: highlight.nodeId,
+          moveId: highlight.moveId,
           kind: highlight.kind,
           span: highlight.revision0Span,
         },
@@ -53,6 +59,7 @@ export function SourceFileCard({
       return [
         {
           nodeId: highlight.nodeId,
+          moveId: highlight.moveId,
           kind: highlight.kind,
           span: highlight.revision1Span,
         },
@@ -104,24 +111,30 @@ export function SourceFileCard({
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <CodePane
-          fileIndex={fileIndex}
-          revision="revision-0"
-          title="Revision 0"
-          subtitle={`${file.filename} revision 0`}
-          source={file.revision_0_source_code}
-          highlights={revision0Highlights}
-        />
+      <div ref={containerRef} className="relative">
+        <MoveConnectorOverlay paths={paths} />
 
-        <CodePane
-          fileIndex={fileIndex}
-          revision="revision-1"
-          title="Revision 1"
-          subtitle={`${file.filename} revision 1`}
-          source={file.revision_1_source_code}
-          highlights={revision1Highlights}
-        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <CodePane
+            fileIndex={fileIndex}
+            revision="revision-0"
+            title="Revision 0"
+            subtitle={`${file.filename} revision 0`}
+            source={file.revision_0_source_code}
+            highlights={revision0Highlights}
+            registerMoveSegment={registerMoveSegment}
+          />
+
+          <CodePane
+            fileIndex={fileIndex}
+            revision="revision-1"
+            title="Revision 1"
+            subtitle={`${file.filename} revision 1`}
+            source={file.revision_1_source_code}
+            highlights={revision1Highlights}
+            registerMoveSegment={registerMoveSegment}
+          />
+        </div>
       </div>
     </article>
   );
