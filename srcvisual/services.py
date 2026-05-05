@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from typing import Callable
@@ -41,7 +42,7 @@ def build_visualization_payload(
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
-        annotated_srcdiff_xml = build_annotated_srcdiff_xml(
+        annotated_srcdiff_xml, move_results = build_annotated_srcdiff_xml(
             revision_0_dir=revision_0_dir,
             revision_1_dir=revision_1_dir,
             tmpdir=tmpdir,
@@ -65,6 +66,7 @@ def build_visualization_payload(
         return VisualizationPayload(
             source_filename=filename,
             annotated_srcdiff_xml=annotated_srcdiff_xml,
+            move_results=move_results,
             has_position_data=has_position_data,
             files=visualized_files,
         )
@@ -81,9 +83,10 @@ def build_annotated_srcdiff_xml(
     revision_1_dir: Path,
     tmpdir: Path,
     progress: ProgressCallback | None = None,
-) -> str:
+) -> tuple[str, dict[str, object]]:
     positioned_path = tmpdir / "positioned.srcdiff.xml"
     annotated_path = tmpdir / "annotated.srcdiff.xml"
+    results_path = tmpdir / "results.json"
 
     notify_progress(progress, "Running srcdiff with position data.")
     run_command(
@@ -98,7 +101,18 @@ def build_annotated_srcdiff_xml(
     )
 
     notify_progress(progress, "Running srcMove annotations.")
-    run_command(["srcMove", str(positioned_path), str(annotated_path)])
+    run_command(
+        [
+            "srcMove",
+            str(positioned_path),
+            str(annotated_path),
+            "--results",
+            str(results_path),
+        ]
+    )
     notify_progress(progress, "Reading annotated srcdiff output.")
 
-    return annotated_path.read_text(encoding="utf-8")
+    return (
+        annotated_path.read_text(encoding="utf-8"),
+        json.loads(results_path.read_text(encoding="utf-8")),
+    )

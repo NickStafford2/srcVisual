@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 
 @dataclass(frozen=True)
@@ -122,6 +122,7 @@ class VisualizedFile:
 class VisualizationPayload:
     source_filename: str
     annotated_srcdiff_xml: str
+    move_results: dict[str, Any]
     has_position_data: bool
     files: tuple[VisualizedFile, ...]
 
@@ -129,6 +130,7 @@ class VisualizationPayload:
         return {
             "source_filename": self.source_filename,
             "annotated_srcdiff_xml": self.annotated_srcdiff_xml,
+            "move_results": self.move_results,
             "units": len(self.files),
             "has_position_data": self.has_position_data,
             "files": [file.to_dict() for file in self.files],

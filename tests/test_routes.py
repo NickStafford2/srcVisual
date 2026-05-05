@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import srcvisual.routes as routes_module
 from srcvisual.app import create_app
+from srcvisual.core.models import RevisionFile, VisualizationPayload, VisualizedFile
 
 
 def test_visualize_events_requires_token() -> None:
@@ -65,3 +67,71 @@ def test_get_example_rejects_unknown_filename(
     response = client.get("/api/examples/../secret.xml")
 
     assert response.status_code == 404
+
+
+def test_visualize_returns_move_results(monkeypatch) -> None:
+    def fake_build_visualization_payload(**kwargs) -> VisualizationPayload:
+        del kwargs
+        return VisualizationPayload(
+            source_filename="example.xml",
+            annotated_srcdiff_xml="<unit />",
+            move_results={
+                "move_count": 1,
+                "moves": [
+                    {
+                        "move_id": "move-1",
+                        "from_xpaths": ["/src:unit[1]/diff:delete[1]"],
+                        "to_xpaths": ["/src:unit[1]/diff:insert[1]"],
+                        "from_raw_texts": ["int a;"],
+                        "to_raw_texts": ["int a;"],
+                    }
+                ],
+                "annotated_regions": 2,
+                "regions_total": 2,
+                "candidates_total": 2,
+                "groups_total": 1,
+            },
+            has_position_data=True,
+            files=(
+                VisualizedFile(
+                    revision_file=RevisionFile(
+                        unit=1,
+                        filename="a.cpp",
+                        language="C++",
+                        revision_0_source_code="int a;\n",
+                        revision_1_source_code="int a;\n",
+                    ),
+                    tree=None,
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        routes_module,
+        "build_visualization_payload",
+        fake_build_visualization_payload,
+    )
+
+    client = create_app().test_client()
+    response = client.post(
+        "/api/visualize",
+        data={"srcdiff_xml": "<unit />"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["move_results"] == {
+        "move_count": 1,
+        "moves": [
+            {
+                "move_id": "move-1",
+                "from_xpaths": ["/src:unit[1]/diff:delete[1]"],
+                "to_xpaths": ["/src:unit[1]/diff:insert[1]"],
+                "from_raw_texts": ["int a;"],
+                "to_raw_texts": ["int a;"],
+            }
+        ],
+        "annotated_regions": 2,
+        "regions_total": 2,
+        "candidates_total": 2,
+        "groups_total": 1,
+    }
