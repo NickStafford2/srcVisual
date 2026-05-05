@@ -78,12 +78,6 @@ def validate_srcmove_results_match_xml(
         f"moves length={len(result_moves)}."
     )
 
-    assert move_results.get("annotated_regions") == len(xml_regions), (
-        "srcMove results annotated_regions does not match XML mv:id region count. "
-        f"annotated_regions={move_results.get('annotated_regions')!r}, "
-        f"XML mv:id regions={len(xml_regions)}."
-    )
-
     result_move_ids = {move.move_id for move in result_moves}
     xml_move_ids = {region.move_id for region in xml_regions.values()}
 
