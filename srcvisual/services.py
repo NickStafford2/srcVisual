@@ -12,6 +12,7 @@ from .core.commands import run_command
 from .core.filenames import sanitize_filename
 from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
 from .core.namespaces import POS_END, POS_START, SRC_NS
+from .core.pruning import prune_unchanged_visualized_files
 from .core.srcdiff_attributes import MV_ID
 from .core.tree_builder import build_tree_index
 from .core.validation import (
@@ -106,7 +107,7 @@ def build_visualization_payload(
             tree_by_unit=tree_by_unit,
         )
 
-        notify_progress(progress, "Validating annotated XML against tree data.")
+        notify_progress(progress, "Validating annotated XML against full tree data.")
         validate_annotated_srcdiff_and_tree(
             annotated_srcdiff_xml=annotated_srcdiff_xml,
             revision_files=revision_files,
@@ -114,18 +115,35 @@ def build_visualization_payload(
             include_skipped_tags=include_skipped_tags,
         )
 
-        payload_result = VisualizationPayload(
-            source_filename=filename,
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
-            move_results=move_results,
-            has_position_data=has_position_data,
-            files=visualized_files,
-        )
+    full_payload_result = VisualizationPayload(
+        source_filename=filename,
+        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        move_results=move_results,
+        has_position_data=has_position_data,
+        files=visualized_files,
+    )
 
-        notify_progress(progress, "Validating visualization payload.")
-        validate_visualization_payload(payload_result)
+    notify_progress(progress, "Validating full visualization payload.")
+    validate_visualization_payload(full_payload_result)
 
-        return payload_result
+    original_file_count = len(visualized_files)
+
+    notify_progress(progress, "Pruning unchanged files from visualization payload.")
+    visualized_files = prune_unchanged_visualized_files(visualized_files)
+
+    pruned_file_count = original_file_count - len(visualized_files)
+    notify_progress(
+        progress,
+        f"Pruned {pruned_file_count} unchanged file(s).",
+    )
+
+    return VisualizationPayload(
+        source_filename=filename,
+        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        move_results=move_results,
+        has_position_data=has_position_data,
+        files=visualized_files,
+    )
 
 
 def is_strict_srcmove_validation_enabled() -> bool:
