@@ -130,7 +130,6 @@ def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
     assert move_id is not None, (
         f"Found mv:from/mv:to without mv:id on {prefixed_name(element.tag)}."
     )
-
     assert move_id, f"Empty mv:id on {prefixed_name(element.tag)}."
 
     from_paths = parse_move_path_list(from_value)

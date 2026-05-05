@@ -12,11 +12,6 @@ from .core.models import VisualizationPayload, VisualizedFile
 from .core.tree_builder import build_tree_index
 from .core.validation import (
     validate_annotated_srcdiff_and_tree,
-    validate_visualization_payload,
-    validate_xml_span_index,
-)
-from .core.validation import (
-    validate_annotated_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
     validate_xml_span_index,
@@ -87,7 +82,7 @@ def build_visualization_payload(
             for revision_file in revision_files
         )
 
-        notify_progress(progress, "Validating srcMove annotations against tree data.")
+        notify_progress(progress, "Validating annotated XML against tree data.")
         validate_annotated_srcdiff_and_tree(
             annotated_srcdiff_xml=annotated_srcdiff_xml,
             revision_files=revision_files,
