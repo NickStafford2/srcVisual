@@ -1,0 +1,16 @@
+services:
+  srcvisual:
+    build:
+      context: ..
+      dockerfile: srcVisual/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: "5000"
+      SRCVISUAL_COMMAND_TIMEOUT_SECONDS: "30"
+      SRCVISUAL_MAX_CONTENT_LENGTH_MB: "32"
+      SRCVISUAL_GUNICORN_WORKERS: "2"
+      SRCVISUAL_GUNICORN_THREADS: "4"
+      SRCVISUAL_GUNICORN_TIMEOUT_SECONDS: "120"
+    tmpfs:
+      - /tmp
