@@ -17,15 +17,22 @@ class BackendCommandError(Exception):
     stdout: str
     stderr: str
     missing_command: str | None = None
+    timed_out: bool = False
+    timeout_seconds: float | None = None
 
     def user_message(self) -> str:
         if self.missing_command:
             return f"Required command not found on PATH: {self.missing_command}"
 
+        command = " ".join(self.argv)
+
+        if self.timed_out:
+            timeout = self.timeout_seconds if self.timeout_seconds is not None else "?"
+            return f"Backend command timed out after {timeout} seconds: `{command}`"
+
         details = (
             self.stderr.strip() or self.stdout.strip() or "Unknown command failure."
         )
-        command = " ".join(self.argv)
 
         return f"Backend command failed while running `{command}`: {details}"
 
