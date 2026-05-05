@@ -111,8 +111,8 @@ export default function App() {
               files={files}
               focusedFileIndex={srcDiffSelection.selectedFileIndex}
               selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
-              highlightedSpansByFileIndex={
-                srcDiffSelection.sourceHighlightedSpansByFileIndex
+              highlightedSpansByUnitId={
+                srcDiffSelection.sourceHighlightedSpansByUnitId
               }
             />
           </SrcDiffHighlightProvider>

@@ -6,20 +6,20 @@ type SourceSectionProps = {
   files: VisualizedFile[];
   focusedFileIndex: number;
   selectedNodeFileIndex: number | null;
-  highlightedSpansByFileIndex: Map<number, SrcDiffHighlight[]>;
+  highlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
 };
 
 export function SourceSection({
   files,
   focusedFileIndex,
   selectedNodeFileIndex,
-  highlightedSpansByFileIndex,
+  highlightedSpansByUnitId,
 }: SourceSectionProps) {
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="space-y-4">
         {files.map((file, index) => {
-          const fileHighlights = highlightedSpansByFileIndex.get(index) ?? [];
+          const fileHighlights = highlightedSpansByUnitId.get(file.unit_id) ?? [];
 
           return (
             <SourceFileCard

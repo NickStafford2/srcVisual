@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type {
-  MoveSourceHighlight,
-  VisualizeResponse,
-  VisualizedFile,
-} from "../types";
+import type { SrcMoveRecord, VisualizeResponse, VisualizedFile } from "../types";
 import type { HighlightMode } from "./highlightContext";
 import type { HighlightKind, SrcDiffTreeNode } from "./types";
 import {
@@ -12,7 +8,11 @@ import {
   type SrcDiffHighlight,
   type SrcDiffSelectionSpans,
 } from "./selection";
-import { buildForestTreeIndex } from "./treeIndex";
+import {
+  buildForestTreeIndex,
+  type TreeIndex,
+  type TreeIndexEntry,
+} from "./treeIndex";
 
 export type SrcDiffSelectionState = {
   moveNodesById: Map<
@@ -37,7 +37,7 @@ export type SrcDiffSelectionState = {
   }[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
-  sourceHighlightedSpansByFileIndex: Map<number, SrcDiffHighlight[]>;
+  sourceHighlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
   highlightMode: HighlightMode;
   unhighlightNode: (nodeId: string) => void;
   setSelectedFileIndex: (index: number) => void;
@@ -62,24 +62,23 @@ export function useSrcDiffSelection(
 
   const files = data?.files ?? [];
   const selectedFile = files[selectedFileIndex] ?? null;
-
   const treeIndex = useMemo(() => buildForestTreeIndex(files), [files]);
-  const treeEntries = useMemo(
-    () => Array.from(treeIndex.entries()),
-    [treeIndex],
-  );
+  const treeEntries = useMemo(() => Array.from(treeIndex.entries()), [treeIndex]);
 
   const selectedNodeEntry = selectedNodeId
     ? (treeIndex.get(selectedNodeId) ?? null)
     : null;
-
   const selectedNode = selectedNodeEntry?.node ?? null;
   const selectedNodeFileIndex = selectedNodeEntry?.fileIndex ?? null;
   const selectedMoveId = selectedNode?.move_id ?? null;
-
   const selectedSpans = useMemo(
     () => getSelectionSpans(selectedNode),
     [selectedNode],
+  );
+
+  const moveEntriesById = useMemo(
+    () => buildMoveEntriesById(data?.move_results.moves ?? [], treeIndex),
+    [data?.move_results.moves, treeIndex],
   );
 
   const moveNodesById = useMemo(() => {
@@ -92,51 +91,56 @@ export function useSrcDiffSelection(
       }[]
     >();
 
-    for (const [, entry] of treeEntries) {
-      if (!entry.node.move_id) {
-        continue;
-      }
-
-      const nodes = next.get(entry.node.move_id) ?? [];
-      nodes.push({
-        node: entry.node,
-        fileIndex: entry.fileIndex,
-        filename: files[entry.fileIndex]?.filename ?? null,
-      });
-      next.set(entry.node.move_id, nodes);
-    }
-
-    return next;
-  }, [files, treeEntries]);
-
-  const baseHighlightedEntries = useMemo(() => {
-    if (highlightMode === "all-moves") {
-      return treeEntries.filter(([, entry]) => entry.node.kind === "move");
-    }
-
-    if (highlightMode === "all-inserts") {
-      return treeEntries.filter(([, entry]) => entry.node.kind === "insert");
-    }
-
-    if (highlightMode === "all-deletes") {
-      return treeEntries.filter(([, entry]) => entry.node.kind === "delete");
-    }
-
-    if (!selectedNodeId || !selectedNodeEntry) {
-      return [];
-    }
-
-    const selectedMoveId = selectedNodeEntry.node.move_id;
-
-    if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
-      return treeEntries.filter(
-        ([, entry]) =>
-          entry.node.kind === "move" && entry.node.move_id === selectedMoveId,
+    for (const [moveId, entries] of moveEntriesById) {
+      next.set(
+        moveId,
+        entries.map((entry) => ({
+          node: entry.node,
+          fileIndex: entry.fileIndex,
+          filename: entry.filename,
+        })),
       );
     }
 
-    return [[selectedNodeId, selectedNodeEntry]] as typeof treeEntries;
-  }, [highlightMode, selectedNodeId, selectedNodeEntry, treeEntries]);
+    return next;
+  }, [moveEntriesById]);
+
+  const baseHighlightedEntries = useMemo(() => {
+    if (highlightMode === "all-moves") {
+      return dedupeEntries(
+        Array.from(moveEntriesById.values()).flatMap((entries) => entries),
+      );
+    }
+
+    if (highlightMode === "all-inserts") {
+      return treeEntries
+        .filter(([, entry]) => entry.node.kind === "insert")
+        .map(([, entry]) => entry);
+    }
+
+    if (highlightMode === "all-deletes") {
+      return treeEntries
+        .filter(([, entry]) => entry.node.kind === "delete")
+        .map(([, entry]) => entry);
+    }
+
+    if (!selectedNodeEntry || !selectedNodeId) {
+      return [];
+    }
+
+    if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
+      return moveEntriesById.get(selectedMoveId) ?? [selectedNodeEntry];
+    }
+
+    return [selectedNodeEntry];
+  }, [
+    highlightMode,
+    moveEntriesById,
+    selectedMoveId,
+    selectedNodeEntry,
+    selectedNodeId,
+    treeEntries,
+  ]);
 
   const highlightedEntries = useMemo(() => {
     if (suppressedHighlightedNodeIds.size === 0) {
@@ -144,68 +148,50 @@ export function useSrcDiffSelection(
     }
 
     return baseHighlightedEntries.filter(
-      ([nodeId]) => !suppressedHighlightedNodeIds.has(nodeId),
+      (entry) => !suppressedHighlightedNodeIds.has(entry.node.id),
     );
   }, [baseHighlightedEntries, suppressedHighlightedNodeIds]);
 
-  const highlightedNodeIds = useMemo(() => {
-    return new Set(highlightedEntries.map(([nodeId]) => nodeId));
-  }, [highlightedEntries]);
-
-  const highlightedNodes = useMemo(() => {
-    return highlightedEntries.map(([, entry]) => ({
-      node: entry.node,
-      fileIndex: entry.fileIndex,
-      filename: files[entry.fileIndex]?.filename ?? null,
-    }));
-  }, [files, highlightedEntries]);
-
-  const highlightedSpans = useMemo<SrcDiffHighlight[]>(() => {
-    return highlightedEntries.map(([, entry]) =>
-      getNodeHighlight(entry.node, entry.fileIndex),
-    );
-  }, [highlightedEntries]);
-
-  const canonicalMoveSourceHighlights = useMemo(
-    () =>
-      (data?.move_source_highlights ?? []).map(
-        convertMoveSourceHighlightToSelectionHighlight,
-      ),
-    [data?.move_source_highlights],
+  const highlightedNodeIds = useMemo(
+    () => new Set(highlightedEntries.map((entry) => entry.node.id)),
+    [highlightedEntries],
   );
 
-  const sourceHighlightedSpansByFileIndex = useMemo(() => {
+  const highlightedNodes = useMemo(
+    () =>
+      highlightedEntries.map((entry) => ({
+        node: entry.node,
+        fileIndex: entry.fileIndex,
+        filename: entry.filename,
+      })),
+    [highlightedEntries],
+  );
+
+  const highlightedSpans = useMemo(
+    () => highlightedEntries.map(buildTreeEntryHighlight),
+    [highlightedEntries],
+  );
+
+  const sourceHighlightedSpansByUnitId = useMemo(() => {
     const next = new Map<number, SrcDiffHighlight[]>();
 
-    const sourceHighlights =
-      highlightMode === "all-moves"
-        ? canonicalMoveSourceHighlights
-        : highlightMode === "selection" &&
-            selectedNodeEntry?.node.kind === "move" &&
-            selectedMoveId
-          ? canonicalMoveSourceHighlights.filter(
-              (highlight) => highlight.moveId === selectedMoveId,
-            )
-          : highlightedEntries.map(([, entry]) => ({
-              moveId: entry.node.move_id ?? entry.node.id,
-              fileIndex: entry.fileIndex,
-              value: getNodeHighlight(entry.node, entry.fileIndex),
-            }));
+    for (const highlight of highlightedSpans) {
+      const matchingFile =
+        files.find((file) => file.unit_id === highlight.unitId) ?? null;
 
-    for (const highlight of sourceHighlights) {
-      const fileHighlights = next.get(highlight.fileIndex) ?? [];
-      fileHighlights.push(highlight.value);
-      next.set(highlight.fileIndex, fileHighlights);
+      assertMatchingFilename(
+        highlight.filename,
+        matchingFile?.filename ?? null,
+        `sourceHighlightedSpansByUnitId unit_id=${highlight.unitId}`,
+      );
+
+      const fileHighlights = next.get(highlight.unitId) ?? [];
+      fileHighlights.push(highlight);
+      next.set(highlight.unitId, fileHighlights);
     }
 
     return next;
-  }, [
-    canonicalMoveSourceHighlights,
-    highlightMode,
-    highlightedEntries,
-    selectedMoveId,
-    selectedNodeEntry,
-  ]);
+  }, [files, highlightedSpans]);
 
   useEffect(() => {
     setSelectedFileIndexState(0);
@@ -261,19 +247,18 @@ export function useSrcDiffSelection(
     setHighlightMode(mode);
     setSuppressedHighlightedNodeIds(new Set());
 
-    const firstMatchingEntry = treeEntries.find(
-      ([, entry]) => entry.node.kind === kind,
-    );
+    const firstMatchingEntry =
+      kind === "move"
+        ? dedupeEntries(Array.from(moveEntriesById.values()).flatMap((entries) => entries))[0]
+        : treeEntries.find(([, entry]) => entry.node.kind === kind)?.[1];
 
     if (!firstMatchingEntry) {
       setSelectedNodeIdState(null);
       return;
     }
 
-    const [firstMatchingNodeId, firstMatchingEntryValue] = firstMatchingEntry;
-
-    setSelectedNodeIdState(firstMatchingNodeId);
-    setSelectedFileIndexState(firstMatchingEntryValue.fileIndex);
+    setSelectedNodeIdState(firstMatchingEntry.node.id);
+    setSelectedFileIndexState(firstMatchingEntry.fileIndex);
   }
 
   function clearHighlights() {
@@ -302,7 +287,7 @@ export function useSrcDiffSelection(
     highlightedNodes,
     highlightedNodeIds,
     highlightedSpans,
-    sourceHighlightedSpansByFileIndex,
+    sourceHighlightedSpansByUnitId,
     highlightMode,
     unhighlightNode,
     setSelectedFileIndex,
@@ -314,38 +299,73 @@ export function useSrcDiffSelection(
   };
 }
 
-function convertMoveSourceHighlightToSelectionHighlight(
-  highlight: MoveSourceHighlight,
-): {
-  moveId: string;
-  fileIndex: number;
-  value: SrcDiffHighlight;
-} {
-  return (
-    highlight.revision === "revision_0"
-      ? {
-          moveId: highlight.move_id,
-          fileIndex: highlight.unit_id - 1,
-          value: {
-            nodeId: highlight.path,
-            fileIndex: highlight.unit_id - 1,
-            kind: "move",
-            xmlSpan: null,
-            revision0Span: highlight.span,
-            revision1Span: null,
-          },
-        }
-      : {
-          moveId: highlight.move_id,
-          fileIndex: highlight.unit_id - 1,
-          value: {
-            nodeId: highlight.path,
-            fileIndex: highlight.unit_id - 1,
-            kind: "move",
-            xmlSpan: null,
-            revision0Span: null,
-            revision1Span: highlight.span,
-          },
-        }
+function buildMoveEntriesById(
+  moves: SrcMoveRecord[],
+  treeIndex: TreeIndex,
+): Map<string, TreeIndexEntry[]> {
+  const next = new Map<string, TreeIndexEntry[]>();
+
+  for (const move of moves) {
+    if (!move.move_id) {
+      continue;
+    }
+
+    const nodeIds = dedupeNodeIds([
+      ...(move.from_node_ids ?? move.from_xpaths),
+      ...(move.to_node_ids ?? move.to_xpaths),
+    ]);
+
+    next.set(
+      move.move_id,
+      dedupeEntries(
+        nodeIds.map((nodeId) => {
+          const entry = treeIndex.get(nodeId) ?? null;
+          if (!entry) {
+            throw new Error(`Missing tree entry for move node_id=${nodeId}.`);
+          }
+          return entry;
+        }),
+      ),
+    );
+  }
+
+  return next;
+}
+
+function buildTreeEntryHighlight(entry: TreeIndexEntry): SrcDiffHighlight {
+  return getNodeHighlight(
+    entry.node,
+    entry.fileIndex,
+    entry.unitId,
+    entry.filename,
   );
+}
+
+function dedupeEntries(entries: TreeIndexEntry[]): TreeIndexEntry[] {
+  const seen = new Set<string>();
+
+  return entries.filter((entry) => {
+    if (seen.has(entry.node.id)) {
+      return false;
+    }
+
+    seen.add(entry.node.id);
+    return true;
+  });
+}
+
+function dedupeNodeIds(nodeIds: string[]): string[] {
+  return Array.from(new Set(nodeIds));
+}
+
+function assertMatchingFilename(
+  expected: string,
+  actual: string | null,
+  context: string,
+) {
+  if (actual !== expected) {
+    throw new Error(
+      `Filename mismatch at ${context}: expected "${expected}", got "${actual}".`,
+    );
+  }
 }

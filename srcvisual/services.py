@@ -9,9 +9,9 @@ from .core.archive import extract_revision_files
 from .core.commands import run_command
 from .core.filenames import sanitize_filename
 from .core.models import VisualizationPayload, VisualizedFile
-from .core.source_highlights import build_move_source_highlights
 from .core.tree_builder import build_tree_index
 from .core.validation import (
+    augment_move_results_with_node_ids,
     validate_annotated_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
@@ -69,14 +69,17 @@ def build_visualization_payload(
             include_skipped_tags=include_skipped_tags,
         )
 
+        notify_progress(progress, "Normalizing move partner node ids.")
+        move_results = augment_move_results_with_node_ids(
+            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            move_results=move_results,
+        )
+
         notify_progress(progress, "Building tree view data.")
         tree_by_unit, has_position_data = build_tree_index(
             annotated_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
-
-        notify_progress(progress, "Building canonical move source highlights.")
-        move_source_highlights = build_move_source_highlights(annotated_srcdiff_xml)
 
         visualized_files = tuple(
             VisualizedFile(
@@ -98,7 +101,6 @@ def build_visualization_payload(
             source_filename=filename,
             annotated_srcdiff_xml=annotated_srcdiff_xml,
             move_results=move_results,
-            move_source_highlights=move_source_highlights,
             has_position_data=has_position_data,
             files=visualized_files,
         )

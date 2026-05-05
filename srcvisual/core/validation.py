@@ -114,6 +114,42 @@ def validate_srcmove_results_match_xml(
     )
 
 
+def augment_move_results_with_node_ids(
+    *,
+    annotated_srcdiff_xml: str,
+    move_results: dict[str, Any],
+) -> dict[str, Any]:
+    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+    parsed_moves = parse_srcmove_result_moves(
+        move_results,
+        filename_to_unit_index=filename_to_unit_index,
+    )
+
+    moves_value = move_results.get("moves")
+    assert isinstance(moves_value, list), "srcMove results must contain moves list."
+    assert len(moves_value) == len(parsed_moves), (
+        "srcMove results length changed while augmenting node ids."
+    )
+
+    normalized_moves: list[dict[str, Any]] = []
+
+    for original_move, parsed_move in zip(moves_value, parsed_moves):
+        assert isinstance(original_move, dict), "srcMove result move must be a dict."
+
+        normalized_moves.append(
+            {
+                **original_move,
+                "from_node_ids": list(parsed_move.from_xpaths),
+                "to_node_ids": list(parsed_move.to_xpaths),
+            }
+        )
+
+    return {
+        **move_results,
+        "moves": normalized_moves,
+    }
+
+
 def validate_annotated_srcdiff_and_tree(
     *,
     annotated_srcdiff_xml: str,
@@ -718,33 +754,6 @@ def validate_visualization_payload(payload: VisualizationPayload) -> None:
     assert payload_dict["annotated_srcdiff_xml"].strip()
 
     assert isinstance(payload_dict["move_results"], dict)
-    assert isinstance(payload_dict["move_source_highlights"], list)
-
-    for index, region in enumerate(payload_dict["move_source_highlights"]):
-        assert isinstance(region, dict), (
-            f"move_source_highlights[{index}] must be a dictionary."
-        )
-        assert isinstance(region.get("path"), str), (
-            f"move_source_highlights[{index}].path must be a string."
-        )
-        assert isinstance(region.get("unit_id"), int), (
-            f"move_source_highlights[{index}].unit_id must be an integer."
-        )
-        assert isinstance(region.get("move_id"), str), (
-            f"move_source_highlights[{index}].move_id must be a string."
-        )
-        assert region.get("revision") in {"revision_0", "revision_1"}, (
-            f"move_source_highlights[{index}].revision must be "
-            "'revision_0' or 'revision_1'."
-        )
-        assert region.get("span") is not None, (
-            f"move_source_highlights[{index}].span must be present."
-        )
-        _ = expect_optional_span_dict(
-            region.get("span"),
-            region.get("path", f"move_source_highlights[{index}]"),
-            "span",
-        )
 
     assert isinstance(payload_dict["has_position_data"], bool)
 

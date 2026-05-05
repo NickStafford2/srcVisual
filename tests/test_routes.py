@@ -4,13 +4,7 @@ from pathlib import Path
 
 import srcvisual.routes as routes_module
 from srcvisual.app import create_app
-from srcvisual.core.models import (
-    RevisionFile,
-    SourceHighlightRegion,
-    SourceSpan,
-    VisualizationPayload,
-    VisualizedFile,
-)
+from srcvisual.core.models import RevisionFile, VisualizationPayload, VisualizedFile
 
 
 def test_visualize_events_requires_token() -> None:
@@ -87,7 +81,9 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
                     {
                         "move_id": "move-1",
                         "from_xpaths": ["/src:unit[1]/diff:delete[1]"],
+                        "from_node_ids": ["/src:unit[1]/diff:delete[1]"],
                         "to_xpaths": ["/src:unit[1]/diff:insert[1]"],
+                        "to_node_ids": ["/src:unit[1]/diff:insert[1]"],
                         "from_raw_texts": ["int a;"],
                         "to_raw_texts": ["int a;"],
                     }
@@ -97,32 +93,6 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
                 "candidates_total": 2,
                 "groups_total": 1,
             },
-            move_source_highlights=(
-                SourceHighlightRegion(
-                    path="/src:unit[1]/diff:delete[1]",
-                    unit_id=1,
-                    move_id="move-1",
-                    revision="revision_0",
-                    span=SourceSpan(
-                        start_line=1,
-                        start_col=1,
-                        end_line=1,
-                        end_col=6,
-                    ),
-                ),
-                SourceHighlightRegion(
-                    path="/src:unit[1]/diff:insert[1]",
-                    unit_id=1,
-                    move_id="move-1",
-                    revision="revision_1",
-                    span=SourceSpan(
-                        start_line=1,
-                        start_col=1,
-                        end_line=1,
-                        end_col=6,
-                    ),
-                ),
-            ),
             has_position_data=True,
             files=(
                 VisualizedFile(
@@ -157,7 +127,9 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
             {
                 "move_id": "move-1",
                 "from_xpaths": ["/src:unit[1]/diff:delete[1]"],
+                "from_node_ids": ["/src:unit[1]/diff:delete[1]"],
                 "to_xpaths": ["/src:unit[1]/diff:insert[1]"],
+                "to_node_ids": ["/src:unit[1]/diff:insert[1]"],
                 "from_raw_texts": ["int a;"],
                 "to_raw_texts": ["int a;"],
             }
@@ -167,29 +139,3 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
         "candidates_total": 2,
         "groups_total": 1,
     }
-    assert response.get_json()["move_source_highlights"] == [
-        {
-            "path": "/src:unit[1]/diff:delete[1]",
-            "unit_id": 1,
-            "move_id": "move-1",
-            "revision": "revision_0",
-            "span": {
-                "start_line": 1,
-                "start_col": 1,
-                "end_line": 1,
-                "end_col": 6,
-            },
-        },
-        {
-            "path": "/src:unit[1]/diff:insert[1]",
-            "unit_id": 1,
-            "move_id": "move-1",
-            "revision": "revision_1",
-            "span": {
-                "start_line": 1,
-                "start_col": 1,
-                "end_line": 1,
-                "end_col": 6,
-            },
-        },
-    ]

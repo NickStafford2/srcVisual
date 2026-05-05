@@ -4,6 +4,8 @@ import type { SrcDiffTreeNode } from "./types";
 export type TreeIndexEntry = {
   node: SrcDiffTreeNode;
   fileIndex: number;
+  unitId: number;
+  filename: string;
 };
 
 export type TreeIndex = Map<string, TreeIndexEntry>;
@@ -22,6 +24,8 @@ export function buildForestTreeIndex(files: VisualizedFile[]): TreeIndex {
       map.set(node.id, {
         node,
         fileIndex,
+        unitId: file.unit_id,
+        filename: file.filename,
       });
 
       for (const child of node.children) {

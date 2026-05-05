@@ -55,27 +55,6 @@ class SourceSpan:
         }
 
 
-SourceRevision = Literal["revision_0", "revision_1"]
-
-
-@dataclass(frozen=True)
-class SourceHighlightRegion:
-    path: str
-    unit_id: int
-    move_id: str
-    revision: SourceRevision
-    span: SourceSpan
-
-    def to_dict(self) -> dict[str, object]:
-        return {
-            "path": self.path,
-            "unit_id": self.unit_id,
-            "move_id": self.move_id,
-            "revision": self.revision,
-            "span": self.span.to_dict(),
-        }
-
-
 TreeNodeKind = Literal["plain", "insert", "delete", "move"]
 
 
@@ -148,7 +127,6 @@ class VisualizationPayload:
     source_filename: str
     annotated_srcdiff_xml: str
     move_results: dict[str, Any]
-    move_source_highlights: tuple[SourceHighlightRegion, ...]
     has_position_data: bool
     files: tuple[VisualizedFile, ...]
 
@@ -157,9 +135,6 @@ class VisualizationPayload:
             "source_filename": self.source_filename,
             "annotated_srcdiff_xml": self.annotated_srcdiff_xml,
             "move_results": self.move_results,
-            "move_source_highlights": [
-                region.to_dict() for region in self.move_source_highlights
-            ],
             "units": len(self.files),
             "has_position_data": self.has_position_data,
             "files": [file.to_dict() for file in self.files],

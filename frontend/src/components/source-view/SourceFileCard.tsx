@@ -18,6 +18,20 @@ export function SourceFileCard({
   isSelectedNodeFile,
   highlightedSpans,
 }: SourceFileCardProps) {
+  for (const highlight of highlightedSpans) {
+    if (highlight.unitId !== file.unit_id) {
+      throw new Error(
+        `Highlight unit mismatch for ${file.filename}: expected unit_id=${file.unit_id}, got unit_id=${highlight.unitId}.`,
+      );
+    }
+
+    if (highlight.filename !== file.filename) {
+      throw new Error(
+        `Highlight filename mismatch for unit_id=${file.unit_id}: expected "${file.filename}", got "${highlight.filename}".`,
+      );
+    }
+  }
+
   const revision0Highlights: SourceViewHighlight[] = highlightedSpans.flatMap(
     (highlight) => {
       if (!highlight.revision0Span) return [];
