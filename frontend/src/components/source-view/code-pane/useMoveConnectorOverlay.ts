@@ -7,9 +7,16 @@ import type {
 import type { MoveConnectorPath } from "./MoveConnectorOverlay";
 
 type MoveSegmentElements = {
-  "revision-0"?: HTMLElement;
-  "revision-1"?: HTMLElement;
+  "revision-0": Set<HTMLElement>;
+  "revision-1": Set<HTMLElement>;
 };
+
+function createMoveSegmentElements(): MoveSegmentElements {
+  return {
+    "revision-0": new Set<HTMLElement>(),
+    "revision-1": new Set<HTMLElement>(),
+  };
+}
 
 export function useMoveConnectorOverlay() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -30,37 +37,41 @@ export function useMoveConnectorOverlay() {
     const nextPaths: MoveConnectorPath[] = [];
 
     for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
-      const from = elements["revision-0"];
-      const to = elements["revision-1"];
+      const fromElements = Array.from(elements["revision-0"]);
+      const toElements = Array.from(elements["revision-1"]);
 
-      if (!from || !to) {
+      if (fromElements.length === 0 || toElements.length === 0) {
         continue;
       }
 
-      const fromRect = from.getBoundingClientRect();
-      const toRect = to.getBoundingClientRect();
+      for (const [fromIndex, from] of fromElements.entries()) {
+        for (const [toIndex, to] of toElements.entries()) {
+          const fromRect = from.getBoundingClientRect();
+          const toRect = to.getBoundingClientRect();
 
-      const start = {
-        x: fromRect.right - containerRect.left,
-        y: fromRect.top + fromRect.height / 2 - containerRect.top,
-      };
+          const start = {
+            x: fromRect.right - containerRect.left,
+            y: fromRect.top + fromRect.height / 2 - containerRect.top,
+          };
 
-      const end = {
-        x: toRect.left - containerRect.left,
-        y: toRect.top + toRect.height / 2 - containerRect.top,
-      };
+          const end = {
+            x: toRect.left - containerRect.left,
+            y: toRect.top + toRect.height / 2 - containerRect.top,
+          };
 
-      const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
+          const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
 
-      nextPaths.push({
-        key: moveId,
-        d: [
-          `M ${start.x} ${start.y}`,
-          `C ${start.x + controlOffset} ${start.y}`,
-          `${end.x - controlOffset} ${end.y}`,
-          `${end.x} ${end.y}`,
-        ].join(" "),
-      });
+          nextPaths.push({
+            key: `${moveId}-${fromIndex}-${toIndex}`,
+            d: [
+              `M ${start.x} ${start.y}`,
+              `C ${start.x + controlOffset} ${start.y}`,
+              `${end.x - controlOffset} ${end.y}`,
+              `${end.x} ${end.y}`,
+            ].join(" "),
+          });
+        }
+      }
     }
 
     setPaths(nextPaths);
@@ -68,15 +79,23 @@ export function useMoveConnectorOverlay() {
 
   const registerMoveSegment = useCallback(
     ({ moveId, revision, element }: MoveSegmentRegistration) => {
-      const current = segmentElementsByMoveIdRef.current.get(moveId) ?? {};
+      const current =
+        segmentElementsByMoveIdRef.current.get(moveId) ??
+        createMoveSegmentElements();
 
       if (element) {
-        current[revision] = element;
+        current[revision].add(element);
         segmentElementsByMoveIdRef.current.set(moveId, current);
       } else {
-        delete current[revision];
+        // React cleanup cannot reliably identify which old element was removed
+        // because this API only receives null. Clear this revision and let the
+        // next mounted highlighted spans re-register themselves.
+        current[revision].clear();
 
-        if (!current["revision-0"] && !current["revision-1"]) {
+        if (
+          current["revision-0"].size === 0 &&
+          current["revision-1"].size === 0
+        ) {
           segmentElementsByMoveIdRef.current.delete(moveId);
         } else {
           segmentElementsByMoveIdRef.current.set(moveId, current);

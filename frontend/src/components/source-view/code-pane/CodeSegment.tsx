@@ -2,7 +2,10 @@ import { useEffect, useRef } from "react";
 import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { getSourceSegmentClasses } from "../segmentStyles";
-import type { RegisterMoveSegment } from "./moveConnectors";
+import type {
+  RegisterMoveSegment,
+  UnregisterMoveSegment,
+} from "./moveConnectors";
 import { MoveTooltip, type MoveTooltipInfo } from "./MoveTooltip";
 import { renderVisibleWhitespace } from "./renderVisibleWhitespace";
 
@@ -10,6 +13,7 @@ type CodeSegmentProps = {
   revision: SourceRevision;
   segment: ViewerLineSegment;
   registerMoveSegment?: RegisterMoveSegment;
+  unregisterMoveSegment?: UnregisterMoveSegment;
   moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
 };
 
@@ -17,6 +21,7 @@ export function CodeSegment({
   revision,
   segment,
   registerMoveSegment,
+  unregisterMoveSegment,
   moveTooltipInfoById,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
@@ -33,24 +38,33 @@ export function CodeSegment({
     : segment.text;
 
   useEffect(() => {
-    if (!isMoveHighlight || !segment.moveId) {
+    if (!isMoveHighlight || !segment.moveId || !ref.current) {
       return;
     }
 
+    const element = ref.current;
+    const moveId = segment.moveId;
+
     registerMoveSegment?.({
-      moveId: segment.moveId,
+      moveId,
       revision,
-      element: ref.current,
+      element,
     });
 
     return () => {
-      registerMoveSegment?.({
-        moveId: segment.moveId!,
+      unregisterMoveSegment?.({
+        moveId,
         revision,
-        element: null,
+        element,
       });
     };
-  }, [isMoveHighlight, registerMoveSegment, revision, segment.moveId]);
+  }, [
+    isMoveHighlight,
+    registerMoveSegment,
+    unregisterMoveSegment,
+    revision,
+    segment.moveId,
+  ]);
 
   if (!isMoveHighlight) {
     return (
@@ -65,7 +79,7 @@ export function CodeSegment({
   return (
     <span
       ref={ref}
-      data-move-id={segment.moveId ?? undefined}
+      data-move-id={segment.moveId}
       className={[
         "group relative inline rounded-md",
         getSourceSegmentClasses(segment.kind, segment.highlighted),

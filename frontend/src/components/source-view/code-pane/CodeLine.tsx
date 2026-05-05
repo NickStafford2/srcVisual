@@ -6,7 +6,10 @@ import {
 } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { CodeSegment } from "./CodeSegment";
-import type { RegisterMoveSegment } from "./moveConnectors";
+import type {
+  RegisterMoveSegment,
+  UnregisterMoveSegment,
+} from "./moveConnectors";
 import type { MoveTooltipInfo } from "./MoveTooltip";
 
 export type SourceViewLine = {
@@ -22,6 +25,7 @@ type CodeLineProps = {
   line: SourceViewLine;
   moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
+  unregisterMoveSegment?: UnregisterMoveSegment;
 };
 
 export function CodeLine({
@@ -31,6 +35,7 @@ export function CodeLine({
   line,
   moveTooltipInfoById,
   registerMoveSegment,
+  unregisterMoveSegment,
 }: CodeLineProps) {
   const lineTargetId = buildSourceLineTargetId(
     fileIndex,
@@ -65,6 +70,7 @@ export function CodeLine({
             revision={revision}
             segment={segment}
             registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
             moveTooltipInfoById={moveTooltipInfoById}
           />
         ))}

@@ -24,7 +24,7 @@ export function SourceFileCard({
   highlightedSpans,
   moveResults,
 }: SourceFileCardProps) {
-  const { containerRef, paths, registerMoveSegment } =
+  const { containerRef, paths, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
 
   const moveTooltipInfoById = useMemo(
@@ -120,7 +120,7 @@ export function SourceFileCard({
         </div>
       </header>
 
-      <div ref={containerRef} className="relative">
+      <div ref={containerRef} className="relative isolate">
         <MoveConnectorOverlay paths={paths} />
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -132,6 +132,7 @@ export function SourceFileCard({
             source={file.revision_0_source_code}
             highlights={revision0Highlights}
             registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
             moveTooltipInfoById={moveTooltipInfoById}
           />
 
@@ -143,6 +144,7 @@ export function SourceFileCard({
             source={file.revision_1_source_code}
             highlights={revision1Highlights}
             registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
             moveTooltipInfoById={moveTooltipInfoById}
           />
         </div>

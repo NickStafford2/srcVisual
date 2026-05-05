@@ -5,7 +5,10 @@ import { buildSourceView } from "../../../srcdiff/srcView";
 import { CodePaneBody } from "./CodePaneBody";
 import { CodePaneHeader } from "./CodePaneHeader";
 import { getCodePaneSurfaceStyle } from "./codePaneStyles";
-import type { RegisterMoveSegment } from "./moveConnectors";
+import type {
+  RegisterMoveSegment,
+  UnregisterMoveSegment,
+} from "./moveConnectors";
 import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneProps = {
@@ -17,6 +20,7 @@ type CodePaneProps = {
   highlights: SourceViewHighlight[];
   moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
+  unregisterMoveSegment?: UnregisterMoveSegment;
 };
 
 export function CodePane({
@@ -28,6 +32,7 @@ export function CodePane({
   highlights,
   moveTooltipInfoById,
   registerMoveSegment,
+  unregisterMoveSegment,
 }: CodePaneProps) {
   const lines = useMemo(
     () => buildSourceView(source, highlights),
@@ -47,6 +52,7 @@ export function CodePane({
         title={title}
         lines={lines}
         registerMoveSegment={registerMoveSegment}
+        unregisterMoveSegment={unregisterMoveSegment}
         moveTooltipInfoById={moveTooltipInfoById}
       />
     </article>

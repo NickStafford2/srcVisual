@@ -2,7 +2,10 @@ import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { SourceViewLine } from "./CodeLine";
 import { CodeLine } from "./CodeLine";
 import { getCodePaneBodyStyle } from "./codePaneStyles";
-import type { RegisterMoveSegment } from "./moveConnectors";
+import type {
+  RegisterMoveSegment,
+  UnregisterMoveSegment,
+} from "./moveConnectors";
 import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneBodyProps = {
@@ -11,6 +14,7 @@ type CodePaneBodyProps = {
   title: string;
   lines: SourceViewLine[];
   registerMoveSegment?: RegisterMoveSegment;
+  unregisterMoveSegment?: UnregisterMoveSegment;
   moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
 };
 
@@ -20,6 +24,7 @@ export function CodePaneBody({
   title,
   lines,
   registerMoveSegment,
+  unregisterMoveSegment,
   moveTooltipInfoById,
 }: CodePaneBodyProps) {
   return (
@@ -40,6 +45,7 @@ export function CodePaneBody({
             title={title}
             line={line}
             registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
             moveTooltipInfoById={moveTooltipInfoById}
           />
         ))
