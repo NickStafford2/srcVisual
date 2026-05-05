@@ -30,7 +30,7 @@ export interface VisualizeResponse {
   source_filename: string;
   annotated_srcdiff_xml: string;
   move_results: SrcMoveResults;
-  units: number;
+  unit_count: number;
   has_position_data: boolean;
   files: VisualizedFile[];
 }
