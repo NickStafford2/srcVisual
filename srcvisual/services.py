@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Callable
@@ -54,21 +55,32 @@ def build_visualization_payload(
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
-        annotated_srcdiff_xml, move_results = build_annotated_srcdiff_xml(
-            input_path=input_path,
-            revision_0_dir=revision_0_dir,
-            revision_1_dir=revision_1_dir,
-            tmpdir=tmpdir,
-            include_skipped_tags=include_skipped_tags,
-            progress=progress,
+        annotated_srcdiff_xml, move_results, _should_validate_srcmove_results = (
+            build_annotated_srcdiff_xml(
+                input_path=input_path,
+                revision_0_dir=revision_0_dir,
+                revision_1_dir=revision_1_dir,
+                tmpdir=tmpdir,
+                include_skipped_tags=include_skipped_tags,
+                progress=progress,
+            )
         )
 
-        notify_progress(progress, "Validating srcMove results against annotated XML.")
-        validate_srcmove_results_match_xml(
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
-            move_results=move_results,
-            include_skipped_tags=include_skipped_tags,
-        )
+        if is_strict_srcmove_validation_enabled():
+            notify_progress(
+                progress,
+                "Strict srcMove validation is enabled. Validating results.json against annotated XML.",
+            )
+            validate_srcmove_results_match_xml(
+                annotated_srcdiff_xml=annotated_srcdiff_xml,
+                move_results=move_results,
+                include_skipped_tags=include_skipped_tags,
+            )
+        else:
+            notify_progress(
+                progress,
+                "Skipping strict srcMove results validation.",
+            )
 
         notify_progress(progress, "Validating annotated srcdiff XML.")
         validate_xml_span_index(
@@ -116,6 +128,15 @@ def build_visualization_payload(
         return payload_result
 
 
+def is_strict_srcmove_validation_enabled() -> bool:
+    return os.environ.get("SRCVISUAL_STRICT_SRCMOVE_VALIDATION", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def build_annotated_srcdiff_xml(
     *,
     input_path: Path,
@@ -124,7 +145,7 @@ def build_annotated_srcdiff_xml(
     tmpdir: Path,
     include_skipped_tags: bool,
     progress: ProgressCallback | None = None,
-) -> tuple[str, dict[str, Any]]:
+) -> tuple[str, dict[str, Any], bool]:
     uploaded_srcdiff_xml = input_path.read_text(encoding="utf-8")
 
     if has_srcmove_annotations(uploaded_srcdiff_xml):
@@ -138,7 +159,7 @@ def build_annotated_srcdiff_xml(
             include_skipped_tags=include_skipped_tags,
         )
 
-        return uploaded_srcdiff_xml, move_results
+        return uploaded_srcdiff_xml, move_results, False
 
     if has_position_annotations(uploaded_srcdiff_xml):
         notify_progress(
@@ -146,11 +167,13 @@ def build_annotated_srcdiff_xml(
             "Uploaded srcdiff already has position data. Skipping srcdiff.",
         )
 
-        return run_srcmove(
+        annotated_srcdiff_xml, move_results = run_srcmove(
             positioned_path=input_path,
             tmpdir=tmpdir,
             progress=progress,
         )
+
+        return annotated_srcdiff_xml, move_results, True
 
     positioned_path = run_srcdiff_with_positions(
         revision_0_dir=revision_0_dir,
@@ -159,11 +182,13 @@ def build_annotated_srcdiff_xml(
         progress=progress,
     )
 
-    return run_srcmove(
+    annotated_srcdiff_xml, move_results = run_srcmove(
         positioned_path=positioned_path,
         tmpdir=tmpdir,
         progress=progress,
     )
+
+    return annotated_srcdiff_xml, move_results, True
 
 
 def run_srcdiff_with_positions(

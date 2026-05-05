@@ -300,7 +300,7 @@ def normalize_srcmove_xpath(
     match = FILENAME_UNIT_PATTERN.match(xpath)
 
     if match is None:
-        return xpath
+        return normalize_src_prefixes_for_internal_path(xpath)
 
     filename = match.group("filename")
     rest = match.group("rest") or ""
@@ -312,7 +312,24 @@ def normalize_srcmove_xpath(
         "filenames exist."
     )
 
-    return f"/src:unit[{filename_to_unit_index[filename]}]{rest}"
+    normalized_xpath = f"/src:unit[{filename_to_unit_index[filename]}]{rest}"
+    return normalize_src_prefixes_for_internal_path(normalized_xpath)
+
+
+def normalize_src_prefixes_for_internal_path(xpath: str) -> str:
+    if not xpath.startswith("/src:unit["):
+        return xpath
+
+    unit_prefix = "/src:unit["
+    close_index = xpath.find("]")
+
+    if close_index == -1:
+        return xpath
+
+    head = xpath[: close_index + 1]
+    tail = xpath[close_index + 1 :]
+
+    return head + tail.replace("/src:", "/").replace("[src:", "[")
 
 
 def normalize_srcmove_xpath_tuple(

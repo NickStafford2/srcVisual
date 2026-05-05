@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
-from .core.models import BackendCommandError
 from .examples import list_example_filenames, read_example_file
 from .progress import progress_broker
 from .services import build_visualization_payload
@@ -61,13 +60,21 @@ def visualize_events() -> Response | tuple[dict[str, str], int]:
 
 @api.post("/visualize")
 def visualize() -> tuple[dict[str, object], int]:
-    try:
-        visualization_request = parse_visualization_request()
+    print("POST /api/visualize received", flush=True)
 
-    except ValueError as exc:
-        return {"error": str(exc)}, 400
-
+    visualization_request = parse_visualization_request()
     progress_token = visualization_request.progress_token
+
+    print(
+        "visualize request parsed:",
+        {
+            "filename": visualization_request.filename,
+            "payload_bytes": len(visualization_request.payload),
+            "include_skipped_tags": visualization_request.include_skipped_tags,
+            "has_progress_token": progress_token is not None,
+        },
+        flush=True,
+    )
 
     try:
         result = build_visualization_payload(
@@ -83,21 +90,15 @@ def visualize() -> tuple[dict[str, object], int]:
                 )
             ),
         )
-    except BackendCommandError as exc:
+    except Exception as exc:
         if progress_token is not None:
-            progress_broker.publish_error(progress_token, exc.user_message())
-        return {"error": exc.user_message()}, 500
-    except ValueError as exc:
-        if progress_token is not None:
-            progress_broker.publish_error(progress_token, str(exc))
-        return {"error": str(exc)}, 400
+            progress_broker.publish_error(
+                progress_token, f"{type(exc).__name__}: {exc}"
+            )
 
-    except AssertionError as exc:
-        message = f"Backend validation failed: {exc}"
-        if progress_token is not None:
-            progress_broker.publish_error(progress_token, message)
+        print("POST /api/visualize crashed; re-raising for Flask debugger", flush=True)
+        raise
 
-        return {"error": message}, 500
     if progress_token is not None:
         progress_broker.publish_complete(progress_token, "Visualization complete.")
 
@@ -107,6 +108,17 @@ def visualize() -> tuple[dict[str, object], int]:
 def parse_visualization_request() -> VisualizationRequest:
     uploaded = request.files.get("srcdiff")
     xml_text = request.form.get("srcdiff_xml", "").strip()
+
+    print(
+        "incoming form:",
+        {
+            "file_keys": list(request.files.keys()),
+            "form_keys": list(request.form.keys()),
+            "has_srcdiff_file": uploaded is not None,
+            "srcdiff_xml_length": len(xml_text),
+        },
+        flush=True,
+    )
 
     if uploaded is None and not xml_text:
         raise ValueError(

@@ -13,8 +13,10 @@ POS_TABS = f"{{{POS_NS}}}tabs"
 MV_ID = f"{{{MV_NS}}}id"
 MV_FROM = f"{{{MV_NS}}}from"
 MV_TO = f"{{{MV_NS}}}to"
+
 PLAIN_MOVE = "move"
 PLAIN_TYPE = "type"
+PLAIN_FORMAT = "format"
 
 
 @dataclass(frozen=True)
@@ -87,6 +89,7 @@ KNOWN_COMMON_ATTRIBUTES = {
     MV_TO,
     PLAIN_MOVE,
     PLAIN_TYPE,
+    PLAIN_FORMAT,
 }
 
 KNOWN_UNIT_ATTRIBUTES = {
@@ -135,7 +138,12 @@ def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
     from_value = element.attrib.get(MV_FROM)
     to_value = element.attrib.get(MV_TO)
 
-    if namespaced_move_id is None and plain_move_id is None and from_value is None and to_value is None:
+    if (
+        namespaced_move_id is None
+        and plain_move_id is None
+        and from_value is None
+        and to_value is None
+    ):
         return None
 
     assert move_id is not None, (
