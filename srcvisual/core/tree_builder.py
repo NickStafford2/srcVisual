@@ -104,6 +104,7 @@ def build_tree_node(
         label=build_node_label(tag, element),
         kind=current_kind,
         move_id=current_move_id,
+        attributes=build_attribute_map(element),
         xml_span=xml_span_by_path.get(path),
         revision_0_span=revision_0_span,
         revision_1_span=revision_1_span,
@@ -140,6 +141,13 @@ def get_current_kind(
         return "insert"
 
     return "plain"
+
+
+def build_attribute_map(element: ET.Element) -> dict[str, str]:
+    return {
+        prefixed_name(attribute_name): attribute_value
+        for attribute_name, attribute_value in sorted(element.attrib.items())
+    }
 
 
 def should_skip_child(

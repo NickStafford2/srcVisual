@@ -64,6 +64,7 @@ class TreeNode:
     label: str
     kind: TreeNodeKind
     move_id: str | None
+    attributes: dict[str, str]
     xml_span: SourceSpan | None
     revision_0_span: SourceSpan | None
     revision_1_span: SourceSpan | None
@@ -77,6 +78,7 @@ class TreeNode:
             "label": self.label,
             "kind": self.kind,
             "move_id": self.move_id,
+            "attributes": self.attributes,
             "xml_span": self.xml_span.to_dict() if self.xml_span else None,
             "revision_0_span": self.revision_0_span.to_dict()
             if self.revision_0_span
