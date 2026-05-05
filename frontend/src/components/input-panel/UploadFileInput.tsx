@@ -24,14 +24,11 @@ export function UploadFileInput({
 }: UploadFileInputProps) {
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-sm font-medium text-slate-100">Upload a srcdiff file</p>
-        <p className="mt-1 text-xs leading-5 text-slate-400">
-          Use this mode when the diff already lives on disk. Supported file
-          types include <code className="text-slate-300">.xml</code> and{" "}
-          <code className="text-slate-300">.srcdiff</code>.
-        </p>
-      </div>
+      <p className="mt-1 text-xs leading-5 text-slate-400">
+        Supported file types include{" "}
+        <code className="text-slate-300">.xml</code> and{" "}
+        <code className="text-slate-300">.srcdiff</code>.
+      </p>
 
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-sky-300/30 bg-sky-300/[0.06] px-5 py-8 text-center transition hover:border-sky-300/45 hover:bg-sky-300/[0.1]">
         <input

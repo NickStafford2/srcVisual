@@ -18,34 +18,27 @@ export function PasteXmlInput({
 }: PasteXmlInputProps) {
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-sm font-medium text-slate-100">Paste srcdiff XML</p>
-        <p className="mt-1 text-xs leading-5 text-slate-400">
-          Use this mode for web-based workflows where you already have srcdiff
-          XML in another tool, tab, or terminal.
-        </p>
-      </div>
-
       <div className="flex flex-wrap gap-2">
+        <span>Example Inputs:</span>
         <SampleButton
           disabled={disabled}
           onClick={() => onXmlInputChange(NESTED_SAMPLE)}
         >
-          Load nested sample
+          Nested
         </SampleButton>
 
         <SampleButton
           disabled={disabled}
           onClick={() => onXmlInputChange(SIMPLE_MOVE_SAMPLE)}
         >
-          Load move sample
+          Move
         </SampleButton>
 
         <SampleButton
           disabled={disabled}
           onClick={() => onXmlInputChange(DELETE_INSERT_SAMPLE)}
         >
-          Load rename sample
+          Rename
         </SampleButton>
       </div>
 
