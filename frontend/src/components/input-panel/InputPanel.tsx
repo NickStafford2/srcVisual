@@ -1,14 +1,13 @@
 import type { FormEvent } from "react";
-import {
-  DELETE_INSERT_SAMPLE,
-  NESTED_SAMPLE,
-  SIMPLE_MOVE_SAMPLE,
-} from "../../samples";
+import type { InputMode } from "../../srcdiff/useSrcDiffData";
 import type { VisualizeResponse } from "../../types";
-import { SampleButton } from "./SampleButton";
+import { InputModeToggle } from "./InputModeToggle";
+import { PasteXmlInput } from "./PasteXmlInput";
 import { StatusPill } from "./StatusPill";
+import { UploadFileInput } from "./UploadFileInput";
 
 type InputPanelProps = {
+  inputMode: InputMode;
   selectedUpload: File | null;
   xmlInput: string;
   isLoading: boolean;
@@ -16,6 +15,7 @@ type InputPanelProps = {
   progressMessage: string | null;
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
+  onInputModeChange: (mode: InputMode) => void;
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
   onIncludeSkippedTagsChange: (value: boolean) => void;
@@ -23,6 +23,7 @@ type InputPanelProps = {
 };
 
 export function InputPanel({
+  inputMode,
   selectedUpload,
   xmlInput,
   isLoading,
@@ -30,6 +31,7 @@ export function InputPanel({
   progressMessage,
   data,
   includeSkippedTags,
+  onInputModeChange,
   onUploadChange,
   onXmlInputChange,
   onIncludeSkippedTagsChange,
@@ -45,47 +47,45 @@ export function InputPanel({
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-300">
-              Choose a srcdiff XML file or paste raw XML. The backend is the
-              source of truth.
+              Pick one input path, then send that srcdiff data to the backend.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-slate-100 transition hover:border-sky-300/40 hover:bg-sky-300/10">
-              <input
-                className="hidden"
-                type="file"
-                accept=".xml,.srcdiff"
-                onChange={(event) =>
-                  onUploadChange(event.target.files?.[0] ?? null)
-                }
-              />
-
-              <span>{selectedUpload?.name ?? "Choose srcdiff file"}</span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="rounded-xl border border-sky-300/30 bg-green-900 px-3 py-2 text-sm font-medium text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
-            >
-              {isLoading ? "Converting..." : "Visualize"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="rounded-xl border border-sky-300/30 bg-green-900 px-3 py-2 text-sm font-medium text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
+          >
+            {isLoading
+              ? "Visualizing..."
+              : inputMode === "paste"
+                ? "Visualize XML"
+                : "Visualize File"}
+          </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <SampleButton onClick={() => onXmlInputChange(NESTED_SAMPLE)}>
-            Load nested sample
-          </SampleButton>
+        <div className="mt-4">
+          <InputModeToggle
+            mode={inputMode}
+            disabled={isLoading}
+            onChange={onInputModeChange}
+          />
+        </div>
 
-          <SampleButton onClick={() => onXmlInputChange(SIMPLE_MOVE_SAMPLE)}>
-            Load move sample
-          </SampleButton>
-
-          <SampleButton onClick={() => onXmlInputChange(DELETE_INSERT_SAMPLE)}>
-            Load rename sample
-          </SampleButton>
+        <div className="mt-4">
+          {inputMode === "paste" ? (
+            <PasteXmlInput
+              xmlInput={xmlInput}
+              disabled={isLoading}
+              onXmlInputChange={onXmlInputChange}
+            />
+          ) : (
+            <UploadFileInput
+              selectedUpload={selectedUpload}
+              disabled={isLoading}
+              onUploadChange={onUploadChange}
+            />
+          )}
         </div>
 
         <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.05]">
@@ -110,13 +110,6 @@ export function InputPanel({
           </span>
         </label>
 
-        <textarea
-          className="mt-3 min-h-[140px] w-full resize-y rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 font-mono text-sm leading-5 text-slate-100 transition outline-none placeholder:text-slate-500 focus:border-sky-300/40"
-          spellCheck={false}
-          value={xmlInput}
-          onChange={(event) => onXmlInputChange(event.target.value)}
-          placeholder="Paste srcdiff XML here"
-        />
       </form>
 
       <div className="mt-3 flex flex-wrap gap-2">

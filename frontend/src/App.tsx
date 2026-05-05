@@ -35,6 +35,7 @@ export default function App() {
     <main className="bg-site-bg min-h-screen px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
         <InputPanel
+          inputMode={srcDiffData.inputMode}
           selectedUpload={srcDiffData.selectedUpload}
           xmlInput={srcDiffData.xmlInput}
           isLoading={srcDiffData.isLoading}
@@ -42,6 +43,7 @@ export default function App() {
           progressMessage={srcDiffData.progressMessage}
           data={srcDiffData.data}
           includeSkippedTags={srcDiffData.includeSkippedTags}
+          onInputModeChange={srcDiffData.setInputMode}
           onUploadChange={srcDiffData.setSelectedUpload}
           onXmlInputChange={srcDiffData.handleXmlInputChange}
           onIncludeSkippedTagsChange={srcDiffData.setIncludeSkippedTags}

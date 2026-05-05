@@ -4,7 +4,10 @@ import { openVisualizationProgressStream, visualizeSrcDiff } from "../api";
 import { NESTED_SAMPLE } from "../samples";
 import type { VisualizeResponse } from "../types";
 
+export type InputMode = "paste" | "upload";
+
 export function useSrcDiffData() {
+  const [inputMode, setInputMode] = useState<InputMode>("paste");
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
   const [xmlInput, setXmlInput] = useState(NESTED_SAMPLE);
   const [data, setData] = useState<VisualizeResponse | null>(null);
@@ -15,20 +18,36 @@ export function useSrcDiffData() {
 
   function handleXmlInputChange(value: string) {
     setXmlInput(value);
-    setSelectedUpload(null);
+  }
+
+  function handleInputModeChange(mode: InputMode) {
+    setInputMode(mode);
+  }
+
+  function handleUploadChange(file: File | null) {
+    setSelectedUpload(file);
+
+    if (file) {
+      setInputMode("upload");
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedUpload && !xmlInput.trim()) {
+    if (inputMode === "upload" && !selectedUpload) {
+      setError("Choose a srcdiff file before submitting.");
+      return;
+    }
+
+    if (inputMode === "paste" && !xmlInput.trim()) {
       setError("Choose a srcdiff file or paste srcdiff XML first.");
       return;
     }
 
     const formData = new FormData();
 
-    if (selectedUpload) {
+    if (inputMode === "upload" && selectedUpload) {
       formData.append("srcdiff", selectedUpload);
     } else {
       formData.append("srcdiff_xml", xmlInput);
@@ -72,6 +91,7 @@ export function useSrcDiffData() {
   }
 
   return {
+    inputMode,
     selectedUpload,
     xmlInput,
     data,
@@ -79,8 +99,9 @@ export function useSrcDiffData() {
     error,
     progressMessage,
     includeSkippedTags,
-    setSelectedUpload,
+    setInputMode: handleInputModeChange,
     setIncludeSkippedTags,
+    setSelectedUpload: handleUploadChange,
     handleXmlInputChange,
     handleSubmit,
   };
