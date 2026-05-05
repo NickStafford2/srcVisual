@@ -10,7 +10,6 @@ type MoveDetailsProps = {
   selectedNodeId: string | null;
   nodes: MoveNodeEntry[];
   moveResults: SrcMoveResults;
-  variant?: "panel" | "embedded";
 };
 
 export function MoveDetails({
@@ -18,7 +17,6 @@ export function MoveDetails({
   selectedNodeId,
   nodes,
   moveResults,
-  variant = "panel",
 }: MoveDetailsProps) {
   if (!moveId) {
     return null;
@@ -29,47 +27,29 @@ export function MoveDetails({
     return null;
   }
 
-  const selectedEntry =
-    move.nodes.find((node) => node.node.id === selectedNodeId) ??
-    move.nodes[0] ??
-    null;
-  const isEmbedded = variant === "embedded";
-
   return (
-    <section
-      className={
-        isEmbedded
-          ? "rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.04] p-4"
-          : "rounded-[20px] border border-emerald-300/15 bg-emerald-500/[0.04] p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
-      }
-    >
-      <header className="flex flex-col gap-3 border-b border-emerald-300/10 pb-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-50">Move Details</h2>
-          <p className="mt-1 text-xs text-slate-400">
+    <section className="flex flex-row rounded-[20px] border border-emerald-300/15 bg-emerald-500/[0.04] p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+      <div className="flex w-fit flex-row bg-red-600">
+        <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+          <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
+            Summary
+          </p>
+          <p className="text-xs text-nowrap text-slate-400">
             {move.nodes.length} node{move.nodes.length === 1 ? "" : "s"} across{" "}
             {move.files.length} file{move.files.length === 1 ? "" : "s"}
           </p>
-        </div>
-
-        <span className="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs text-emerald-200">
-          move={move.moveId}
-        </span>
-      </header>
-
-      <div className="mt-4 grid gap-3 xl:grid-cols-2">
-        <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Summary
-          </p>
-          <div className="mt-2 space-y-2 text-xs text-slate-300">
+          <div className="space-y-2 text-xs text-slate-300">
             <p>delete paths: {move.fromXpaths.length}</p>
             <p>insert paths: {move.toXpaths.length}</p>
             <p>before texts: {move.fromRawTexts.length}</p>
             <p>after texts: {move.toRawTexts.length}</p>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <p className="text-xs text-nowrap text-slate-400">
+            {move.nodes.length} node{move.nodes.length === 1 ? "" : "s"} across{" "}
+            {move.files.length} file{move.files.length === 1 ? "" : "s"}
+          </p>
+          <div className="flex flex-wrap gap-2">
             {move.files.map((file) => (
               <span
                 key={file}
@@ -82,25 +62,21 @@ export function MoveDetails({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Raw Text
-          </p>
-
-          <div className="mt-2 space-y-3">
+          <div className="space-y-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 Before
               </p>
-              <pre className="mt-1 overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
+              <pre className="overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
                 {formatRawTextBlock(move.fromRawTexts)}
               </pre>
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 After
               </p>
-              <pre className="mt-1 overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
+              <pre className="overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
                 {formatRawTextBlock(move.toRawTexts)}
               </pre>
             </div>
@@ -108,32 +84,15 @@ export function MoveDetails({
         </article>
       </div>
 
-      {selectedEntry ? (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Anchor
-          </p>
-          <h3 className="mt-2 text-sm font-semibold text-slate-100">
-            {selectedEntry.node.label}
-          </h3>
-          <p className="mt-1 text-xs text-slate-400">
-            {selectedEntry.filename ?? "unknown file"}
-          </p>
-          <p className="mt-1 font-mono text-[11px] text-slate-500">
-            {selectedEntry.node.path}
-          </p>
-        </div>
-      ) : null}
-
       {move.fromXpaths.length > 0 || move.toXpaths.length > 0 ? (
-        <div className="mt-4 grid gap-3 xl:grid-cols-2">
+        <div className="flex w-fit flex-col bg-green-600">
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
               From XPaths
             </p>
-            <ul className="mt-2 space-y-1 font-mono text-[11px] text-slate-300">
+            <ul className="space-y-1 font-mono text-[11px] text-slate-300">
               {move.fromXpaths.map((xpath) => (
-                <li key={xpath} className="break-all">
+                <li key={xpath} className="text-nowrap break-all">
                   {xpath}
                 </li>
               ))}
@@ -141,12 +100,12 @@ export function MoveDetails({
           </article>
 
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
               To XPaths
             </p>
-            <ul className="mt-2 space-y-1 font-mono text-[11px] text-slate-300">
+            <ul className="space-y-1 font-mono text-[11px] text-slate-300">
               {move.toXpaths.map((xpath) => (
-                <li key={xpath} className="break-all">
+                <li key={xpath} className="text-nowrap break-all">
                   {xpath}
                 </li>
               ))}
@@ -156,11 +115,11 @@ export function MoveDetails({
       ) : null}
 
       {move.nodes.length > 0 ? (
-        <article className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+        <article className="flex w-fit flex-col rounded-2xl border border-white/10 bg-amber-600 bg-white/[0.03] px-4 py-3">
+          <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
             Nodes
           </p>
-          <ul className="mt-2 space-y-2">
+          <ul className="space-y-2">
             {move.nodes.map((entry) => {
               const spans = formatNodeSpanText(entry.node);
               const isSelected = entry.node.id === selectedNodeId;
@@ -175,7 +134,7 @@ export function MoveDetails({
                       <p className="text-sm font-medium text-slate-100">
                         {entry.node.label}
                       </p>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="text-xs text-slate-400">
                         {entry.filename ?? "unknown file"}
                       </p>
                     </div>
@@ -187,13 +146,13 @@ export function MoveDetails({
                     ) : null}
                   </div>
 
-                  <p className="mt-2 font-mono text-[11px] text-slate-500">
+                  <p className="font-mono text-[11px] text-slate-500">
                     {entry.node.path}
                   </p>
-                  <p className="mt-2 font-mono text-[11px] text-slate-400">
+                  <p className="font-mono text-[11px] text-slate-400">
                     rev0: {spans.rev0}
                   </p>
-                  <p className="mt-1 font-mono text-[11px] text-slate-400">
+                  <p className="font-mono text-[11px] text-slate-400">
                     rev1: {spans.rev1}
                   </p>
                 </li>
