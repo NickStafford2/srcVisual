@@ -19,9 +19,7 @@ export function SourceSection({
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="space-y-4">
         {files.map((file, index) => {
-          const fileHighlights = highlightedSpans.filter(
-            (highlight) => highlight.fileIndex === index,
-          );
+          const fileHighlights = highlightedSpans;
 
           return (
             <SourceFileCard
