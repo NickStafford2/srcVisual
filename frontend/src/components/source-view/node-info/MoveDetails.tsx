@@ -61,35 +61,6 @@ export function MoveDetails({
           </div>
         </article>
 
-        {move.fromXpaths.length > 0 || move.toXpaths.length > 0 ? (
-          <div className="flex w-fit flex-col">
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
-                From XPaths
-              </p>
-              <ul className="space-y-1 font-mono text-[11px] text-slate-300">
-                {move.fromXpaths.map((xpath) => (
-                  <li key={xpath} className="text-nowrap break-all">
-                    {xpath}
-                  </li>
-                ))}
-              </ul>
-            </article>
-
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
-                To XPaths
-              </p>
-              <ul className="space-y-1 font-mono text-[11px] text-slate-300">
-                {move.toXpaths.map((xpath) => (
-                  <li key={xpath} className="text-nowrap break-all">
-                    {xpath}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          </div>
-        ) : null}
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
           <div className="space-y-3">
             <div>
