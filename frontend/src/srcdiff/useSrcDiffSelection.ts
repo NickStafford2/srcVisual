@@ -11,6 +11,12 @@ import {
 import { buildForestTreeIndex } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
+  selectedMoveId: string | null;
+  selectedMoveNodes: {
+    node: SrcDiffTreeNode;
+    fileIndex: number;
+    filename: string | null;
+  }[];
   selectedFile: VisualizedFile | null;
   selectedFileIndex: number;
   selectedNode: SrcDiffTreeNode | null;
@@ -61,11 +67,30 @@ export function useSrcDiffSelection(
 
   const selectedNode = selectedNodeEntry?.node ?? null;
   const selectedNodeFileIndex = selectedNodeEntry?.fileIndex ?? null;
+  const selectedMoveId = selectedNode?.move_id ?? null;
 
   const selectedSpans = useMemo(
     () => getSelectionSpans(selectedNode),
     [selectedNode],
   );
+
+  const selectedMoveEntries = useMemo(() => {
+    if (!selectedMoveId) {
+      return [];
+    }
+
+    return treeEntries.filter(
+      ([, entry]) => entry.node.move_id === selectedMoveId,
+    );
+  }, [selectedMoveId, treeEntries]);
+
+  const selectedMoveNodes = useMemo(() => {
+    return selectedMoveEntries.map(([, entry]) => ({
+      node: entry.node,
+      fileIndex: entry.fileIndex,
+      filename: files[entry.fileIndex]?.filename ?? null,
+    }));
+  }, [files, selectedMoveEntries]);
 
   const baseHighlightedEntries = useMemo(() => {
     if (highlightMode === "all-moves") {
@@ -208,6 +233,8 @@ export function useSrcDiffSelection(
   }
 
   return {
+    selectedMoveId,
+    selectedMoveNodes,
     selectedFile,
     selectedFileIndex,
     selectedNode,

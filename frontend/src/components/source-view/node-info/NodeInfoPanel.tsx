@@ -11,6 +11,7 @@ export type NodeInfoPanelItem = {
   xmlSpanText: string;
   links: SelectedNodeLink[];
   actions?: ReactNode;
+  details?: ReactNode;
 };
 
 type NodeInfoPanelProps = {
@@ -93,6 +94,8 @@ export function NodeInfoPanel({
                   <div>{item.actions}</div>
                 ) : null}
               </div>
+
+              {item.details ? <div className="mt-3">{item.details}</div> : null}
             </article>
           ))}
         </div>
