@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -70,6 +76,7 @@ describe("App highlight all moves flow", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -77,21 +84,7 @@ describe("App highlight all moves flow", () => {
   it("highlights the same move in the tree, xml pane, and source panes", async () => {
     const user = userEvent.setup();
 
-    render(<App />);
-
-    await user.click(
-      await screen.findByRole("button", { name: exampleFilename }),
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByPlaceholderText("Paste srcDiff XML here"),
-      ).toHaveValue(exampleXml);
-    });
-
-    await user.click(screen.getByRole("button", { name: "Submit" }));
-
-    await screen.findByRole("heading", { name: "SrcDiff Tree" });
+    await renderHighlightedMovesApp(user);
 
     expect(visualizeRequest).toEqual({
       includeSkippedTags: "false",
@@ -139,6 +132,29 @@ describe("App highlight all moves flow", () => {
       sourceSection.querySelectorAll(`[data-move-id="${toNewFileMoveId}"]`),
     ).not.toHaveLength(0);
   });
+
+  it("only highlights source panes that actually contain the move", async () => {
+    const user = userEvent.setup();
+
+    await renderHighlightedMovesApp(user);
+
+    expectSourcePaneHighlightPresence({
+      paneLabel: "main.cpp Revision 0",
+      shouldHaveHighlights: true,
+    });
+    expectSourcePaneHighlightPresence({
+      paneLabel: "main.cpp Revision 1",
+      shouldHaveHighlights: false,
+    });
+    expectSourcePaneHighlightPresence({
+      paneLabel: "|foo.hpp Revision 0",
+      shouldHaveHighlights: false,
+    });
+    expectSourcePaneHighlightPresence({
+      paneLabel: "|foo.hpp Revision 1",
+      shouldHaveHighlights: true,
+    });
+  });
 });
 
 function jsonResponse(payload: unknown): Response {
@@ -164,4 +180,43 @@ function getHighlightedTreeNodeIds(region: HTMLElement): string[] {
   )
     .map((row) => row.dataset.nodeId ?? "")
     .filter(Boolean);
+}
+
+async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup>) {
+  render(<App />);
+
+  await user.click(
+    await screen.findByRole("button", { name: exampleFilename }),
+  );
+
+  await waitFor(() => {
+    expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
+      exampleXml,
+    );
+  });
+
+  await user.click(screen.getByRole("button", { name: "Submit" }));
+
+  await screen.findByRole("heading", { name: "SrcDiff Tree" });
+
+  await user.click(screen.getByRole("button", { name: "Highlight all moves" }));
+}
+
+function expectSourcePaneHighlightPresence({
+  paneLabel,
+  shouldHaveHighlights,
+}: {
+  paneLabel: string;
+  shouldHaveHighlights: boolean;
+}) {
+  const highlightedLines = getHighlightedLineNumbers(
+    screen.getByLabelText(paneLabel),
+  );
+
+  if (shouldHaveHighlights) {
+    expect(highlightedLines.length).toBeGreaterThan(0);
+    return;
+  }
+
+  expect(highlightedLines).toEqual([]);
 }
