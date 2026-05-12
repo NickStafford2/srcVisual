@@ -81,6 +81,8 @@ export function SourceFileCard({
 
   return (
     <article
+      aria-label={`Source file ${file.filename}`}
+      data-file-name={file.filename}
       className={[
         "rounded-[20px] border p-3 transition",
         isSelectedNodeFile
@@ -126,6 +128,7 @@ export function SourceFileCard({
       <div className="grid gap-4 lg:grid-cols-2">
         <CodePane
           fileIndex={fileIndex}
+          filename={file.filename}
           revision="revision-0"
           title="Revision 0"
           subtitle={`${file.filename} revision 0`}
@@ -138,6 +141,7 @@ export function SourceFileCard({
 
         <CodePane
           fileIndex={fileIndex}
+          filename={file.filename}
           revision="revision-1"
           title="Revision 1"
           subtitle={`${file.filename} revision 1`}

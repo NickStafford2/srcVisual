@@ -13,6 +13,7 @@ import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneProps = {
   fileIndex: number;
+  filename: string;
   revision: SourceRevision;
   title: string;
   subtitle: string;
@@ -25,6 +26,7 @@ type CodePaneProps = {
 
 export function CodePane({
   fileIndex,
+  filename,
   revision,
   title,
   subtitle,
@@ -41,6 +43,9 @@ export function CodePane({
 
   return (
     <article
+      aria-label={`${filename} ${title}`}
+      data-file-name={filename}
+      data-source-revision={revision}
       className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/45"
       style={getCodePaneSurfaceStyle(revision)}
     >

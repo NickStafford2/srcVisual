@@ -36,6 +36,10 @@ export function TreeNodeRow({
   return (
     <div>
       <div
+        data-highlight-kind={node.kind}
+        data-highlighted={isHighlighted ? "true" : "false"}
+        data-node-id={node.id}
+        data-selected={isSelected ? "true" : "false"}
         className={[
           "mb-0.5 flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition",
           isSelected

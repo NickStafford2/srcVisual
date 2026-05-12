@@ -46,6 +46,9 @@ export function CodeLine({
   return (
     <div
       id={lineTargetId}
+      data-highlighted={line.hasHighlight ? "true" : "false"}
+      data-line-number={line.number}
+      data-source-revision={revision}
       className={[
         "grid grid-cols-[56px_1fr] gap-2 px-4",
         line.hasHighlight ? "bg-white/[0.04]" : "",

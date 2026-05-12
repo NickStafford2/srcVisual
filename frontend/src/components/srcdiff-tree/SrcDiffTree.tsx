@@ -97,7 +97,10 @@ export default function SrcDiffTree({
   }
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+    <section
+      aria-label="SrcDiff Tree"
+      className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+    >
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-row gap-2">
           <div>
@@ -142,6 +145,6 @@ export default function SrcDiffTree({
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

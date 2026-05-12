@@ -2,7 +2,7 @@ import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
 import { MoveSummary } from "./components/source-view/node-info/MoveSummary";
 import { SelectedNodeInfo } from "./components/source-view/node-info/SelectedNodeInfo";
-import { SourceCodeSection } from "./components/source-view/SourceSection";
+import { SourceCodeSection } from "./components/source-view/SourceCodeSection";
 import { XmlPane } from "./components/source-view/XmlPane";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
 import { SrcDiffHighlightProvider } from "./srcdiff/highlightContext";
@@ -113,6 +113,7 @@ export default function App() {
               highlightedSpansByUnitId={
                 srcDiffSelection.sourceHighlightedSpansByUnitId
               }
+              moveResults={data.move_results}
             />
           </SrcDiffHighlightProvider>
         ) : null}
