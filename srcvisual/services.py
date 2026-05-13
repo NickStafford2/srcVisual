@@ -370,30 +370,50 @@ def build_visualized_files(
     tree_by_unit: dict[int, dict[str, object]],
 ) -> tuple[VisualizedFile, ...]:
     annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
+    revision_files_by_filename = build_revision_file_index_by_filename(revision_files)
     visualized_files: list[VisualizedFile] = []
 
-    for revision_file, annotated_filename in zip(
-        revision_files,
+    for annotated_unit_id, annotated_filename in enumerate(
         annotated_filenames,
-        strict=True,
+        start=1,
     ):
-        if revision_file.filename != annotated_filename:
-            revision_file = RevisionFile(
-                unit_id=revision_file.unit_id,
-                filename=annotated_filename,
-                language=revision_file.language,
-                revision_0_source_code=revision_file.revision_0_source_code,
-                revision_1_source_code=revision_file.revision_1_source_code,
-            )
+        source_owner = revision_files_by_filename.get(annotated_filename)
+
+        assert source_owner is not None, (
+            "Annotated srcdiff filename is missing from extracted revision files. "
+            f'filename={annotated_filename!r}, annotated unit={annotated_unit_id}.'
+        )
 
         visualized_files.append(
             VisualizedFile(
-                revision_file=revision_file,
-                tree=tree_by_unit.get(revision_file.unit_id),
+                revision_file=RevisionFile(
+                    unit_id=annotated_unit_id,
+                    filename=annotated_filename,
+                    language=source_owner.language,
+                    revision_0_source_code=source_owner.revision_0_source_code,
+                    revision_1_source_code=source_owner.revision_1_source_code,
+                ),
+                tree=tree_by_unit.get(annotated_unit_id),
             )
         )
 
     return tuple(visualized_files)
+
+
+def build_revision_file_index_by_filename(
+    revision_files: tuple[RevisionFile, ...],
+) -> dict[str, RevisionFile]:
+    indexed_files: dict[str, RevisionFile] = {}
+
+    for revision_file in revision_files:
+        assert revision_file.filename not in indexed_files, (
+            "Extracted revision files contain duplicate filenames, so srcMove "
+            "cannot be the sole source of truth for unit ownership. "
+            f"duplicate filename={revision_file.filename!r}."
+        )
+        indexed_files[revision_file.filename] = revision_file
+
+    return indexed_files
 
 
 def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
