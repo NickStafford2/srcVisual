@@ -11,6 +11,7 @@ from .srcmove import (
     run_srcmove,
     has_srcmove_annotations,
     is_strict_srcmove_validation_enabled,
+    build_move_results_from_annotated_xml,
 )
 from .visualize_data import build_visualized_files
 from .core.archive import extract_revision_files
@@ -23,8 +24,6 @@ from .core.srcdiff_restore import restore_original_srcdiff_metadata
 from .core.tree_builder import build_tree_index
 from .core.validation import (
     augment_move_results_with_node_ids,
-    build_filename_to_unit_index,
-    collect_xml_move_regions,
     validate_annotated_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
@@ -281,56 +280,6 @@ def has_position_annotations(srcdiff_xml: str) -> bool:
         POS_START in element.attrib and POS_END in element.attrib
         for element in root.iter()
     )
-
-
-def build_move_results_from_annotated_xml(
-    *,
-    annotated_srcdiff_xml: str,
-    include_skipped_tags: bool,
-) -> dict[str, Any]:
-    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
-
-    xml_regions = collect_xml_move_regions(
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
-        include_skipped_tags=include_skipped_tags,
-        filename_to_unit_index=filename_to_unit_index,
-    )
-
-    grouped_regions: dict[str, list[Any]] = {}
-
-    for region in xml_regions.values():
-        grouped_regions.setdefault(region.move_id, []).append(region)
-
-    moves: list[dict[str, Any]] = []
-
-    for move_id in sorted(grouped_regions):
-        regions = sorted(grouped_regions[move_id], key=lambda region: region.path)
-
-        from_regions = [region for region in regions if region.tag == "diff:delete"]
-        to_regions = [region for region in regions if region.tag == "diff:insert"]
-
-        assert from_regions, (
-            f"Existing srcMove annotation {move_id!r} has no diff:delete region."
-        )
-        assert to_regions, (
-            f"Existing srcMove annotation {move_id!r} has no diff:insert region."
-        )
-
-        moves.append(
-            {
-                "move_id": move_id,
-                "from_xpaths": [region.path for region in from_regions],
-                "to_xpaths": [region.path for region in to_regions],
-                "from_raw_texts": [region.raw_text for region in from_regions],
-                "to_raw_texts": [region.raw_text for region in to_regions],
-            }
-        )
-
-    return {
-        "move_count": len(moves),
-        "annotated_regions": len(xml_regions),
-        "moves": moves,
-    }
 
 
 def restore_original_metadata_on_path(
