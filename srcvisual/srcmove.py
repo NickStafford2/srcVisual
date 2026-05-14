@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
-import xml.etree.ElementTree as ET
 
-
-from .notify import notify_progress, ProgressCallback
 from .core.commands import run_command
 from .core.srcdiff_attributes import MV_ID
 from .core.srcdiff_restore import restore_original_srcdiff_metadata
@@ -15,6 +13,7 @@ from .core.validation import (
     build_filename_to_unit_index,
     collect_xml_move_regions,
 )
+from .notify import ProgressCallback, notify_progress
 
 
 def run_srcmove(
