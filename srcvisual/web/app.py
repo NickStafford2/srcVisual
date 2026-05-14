@@ -9,7 +9,7 @@ from flask import Flask, abort, send_from_directory
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from ..core.commands import get_command_timeout_seconds
+from ..workflow._commands import get_command_timeout_seconds
 from ._routes import api
 
 DEFAULT_MAX_CONTENT_LENGTH_MB = 64

@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from srcvisual.core.commands import run_command
+from srcvisual.workflow._commands import run_command
 from srcvisual.core.models import BackendCommandError
 
 

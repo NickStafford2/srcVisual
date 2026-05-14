@@ -3,7 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from ..core.commands import run_command
+from ._commands import run_command
 from ..srcdiff.namespaces import POS_END, POS_START
 from ..srcdiff.restore import restore_original_srcdiff_metadata
 from ._notify import ProgressCallback, notify_progress

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from ..core.commands import run_command
+from ._commands import run_command
 from ._notify import ProgressCallback, notify_progress
 
 

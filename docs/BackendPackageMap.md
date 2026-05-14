@@ -45,8 +45,8 @@ Rules for this layout:
 | `srcvisual/core/archive.py` | `srcvisual/files/archive.py` | Extract revision files from uploaded srcDiff input. |
 | `srcvisual/core/source_files.py` | `srcvisual/files/_source_files.py` | Internal file writing helper for `files/`. |
 | `srcvisual/core/filenames.py` | `srcvisual/files/filenames.py` | Shared filename normalization and sanitization. |
-| `srcvisual/core/commands.py` | `srcvisual/workflow/_commands.py` | Backend command execution is part of workflow runtime behavior. |
-| `srcvisual/core/pruning.py` | `srcvisual/workflow/_pruning.py` | Payload pruning is workflow output shaping. |
+| `srcvisual/workflow/_commands.py` | `srcvisual/workflow/_commands.py` | Backend command execution is part of workflow runtime behavior. |
+| `srcvisual/workflow/_pruning.py` | `srcvisual/workflow/_pruning.py` | Payload pruning is workflow output shaping. |
 | `srcvisual/core/models.py` | `srcvisual/model/models.py` | Shared dataclasses and backend error types. Keep as one file for now. |
 | `srcvisual/core/namespaces.py` | `srcvisual/srcdiff/_namespaces.py` | Internal XML namespace constants for srcDiff logic. |
 | `srcvisual/core/units.py` | `srcvisual/srcdiff/_units.py` | Internal XML unit helpers. |

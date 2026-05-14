@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 
-from .models import BackendCommandError, CommandResult
+from ..core.models import BackendCommandError, CommandResult
 
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 30.0
 

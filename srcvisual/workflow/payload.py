@@ -3,12 +3,12 @@ from __future__ import annotations
 from ..files.archive import extract_revision_files
 from ..files.filenames import sanitize_filename
 from ..core.models import VisualizationPayload
-from ..core.pruning import get_pruning_level, prune_visualized_files
 from ..srcdiff.tree import build_tree_index
 from ..validation.payload import validate_visualization_payload
 from ..validation.srcmove_results import validate_srcmove_results_match_xml
 from ..validation.tree import validate_moved_srcdiff_and_tree
 from ..validation.xml import validate_xml_span_index
+from ._pruning import get_pruning_level, prune_visualized_files
 from ._move_results import augment_move_results_with_node_ids
 from ._notify import ProgressCallback, notify_progress
 from ._srcdiff import build_moved_srcdiff_xml

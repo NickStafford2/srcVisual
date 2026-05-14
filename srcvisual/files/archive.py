@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..core.commands import run_command
+from ..workflow._commands import run_command
 from ..core.models import RevisionFile
 from ._source_files import write_source_file
 
