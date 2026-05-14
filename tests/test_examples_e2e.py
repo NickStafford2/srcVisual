@@ -102,6 +102,26 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
         assert file_payload["tree"]["path"] == f"/src:unit[{file_payload['unit_id']}]"
         assert file_payload["tree"]["label"] == f"unit: {file_payload['filename']}"
 
+    files_by_filename = {
+        file_payload["filename"]: file_payload for file_payload in payload["files"]
+    }
+
+    assert files_by_filename["main.cpp"]["revision_0_source_code"].startswith(
+        "int changed_function() {"
+    )
+    assert "int main(int argc, char **argv)" in files_by_filename["main.cpp"][
+        "revision_0_source_code"
+    ]
+    assert files_by_filename["main.cpp"]["revision_1_source_code"].startswith(
+        '#include "foo.hpp"'
+    )
+    assert (
+        files_by_filename["|foo.hpp"]["revision_0_source_code"] == ""
+    )
+    assert files_by_filename["|foo.hpp"]["revision_1_source_code"].startswith(
+        "int changed_function() {"
+    )
+
     expected_tree_records = sorted(
         build_expected_tree_records(expected_results, expected_moves)
     )
