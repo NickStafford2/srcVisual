@@ -44,10 +44,13 @@ function getCanonicalMoveNodeIds(
   move: SrcMoveRecord,
   files: VisualizedFile[],
 ): string[] {
-  const rawNodeIds = [
-    ...(move.from_node_ids.length > 0 ? move.from_node_ids : move.from_xpaths),
-    ...(move.to_node_ids.length > 0 ? move.to_node_ids : move.to_xpaths),
-  ];
+  if (move.from_node_ids.length === 0 || move.to_node_ids.length === 0) {
+    throw new Error(
+      `Move ${move.move_id ?? "(unknown)"} is missing frontend node ids.`,
+    );
+  }
+
+  const rawNodeIds = [...move.from_node_ids, ...move.to_node_ids];
 
   return dedupeNodeIds(
     rawNodeIds.map((nodeId) => normalizeNodeId(nodeId, files)),
