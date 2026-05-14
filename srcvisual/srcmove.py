@@ -8,7 +8,6 @@ from typing import Any
 
 from .core.commands import run_command
 from .core.srcdiff_attributes import MV_ID
-from .core.srcdiff_restore import restore_original_srcdiff_metadata
 from .core.validation import (
     build_filename_to_unit_index,
     collect_xml_move_regions,
@@ -20,7 +19,6 @@ def run_srcmove(
     *,
     positioned_path: Path,
     tmpdir: Path,
-    original_srcdiff_xml: str | None = None,
     progress: ProgressCallback | None = None,
 ) -> tuple[str, dict[str, Any]]:
     annotated_path = tmpdir / "annotated.srcdiff.xml"
@@ -60,13 +58,6 @@ def run_srcmove(
     assert isinstance(move_results, dict), (
         f"srcMove results JSON must be an object; got {type(move_results).__name__}."
     )
-
-    if original_srcdiff_xml is not None:
-        annotated_srcdiff_xml = restore_original_srcdiff_metadata(
-            original_xml=original_srcdiff_xml,
-            generated_xml=annotated_srcdiff_xml,
-        )
-        annotated_path.write_text(annotated_srcdiff_xml, encoding="utf-8")
 
     notify_progress(progress, "Reading annotated srcdiff output.")
 

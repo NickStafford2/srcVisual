@@ -64,16 +64,15 @@ def build_annotated_srcdiff_xml(
         tmpdir=tmpdir,
         progress=progress,
     )
+    restore_original_metadata_on_path(
+        original_srcdiff_xml=uploaded_srcdiff_xml,
+        generated_path=positioned_path,
+    )
 
     annotated_srcdiff_xml, move_results = run_srcmove(
         positioned_path=positioned_path,
         tmpdir=tmpdir,
-        original_srcdiff_xml=uploaded_srcdiff_xml,
         progress=progress,
-    )
-    restore_original_metadata_on_path(
-        original_srcdiff_xml=uploaded_srcdiff_xml,
-        generated_path=positioned_path,
     )
 
     return annotated_srcdiff_xml, move_results, True
