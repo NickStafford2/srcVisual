@@ -3,17 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ._annotated_srcdiff import (
+    build_move_results_from_annotated_xml,
+    has_srcmove_annotations,
+)
 from ._positioned_srcdiff import (
     has_position_annotations,
     restore_original_metadata_on_path,
     run_srcdiff_with_positions,
 )
 from .notify import ProgressCallback, notify_progress
-from .srcmove import (
-    build_move_results_from_annotated_xml,
-    has_srcmove_annotations,
-    run_srcmove,
-)
+from .srcmove import run_srcmove
 
 
 def build_annotated_srcdiff_xml(

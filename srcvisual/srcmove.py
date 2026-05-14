@@ -2,16 +2,10 @@ from __future__ import annotations
 
 import json
 import os
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 from .core.commands import run_command
-from .core.srcdiff_attributes import MV_ID
-from .core.validation import (
-    build_filename_to_unit_index,
-    collect_xml_move_regions,
-)
 from .notify import ProgressCallback, notify_progress
 
 
@@ -64,66 +58,10 @@ def run_srcmove(
     return annotated_srcdiff_xml, move_results
 
 
-def has_srcmove_annotations(srcdiff_xml: str) -> bool:
-    root = ET.fromstring(srcdiff_xml)
-
-    return any(MV_ID in element.attrib for element in root.iter())
-
-
 def is_strict_srcmove_validation_enabled() -> bool:
     return os.environ.get("SRCVISUAL_STRICT_SRCMOVE_VALIDATION", "").lower() in {
         "1",
         "true",
         "yes",
         "on",
-    }
-
-
-def build_move_results_from_annotated_xml(
-    *,
-    annotated_srcdiff_xml: str,
-    include_skipped_tags: bool,
-) -> dict[str, Any]:
-    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
-
-    xml_regions = collect_xml_move_regions(
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
-        include_skipped_tags=include_skipped_tags,
-        filename_to_unit_index=filename_to_unit_index,
-    )
-
-    grouped_regions: dict[str, list[Any]] = {}
-
-    for region in xml_regions.values():
-        grouped_regions.setdefault(region.move_id, []).append(region)
-
-    moves: list[dict[str, Any]] = []
-
-    for move_id in sorted(grouped_regions):
-        regions = sorted(grouped_regions[move_id], key=lambda region: region.path)
-
-        from_regions = [region for region in regions if region.tag == "diff:delete"]
-        to_regions = [region for region in regions if region.tag == "diff:insert"]
-
-        assert from_regions, (
-            f"Existing srcMove annotation {move_id!r} has no diff:delete region."
-        )
-        assert to_regions, (
-            f"Existing srcMove annotation {move_id!r} has no diff:insert region."
-        )
-
-        moves.append(
-            {
-                "move_id": move_id,
-                "from_xpaths": [region.path for region in from_regions],
-                "to_xpaths": [region.path for region in to_regions],
-                "from_raw_texts": [region.raw_text for region in from_regions],
-                "to_raw_texts": [region.raw_text for region in to_regions],
-            }
-        )
-
-    return {
-        "move_count": len(moves),
-        "annotated_regions": len(xml_regions),
-        "moves": moves,
     }
