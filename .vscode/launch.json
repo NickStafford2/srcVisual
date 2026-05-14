@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Pytest: blocks_swapped example",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": [
+        "tests/test_examples_e2e.py",
+        "-vv",
+        "-k",
+        "e2e_generated_blocks_swapped_diff"
+      ]
+    }
+  ]
+}
