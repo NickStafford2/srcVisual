@@ -5,6 +5,7 @@ Start here for any new LLM session working on `srcVisual`.
 - `srcVisual` exists to make `srcDiff` and especially `srcMove` output easy to inspect.
 - Change into the `srcVisual` directory if you have not already.
 - Read the four files below at the start of the session. Together they define the working context for `srcVisual`.
+- Keep your responses brief. Save tokens and do not repeat obvious things. Consice, caveman, simple.
 
 1. [Workspace.md](./Workspace.md)
 2. [ProgrammingStyle.md](./ProgrammingStyle.md)
