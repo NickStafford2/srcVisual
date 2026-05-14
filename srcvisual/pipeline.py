@@ -10,7 +10,6 @@ from .core.models import VisualizationPayload
 from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.tree_builder import build_tree_index
 from .core.validation import (
-    augment_move_results_with_node_ids,
     validate_moved_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
@@ -21,6 +20,7 @@ from .srcmove import (
     is_strict_srcmove_validation_enabled,
 )
 from .srcdiff import build_moved_srcdiff_xml
+from .transform._move_results import augment_move_results_with_node_ids
 from .visualize_data import build_visualized_files
 
 
