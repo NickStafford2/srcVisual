@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core.validation import (
-    XmlMoveRegion,
+from ..core._srcmove_results import (
     build_filename_to_unit_index,
-    collect_xml_move_regions,
     parse_srcmove_result_moves,
 )
+from ..core.validation import XmlMoveRegion, collect_xml_move_regions
 
 
 def augment_move_results_with_node_ids(
