@@ -24,4 +24,4 @@ High-level rules:
    It must be easy to verify `srcMove` results, especially cross-file moves, new-file moves, deleted-file moves, and reordered units. File ownership and unit ordering must remain correct through the backend pipeline.
 
 7. Package boundaries should stay explicit.
-   Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Files imported from outside the subpackage should not use `_`.
+   Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. Files imported from outside the subpackage by non-test code should not use `_`.
