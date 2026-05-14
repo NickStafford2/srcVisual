@@ -5,16 +5,12 @@ import { UnitTree } from "./UnitTree";
 
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
-  selectedFileIndex: number;
-  onSelectFileIndex: (index: number) => void;
   onHighlightNode: (nodeId: string) => void;
   onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export default function SrcDiffTree({
   files,
-  selectedFileIndex,
-  onSelectFileIndex,
   onHighlightNode,
   onHighlightMoveGroup,
 }: SrcDiffTreeProps) {
@@ -109,9 +105,8 @@ export default function SrcDiffTree({
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-300">
-              Select a node to highlight it, select a moved node to highlight
-              its move partners, or bulk-highlight all moves, inserts, or
-              deletes.
+              Use node actions to highlight one node or an entire move group,
+              or use the bulk highlight controls for moves, inserts, and deletes.
             </p>
           </div>
 
@@ -134,10 +129,8 @@ export default function SrcDiffTree({
               key={`${unit.unit_id}-${unit.filename}`}
               unit={unit}
               unitIndex={unitIndex}
-              isFocused={unitIndex === selectedFileIndex}
               highlightedNodeIds={highlightedNodeIds}
               expandedIds={expandedIds}
-              onSelectUnitIndex={onSelectFileIndex}
               onHighlightNode={onHighlightNode}
               onHighlightMoveGroup={onHighlightMoveGroup}
               onToggleNode={handleToggleNode}

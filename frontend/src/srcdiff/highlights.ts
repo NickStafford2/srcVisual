@@ -1,5 +1,5 @@
 import type { VisualizedFile } from "../types";
-import type { BulkHighlightKind, HighlightMode } from "./highlightContext";
+import type { HighlightMode } from "./highlightContext";
 import {
   dedupeNodeEntries,
   getAllMoveEntries,
@@ -10,9 +10,9 @@ import type { SrcDiffNodeEntry } from "./treeIndex";
 
 type GetBaseHighlightedEntriesInput = {
   highlightMode: HighlightMode;
-  selectedNodeEntry: SrcDiffNodeEntry | null;
-  selectedMoveId: string | null;
-  selectedNodeHighlightScope: "node" | "move-group";
+  manualHighlightEntry: SrcDiffNodeEntry | null;
+  manualHighlightMoveId: string | null;
+  manualHighlightScope: "node" | "move-group";
   treeEntries: SrcDiffNodeEntry[];
   moveIndex: MoveIndex;
 };
@@ -32,18 +32,6 @@ export function getHighlightedEntries({
   }
 
   return baseEntries.filter((entry) => !suppressedNodeIds.has(entry.node.id));
-}
-
-export function getFirstEntryForHighlightKind(
-  kind: BulkHighlightKind,
-  treeEntries: SrcDiffNodeEntry[],
-  moveIndex: MoveIndex,
-): SrcDiffNodeEntry | null {
-  if (kind === "move") {
-    return getAllMoveEntries(moveIndex)[0] ?? null;
-  }
-
-  return treeEntries.find((entry) => entry.node.kind === kind) ?? null;
 }
 
 export function buildHighlightedNodeIds(
@@ -85,19 +73,21 @@ export function buildSourceHighlightedSpansByUnitId(
 
 function getBaseHighlightedEntries({
   highlightMode,
-  selectedNodeEntry,
-  selectedMoveId,
-  selectedNodeHighlightScope,
+  manualHighlightEntry,
+  manualHighlightMoveId,
+  manualHighlightScope,
   treeEntries,
   moveIndex,
 }: GetBaseHighlightedEntriesInput): SrcDiffNodeEntry[] {
   const _entries: SrcDiffNodeEntry[] = [];
 
-  if (selectedNodeEntry) {
-    if (selectedNodeHighlightScope === "move-group" && selectedMoveId) {
-      _entries.push(...(moveIndex.get(selectedMoveId) ?? [selectedNodeEntry]));
+  if (manualHighlightEntry) {
+    if (manualHighlightScope === "move-group" && manualHighlightMoveId) {
+      _entries.push(
+        ...(moveIndex.get(manualHighlightMoveId) ?? [manualHighlightEntry]),
+      );
     } else {
-      _entries.push(selectedNodeEntry);
+      _entries.push(manualHighlightEntry);
     }
   }
 

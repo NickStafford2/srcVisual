@@ -1,32 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import type { VisualizeResponse, VisualizedFile } from "../types";
+import type { VisualizeResponse } from "../types";
 import type { BulkHighlightKind, HighlightMode } from "./highlightContext";
 import {
   buildHighlightedNodeIds,
   buildHighlightedSpans,
   buildSourceHighlightedSpansByUnitId,
-  getFirstEntryForHighlightKind,
   getHighlightedEntries,
 } from "./highlights";
 import { buildMoveIndex } from "./moveIndex";
-import {
-  type SrcDiffHighlight,
-} from "./selection";
+import { type SrcDiffHighlight } from "./selection";
 import { buildForestTreeIndex, type SrcDiffNodeEntry } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
   moveNodesById: Map<string, SrcDiffNodeEntry[]>;
-  selectedMoveId: string | null;
-  selectedFile: VisualizedFile | null;
-  selectedFileIndex: number;
-  selectedNodeId: string | null;
   highlightedNodes: SrcDiffNodeEntry[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
   sourceHighlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
   highlightMode: HighlightMode;
   unhighlightNode: (nodeId: string) => void;
-  setSelectedFileIndex: (index: number) => void;
   highlightNode: (nodeId: string) => void;
   highlightMoveGroup: (nodeId: string) => void;
   highlightAllMoves: () => void;
@@ -44,11 +36,10 @@ const EMPTY_HIGHLIGHT_MODE: HighlightMode = {
 export function useSrcDiffSelection(
   data: VisualizeResponse | null,
 ): SrcDiffSelectionState {
-  const [selectedFileIndex, setSelectedFileIndexState] = useState(0);
-  const [selectedNodeId, setSelectedNodeIdState] = useState<string | null>(
-    null,
-  );
-  const [selectedNodeHighlightScope, setSelectedNodeHighlightScope] = useState<
+  const [manualHighlightNodeId, setManualHighlightNodeId] = useState<
+    string | null
+  >(null);
+  const [manualHighlightScope, setManualHighlightScope] = useState<
     "node" | "move-group"
   >("node");
   const [highlightMode, setHighlightMode] =
@@ -57,7 +48,6 @@ export function useSrcDiffSelection(
     useState<Set<string>>(new Set());
 
   const files = data?.files ?? [];
-  const selectedFile = files[selectedFileIndex] ?? null;
 
   const treeIndex = useMemo(() => buildForestTreeIndex(files), [files]);
 
@@ -71,29 +61,28 @@ export function useSrcDiffSelection(
     [data?.move_results, treeIndex, files],
   );
 
-  const selectedNodeEntry = selectedNodeId
-    ? (treeIndex.get(selectedNodeId) ?? null)
+  const manualHighlightEntry = manualHighlightNodeId
+    ? (treeIndex.get(manualHighlightNodeId) ?? null)
     : null;
 
-  const selectedNode = selectedNodeEntry?.node ?? null;
-  const selectedMoveId = selectedNode?.move_id ?? null;
+  const manualHighlightMoveId = manualHighlightEntry?.node.move_id ?? null;
 
   const highlightedNodes = useMemo(
     () =>
       getHighlightedEntries({
         highlightMode,
-        selectedNodeEntry,
-        selectedMoveId,
-        selectedNodeHighlightScope,
+        manualHighlightEntry,
+        manualHighlightMoveId,
+        manualHighlightScope,
         treeEntries,
         moveIndex,
         suppressedNodeIds: suppressedHighlightedNodeIds,
       }),
     [
       highlightMode,
-      selectedNodeEntry,
-      selectedMoveId,
-      selectedNodeHighlightScope,
+      manualHighlightEntry,
+      manualHighlightMoveId,
+      manualHighlightScope,
       treeEntries,
       moveIndex,
       suppressedHighlightedNodeIds,
@@ -116,54 +105,35 @@ export function useSrcDiffSelection(
   );
 
   useEffect(() => {
-    setSelectedFileIndexState(0);
-    setSelectedNodeIdState(null);
-    setSelectedNodeHighlightScope("node");
+    setManualHighlightNodeId(null);
+    setManualHighlightScope("node");
     setHighlightMode(EMPTY_HIGHLIGHT_MODE);
     setSuppressedHighlightedNodeIds(new Set());
   }, [data]);
 
   useEffect(() => {
-    if (!data) return;
+    if (!manualHighlightNodeId) return;
 
-    if (selectedFileIndex >= data.files.length) {
-      setSelectedFileIndexState(0);
+    if (!treeIndex.has(manualHighlightNodeId)) {
+      setManualHighlightNodeId(null);
     }
-  }, [data, selectedFileIndex]);
+  }, [manualHighlightNodeId, treeIndex]);
 
-  useEffect(() => {
-    if (!selectedNodeId) return;
-
-    if (!treeIndex.has(selectedNodeId)) {
-      setSelectedNodeIdState(null);
-    }
-  }, [selectedNodeId, treeIndex]);
-
-  function setSelectedFileIndex(index: number) {
-    setSelectedFileIndexState(index);
-  }
-
-  function setSelectedNodeState(
+  function setManualHighlight(
     nodeId: string,
     scope: "node" | "move-group",
   ) {
     setSuppressedHighlightedNodeIds(new Set());
-    setSelectedNodeIdState(nodeId);
-    setSelectedNodeHighlightScope(scope);
-
-    const _entry = treeIndex.get(nodeId);
-
-    if (_entry) {
-      setSelectedFileIndexState(_entry.fileIndex);
-    }
+    setManualHighlightNodeId(nodeId);
+    setManualHighlightScope(scope);
   }
 
   function highlightNode(nodeId: string) {
-    setSelectedNodeState(nodeId, "node");
+    setManualHighlight(nodeId, "node");
   }
 
   function highlightMoveGroup(nodeId: string) {
-    setSelectedNodeState(nodeId, "move-group");
+    setManualHighlight(nodeId, "move-group");
   }
 
   function highlightAllMoves() {
@@ -181,8 +151,8 @@ export function useSrcDiffSelection(
   function clearHighlights() {
     setHighlightMode(EMPTY_HIGHLIGHT_MODE);
     setSuppressedHighlightedNodeIds(new Set());
-    setSelectedNodeIdState(null);
-    setSelectedNodeHighlightScope("node");
+    setManualHighlightNodeId(null);
+    setManualHighlightScope("node");
   }
 
   function unhighlightNode(nodeId: string) {
@@ -199,35 +169,16 @@ export function useSrcDiffSelection(
       [kind]: !current[kind],
     }));
     setSuppressedHighlightedNodeIds(new Set());
-
-    if (selectedNodeId) {
-      return;
-    }
-
-    const _firstEntry = getFirstEntryForHighlightKind(
-      kind,
-      treeEntries,
-      moveIndex,
-    );
-
-    if (_firstEntry) {
-      setSelectedFileIndexState(_firstEntry.fileIndex);
-    }
   }
 
   return {
     moveNodesById: moveIndex,
-    selectedMoveId,
-    selectedFile,
-    selectedFileIndex,
-    selectedNodeId,
     highlightedNodes,
     highlightedNodeIds,
     highlightedSpans,
     sourceHighlightedSpansByUnitId,
     highlightMode,
     unhighlightNode,
-    setSelectedFileIndex,
     highlightNode,
     highlightMoveGroup,
     highlightAllMoves,

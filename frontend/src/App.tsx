@@ -68,8 +68,6 @@ export default function App() {
           >
             <SrcDiffTree
               files={files}
-              selectedFileIndex={srcDiffSelection.selectedFileIndex}
-              onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
               onHighlightNode={srcDiffSelection.highlightNode}
               onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
             />
