@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 
 from .core.archive import extract_revision_files
 from .core.commands import run_command
-from .core.filenames import sanitize_filename
+from .core.filenames import normalize_visualized_filename, sanitize_filename
 from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
 from .core.namespaces import POS_END, POS_START
 from .core.pruning import get_pruning_level, prune_visualized_files
@@ -50,11 +50,12 @@ def build_visualization_payload(
         revision_1_dir.mkdir()
 
         notify_progress(progress, "Extracting revision sources from srcdiff.")
-        revision_files = extract_revision_files(
+        extracted_layout = extract_revision_files(
             input_path=input_path,
             revision_0_dir=revision_0_dir,
             revision_1_dir=revision_1_dir,
         )
+        revision_files = extracted_layout.files
 
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
@@ -64,6 +65,8 @@ def build_visualization_payload(
                 input_path=input_path,
                 revision_0_dir=revision_0_dir,
                 revision_1_dir=revision_1_dir,
+                revision_0_input=extracted_layout.revision_0_input,
+                revision_1_input=extracted_layout.revision_1_input,
                 tmpdir=tmpdir,
                 include_skipped_tags=include_skipped_tags,
                 progress=progress,
@@ -209,6 +212,8 @@ def build_annotated_srcdiff_xml(
     input_path: Path,
     revision_0_dir: Path,
     revision_1_dir: Path,
+    revision_0_input: Path,
+    revision_1_input: Path,
     tmpdir: Path,
     include_skipped_tags: bool,
     progress: ProgressCallback | None = None,
@@ -245,6 +250,8 @@ def build_annotated_srcdiff_xml(
     positioned_path = run_srcdiff_with_positions(
         revision_0_dir=revision_0_dir,
         revision_1_dir=revision_1_dir,
+        revision_0_input=revision_0_input,
+        revision_1_input=revision_1_input,
         tmpdir=tmpdir,
         progress=progress,
     )
@@ -262,6 +269,8 @@ def run_srcdiff_with_positions(
     *,
     revision_0_dir: Path,
     revision_1_dir: Path,
+    revision_0_input: Path,
+    revision_1_input: Path,
     tmpdir: Path,
     progress: ProgressCallback | None = None,
 ) -> Path:
@@ -272,8 +281,8 @@ def run_srcdiff_with_positions(
         [
             "srcdiff",
             "--position",
-            str(revision_0_dir),
-            str(revision_1_dir),
+            str(revision_0_input),
+            str(revision_1_input),
             "-o",
             str(positioned_path),
         ]
@@ -431,6 +440,9 @@ def build_visualized_files(
 ) -> tuple[VisualizedFile, ...]:
     annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
     revision_files_by_filename = build_revision_file_index_by_filename(revision_files)
+    normalized_revision_files_by_filename = build_normalized_revision_file_index(
+        revision_files
+    )
     visualized_files: list[VisualizedFile] = []
 
     for annotated_unit_id, annotated_filename in enumerate(
@@ -438,22 +450,40 @@ def build_visualized_files(
         start=1,
     ):
         source_owner = revision_files_by_filename.get(annotated_filename)
+        visualized_filename = annotated_filename
+
+        if source_owner is None:
+            source_owner = normalized_revision_files_by_filename.get(
+                normalize_visualized_filename(annotated_filename)
+            )
+            if source_owner is not None:
+                visualized_filename = normalize_visualized_filename(
+                    source_owner.filename
+                )
 
         assert source_owner is not None, (
             "Annotated srcdiff filename is missing from extracted revision files. "
             f'filename={annotated_filename!r}, annotated unit={annotated_unit_id}.'
         )
 
+        tree = tree_by_unit.get(annotated_unit_id)
+
+        if tree is not None and visualized_filename != annotated_filename:
+            tree = build_visualized_tree_root(
+                tree=tree,
+                filename=visualized_filename,
+            )
+
         visualized_files.append(
             VisualizedFile(
                 revision_file=RevisionFile(
                     unit_id=annotated_unit_id,
-                    filename=annotated_filename,
+                    filename=visualized_filename,
                     language=source_owner.language,
                     revision_0_source_code=source_owner.revision_0_source_code,
                     revision_1_source_code=source_owner.revision_1_source_code,
                 ),
-                tree=tree_by_unit.get(annotated_unit_id),
+                tree=tree,
             )
         )
 
@@ -474,6 +504,56 @@ def build_revision_file_index_by_filename(
         indexed_files[revision_file.filename] = revision_file
 
     return indexed_files
+
+
+def build_normalized_revision_file_index(
+    revision_files: tuple[RevisionFile, ...],
+) -> dict[str, RevisionFile]:
+    indexed_files: dict[str, RevisionFile] = {}
+    duplicate_filenames: set[str] = set()
+
+    for revision_file in revision_files:
+        normalized = normalize_visualized_filename(revision_file.filename)
+
+        if normalized in duplicate_filenames:
+            continue
+
+        if normalized in indexed_files:
+            del indexed_files[normalized]
+            duplicate_filenames.add(normalized)
+            continue
+
+        indexed_files[normalized] = revision_file
+
+    return indexed_files
+
+
+def build_visualized_tree_root(
+    *,
+    tree: dict[str, object],
+    filename: str,
+) -> dict[str, object]:
+    srcdiff_attributes = tree.get("srcdiff_attributes")
+
+    if not isinstance(srcdiff_attributes, dict):
+        return {**tree, "label": f"unit: {filename}"}
+
+    unit_attributes = srcdiff_attributes.get("unit")
+
+    if not isinstance(unit_attributes, dict):
+        return {**tree, "label": f"unit: {filename}"}
+
+    return {
+        **tree,
+        "label": f"unit: {filename}",
+        "srcdiff_attributes": {
+            **srcdiff_attributes,
+            "unit": {
+                **unit_attributes,
+                "filename": filename,
+            },
+        },
+    }
 
 
 def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:

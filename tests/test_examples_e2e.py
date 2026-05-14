@@ -130,6 +130,37 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     assert actual_tree_records == expected_tree_records
 
 
+def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
+    client = create_app().test_client()
+    example_path = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
+
+    response = client.post(
+        "/api/visualize",
+        data={
+            "srcdiff_xml": example_path.read_text(encoding="utf-8"),
+            "include_skipped_tags": "false",
+        },
+    )
+
+    if response.status_code != 200:
+        payload = response.get_json(silent=True)
+        error_message = (
+            payload["error"]
+            if isinstance(payload, dict) and "error" in payload
+            else response.get_data(as_text=True)
+        )
+        pytest.fail(
+            "e2e_generated_blocks_swapped_diff.xml failed with status "
+            f"{response.status_code}: {error_message}"
+        )
+
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert [file_payload["filename"] for file_payload in payload["files"]] == [
+        "original.cpp|modified.cpp"
+    ]
+
+
 def build_expected_tree_records(
     expected_results: dict[str, object],
     expected_moves,
