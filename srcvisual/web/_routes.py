@@ -7,7 +7,7 @@ from werkzeug.datastructures import FileStorage
 
 from ..pipeline import build_visualization_payload
 from ._examples import list_example_filenames, read_example_file
-from .progress import progress_broker
+from ._progress import progress_broker
 
 api = Blueprint("api", __name__)
 

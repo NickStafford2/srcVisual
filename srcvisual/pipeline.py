@@ -18,7 +18,7 @@ from .srcmove import (
     is_strict_srcmove_validation_enabled,
 )
 from .srcdiff import build_moved_srcdiff_xml
-from .transform._move_results import augment_move_results_with_node_ids
+from .transform.move_results import augment_move_results_with_node_ids
 from .visualize_data import build_visualized_files
 
 

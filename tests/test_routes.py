@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import srcvisual.web.routes as routes_module
+import srcvisual.web._routes as routes_module
 from srcvisual.web.app import create_app
 from srcvisual.core.models import RevisionFile, VisualizationPayload, VisualizedFile
 
