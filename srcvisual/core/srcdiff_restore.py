@@ -4,8 +4,16 @@ from io import BytesIO
 import xml.etree.ElementTree as ET
 
 from .filenames import normalize_visualized_filename
-from .namespaces import POS_NS, prefixed_name
+from .namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
 from .units import get_srcdiff_file_unit_elements
+
+
+CANONICAL_NAMESPACE_PREFIX = {
+    SRC_NS: "",
+    DIFF_NS: "diff",
+    MV_NS: "mv",
+    POS_NS: "pos",
+}
 
 
 def restore_original_srcdiff_metadata(
@@ -37,6 +45,11 @@ def restore_original_srcdiff_metadata(
             generated_element=generated_unit,
             path=f"/src:unit[{index}]",
         )
+
+    register_serialization_namespaces(
+        original_xml=original_xml,
+        generated_xml=generated_xml,
+    )
 
     buffer = BytesIO()
     ET.ElementTree(generated_root).write(
@@ -77,6 +90,54 @@ def restore_metadata_attributes(
 
 def is_position_attribute(attribute_name: str) -> bool:
     return attribute_name.startswith(f"{{{POS_NS}}}")
+
+
+def register_serialization_namespaces(
+    *,
+    original_xml: str,
+    generated_xml: str,
+) -> None:
+    namespace_prefixes = collect_namespace_prefixes(original_xml)
+
+    for uri, prefix in collect_namespace_prefixes(generated_xml).items():
+        namespace_prefixes.setdefault(uri, prefix)
+
+    for uri, prefix in namespace_prefixes.items():
+        ET.register_namespace(prefix, uri)
+
+
+def collect_namespace_prefixes(xml: str) -> dict[str, str]:
+    namespace_prefixes: dict[str, str] = {}
+
+    for event, namespace_data in ET.iterparse(
+        BytesIO(xml.encode("utf-8")),
+        events=("start-ns",),
+    ):
+        _ = event
+        prefix, uri = namespace_data
+
+        if uri in namespace_prefixes:
+            continue
+
+        namespace_prefixes[uri] = preferred_namespace_prefix(prefix, uri)
+
+    return namespace_prefixes
+
+
+def preferred_namespace_prefix(prefix: str, uri: str) -> str:
+    canonical_prefix = CANONICAL_NAMESPACE_PREFIX.get(uri)
+
+    if canonical_prefix is not None:
+        if prefix.startswith("ns"):
+            return canonical_prefix
+
+        if not prefix and canonical_prefix == "":
+            return canonical_prefix
+
+        if prefix == canonical_prefix:
+            return prefix
+
+    return prefix
 
 
 def align_generated_units_to_original(
