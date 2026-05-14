@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import json
 import os
-import shutil
-import tempfile
 from pathlib import Path
 from typing import Any, Callable
 import xml.etree.ElementTree as ET
 
+from srcvisual.tempfiles import managed_tmpdir
+
+from .notify import notify_progress, ProgressCallback
 from .core.archive import extract_revision_files
 from .core.commands import run_command
 from .core.filenames import normalize_visualized_filename, sanitize_filename
@@ -29,7 +29,6 @@ from .core.validation import (
     validate_xml_span_index,
 )
 
-ProgressCallback = Callable[[str], None]
 DEFAULT_TMP_ROOT = Path(__file__).resolve().parents[1] / "temp"
 
 
@@ -42,7 +41,7 @@ def build_visualization_payload(
 ) -> VisualizationPayload:
     with managed_tmpdir(progress=progress) as tmpdir:
         input_path = tmpdir / sanitize_filename(filename)
-        input_path.write_bytes(payload)
+        _ = input_path.write_bytes(payload)
         notify_progress(progress, "Saved uploaded srcdiff.")
 
         revision_0_dir = tmpdir / "revision_0"
@@ -158,45 +157,6 @@ def build_visualization_payload(
         has_position_data=has_position_data,
         files=visualized_files,
     )
-
-
-@contextmanager
-def managed_tmpdir(
-    *,
-    progress: ProgressCallback | None = None,
-):
-    tmp_root = get_tmp_root()
-    tmp_root.mkdir(parents=True, exist_ok=True)
-    tmpdir = Path(tempfile.mkdtemp(prefix="srcvisual-", dir=tmp_root))
-    keep_tmp = should_keep_tmp()
-
-    notify_progress(progress, f"Using temp directory: {tmpdir}")
-
-    try:
-        yield tmpdir
-    finally:
-        if keep_tmp:
-            notify_progress(progress, f"Keeping temp directory for inspection: {tmpdir}")
-        else:
-            shutil.rmtree(tmpdir, ignore_errors=True)
-
-
-def get_tmp_root() -> Path:
-    configured = os.environ.get("SRCVISUAL_TMP_ROOT", "").strip()
-
-    if not configured:
-        return DEFAULT_TMP_ROOT
-
-    return Path(configured).expanduser()
-
-
-def should_keep_tmp() -> bool:
-    return os.environ.get("SRCVISUAL_KEEP_TMP", "").lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
 
 
 def is_strict_srcmove_validation_enabled() -> bool:
@@ -489,7 +449,7 @@ def build_visualized_files(
 
         assert source_owner is not None, (
             "Annotated srcdiff filename is missing from extracted revision files. "
-            f'filename={annotated_filename!r}, annotated unit={annotated_unit_id}.'
+            f"filename={annotated_filename!r}, annotated unit={annotated_unit_id}."
         )
 
         tree = tree_by_unit.get(annotated_unit_id)
@@ -599,11 +559,3 @@ def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]
         filenames.append(filename)
 
     return tuple(filenames)
-
-
-def notify_progress(
-    progress: ProgressCallback | None,
-    message: str,
-) -> None:
-    if progress is not None:
-        progress(message)
