@@ -172,6 +172,59 @@ def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
     assert moved_root.attrib.get("filename") == original_filename
 
 
+def test_function_content_example_keeps_raw_srcmove_xpaths_and_tree_node_ids() -> None:
+    client = create_app().test_client()
+    example_path = EXAMPLES_DIR / "e2e_generated_function_content_diff.xml"
+
+    response = client.post(
+        "/api/visualize",
+        data={
+            "srcdiff_xml": example_path.read_text(encoding="utf-8"),
+            "include_skipped_tags": "false",
+        },
+    )
+
+    if response.status_code != 200:
+        payload = response.get_json(silent=True)
+        error_message = (
+            payload["error"]
+            if isinstance(payload, dict) and "error" in payload
+            else response.get_data(as_text=True)
+        )
+        pytest.fail(
+            "e2e_generated_function_content_diff.xml failed with status "
+            f"{response.status_code}: {error_message}"
+        )
+
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+
+    moves = payload["move_results"]["moves"]
+    assert isinstance(moves, list)
+    assert moves
+    move = moves[0]
+    assert isinstance(move, dict)
+
+    from_xpaths = move["from_xpaths"]
+    to_xpaths = move["to_xpaths"]
+    from_node_ids = move["from_node_ids"]
+    to_node_ids = move["to_node_ids"]
+
+    assert isinstance(from_xpaths, list) and from_xpaths
+    assert isinstance(to_xpaths, list) and to_xpaths
+    assert isinstance(from_node_ids, list) and from_node_ids
+    assert isinstance(to_node_ids, list) and to_node_ids
+
+    assert "function[" in from_xpaths[0]
+    assert "name='bar'" in from_xpaths[0]
+    assert "function[" in to_xpaths[0]
+    assert "name='foo'" in to_xpaths[0]
+    assert "name='bar'" not in from_node_ids[0]
+    assert "name='foo'" not in to_node_ids[0]
+    assert from_node_ids[0].startswith("/src:unit[1]/function[")
+    assert to_node_ids[0].startswith("/src:unit[1]/function[")
+
+
 def build_expected_tree_records(
     expected_results: dict[str, object],
     expected_moves,
