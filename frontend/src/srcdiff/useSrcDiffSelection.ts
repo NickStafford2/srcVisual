@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { VisualizeResponse, VisualizedFile } from "../types";
-import type { HighlightMode } from "./highlightContext";
+import type { BulkHighlightKind, HighlightMode } from "./highlightContext";
 import {
   buildHighlightedNodeIds,
   buildHighlightedSpans,
@@ -14,7 +14,7 @@ import {
   type SrcDiffHighlight,
   type SrcDiffSelectionSpans,
 } from "./selection";
-import type { HighlightKind, SrcDiffTreeNode } from "./types";
+import type { SrcDiffTreeNode } from "./types";
 import { buildForestTreeIndex, type SrcDiffNodeEntry } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
@@ -40,6 +40,12 @@ export type SrcDiffSelectionState = {
   clearHighlights: () => void;
 };
 
+const EMPTY_HIGHLIGHT_MODE: HighlightMode = {
+  move: false,
+  insert: false,
+  delete: false,
+};
+
 export function useSrcDiffSelection(
   data: VisualizeResponse | null,
 ): SrcDiffSelectionState {
@@ -48,7 +54,7 @@ export function useSrcDiffSelection(
     null,
   );
   const [highlightMode, setHighlightMode] =
-    useState<HighlightMode>("selection");
+    useState<HighlightMode>(EMPTY_HIGHLIGHT_MODE);
   const [suppressedHighlightedNodeIds, setSuppressedHighlightedNodeIds] =
     useState<Set<string>>(new Set());
 
@@ -118,7 +124,7 @@ export function useSrcDiffSelection(
   useEffect(() => {
     setSelectedFileIndexState(0);
     setSelectedNodeIdState(null);
-    setHighlightMode("selection");
+    setHighlightMode(EMPTY_HIGHLIGHT_MODE);
     setSuppressedHighlightedNodeIds(new Set());
   }, [data]);
 
@@ -143,31 +149,30 @@ export function useSrcDiffSelection(
   }
 
   function setSelectedNodeId(nodeId: string) {
-    setHighlightMode("selection");
     setSuppressedHighlightedNodeIds(new Set());
     setSelectedNodeIdState(nodeId);
 
-    const entry = treeIndex.get(nodeId);
+    const _entry = treeIndex.get(nodeId);
 
-    if (entry) {
-      setSelectedFileIndexState(entry.fileIndex);
+    if (_entry) {
+      setSelectedFileIndexState(_entry.fileIndex);
     }
   }
 
   function highlightAllMoves() {
-    highlightAllByKind("move", "all-moves");
+    toggleHighlightKind("move");
   }
 
   function highlightAllInserts() {
-    highlightAllByKind("insert", "all-inserts");
+    toggleHighlightKind("insert");
   }
 
   function highlightAllDeletes() {
-    highlightAllByKind("delete", "all-deletes");
+    toggleHighlightKind("delete");
   }
 
   function clearHighlights() {
-    setHighlightMode("selection");
+    setHighlightMode(EMPTY_HIGHLIGHT_MODE);
     setSuppressedHighlightedNodeIds(new Set());
     setSelectedNodeIdState(null);
   }
@@ -180,23 +185,26 @@ export function useSrcDiffSelection(
     });
   }
 
-  function highlightAllByKind(kind: HighlightKind, mode: HighlightMode) {
-    setHighlightMode(mode);
+  function toggleHighlightKind(kind: BulkHighlightKind) {
+    setHighlightMode((current) => ({
+      ...current,
+      [kind]: !current[kind],
+    }));
     setSuppressedHighlightedNodeIds(new Set());
 
-    const firstEntry = getFirstEntryForHighlightKind(
+    if (selectedNodeId) {
+      return;
+    }
+
+    const _firstEntry = getFirstEntryForHighlightKind(
       kind,
       treeEntries,
       moveIndex,
     );
 
-    if (!firstEntry) {
-      setSelectedNodeIdState(null);
-      return;
+    if (_firstEntry) {
+      setSelectedFileIndexState(_firstEntry.fileIndex);
     }
-
-    setSelectedNodeIdState(firstEntry.node.id);
-    setSelectedFileIndexState(firstEntry.fileIndex);
   }
 
   return {

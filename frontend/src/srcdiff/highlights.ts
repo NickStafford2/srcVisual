@@ -1,8 +1,11 @@
 import type { VisualizedFile } from "../types";
-import type { HighlightMode } from "./highlightContext";
-import { getAllMoveEntries, type MoveIndex } from "./moveIndex";
+import type { BulkHighlightKind, HighlightMode } from "./highlightContext";
+import {
+  dedupeNodeEntries,
+  getAllMoveEntries,
+  type MoveIndex,
+} from "./moveIndex";
 import { getNodeHighlight, type SrcDiffHighlight } from "./selection";
-import type { HighlightKind } from "./types";
 import type { SrcDiffNodeEntry } from "./treeIndex";
 
 type GetBaseHighlightedEntriesInput = {
@@ -31,7 +34,7 @@ export function getHighlightedEntries({
 }
 
 export function getFirstEntryForHighlightKind(
-  kind: HighlightKind,
+  kind: BulkHighlightKind,
   treeEntries: SrcDiffNodeEntry[],
   moveIndex: MoveIndex,
 ): SrcDiffNodeEntry | null {
@@ -86,27 +89,29 @@ function getBaseHighlightedEntries({
   treeEntries,
   moveIndex,
 }: GetBaseHighlightedEntriesInput): SrcDiffNodeEntry[] {
-  if (highlightMode === "all-moves") {
-    return getAllMoveEntries(moveIndex);
+  const _entries: SrcDiffNodeEntry[] = [];
+
+  if (selectedNodeEntry) {
+    if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
+      _entries.push(...(moveIndex.get(selectedMoveId) ?? [selectedNodeEntry]));
+    } else {
+      _entries.push(selectedNodeEntry);
+    }
   }
 
-  if (highlightMode === "all-inserts") {
-    return treeEntries.filter((entry) => entry.node.kind === "insert");
+  if (highlightMode.move) {
+    _entries.push(...getAllMoveEntries(moveIndex));
   }
 
-  if (highlightMode === "all-deletes") {
-    return treeEntries.filter((entry) => entry.node.kind === "delete");
+  if (highlightMode.insert) {
+    _entries.push(...treeEntries.filter((_entry) => _entry.node.kind === "insert"));
   }
 
-  if (!selectedNodeEntry) {
-    return [];
+  if (highlightMode.delete) {
+    _entries.push(...treeEntries.filter((_entry) => _entry.node.kind === "delete"));
   }
 
-  if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
-    return moveIndex.get(selectedMoveId) ?? [selectedNodeEntry];
-  }
-
-  return [selectedNodeEntry];
+  return dedupeNodeEntries(_entries);
 }
 
 function assertMatchingFilename(

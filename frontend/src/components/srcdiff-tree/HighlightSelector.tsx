@@ -19,21 +19,21 @@ export function HighlightSelector({
     <div className="grid grid-cols-2">
       <BulkHighlightButton
         label="Highlight all moves"
-        active={highlightMode === "all-moves"}
+        active={highlightMode.move}
         tone="move"
         onClick={onHighlightAllMoves}
       />
 
       <BulkHighlightButton
         label="Highlight all inserts"
-        active={highlightMode === "all-inserts"}
+        active={highlightMode.insert}
         tone="insert"
         onClick={onHighlightAllInserts}
       />
 
       <BulkHighlightButton
         label="Highlight all deletes"
-        active={highlightMode === "all-deletes"}
+        active={highlightMode.delete}
         tone="delete"
         onClick={onHighlightAllDeletes}
       />
@@ -68,6 +68,7 @@ function BulkHighlightButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={[
         "rounded-xl border px-3 py-2 text-xs font-medium transition hover:-translate-y-0.5",
         toneClasses,

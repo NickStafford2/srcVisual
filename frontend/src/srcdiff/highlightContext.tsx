@@ -2,11 +2,9 @@ import { createContext, useContext } from "react";
 import type { SrcDiffHighlight } from "./selection";
 import type { SrcDiffNodeEntry } from "./treeIndex";
 
-export type HighlightMode =
-  | "selection"
-  | "all-moves"
-  | "all-inserts"
-  | "all-deletes";
+export type BulkHighlightKind = "move" | "insert" | "delete";
+
+export type HighlightMode = Record<BulkHighlightKind, boolean>;
 
 export type SrcDiffHighlightContextValue = {
   highlightedNodes: SrcDiffNodeEntry[];

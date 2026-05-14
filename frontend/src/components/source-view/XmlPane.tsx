@@ -147,6 +147,9 @@ export function XmlPane({
 function XmlSegment({ segment }: { segment: ViewerLineSegment }) {
   return (
     <span
+      data-highlighted-segment={segment.highlighted ? "true" : "false"}
+      data-highlight-kind={segment.kind}
+      data-node-id={segment.nodeId ?? undefined}
       className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
     >
       {segment.text}

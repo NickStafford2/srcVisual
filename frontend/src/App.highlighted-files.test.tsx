@@ -67,6 +67,44 @@ describe("App file-level highlight behavior", () => {
       expectFileToHaveNoHighlightedSourceLines(filename);
     }
   });
+
+  it("keeps move highlights active while adding delete highlights", async () => {
+    const user = userEvent.setup();
+
+    await renderHighlightedMovesApp(user);
+
+    const _movesButton = screen.getByRole("button", {
+      name: "Highlight all moves",
+    });
+    const _deletesButton = screen.getByRole("button", {
+      name: "Highlight all deletes",
+    });
+    const _insertsButton = screen.getByRole("button", {
+      name: "Highlight all inserts",
+    });
+
+    expect(_movesButton).toHaveAttribute("aria-pressed", "true");
+    expect(_deletesButton).toHaveAttribute("aria-pressed", "false");
+    expect(_insertsButton).toHaveAttribute("aria-pressed", "false");
+    expectFileToHaveHighlightedSourceLines("foo.hpp");
+
+    await user.click(_deletesButton);
+
+    await waitFor(() => {
+      expect(_movesButton).toHaveAttribute("aria-pressed", "true");
+      expect(_deletesButton).toHaveAttribute("aria-pressed", "true");
+      expectFileToHaveHighlightedSourceLines("foo.hpp");
+    });
+
+    await user.click(_insertsButton);
+
+    await waitFor(() => {
+      expect(_movesButton).toHaveAttribute("aria-pressed", "true");
+      expect(_deletesButton).toHaveAttribute("aria-pressed", "true");
+      expect(_insertsButton).toHaveAttribute("aria-pressed", "true");
+      expectFileToHaveHighlightedSourceLines("foo.cpp");
+    });
+  });
 });
 
 function jsonResponse(payload: unknown): Response {

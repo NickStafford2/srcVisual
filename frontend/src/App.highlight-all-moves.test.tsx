@@ -92,10 +92,6 @@ describe("App highlight all moves flow", () => {
       srcdiffXml: exampleXml,
     });
 
-    await user.click(
-      screen.getByRole("button", { name: "Highlight all moves" }),
-    );
-
     await waitFor(() => {
       expect(getHighlightedTreeNodeIds(screen.getByLabelText("SrcDiff Tree"))).toEqual([
         "/src:unit[1]/diff:delete[1]",
