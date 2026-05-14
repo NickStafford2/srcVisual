@@ -9,27 +9,27 @@ from .core.units import get_srcdiff_file_unit_elements
 
 def build_visualized_files(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     revision_files: tuple[RevisionFile, ...],
     tree_by_unit: dict[int, dict[str, object]],
 ) -> tuple[VisualizedFile, ...]:
-    annotated_filenames = _read_annotated_unit_filenames(annotated_srcdiff_xml)
+    moved_filenames = _read_moved_unit_filenames(moved_srcdiff_xml)
     revision_files_by_filename = _build_revision_file_index_by_filename(revision_files)
     normalized_revision_files_by_filename = _build_normalized_revision_file_index(
         revision_files
     )
     visualized_files: list[VisualizedFile] = []
 
-    for annotated_unit_id, annotated_filename in enumerate(
-        annotated_filenames,
+    for moved_unit_id, moved_filename in enumerate(
+        moved_filenames,
         start=1,
     ):
-        source_owner = revision_files_by_filename.get(annotated_filename)
-        visualized_filename = annotated_filename
+        source_owner = revision_files_by_filename.get(moved_filename)
+        visualized_filename = moved_filename
 
         if source_owner is None:
             source_owner = normalized_revision_files_by_filename.get(
-                normalize_visualized_filename(annotated_filename)
+                normalize_visualized_filename(moved_filename)
             )
             if source_owner is not None:
                 visualized_filename = normalize_visualized_filename(
@@ -37,13 +37,13 @@ def build_visualized_files(
                 )
 
         assert source_owner is not None, (
-            "Annotated srcdiff filename is missing from extracted revision files. "
-            f"filename={annotated_filename!r}, annotated unit={annotated_unit_id}."
+            "Moved srcdiff filename is missing from extracted revision files. "
+            f"filename={moved_filename!r}, moved unit={moved_unit_id}."
         )
 
-        tree = tree_by_unit.get(annotated_unit_id)
+        tree = tree_by_unit.get(moved_unit_id)
 
-        if tree is not None and visualized_filename != annotated_filename:
+        if tree is not None and visualized_filename != moved_filename:
             tree = _build_visualized_tree_root(
                 tree=tree,
                 filename=visualized_filename,
@@ -52,7 +52,7 @@ def build_visualized_files(
         visualized_files.append(
             VisualizedFile(
                 revision_file=RevisionFile(
-                    unit_id=annotated_unit_id,
+                    unit_id=moved_unit_id,
                     filename=visualized_filename,
                     language=source_owner.language,
                     revision_0_source_code=source_owner.revision_0_source_code,
@@ -93,8 +93,8 @@ def _build_visualized_tree_root(
     }
 
 
-def _read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
-    root = ET.fromstring(annotated_srcdiff_xml)
+def _read_moved_unit_filenames(moved_srcdiff_xml: str) -> tuple[str, ...]:
+    root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
     filenames: list[str] = []
@@ -103,7 +103,7 @@ def _read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...
         filename = unit_element.attrib.get("filename")
 
         assert isinstance(filename, str) and filename, (
-            "Annotated srcdiff unit is missing a filename attribute at "
+            "Moved srcdiff unit is missing a filename attribute at "
             f"index {unit_index}."
         )
 

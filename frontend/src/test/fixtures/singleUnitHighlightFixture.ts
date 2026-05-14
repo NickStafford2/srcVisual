@@ -6,7 +6,7 @@ export const singleUnitHighlightFixture: VisualizeResponse = {
   source_filename: "pasted.srcdiff.xml",
   unit_count: 1,
   has_position_data: true,
-  annotated_srcdiff_xml: `<?xml version="1.0" encoding="UTF-8"?>
+  moved_srcdiff_xml: `<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" xmlns:mv="http://www.srcML.org/srcMove" filename="basic.cpp">
   <diff:delete mv:id="move-1" mv:to="/src:unit[1]/diff:insert[1]">int a;</diff:delete>
   <diff:insert mv:from="/src:unit[1]/diff:delete[1]" mv:id="move-1">int a;</diff:insert>

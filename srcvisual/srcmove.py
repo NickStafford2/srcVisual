@@ -15,7 +15,7 @@ def run_srcmove(
     tmpdir: Path,
     progress: ProgressCallback | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    annotated_path = tmpdir / "annotated.srcdiff.xml"
+    moved_path = tmpdir / "moved.srcdiff.xml"
     results_path = tmpdir / "results.json"
 
     notify_progress(progress, "Running srcMove annotations.")
@@ -23,24 +23,24 @@ def run_srcmove(
         [
             "srcMove",
             str(positioned_path),
-            str(annotated_path),
+            str(moved_path),
             "--results",
             str(results_path),
         ]
     )
 
-    assert annotated_path.is_file(), (
-        f"srcMove did not create expected annotated output: {annotated_path}"
+    assert moved_path.is_file(), (
+        f"srcMove did not create expected moved output: {moved_path}"
     )
 
     f"srcMove did not create expected results JSON: {results_path}"
     assert results_path.is_file(), ()
 
-    annotated_srcdiff_xml = annotated_path.read_text(encoding="utf-8")
+    moved_srcdiff_xml = moved_path.read_text(encoding="utf-8")
     results_text = results_path.read_text(encoding="utf-8")
 
-    assert annotated_srcdiff_xml.strip(), (
-        f"srcMove created an empty annotated output: {annotated_path}"
+    assert moved_srcdiff_xml.strip(), (
+        f"srcMove created an empty moved output: {moved_path}"
     )
 
     assert results_text.strip(), (
@@ -53,9 +53,9 @@ def run_srcmove(
         f"srcMove results JSON must be an object; got {type(move_results).__name__}."
     )
 
-    notify_progress(progress, "Reading annotated srcdiff output.")
+    notify_progress(progress, "Reading moved srcdiff output.")
 
-    return annotated_srcdiff_xml, move_results
+    return moved_srcdiff_xml, move_results
 
 
 def is_strict_srcmove_validation_enabled() -> bool:

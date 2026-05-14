@@ -48,6 +48,10 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
         error_message = payload["error"] if isinstance(payload, dict) and "error" in payload else response.get_data(as_text=True)
         pytest.fail(f"{example_path.name} failed with status {response.status_code}: {error_message}")
 
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert_move_node_ids_exist_in_tree(payload)
+
 
 def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> None:
     client = create_app().test_client()
@@ -78,7 +82,7 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     assert isinstance(payload, dict)
 
     filename_to_unit_index = build_filename_to_unit_index(
-        payload["annotated_srcdiff_xml"]
+        payload["moved_srcdiff_xml"]
     )
     expected_results = json.loads(expected_results_path.read_text(encoding="utf-8"))
     actual_moves = parse_srcmove_result_moves(
@@ -164,8 +168,8 @@ def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
         original_filename
     ]
 
-    annotated_root = ET.fromstring(payload["annotated_srcdiff_xml"])
-    assert annotated_root.attrib.get("filename") == original_filename
+    moved_root = ET.fromstring(payload["moved_srcdiff_xml"])
+    assert moved_root.attrib.get("filename") == original_filename
 
 
 def build_expected_tree_records(
@@ -234,6 +238,37 @@ def build_actual_tree_records(
     return records
 
 
+def assert_move_node_ids_exist_in_tree(payload: dict[str, object]) -> None:
+    files = payload["files"]
+    move_results = payload["move_results"]
+    assert isinstance(files, list)
+    assert isinstance(move_results, dict)
+
+    tree_paths: set[str] = set()
+
+    for file_payload in files:
+        assert isinstance(file_payload, dict)
+        tree = file_payload.get("tree")
+        assert isinstance(tree, dict)
+        collect_tree_paths(tree, tree_paths)
+
+    moves = move_results.get("moves")
+    assert isinstance(moves, list)
+
+    for move in moves:
+        assert isinstance(move, dict)
+
+        for key in ("from_node_ids", "to_node_ids"):
+            node_ids = move.get(key)
+            assert isinstance(node_ids, list)
+
+            for node_id in node_ids:
+                assert isinstance(node_id, str)
+                assert node_id in tree_paths, (
+                    f"Move node id from {key} is missing from tree paths: {node_id}"
+                )
+
+
 def collect_tree_records(
     node: dict[str, object],
     filename: str,
@@ -255,6 +290,20 @@ def collect_tree_records(
     for child in children:
         assert isinstance(child, dict)
         collect_tree_records(child, filename, records)
+
+
+def collect_tree_paths(node: dict[str, object], tree_paths: set[str]) -> None:
+    path = node.get("path")
+    children = node.get("children")
+
+    assert isinstance(path, str)
+    assert isinstance(children, list)
+
+    tree_paths.add(path)
+
+    for child in children:
+        assert isinstance(child, dict)
+        collect_tree_paths(child, tree_paths)
 
 
 def extract_filename_from_xpath(xpath: str) -> str:

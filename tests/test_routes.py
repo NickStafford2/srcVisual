@@ -74,7 +74,7 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
         del kwargs
         return VisualizationPayload(
             source_filename="example.xml",
-            annotated_srcdiff_xml="<unit />",
+            moved_srcdiff_xml="<unit />",
             move_results={
                 "move_count": 1,
                 "moves": [

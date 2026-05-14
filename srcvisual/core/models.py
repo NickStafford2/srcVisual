@@ -125,7 +125,7 @@ class VisualizedFile:
 @dataclass(frozen=True)
 class VisualizationPayload:
     source_filename: str
-    annotated_srcdiff_xml: str
+    moved_srcdiff_xml: str
     move_results: dict[str, Any]
     has_position_data: bool
     files: tuple[VisualizedFile, ...]
@@ -133,9 +133,9 @@ class VisualizationPayload:
     def to_dict(self) -> dict[str, object]:
         return {
             "source_filename": self.source_filename,
-            "annotated_srcdiff_xml": self.annotated_srcdiff_xml,
+            "moved_srcdiff_xml": self.moved_srcdiff_xml,
             "move_results": self.move_results,
-            "units": len(self.files),
+            "unit_count": len(self.files),
             "has_position_data": self.has_position_data,
             "files": [file.to_dict() for file in self.files],
         }

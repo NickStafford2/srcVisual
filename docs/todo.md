@@ -11,3 +11,7 @@ Depending on these factors, adjust how the backend works to save calculation tim
 ## MoveTooltip
 
 This is all wrong. it should be on the xml section. the goal is to be able to show the src code of any xml tag without needing to scroll to src code. this should not be just on highlights. wherever you put your mouse, a tooltip should appear showing the src code inside that tag.
+
+## file /project
+
+above the diff tree. we need a file or project name. if an example file was used, use its name.

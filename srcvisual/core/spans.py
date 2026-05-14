@@ -59,13 +59,13 @@ def parse_position_points(value: str) -> tuple[tuple[int, int], ...]:
 
 
 def build_xml_span_index(
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     *,
     include_skipped_tags: bool = False,
 ) -> dict[str, SourceSpan]:
-    root = ET.fromstring(annotated_srcdiff_xml)
+    root = ET.fromstring(moved_srcdiff_xml)
     root_is_file_unit = is_single_file_srcdiff_root(root)
-    xml_bytes = annotated_srcdiff_xml.encode("utf-8")
+    xml_bytes = moved_srcdiff_xml.encode("utf-8")
     line_start_offsets = compute_line_start_offsets(xml_bytes)
 
     spans: dict[str, SourceSpan] = {}

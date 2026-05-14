@@ -10,15 +10,15 @@ from .units import get_srcdiff_file_unit_elements
 
 
 def build_tree_index(
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     *,
     include_skipped_tags: bool = False,
 ) -> tuple[dict[int, dict[str, object]], bool]:
-    root = ET.fromstring(annotated_srcdiff_xml)
+    root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
     xml_span_by_path = build_xml_span_index(
-        annotated_srcdiff_xml,
+        moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
     )
 

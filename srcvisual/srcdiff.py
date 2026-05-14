@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ._annotated_srcdiff import (
-    build_move_results_from_annotated_xml,
+from ._moved_srcdiff import (
+    build_move_results_from_moved_srcdiff,
     has_srcmove_annotations,
 )
 from ._positioned_srcdiff import (
@@ -16,7 +16,7 @@ from .notify import ProgressCallback, notify_progress
 from .srcmove import run_srcmove
 
 
-def build_annotated_srcdiff_xml(
+def build_moved_srcdiff_xml(
     *,
     input_path: Path,
     revision_0_dir: Path,
@@ -35,8 +35,8 @@ def build_annotated_srcdiff_xml(
             "Uploaded srcdiff already has srcMove annotations. Skipping srcdiff and srcMove.",
         )
 
-        move_results = build_move_results_from_annotated_xml(
-            annotated_srcdiff_xml=uploaded_srcdiff_xml,
+        move_results = build_move_results_from_moved_srcdiff(
+            moved_srcdiff_xml=uploaded_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
 
@@ -48,13 +48,13 @@ def build_annotated_srcdiff_xml(
             "Uploaded srcdiff already has position data. Skipping srcdiff.",
         )
 
-        annotated_srcdiff_xml, move_results = run_srcmove(
+        moved_srcdiff_xml, move_results = run_srcmove(
             positioned_path=input_path,
             tmpdir=tmpdir,
             progress=progress,
         )
 
-        return annotated_srcdiff_xml, move_results, True
+        return moved_srcdiff_xml, move_results, True
 
     positioned_path = run_srcdiff_with_positions(
         revision_0_dir=revision_0_dir,
@@ -69,10 +69,10 @@ def build_annotated_srcdiff_xml(
         generated_path=positioned_path,
     )
 
-    annotated_srcdiff_xml, move_results = run_srcmove(
+    moved_srcdiff_xml, move_results = run_srcmove(
         positioned_path=positioned_path,
         tmpdir=tmpdir,
         progress=progress,
     )
 
-    return annotated_srcdiff_xml, move_results, True
+    return moved_srcdiff_xml, move_results, True

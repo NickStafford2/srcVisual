@@ -56,11 +56,11 @@ class TreeMoveNode:
 
 def validate_srcmove_results_match_xml(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     move_results: dict[str, Any],
     include_skipped_tags: bool,
 ) -> None:
-    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+    filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
 
     result_moves = parse_srcmove_result_moves(
         move_results,
@@ -68,7 +68,7 @@ def validate_srcmove_results_match_xml(
     )
 
     xml_regions = collect_xml_move_regions(
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        moved_srcdiff_xml=moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
         filename_to_unit_index=filename_to_unit_index,
     )
@@ -83,7 +83,7 @@ def validate_srcmove_results_match_xml(
     xml_move_ids = {region.move_id for region in xml_regions.values()}
 
     assert result_move_ids == xml_move_ids, (
-        "Move ids differ between results.json and annotated XML. "
+        "Move ids differ between results.json and moved XML. "
         f"Only in results.json: {sorted(result_move_ids - xml_move_ids)}. "
         f"Only in XML: {sorted(xml_move_ids - result_move_ids)}."
     )
@@ -103,7 +103,7 @@ def validate_srcmove_results_match_xml(
     xml_paths = set(xml_regions)
 
     assert result_paths == xml_paths, (
-        "Move region paths differ between results.json and annotated XML. "
+        "Move region paths differ between results.json and moved XML. "
         f"Only in results.json: {sorted(result_paths - xml_paths)}. "
         f"Only in XML: {sorted(xml_paths - result_paths)}."
     )
@@ -111,14 +111,20 @@ def validate_srcmove_results_match_xml(
 
 def augment_move_results_with_node_ids(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     move_results: dict[str, Any],
 ) -> dict[str, Any]:
-    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+    filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
     parsed_moves = parse_srcmove_result_moves(
         move_results,
         filename_to_unit_index=filename_to_unit_index,
     )
+    xml_regions = collect_xml_move_regions(
+        moved_srcdiff_xml=moved_srcdiff_xml,
+        include_skipped_tags=False,
+        filename_to_unit_index=filename_to_unit_index,
+    )
+    move_region_paths = build_move_region_paths_by_id(xml_regions)
 
     moves_value = move_results.get("moves")
     assert isinstance(moves_value, list), "srcMove results must contain moves list."
@@ -130,14 +136,18 @@ def augment_move_results_with_node_ids(
 
     for original_move, parsed_move in zip(moves_value, parsed_moves):
         assert isinstance(original_move, dict), "srcMove result move must be a dict."
+        region_paths = move_region_paths.get(parsed_move.move_id)
+        assert region_paths is not None, (
+            f"Moved XML is missing regions for srcMove move_id={parsed_move.move_id!r}."
+        )
 
         normalized_moves.append(
             {
                 **original_move,
                 "from_xpaths": list(parsed_move.from_xpaths),
                 "to_xpaths": list(parsed_move.to_xpaths),
-                "from_node_ids": list(parsed_move.from_xpaths),
-                "to_node_ids": list(parsed_move.to_xpaths),
+                "from_node_ids": list(region_paths["from_node_ids"]),
+                "to_node_ids": list(region_paths["to_node_ids"]),
             }
         )
 
@@ -147,20 +157,55 @@ def augment_move_results_with_node_ids(
     }
 
 
-def validate_annotated_srcdiff_and_tree(
+def build_move_region_paths_by_id(
+    xml_regions: dict[str, XmlMoveRegion],
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    grouped_paths: dict[str, dict[str, list[str]]] = {}
+
+    for path, region in sorted(xml_regions.items()):
+        move_paths = grouped_paths.setdefault(
+            region.move_id,
+            {
+                "from_node_ids": [],
+                "to_node_ids": [],
+            },
+        )
+
+        if region.tag == "diff:delete":
+            move_paths["from_node_ids"].append(path)
+            continue
+
+        if region.tag == "diff:insert":
+            move_paths["to_node_ids"].append(path)
+            continue
+
+        raise AssertionError(
+            f"Move region {path!r} has unexpected tag {region.tag!r}."
+        )
+
+    return {
+        move_id: {
+            "from_node_ids": tuple(paths["from_node_ids"]),
+            "to_node_ids": tuple(paths["to_node_ids"]),
+        }
+        for move_id, paths in grouped_paths.items()
+    }
+
+
+def validate_moved_srcdiff_and_tree(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     revision_files: tuple[RevisionFile, ...],
     visualized_files: tuple[VisualizedFile, ...],
     include_skipped_tags: bool,
 ) -> None:
-    assert annotated_srcdiff_xml.strip(), "Annotated srcdiff XML is empty."
+    assert moved_srcdiff_xml.strip(), "Moved srcdiff XML is empty."
 
-    root = ET.fromstring(annotated_srcdiff_xml)
+    root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
     assert len(unit_elements) == len(revision_files), (
-        "Annotated srcdiff unit count does not match extracted revision file count. "
+        "Moved srcdiff unit count does not match extracted revision file count. "
         f"srcdiff units={len(unit_elements)}, revision_files={len(revision_files)}."
     )
 
@@ -176,14 +221,14 @@ def validate_annotated_srcdiff_and_tree(
         expected_filename = unit_element.attrib.get("filename")
 
         assert visualized_file.revision_file.unit_id == unit_index, (
-            "Visualized file unit_id does not match annotated srcdiff unit order. "
+            "Visualized file unit_id does not match moved srcdiff unit order. "
             f"expected unit_id={unit_index}, "
             f"got {visualized_file.revision_file.unit_id}."
         )
 
         if expected_filename is not None:
             assert visualized_file.revision_file.filename == expected_filename, (
-                "Visualized file filename does not match annotated srcdiff unit. "
+                "Visualized file filename does not match moved srcdiff unit. "
                 f"unit {unit_index} expected filename={expected_filename!r}, "
                 f"got {visualized_file.revision_file.filename!r}."
             )
@@ -192,22 +237,22 @@ def validate_annotated_srcdiff_and_tree(
 
         if tree is not None:
             assert tree.get("path") == f"/src:unit[{unit_index}]", (
-                "Visualized tree root path does not match annotated srcdiff unit "
+                "Visualized tree root path does not match moved srcdiff unit "
                 f"order for filename {visualized_file.revision_file.filename!r}. "
                 f"tree path={tree.get('path')!r}."
             )
 
             if expected_filename is not None:
                 assert tree.get("label") == f"unit: {expected_filename}", (
-                    "Visualized tree root label does not match annotated srcdiff "
+                    "Visualized tree root label does not match moved srcdiff "
                     f"unit filename {expected_filename!r}. "
                     f"tree label={tree.get('label')!r}."
                 )
 
-    filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+    filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
 
     xml_regions = collect_xml_move_regions(
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        moved_srcdiff_xml=moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
         filename_to_unit_index=filename_to_unit_index,
     )
@@ -217,7 +262,7 @@ def validate_annotated_srcdiff_and_tree(
     )
 
     assert set(xml_regions) == set(tree_moves), (
-        "Move node paths differ between annotated srcdiff XML and tree payload. "
+        "Move node paths differ between moved srcdiff XML and tree payload. "
         f"Only in XML: {sorted(set(xml_regions) - set(tree_moves))}. "
         f"Only in tree: {sorted(set(tree_moves) - set(xml_regions))}."
     )
@@ -268,8 +313,8 @@ def validate_annotated_srcdiff_and_tree(
     assert_move_groups_match(xml_regions, tree_moves)
 
 
-def build_filename_to_unit_index(annotated_srcdiff_xml: str) -> dict[str, int]:
-    root = ET.fromstring(annotated_srcdiff_xml)
+def build_filename_to_unit_index(moved_srcdiff_xml: str) -> dict[str, int]:
+    root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
     filename_to_unit_index: dict[str, int] = {}
@@ -308,7 +353,7 @@ def normalize_srcmove_xpath(
 
     assert filename in filename_to_unit_index, (
         f"srcMove xpath references filename {filename!r}, but that filename "
-        "is missing or ambiguous in the annotated srcdiff XML units. "
+        "is missing or ambiguous in the moved srcdiff XML units. "
         "Prefer /src:unit[index] paths for srcMove references when duplicate "
         "filenames exist."
     )
@@ -435,11 +480,11 @@ def expect_string_tuple(
 
 def collect_xml_move_regions(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     include_skipped_tags: bool,
     filename_to_unit_index: dict[str, int],
 ) -> dict[str, XmlMoveRegion]:
-    root = ET.fromstring(annotated_srcdiff_xml)
+    root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
     regions: dict[str, XmlMoveRegion] = {}
@@ -743,7 +788,7 @@ def assert_move_groups_match(
         tree_groups.setdefault(move.move_id, set()).add(path)
 
     assert xml_groups == tree_groups, (
-        "Move id groupings differ between annotated srcdiff XML and tree payload. "
+        "Move id groupings differ between moved srcdiff XML and tree payload. "
         f"XML groups={format_move_groups(xml_groups)}. "
         f"Tree groups={format_move_groups(tree_groups)}."
     )
@@ -804,18 +849,18 @@ def validate_visualization_payload(payload: VisualizationPayload) -> None:
     assert isinstance(payload_dict["source_filename"], str)
     assert payload_dict["source_filename"]
 
-    assert isinstance(payload_dict["annotated_srcdiff_xml"], str)
-    assert payload_dict["annotated_srcdiff_xml"].strip()
+    assert isinstance(payload_dict["moved_srcdiff_xml"], str)
+    assert payload_dict["moved_srcdiff_xml"].strip()
 
     assert isinstance(payload_dict["move_results"], dict)
 
     assert isinstance(payload_dict["has_position_data"], bool)
 
-    assert isinstance(payload_dict["units"], int)
-    assert payload_dict["units"] == len(payload.files)
+    assert isinstance(payload_dict["unit_count"], int)
+    assert payload_dict["unit_count"] == len(payload.files)
 
     assert isinstance(payload_dict["files"], list)
-    assert len(payload_dict["files"]) == payload_dict["units"]
+    assert len(payload_dict["files"]) == payload_dict["unit_count"]
 
     for file_index, file_payload in enumerate(payload_dict["files"]):
         assert isinstance(file_payload, dict), (
@@ -900,11 +945,11 @@ def validate_tree_payload_node(node: dict[str, object]) -> None:
 
 def validate_xml_span_index(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     include_skipped_tags: bool,
 ) -> None:
     spans = build_xml_span_index(
-        annotated_srcdiff_xml,
+        moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
     )
 

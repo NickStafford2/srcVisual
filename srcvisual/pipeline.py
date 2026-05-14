@@ -11,7 +11,7 @@ from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.tree_builder import build_tree_index
 from .core.validation import (
     augment_move_results_with_node_ids,
-    validate_annotated_srcdiff_and_tree,
+    validate_moved_srcdiff_and_tree,
     validate_srcmove_results_match_xml,
     validate_visualization_payload,
     validate_xml_span_index,
@@ -20,7 +20,7 @@ from .notify import ProgressCallback, notify_progress
 from .srcmove import (
     is_strict_srcmove_validation_enabled,
 )
-from .srcdiff import build_annotated_srcdiff_xml
+from .srcdiff import build_moved_srcdiff_xml
 from .visualize_data import build_visualized_files
 
 
@@ -52,8 +52,8 @@ def build_visualization_payload(
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
-        annotated_srcdiff_xml, move_results, _should_validate_srcmove_results = (
-            build_annotated_srcdiff_xml(
+        moved_srcdiff_xml, move_results, _should_validate_srcmove_results = (
+            build_moved_srcdiff_xml(
                 input_path=input_path,
                 revision_0_dir=revision_0_dir,
                 revision_1_dir=revision_1_dir,
@@ -68,10 +68,10 @@ def build_visualization_payload(
         if is_strict_srcmove_validation_enabled():
             notify_progress(
                 progress,
-                "Strict srcMove validation is enabled. Validating results.json against annotated XML.",
+                "Strict srcMove validation is enabled. Validating results.json against moved XML.",
             )
             validate_srcmove_results_match_xml(
-                annotated_srcdiff_xml=annotated_srcdiff_xml,
+                moved_srcdiff_xml=moved_srcdiff_xml,
                 move_results=move_results,
                 include_skipped_tags=include_skipped_tags,
             )
@@ -81,33 +81,33 @@ def build_visualization_payload(
                 "Skipping strict srcMove results validation.",
             )
 
-        notify_progress(progress, "Validating annotated srcdiff XML.")
+        notify_progress(progress, "Validating moved srcdiff XML.")
         validate_xml_span_index(
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            moved_srcdiff_xml=moved_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
 
         notify_progress(progress, "Normalizing move partner node ids.")
         move_results = augment_move_results_with_node_ids(
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            moved_srcdiff_xml=moved_srcdiff_xml,
             move_results=move_results,
         )
 
         notify_progress(progress, "Building tree view data.")
         tree_by_unit, has_position_data = build_tree_index(
-            annotated_srcdiff_xml,
+            moved_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
 
         visualized_files = build_visualized_files(
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
+            moved_srcdiff_xml=moved_srcdiff_xml,
             revision_files=revision_files,
             tree_by_unit=tree_by_unit,
         )
 
-        notify_progress(progress, "Validating annotated XML against full tree data.")
-        validate_annotated_srcdiff_and_tree(
-            annotated_srcdiff_xml=annotated_srcdiff_xml,
+        notify_progress(progress, "Validating moved XML against full tree data.")
+        validate_moved_srcdiff_and_tree(
+            moved_srcdiff_xml=moved_srcdiff_xml,
             revision_files=revision_files,
             visualized_files=visualized_files,
             include_skipped_tags=include_skipped_tags,
@@ -115,7 +115,7 @@ def build_visualization_payload(
 
     full_payload_result = VisualizationPayload(
         source_filename=filename,
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        moved_srcdiff_xml=moved_srcdiff_xml,
         move_results=move_results,
         has_position_data=has_position_data,
         files=visualized_files,
@@ -144,7 +144,7 @@ def build_visualization_payload(
 
     return VisualizationPayload(
         source_filename=filename,
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        moved_srcdiff_xml=moved_srcdiff_xml,
         move_results=move_results,
         has_position_data=has_position_data,
         files=visualized_files,

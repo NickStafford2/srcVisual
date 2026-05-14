@@ -45,6 +45,7 @@ export async function visualizeSrcDiff(
     throw new Error("error" in payload ? payload.error : "Upload failed.");
   }
 
+  assertVisualizeResponseContract(payload);
   assertVisualizeResponseHasXmlSpans(payload);
 
   return payload;
@@ -72,6 +73,32 @@ function assertVisualizeResponseHasXmlSpans(
     if (!file.tree) continue;
 
     assertTreeHasXmlSpans(file.tree, file.filename);
+  }
+}
+
+function assertVisualizeResponseContract(
+  payload: VisualizeResponse,
+): asserts payload is VisualizeResponse {
+  if (typeof payload.moved_srcdiff_xml !== "string") {
+    throw new Error("Backend response is missing `moved_srcdiff_xml`.");
+  }
+
+  if (typeof payload.source_filename !== "string") {
+    throw new Error("Backend response is missing `source_filename`.");
+  }
+
+  if (!Array.isArray(payload.files)) {
+    throw new Error("Backend response is missing `files`.");
+  }
+
+  if (typeof payload.unit_count !== "number") {
+    throw new Error("Backend response is missing `unit_count`.");
+  }
+
+  if (payload.unit_count !== payload.files.length) {
+    throw new Error(
+      `Backend response has mismatched unit count: unit_count=${payload.unit_count}, files=${payload.files.length}.`,
+    );
   }
 }
 

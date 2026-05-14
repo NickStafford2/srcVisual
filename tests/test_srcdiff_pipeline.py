@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from srcvisual.srcdiff import build_annotated_srcdiff_xml
+from srcvisual.srcdiff import build_moved_srcdiff_xml
 
 
-def test_build_annotated_srcdiff_xml_restores_positioned_xml_before_srcmove(
+def test_build_moved_srcdiff_xml_restores_positioned_xml_before_srcmove(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -49,7 +49,7 @@ def test_build_annotated_srcdiff_xml_restores_positioned_xml_before_srcmove(
     )
     monkeypatch.setattr("srcvisual.srcdiff.run_srcmove", _fake_run_srcmove)
 
-    _annotated_xml, _move_results, _has_position_data = build_annotated_srcdiff_xml(
+    _moved_xml, _move_results, _has_position_data = build_moved_srcdiff_xml(
         input_path=_input_path,
         revision_0_dir=tmp_path / "revision_0",
         revision_1_dir=tmp_path / "revision_1",
@@ -59,7 +59,7 @@ def test_build_annotated_srcdiff_xml_restores_positioned_xml_before_srcmove(
         include_skipped_tags=False,
     )
 
-    assert _annotated_xml == "annotated xml"
+    assert _moved_xml == "annotated xml"
     assert _move_results == {"moves": []}
     assert _has_position_data is True
     assert _calls[0] == "srcdiff"
@@ -67,7 +67,7 @@ def test_build_annotated_srcdiff_xml_restores_positioned_xml_before_srcmove(
     assert _calls[2] == ("srcmove", "restored positioned xml", tmp_path)
 
 
-def test_build_annotated_srcdiff_xml_skips_restore_when_input_has_positions(
+def test_build_moved_srcdiff_xml_skips_restore_when_input_has_positions(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -96,7 +96,7 @@ def test_build_annotated_srcdiff_xml_skips_restore_when_input_has_positions(
     )
     monkeypatch.setattr("srcvisual.srcdiff.run_srcmove", _fake_run_srcmove)
 
-    _annotated_xml, _move_results, _has_position_data = build_annotated_srcdiff_xml(
+    _moved_xml, _move_results, _has_position_data = build_moved_srcdiff_xml(
         input_path=_input_path,
         revision_0_dir=tmp_path / "revision_0",
         revision_1_dir=tmp_path / "revision_1",
@@ -106,7 +106,7 @@ def test_build_annotated_srcdiff_xml_skips_restore_when_input_has_positions(
         include_skipped_tags=False,
     )
 
-    assert _annotated_xml == "annotated xml"
+    assert _moved_xml == "annotated xml"
     assert _move_results == {"moves": []}
     assert _has_position_data is True
     assert _calls == [(_input_path, tmp_path)]

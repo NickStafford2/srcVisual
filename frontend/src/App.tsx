@@ -85,8 +85,8 @@ export default function App() {
 
             <XmlPane
               title="srcDiff XML"
-              subtitle="Annotated XML returned by the backend"
-              source={data.annotated_srcdiff_xml}
+              subtitle="Moved srcdiff XML returned by the backend"
+              source={data.moved_srcdiff_xml}
               highlights={xmlHighlights}
             />
 

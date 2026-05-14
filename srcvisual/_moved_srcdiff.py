@@ -16,15 +16,15 @@ def has_srcmove_annotations(srcdiff_xml: str) -> bool:
     return any(MV_ID in _element.attrib for _element in _root.iter())
 
 
-def build_move_results_from_annotated_xml(
+def build_move_results_from_moved_srcdiff(
     *,
-    annotated_srcdiff_xml: str,
+    moved_srcdiff_xml: str,
     include_skipped_tags: bool,
 ) -> dict[str, Any]:
-    _filename_to_unit_index = build_filename_to_unit_index(annotated_srcdiff_xml)
+    _filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
 
     _xml_regions = collect_xml_move_regions(
-        annotated_srcdiff_xml=annotated_srcdiff_xml,
+        moved_srcdiff_xml=moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
         filename_to_unit_index=_filename_to_unit_index,
     )

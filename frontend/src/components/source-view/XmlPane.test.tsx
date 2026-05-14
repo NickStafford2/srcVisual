@@ -49,7 +49,7 @@ describe("XmlPane", () => {
     render(
       <XmlPane
         title="srcDiff XML"
-        subtitle="Annotated XML"
+        subtitle="Moved srcdiff XML"
         source={_source}
         highlights={_highlights}
       />,

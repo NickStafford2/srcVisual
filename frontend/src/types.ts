@@ -30,7 +30,7 @@ export interface SrcMoveResults {
 
 export interface VisualizeResponse {
   source_filename: string;
-  annotated_srcdiff_xml: string;
+  moved_srcdiff_xml: string;
   move_results: SrcMoveResults;
   unit_count: number;
   has_position_data: boolean;
