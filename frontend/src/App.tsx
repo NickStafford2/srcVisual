@@ -69,7 +69,6 @@ export default function App() {
             <SrcDiffTree
               files={files}
               selectedFileIndex={srcDiffSelection.selectedFileIndex}
-              selectedNodeId={srcDiffSelection.selectedNodeId}
               onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
               onHighlightNode={srcDiffSelection.highlightNode}
               onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
@@ -83,7 +82,6 @@ export default function App() {
             <MoveSummary
               moveResults={data.move_results}
               moveNodesById={srcDiffSelection.moveNodesById}
-              selectedMoveId={srcDiffSelection.selectedMoveId}
               onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
             />
 
@@ -97,8 +95,6 @@ export default function App() {
 
             <SourceCodeSection
               files={files}
-              focusedFileIndex={srcDiffSelection.selectedFileIndex}
-              selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
               highlightedSpansByUnitId={
                 srcDiffSelection.sourceHighlightedSpansByUnitId
               }

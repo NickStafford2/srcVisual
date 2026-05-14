@@ -12,8 +12,6 @@ import { buildMoveTooltipInfoById } from "./code-pane/MoveTooltip";
 type SourceFileCardProps = {
   fileIndex: number;
   file: VisualizedFile;
-  isFocused: boolean;
-  isSelectedNodeFile: boolean;
   highlightedSpans: SrcDiffHighlight[];
   moveResults?: SrcMoveResults;
   registerMoveSegment?: RegisterMoveSegment;
@@ -23,8 +21,6 @@ type SourceFileCardProps = {
 export function SourceFileCard({
   fileIndex,
   file,
-  isFocused,
-  isSelectedNodeFile,
   highlightedSpans,
   moveResults,
   registerMoveSegment,
@@ -83,14 +79,7 @@ export function SourceFileCard({
     <article
       aria-label={`Source file ${file.filename}`}
       data-file-name={file.filename}
-      className={[
-        "rounded-[20px] border p-3 transition",
-        isSelectedNodeFile
-          ? "border-emerald-300/25 bg-emerald-300/8"
-          : isFocused
-            ? "border-sky-300/25 bg-sky-300/8"
-            : "border-white/10 bg-white/[0.03]",
-      ].join(" ")}
+      className="rounded-[20px] border border-white/10 bg-white/[0.03] p-3 transition"
     >
       <header className="mb-3 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <div>
@@ -105,18 +94,6 @@ export function SourceFileCard({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {isFocused ? (
-            <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-1 text-xs text-sky-100">
-              focused
-            </span>
-          ) : null}
-
-          {isSelectedNodeFile ? (
-            <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
-              focused node
-            </span>
-          ) : null}
-
           {highlightedSpans.length > 0 ? (
             <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
               {highlightedSpans.length} highlighted

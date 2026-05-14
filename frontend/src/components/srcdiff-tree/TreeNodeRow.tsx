@@ -12,7 +12,6 @@ type TreeNodeRowProps = {
   node: SrcDiffTreeNode;
   depth: number;
   expandedIds: Set<string>;
-  selectedNodeId: string | null;
   highlightedNodeIds: Set<string>;
   onHighlightNode: (nodeId: string) => void;
   onHighlightMoveGroup: (nodeId: string) => void;
@@ -24,14 +23,12 @@ export function TreeNodeRow({
   node,
   depth,
   expandedIds,
-  selectedNodeId,
   highlightedNodeIds,
   onHighlightNode,
   onHighlightMoveGroup,
   onToggleNode,
 }: TreeNodeRowProps) {
   const isExpanded = expandedIds.has(node.id);
-  const isSelected = selectedNodeId === node.id;
   const isHighlighted = highlightedNodeIds.has(node.id);
   const hasChildren = node.children.length > 0;
   const lineBadges = getNodeLineBadges(node, fileIndex);
@@ -70,14 +67,11 @@ export function TreeNodeRow({
         data-highlight-kind={node.kind}
         data-highlighted={isHighlighted ? "true" : "false"}
         data-node-id={node.id}
-        data-selected={isSelected ? "true" : "false"}
         className={[
           "mb-0.5 flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition",
-          isSelected
-            ? "bg-sky-300/20 ring-1 ring-sky-300/30"
-            : isHighlighted
-              ? getTreeNodeHighlightClasses(node.kind)
-              : "hover:bg-white/5",
+          isHighlighted
+            ? getTreeNodeHighlightClasses(node.kind)
+            : "hover:bg-white/5",
         ].join(" ")}
         style={{ paddingLeft: `${depth * 14 + 8}px` }}
       >
@@ -170,7 +164,6 @@ export function TreeNodeRow({
               node={child}
               depth={depth + 1}
               expandedIds={expandedIds}
-              selectedNodeId={selectedNodeId}
               highlightedNodeIds={highlightedNodeIds}
               onHighlightNode={onHighlightNode}
               onHighlightMoveGroup={onHighlightMoveGroup}

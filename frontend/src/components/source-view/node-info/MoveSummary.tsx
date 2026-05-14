@@ -4,14 +4,12 @@ import { buildMoveIds, buildMoveInfo, summarizeTextList, type MoveNodeEntry } fr
 type MoveSummaryProps = {
   moveResults: SrcMoveResults;
   moveNodesById: Map<string, MoveNodeEntry[]>;
-  selectedMoveId: string | null;
   onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export function MoveSummary({
   moveResults,
   moveNodesById,
-  selectedMoveId,
   onHighlightMoveGroup,
 }: MoveSummaryProps) {
   const moveIds = buildMoveIds(moveResults, moveNodesById);
@@ -50,16 +48,11 @@ export function MoveSummary({
               moveNodesById.get(moveId) ?? [],
             );
             const anchorNode = move.nodes[0]?.node ?? null;
-            const isSelected = selectedMoveId === moveId;
 
             return (
               <article
                 key={moveId}
-                className={
-                  isSelected
-                    ? "rounded-2xl border border-emerald-300/20 bg-emerald-300/8 px-4 py-3"
-                    : "rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
-                }
+                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>

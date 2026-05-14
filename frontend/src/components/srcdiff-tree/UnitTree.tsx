@@ -5,7 +5,6 @@ type UnitTreeProps = {
   unit: VisualizedFile;
   unitIndex: number;
   isFocused: boolean;
-  selectedNodeId: string | null;
   highlightedNodeIds: Set<string>;
   expandedIds: Set<string>;
   onSelectUnitIndex: (index: number) => void;
@@ -18,7 +17,6 @@ export function UnitTree({
   unit,
   unitIndex,
   isFocused,
-  selectedNodeId,
   highlightedNodeIds,
   expandedIds,
   onSelectUnitIndex,
@@ -40,7 +38,6 @@ export function UnitTree({
             node={unit.tree}
             depth={0}
             expandedIds={expandedIds}
-            selectedNodeId={selectedNodeId}
             highlightedNodeIds={highlightedNodeIds}
             onHighlightNode={onHighlightNode}
             onHighlightMoveGroup={onHighlightMoveGroup}
@@ -58,12 +55,6 @@ export function UnitTree({
         className="flex w-full cursor-pointer flex-row items-start justify-end gap-2 rounded-xl px-2.5 py-1.5 text-left transition hover:bg-white/5"
         onClick={() => onSelectUnitIndex(unitIndex)}
       >
-        {isFocused ? (
-          <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] tracking-wide text-sky-100 uppercase">
-            focused
-          </span>
-        ) : null}
-
         <span className="truncate text-sm text-slate-100">{unit.filename}</span>
 
         {unit.language ? (

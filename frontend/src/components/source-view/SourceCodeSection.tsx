@@ -6,16 +6,12 @@ import { useMoveConnectorOverlay } from "./code-pane/useMoveConnectorOverlay";
 
 type SourceCodeSectionProps = {
   files: VisualizedFile[];
-  focusedFileIndex: number;
-  selectedNodeFileIndex: number | null;
   highlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
   moveResults?: SrcMoveResults;
 };
 
 export function SourceCodeSection({
   files,
-  focusedFileIndex,
-  selectedNodeFileIndex,
   highlightedSpansByUnitId,
   moveResults,
 }: SourceCodeSectionProps) {
@@ -41,8 +37,6 @@ export function SourceCodeSection({
                 key={`${file.unit_id}-${file.filename}`}
                 fileIndex={fileIndex}
                 file={file}
-                isFocused={fileIndex === focusedFileIndex}
-                isSelectedNodeFile={fileIndex === selectedNodeFileIndex}
                 highlightedSpans={highlightedSpans}
                 moveResults={moveResults}
                 registerMoveSegment={registerMoveSegment}

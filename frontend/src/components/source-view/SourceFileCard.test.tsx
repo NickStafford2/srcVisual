@@ -75,8 +75,6 @@ describe("SourceFileCard", () => {
       <SourceFileCard
         fileIndex={0}
         file={_file}
-        isFocused={false}
-        isSelectedNodeFile={false}
         highlightedSpans={_highlights}
       />,
     );

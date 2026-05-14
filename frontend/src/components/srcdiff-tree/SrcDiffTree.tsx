@@ -6,7 +6,6 @@ import { UnitTree } from "./UnitTree";
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
   selectedFileIndex: number;
-  selectedNodeId: string | null;
   onSelectFileIndex: (index: number) => void;
   onHighlightNode: (nodeId: string) => void;
   onHighlightMoveGroup: (nodeId: string) => void;
@@ -15,7 +14,6 @@ type SrcDiffTreeProps = {
 export default function SrcDiffTree({
   files,
   selectedFileIndex,
-  selectedNodeId,
   onSelectFileIndex,
   onHighlightNode,
   onHighlightMoveGroup,
@@ -137,7 +135,6 @@ export default function SrcDiffTree({
               unit={unit}
               unitIndex={unitIndex}
               isFocused={unitIndex === selectedFileIndex}
-              selectedNodeId={selectedNodeId}
               highlightedNodeIds={highlightedNodeIds}
               expandedIds={expandedIds}
               onSelectUnitIndex={onSelectFileIndex}

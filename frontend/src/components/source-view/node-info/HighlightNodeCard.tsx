@@ -81,7 +81,6 @@ export function HighlightedNodeCard({
       {node.move_id ? (
         <MoveDetails
           moveId={node.move_id}
-          selectedNodeId={node.id}
           nodes={moveNodes}
           moveResults={moveResults}
         />
