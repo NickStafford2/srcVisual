@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import json
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any, Callable
@@ -27,6 +29,7 @@ from .core.validation import (
 )
 
 ProgressCallback = Callable[[str], None]
+DEFAULT_TMP_ROOT = Path(__file__).resolve().parents[1] / "temp"
 
 
 def build_visualization_payload(
@@ -36,8 +39,7 @@ def build_visualization_payload(
     include_skipped_tags: bool = False,
     progress: ProgressCallback | None = None,
 ) -> VisualizationPayload:
-    with tempfile.TemporaryDirectory(prefix="srcvisual-") as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
+    with managed_tmpdir(progress=progress) as tmpdir:
         input_path = tmpdir / sanitize_filename(filename)
         input_path.write_bytes(payload)
         notify_progress(progress, "Saved uploaded srcdiff.")
@@ -152,6 +154,45 @@ def build_visualization_payload(
         has_position_data=has_position_data,
         files=visualized_files,
     )
+
+
+@contextmanager
+def managed_tmpdir(
+    *,
+    progress: ProgressCallback | None = None,
+):
+    tmp_root = get_tmp_root()
+    tmp_root.mkdir(parents=True, exist_ok=True)
+    tmpdir = Path(tempfile.mkdtemp(prefix="srcvisual-", dir=tmp_root))
+    keep_tmp = should_keep_tmp()
+
+    notify_progress(progress, f"Using temp directory: {tmpdir}")
+
+    try:
+        yield tmpdir
+    finally:
+        if keep_tmp:
+            notify_progress(progress, f"Keeping temp directory for inspection: {tmpdir}")
+        else:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def get_tmp_root() -> Path:
+    configured = os.environ.get("SRCVISUAL_TMP_ROOT", "").strip()
+
+    if not configured:
+        return DEFAULT_TMP_ROOT
+
+    return Path(configured).expanduser()
+
+
+def should_keep_tmp() -> bool:
+    return os.environ.get("SRCVISUAL_KEEP_TMP", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def is_strict_srcmove_validation_enabled() -> bool:
