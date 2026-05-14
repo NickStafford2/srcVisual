@@ -227,7 +227,7 @@ def run_srcdiff_with_positions(
     positioned_path = tmpdir / "positioned.srcdiff.xml"
 
     notify_progress(progress, "Running srcdiff with position data.")
-    _ = run_command(
+    result = run_command(
         [
             "srcdiff",
             "--position",
@@ -238,9 +238,27 @@ def run_srcdiff_with_positions(
         ]
     )
 
+    if not positioned_path.is_file():
+        print("srcdiff stdout:")
+        print(result.stdout)
+        print("srcdiff stderr:")
+        print(result.stderr)
+        print("tmpdir contents:")
+        for candidate in sorted(tmpdir.rglob("*")):
+            print(candidate)
+
     assert positioned_path.is_file(), (
         f"srcdiff did not create expected positioned output: {positioned_path}"
     )
+
+    if not positioned_path.read_text(encoding="utf-8").strip():
+        print("srcdiff stdout:")
+        print(result.stdout)
+        print("srcdiff stderr:")
+        print(result.stderr)
+        print("tmpdir contents:")
+        for candidate in sorted(tmpdir.rglob("*")):
+            print(candidate)
 
     assert positioned_path.read_text(encoding="utf-8").strip(), (
         f"srcdiff created an empty positioned output: {positioned_path}"
