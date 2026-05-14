@@ -15,13 +15,12 @@ from .srcmove import (
 from .visualize_data import build_visualized_files
 from .core.archive import extract_revision_files
 from .core.commands import run_command
-from .core.filenames import normalize_visualized_filename, sanitize_filename
-from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
+from .core.filenames import sanitize_filename
+from .core.models import VisualizationPayload
 from .core.namespaces import POS_END, POS_START
 from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.srcdiff_restore import restore_original_srcdiff_metadata
 from .core.tree_builder import build_tree_index
-from .core.units import get_srcdiff_file_unit_elements
 from .core.validation import (
     augment_move_results_with_node_ids,
     build_filename_to_unit_index,

@@ -1,35 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
 import xml.etree.ElementTree as ET
 
-from srcvisual.tempfiles import managed_tmpdir
-
-from .notify import notify_progress, ProgressCallback
-from .srcmove import (
-    run_srcmove,
-    has_srcmove_annotations,
-    is_strict_srcmove_validation_enabled,
-)
-from .core.archive import extract_revision_files
-from .core.commands import run_command
-from .core.filenames import normalize_visualized_filename, sanitize_filename
-from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
-from .core.namespaces import POS_END, POS_START
-from .core.pruning import get_pruning_level, prune_visualized_files
-from .core.srcdiff_restore import restore_original_srcdiff_metadata
-from .core.tree_builder import build_tree_index
+from .core.filenames import normalize_visualized_filename
+from .core.models import RevisionFile, VisualizedFile
 from .core.units import get_srcdiff_file_unit_elements
-from .core.validation import (
-    augment_move_results_with_node_ids,
-    build_filename_to_unit_index,
-    collect_xml_move_regions,
-    validate_annotated_srcdiff_and_tree,
-    validate_srcmove_results_match_xml,
-    validate_visualization_payload,
-    validate_xml_span_index,
-)
 
 
 def build_visualized_files(
@@ -38,9 +13,9 @@ def build_visualized_files(
     revision_files: tuple[RevisionFile, ...],
     tree_by_unit: dict[int, dict[str, object]],
 ) -> tuple[VisualizedFile, ...]:
-    annotated_filenames = read_annotated_unit_filenames(annotated_srcdiff_xml)
-    revision_files_by_filename = build_revision_file_index_by_filename(revision_files)
-    normalized_revision_files_by_filename = build_normalized_revision_file_index(
+    annotated_filenames = _read_annotated_unit_filenames(annotated_srcdiff_xml)
+    revision_files_by_filename = _build_revision_file_index_by_filename(revision_files)
+    normalized_revision_files_by_filename = _build_normalized_revision_file_index(
         revision_files
     )
     visualized_files: list[VisualizedFile] = []
@@ -69,7 +44,7 @@ def build_visualized_files(
         tree = tree_by_unit.get(annotated_unit_id)
 
         if tree is not None and visualized_filename != annotated_filename:
-            tree = build_visualized_tree_root(
+            tree = _build_visualized_tree_root(
                 tree=tree,
                 filename=visualized_filename,
             )
@@ -90,7 +65,7 @@ def build_visualized_files(
     return tuple(visualized_files)
 
 
-def build_visualized_tree_root(
+def _build_visualized_tree_root(
     *,
     tree: dict[str, object],
     filename: str,
@@ -118,7 +93,7 @@ def build_visualized_tree_root(
     }
 
 
-def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
+def _read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
     root = ET.fromstring(annotated_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
@@ -137,7 +112,7 @@ def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]
     return tuple(filenames)
 
 
-def build_normalized_revision_file_index(
+def _build_normalized_revision_file_index(
     revision_files: tuple[RevisionFile, ...],
 ) -> dict[str, RevisionFile]:
     indexed_files: dict[str, RevisionFile] = {}
@@ -159,7 +134,7 @@ def build_normalized_revision_file_index(
     return indexed_files
 
 
-def build_revision_file_index_by_filename(
+def _build_revision_file_index_by_filename(
     revision_files: tuple[RevisionFile, ...],
 ) -> dict[str, RevisionFile]:
     indexed_files: dict[str, RevisionFile] = {}
