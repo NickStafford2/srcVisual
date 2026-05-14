@@ -1,25 +1,22 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-from srcvisual.tempfiles import managed_tmpdir
-
-from .core.archive import extract_revision_files
-from .core.filenames import sanitize_filename
-from .core.models import VisualizationPayload
-from .core.pruning import get_pruning_level, prune_visualized_files
-from .core.tree_builder import build_tree_index
-from .core.validation.payload import validate_visualization_payload
-from .core.validation.srcmove_results import validate_srcmove_results_match_xml
-from .core.validation.tree import validate_moved_srcdiff_and_tree
-from .core.validation.xml import validate_xml_span_index
-from .notify import ProgressCallback, notify_progress
-from .srcmove import (
+from ..core.archive import extract_revision_files
+from ..core.filenames import sanitize_filename
+from ..core.models import VisualizationPayload
+from ..core.pruning import get_pruning_level, prune_visualized_files
+from ..core.tree_builder import build_tree_index
+from ..core.validation.payload import validate_visualization_payload
+from ..core.validation.srcmove_results import validate_srcmove_results_match_xml
+from ..core.validation.tree import validate_moved_srcdiff_and_tree
+from ..core.validation.xml import validate_xml_span_index
+from ._move_results import augment_move_results_with_node_ids
+from ._notify import ProgressCallback, notify_progress
+from ._srcdiff import build_moved_srcdiff_xml
+from ._srcmove import (
     is_strict_srcmove_validation_enabled,
 )
-from .srcdiff import build_moved_srcdiff_xml
-from .transform.move_results import augment_move_results_with_node_ids
-from .visualize_data import build_visualized_files
+from ._tempfiles import managed_tmpdir
+from ._visualized_files import build_visualized_files
 
 
 def build_visualization_payload(

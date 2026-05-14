@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from .core.commands import run_command
-from .notify import ProgressCallback, notify_progress
+from ..core.commands import run_command
+from ._notify import ProgressCallback, notify_progress
 
 
 def run_srcmove(

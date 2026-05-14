@@ -102,7 +102,7 @@ def get_frontend_dist() -> Path | None:
 
         return frontend_dist
 
-    candidate = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+    candidate = Path(__file__).resolve().parents[2] / "frontend" / "dist"
     if (candidate / "index.html").is_file():
         return candidate
 
@@ -120,7 +120,7 @@ def get_examples_dir() -> Path:
             )
         return examples_dir
 
-    return Path(__file__).resolve().parents[1] / "examples"
+    return Path(__file__).resolve().parents[2] / "examples"
 
 
 def get_dev_host() -> str:

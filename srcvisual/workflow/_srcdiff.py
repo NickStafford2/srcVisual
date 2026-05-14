@@ -12,8 +12,8 @@ from ._positioned_srcdiff import (
     restore_original_metadata_on_path,
     run_srcdiff_with_positions,
 )
-from .notify import ProgressCallback, notify_progress
-from .srcmove import run_srcmove
+from ._notify import ProgressCallback, notify_progress
+from ._srcmove import run_srcmove
 
 
 def build_moved_srcdiff_xml(

@@ -6,9 +6,9 @@ from contextlib import contextmanager
 import os
 from pathlib import Path
 
-from .notify import notify_progress, ProgressCallback
+from ._notify import notify_progress, ProgressCallback
 
-DEFAULT_TMP_ROOT = Path(__file__).resolve().parents[1] / "temp"
+DEFAULT_TMP_ROOT = Path(__file__).resolve().parents[2] / "temp"
 
 
 @contextmanager

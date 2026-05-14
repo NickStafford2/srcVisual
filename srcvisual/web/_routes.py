@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
-from ..pipeline import build_visualization_payload
+from ..workflow.payload import build_visualization_payload
 from ._examples import list_example_filenames, read_example_file
 from ._progress import progress_broker
 

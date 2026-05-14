@@ -3,10 +3,10 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from .core.commands import run_command
-from .core.namespaces import POS_END, POS_START
-from .core.srcdiff_restore import restore_original_srcdiff_metadata
-from .notify import ProgressCallback, notify_progress
+from ..core.commands import run_command
+from ..core.namespaces import POS_END, POS_START
+from ..core.srcdiff_restore import restore_original_srcdiff_metadata
+from ._notify import ProgressCallback, notify_progress
 
 
 def run_srcdiff_with_positions(
