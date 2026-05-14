@@ -51,7 +51,6 @@ describe("XmlPane", () => {
         title="srcDiff XML"
         subtitle="Annotated XML"
         source={_source}
-        selectedSpan={null}
         highlights={_highlights}
       />,
     );

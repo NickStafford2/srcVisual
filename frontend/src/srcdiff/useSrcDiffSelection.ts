@@ -10,11 +10,8 @@ import {
 } from "./highlights";
 import { buildMoveIndex } from "./moveIndex";
 import {
-  getSelectionSpans,
   type SrcDiffHighlight,
-  type SrcDiffSelectionSpans,
 } from "./selection";
-import type { SrcDiffTreeNode } from "./types";
 import { buildForestTreeIndex, type SrcDiffNodeEntry } from "./treeIndex";
 
 export type SrcDiffSelectionState = {
@@ -22,10 +19,7 @@ export type SrcDiffSelectionState = {
   selectedMoveId: string | null;
   selectedFile: VisualizedFile | null;
   selectedFileIndex: number;
-  selectedNode: SrcDiffTreeNode | null;
   selectedNodeId: string | null;
-  selectedNodeFileIndex: number | null;
-  selectedSpans: SrcDiffSelectionSpans;
   highlightedNodes: SrcDiffNodeEntry[];
   highlightedNodeIds: Set<string>;
   highlightedSpans: SrcDiffHighlight[];
@@ -82,13 +76,7 @@ export function useSrcDiffSelection(
     : null;
 
   const selectedNode = selectedNodeEntry?.node ?? null;
-  const selectedNodeFileIndex = selectedNodeEntry?.fileIndex ?? null;
   const selectedMoveId = selectedNode?.move_id ?? null;
-
-  const selectedSpans = useMemo(
-    () => getSelectionSpans(selectedNode),
-    [selectedNode],
-  );
 
   const highlightedNodes = useMemo(
     () =>
@@ -232,10 +220,7 @@ export function useSrcDiffSelection(
     selectedMoveId,
     selectedFile,
     selectedFileIndex,
-    selectedNode,
     selectedNodeId,
-    selectedNodeFileIndex,
-    selectedSpans,
     highlightedNodes,
     highlightedNodeIds,
     highlightedSpans,

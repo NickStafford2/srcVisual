@@ -1,4 +1,5 @@
 import type { SrcMoveResults } from "../../../types";
+import { jumpToXmlLineTarget } from "../../../srcdiff/lineLinks";
 import { getSelectionSpans } from "../../../srcdiff/selection";
 import { buildSelectedNodeLinks } from "./selectedNodeLinks";
 import { MoveDetails } from "./MoveDetails";
@@ -18,8 +19,10 @@ export function HighlightedNodeCard({
   onUnhighlight,
 }: HighlightedNodeCardProps) {
   const { node, fileIndex, filename } = entry;
-  const spans = getSelectionSpans(node);
-  const links = buildSelectedNodeLinks(spans, fileIndex);
+  const _spans = getSelectionSpans(node);
+  const _links = buildSelectedNodeLinks(_spans, fileIndex).filter(
+    (_link) => _link.variant !== "xml",
+  );
   const moveNodes = node.move_id ? (moveNodesById.get(node.move_id) ?? []) : [];
 
   return (
@@ -44,26 +47,38 @@ export function HighlightedNodeCard({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onUnhighlight(node.id)}
-          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-        >
-          Unhighlight
-        </button>
+        <div className="flex items-center gap-2">
+          {_spans.xmlSpan ? (
+            <button
+              type="button"
+              onClick={() => jumpToXmlLineTarget(_spans.xmlSpan!.start_line)}
+              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+            >
+              XML
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => onUnhighlight(node.id)}
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+          >
+            Unhighlight
+          </button>
+        </div>
       </div>
 
       <dl className="mt-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
         <div>
           <dt className="text-slate-500">XML span</dt>
-          <dd className="font-mono">{formatXmlSpanText(spans.xmlSpan)}</dd>
+          <dd className="font-mono">{formatXmlSpanText(_spans.xmlSpan)}</dd>
         </div>
 
         <div>
           <dt className="text-slate-500">Links</dt>
           <dd className="mt-1 flex flex-wrap gap-1.5">
-            {links.length > 0
-              ? links.map((link) => (
+            {_links.length > 0
+              ? _links.map((link) => (
                   <a
                     key={link.targetId}
                     href={`#${link.targetId}`}

@@ -1,6 +1,7 @@
 import type { SourceCodeSpan } from "./types";
 
 export type SourceRevision = "revision-0" | "revision-1";
+export const XML_PANE_ID = "srcdiff-xml-pane";
 
 export function buildXmlLineTargetId(lineNumber: number): string {
   return `xml-line-${lineNumber}`;
@@ -36,6 +37,20 @@ export function jumpToLineTarget(targetId: string): void {
   if (typeof window !== "undefined") {
     window.history.replaceState(null, "", buildLineHref(targetId));
   }
+}
+
+export function jumpToXmlLineTarget(lineNumber: number): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const pane = document.getElementById(XML_PANE_ID);
+  pane?.scrollIntoView({
+    block: "center",
+    behavior: "smooth",
+  });
+
+  jumpToLineTarget(buildXmlLineTargetId(lineNumber));
 }
 
 export function formatLineRange(span: SourceCodeSpan | null | undefined): string | null {

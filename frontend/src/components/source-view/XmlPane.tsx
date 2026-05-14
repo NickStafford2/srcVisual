@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  XML_PANE_ID,
   buildLineHref,
   buildXmlLineTargetId,
   jumpToLineTarget,
 } from "../../srcdiff/lineLinks";
 import { buildXmlDisplayModel } from "../../srcdiff/xmlDisplay";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
-import type { SourceCodeSpan, ViewerLineSegment } from "../../srcdiff/types";
+import type { ViewerLineSegment } from "../../srcdiff/types";
 import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
 
@@ -14,7 +15,6 @@ type XmlPaneProps = {
   title: string;
   subtitle: string;
   source: string;
-  selectedSpan: SourceCodeSpan | null | undefined;
   highlights: SourceViewHighlight[];
 };
 
@@ -22,11 +22,8 @@ export function XmlPane({
   title,
   subtitle,
   source,
-  selectedSpan,
   highlights,
 }: XmlPaneProps) {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const lineRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [showPositions, setShowPositions] = useState(false);
 
   const displayModel = useMemo(
@@ -39,38 +36,9 @@ export function XmlPane({
     [displayModel],
   );
 
-  useEffect(() => {
-    if (!selectedSpan) return;
-
-    const scrollContainer = scrollContainerRef.current;
-    const highlightedLine = lineRefs.current.get(selectedSpan.start_line);
-
-    if (!scrollContainer || !highlightedLine) return;
-
-    const containerRect = scrollContainer.getBoundingClientRect();
-    const lineRect = highlightedLine.getBoundingClientRect();
-
-    const lineTopInsideContainer =
-      lineRect.top - containerRect.top + scrollContainer.scrollTop;
-
-    const centeredScrollTop =
-      lineTopInsideContainer -
-      scrollContainer.clientHeight / 2 +
-      highlightedLine.clientHeight / 2;
-
-    scrollContainer.scrollTo({
-      top: Math.max(centeredScrollTop, 0),
-      behavior: "smooth",
-    });
-  }, [
-    selectedSpan?.start_line,
-    selectedSpan?.start_col,
-    selectedSpan?.end_line,
-    selectedSpan?.end_col,
-  ]);
-
   return (
     <article
+      id={XML_PANE_ID}
       aria-label={title}
       className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55"
     >
@@ -90,7 +58,6 @@ export function XmlPane({
       </header>
 
       <div
-        ref={scrollContainerRef}
         className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono"
       >
         {lines.length === 0 ? (
@@ -104,13 +71,6 @@ export function XmlPane({
               id={buildXmlLineTargetId(line.number)}
               data-highlighted={line.hasHighlight ? "true" : "false"}
               data-line-number={line.number}
-              ref={(element) => {
-                if (element) {
-                  lineRefs.current.set(line.number, element);
-                } else {
-                  lineRefs.current.delete(line.number);
-                }
-              }}
               className={[
                 "grid grid-cols-[56px_1fr] gap-2 px-4",
                 line.hasHighlight ? "bg-white/[0.04]" : "",

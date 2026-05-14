@@ -89,7 +89,6 @@ export default function App() {
               title="srcDiff XML"
               subtitle="Annotated XML returned by the backend"
               source={data.annotated_srcdiff_xml}
-              selectedSpan={srcDiffSelection.selectedSpans.xmlSpan}
               highlights={xmlHighlights}
             />
 
