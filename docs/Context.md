@@ -1,11 +1,12 @@
-Read these first before making changes:
+Start here for any new LLM session working on `srcVisual`.
 
-1. [docs/Workspace.md](./docs/Workspace.md)
-2. [docs/ProgrammingStyle.md](./docs/ProgrammingStyle.md)
-3. [docs/Rules.md](./docs/Rules.md)
-4. [docs/Debugging.md](./docs/Debugging.md)
+- Assume the task is in `srcVisual` unless the user says otherwise.
+- Do not edit outside `srcVisual` without explicit permission.
+- `srcVisual` exists to make `srcDiff` and especially `srcMove` output easy to inspect.
+- Change into the `srcVisual` directory if you have not already.
+- Read the four files below at the start of the session. Together they define the working context for `srcVisual`.
 
-Use `Workspace.md` for repository scope and editing boundaries.
-Use `ProgrammingStyle.md` for coding conventions.
-Use `Rules.md` for project goals and behavioral invariants.
-Use `Debugging.md` for test and temp-directory workflows.
+1. [Workspace.md](./Workspace.md)
+2. [ProgrammingStyle.md](./ProgrammingStyle.md)
+3. [Rules.md](./Rules.md)
+4. [Debugging.md](./Debugging.md)
