@@ -3,9 +3,10 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from .models import SourceSpan, TreeNode, TreeNodeKind
-from .namespaces import SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
+from .namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index, parse_position_spans
 from .srcdiff_attributes import parse_srcdiff_attributes
+from .units import get_srcdiff_file_unit_elements
 
 
 def build_tree_index(
@@ -14,7 +15,7 @@ def build_tree_index(
     include_skipped_tags: bool = False,
 ) -> tuple[dict[int, dict[str, object]], bool]:
     root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+    unit_elements = get_srcdiff_file_unit_elements(root)
 
     xml_span_by_path = build_xml_span_index(
         annotated_srcdiff_xml,

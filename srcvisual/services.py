@@ -11,10 +11,11 @@ from .core.archive import extract_revision_files
 from .core.commands import run_command
 from .core.filenames import sanitize_filename
 from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
-from .core.namespaces import POS_END, POS_START, SRC_NS
+from .core.namespaces import POS_END, POS_START
 from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.srcdiff_attributes import MV_ID
 from .core.tree_builder import build_tree_index
+from .core.units import get_srcdiff_file_unit_elements
 from .core.validation import (
     augment_move_results_with_node_ids,
     build_filename_to_unit_index,
@@ -418,7 +419,7 @@ def build_revision_file_index_by_filename(
 
 def read_annotated_unit_filenames(annotated_srcdiff_xml: str) -> tuple[str, ...]:
     root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+    unit_elements = get_srcdiff_file_unit_elements(root)
 
     filenames: list[str] = []
 

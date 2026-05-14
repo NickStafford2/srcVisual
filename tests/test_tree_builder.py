@@ -29,6 +29,24 @@ def test_build_tree_index_keys_trees_by_unit_number() -> None:
     assert tree_by_unit[2]["label"] == "unit: second.cpp"
 
 
+def test_build_tree_index_accepts_single_root_file_unit() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src" filename="basic.cpp">
+  <function>
+    <name>main</name>
+  </function>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    assert set(tree_by_unit) == {1}
+    assert has_position_data is False
+    assert tree_by_unit[1]["id"] == "/src:unit[1]"
+    assert tree_by_unit[1]["label"] == "unit: basic.cpp"
+    assert tree_by_unit[1]["children"][0]["path"] == "/src:unit[1]/function[1]"
+
+
 def test_build_tree_index_accepts_pos_tabs_on_unit() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"

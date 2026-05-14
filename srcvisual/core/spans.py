@@ -11,6 +11,8 @@ from .namespaces import (
     prefixed_name_from_expat,
     skipped_tree_tag_names,
 )
+from .units import is_single_file_srcdiff_root
+import xml.etree.ElementTree as ET
 
 
 def parse_position_spans(element) -> tuple[SourceSpan, ...] | None:
@@ -61,6 +63,8 @@ def build_xml_span_index(
     *,
     include_skipped_tags: bool = False,
 ) -> dict[str, SourceSpan]:
+    root = ET.fromstring(annotated_srcdiff_xml)
+    root_is_file_unit = is_single_file_srcdiff_root(root)
     xml_bytes = annotated_srcdiff_xml.encode("utf-8")
     line_start_offsets = compute_line_start_offsets(xml_bytes)
 
@@ -87,8 +91,8 @@ def build_xml_span_index(
         start_byte = parser.CurrentByteIndex
 
         if not stack:
-            path = None
-        elif len(stack) == 1 and stack[0].tag == "unit" and tag == "unit":
+            path = "/src:unit[1]" if root_is_file_unit and tag == "unit" else None
+        elif not root_is_file_unit and len(stack) == 1 and stack[0].tag == "unit" and tag == "unit":
             nested_unit_count += 1
             path = f"/src:unit[{nested_unit_count}]"
         elif stack[-1].path is not None and tag not in skipped_names:

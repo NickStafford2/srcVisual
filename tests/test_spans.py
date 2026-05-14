@@ -118,6 +118,22 @@ def test_build_xml_span_index_uses_srcdiff_unit_paths() -> None:
     assert "/src:unit[2]/function[1]/name[1]" in spans
 
 
+def test_build_xml_span_index_supports_single_root_file_unit() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src" filename="basic.cpp">
+  <function>
+    <name>main</name>
+  </function>
+</unit>
+"""
+
+    spans = build_xml_span_index(xml)
+
+    assert "/src:unit[1]" in spans
+    assert "/src:unit[1]/function[1]" in spans
+    assert "/src:unit[1]/function[1]/name[1]" in spans
+
+
 def test_build_xml_span_index_skips_diff_ws_by_default() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"

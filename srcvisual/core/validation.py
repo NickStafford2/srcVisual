@@ -6,10 +6,11 @@ from typing import Any
 import xml.etree.ElementTree as ET
 
 from .models import RevisionFile, VisualizedFile, VisualizationPayload
-from .namespaces import POS_END, POS_START, SRC_NS, SKIPPED_TREE_TAGS, prefixed_name
+from .namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index
 from .srcmove_paths import split_srcmove_path_list
 from .srcdiff_attributes import MV_FROM, MV_ID, MV_TO
+from .units import get_srcdiff_file_unit_elements
 
 
 FILENAME_UNIT_PATTERN = re.compile(
@@ -156,7 +157,7 @@ def validate_annotated_srcdiff_and_tree(
     assert annotated_srcdiff_xml.strip(), "Annotated srcdiff XML is empty."
 
     root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+    unit_elements = get_srcdiff_file_unit_elements(root)
 
     assert len(unit_elements) == len(revision_files), (
         "Annotated srcdiff unit count does not match extracted revision file count. "
@@ -269,7 +270,7 @@ def validate_annotated_srcdiff_and_tree(
 
 def build_filename_to_unit_index(annotated_srcdiff_xml: str) -> dict[str, int]:
     root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+    unit_elements = get_srcdiff_file_unit_elements(root)
 
     filename_to_unit_index: dict[str, int] = {}
     duplicate_filenames: set[str] = set()
@@ -439,7 +440,7 @@ def collect_xml_move_regions(
     filename_to_unit_index: dict[str, int],
 ) -> dict[str, XmlMoveRegion]:
     root = ET.fromstring(annotated_srcdiff_xml)
-    unit_elements = [child for child in root if child.tag == f"{{{SRC_NS}}}unit"]
+    unit_elements = get_srcdiff_file_unit_elements(root)
 
     regions: dict[str, XmlMoveRegion] = {}
 
