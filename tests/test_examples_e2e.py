@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from srcvisual.app import create_app
+from srcvisual.web.app import create_app
 from srcvisual.core._srcmove_results import (
     build_filename_to_unit_index,
     parse_srcmove_result_moves,

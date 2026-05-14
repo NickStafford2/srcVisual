@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import srcvisual.routes as routes_module
-from srcvisual.app import create_app
+import srcvisual.web.routes as routes_module
+from srcvisual.web.app import create_app
 from srcvisual.core.models import RevisionFile, VisualizationPayload, VisualizedFile
 
 

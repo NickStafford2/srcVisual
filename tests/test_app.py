@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from srcvisual.app import create_app
+from srcvisual.web.app import create_app
 
 
 def test_root_serves_frontend_index_from_configured_dist(

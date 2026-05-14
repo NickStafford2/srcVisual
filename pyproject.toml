@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-web = "srcvisual.app:main"
+web = "srcvisual.web.app:main"
 test = "srcvisual.test_runner:main"
 
 

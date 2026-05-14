@@ -24,7 +24,7 @@ Rules:
    Import from the real module that owns the code, not from package-level `__init__.py`.
 
 8. Use `_` module filenames for subpackage-private files.
-   If a file is only imported inside the same subpackage, prefix it with `_`. If a file is imported from outside that subpackage, do not prefix it with `_`.
+   If a file is only imported inside the same subpackage, prefix it with `_`. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. If a file is imported from outside that subpackage, do not prefix it with `_`.
 
 9. Beware Fallbacks
    the frontend should receive a specific and well known data type from the backend.
