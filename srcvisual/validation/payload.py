@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import VisualizationPayload
+from ..core.models import VisualizationPayload
 from .move_regions import expect_optional_span_dict
 
 

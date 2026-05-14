@@ -3,14 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 import xml.etree.ElementTree as ET
 
-from ...srcdiff.srcmove_results import (
+from ..srcdiff.srcmove_results import (
     normalize_srcmove_xpath_tuple,
     parse_xml_move_reference_list,
 )
-from ..models import VisualizedFile
-from ...srcdiff.attributes import MV_FROM, MV_ID, MV_TO
-from ...srcdiff.namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
-from ...srcdiff.units import get_srcdiff_file_unit_elements
+from ..core.models import VisualizedFile
+from ..srcdiff.attributes import MV_FROM, MV_ID, MV_TO
+from ..srcdiff.namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
+from ..srcdiff.units import get_srcdiff_file_unit_elements
 
 
 @dataclass(frozen=True)

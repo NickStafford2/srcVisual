@@ -56,11 +56,11 @@ Rules for this layout:
 | `srcvisual/core/tree_builder.py` | `srcvisual/srcdiff/tree.py` | Build tree payload from annotated XML. |
 | `srcvisual/core/srcmove_paths.py` | `srcvisual/srcdiff/_srcmove_paths.py` | Internal srcMove path parsing helpers. |
 | `srcvisual/core/_srcmove_results.py` | `srcvisual/srcdiff/_srcmove_results.py` | Internal srcMove results parsing helpers. |
-| `srcvisual/core/validation/move_regions.py` | `srcvisual/validation/move_regions.py` | Shared move-region validation support. |
-| `srcvisual/core/validation/srcmove_results.py` | `srcvisual/validation/srcmove_results.py` | Cross-check results JSON against moved XML. |
-| `srcvisual/core/validation/tree.py` | `srcvisual/validation/tree.py` | Cross-check tree payload against moved XML. |
-| `srcvisual/core/validation/payload.py` | `srcvisual/validation/payload.py` | Validate final API payload structure. |
-| `srcvisual/core/validation/xml.py` | `srcvisual/validation/xml.py` | Validate XML span index. |
+| `srcvisual/validation/move_regions.py` | `srcvisual/validation/move_regions.py` | Shared move-region validation support. |
+| `srcvisual/validation/srcmove_results.py` | `srcvisual/validation/srcmove_results.py` | Cross-check results JSON against moved XML. |
+| `srcvisual/validation/tree.py` | `srcvisual/validation/tree.py` | Cross-check tree payload against moved XML. |
+| `srcvisual/validation/payload.py` | `srcvisual/validation/payload.py` | Validate final API payload structure. |
+| `srcvisual/validation/xml.py` | `srcvisual/validation/xml.py` | Validate XML span index. |
 | `srcvisual/test_runner.py` | `srcvisual/test_runner.py` | CLI helper. Fine at package root for now. |
 
 ## End State
