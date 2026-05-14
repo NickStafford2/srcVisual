@@ -4,8 +4,7 @@ import sys
 
 import pytest
 
-from srcvisual.workflow._commands import run_command
-from srcvisual.core.models import BackendCommandError
+from srcvisual.workflow._commands import BackendCommandError, run_command
 
 
 def test_run_command_returns_stdout_and_stderr(monkeypatch: pytest.MonkeyPatch) -> None:

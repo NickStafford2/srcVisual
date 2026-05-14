@@ -4,7 +4,7 @@ from bisect import bisect_right
 from dataclasses import dataclass
 from xml.parsers import expat
 
-from ..core.models import SourceSpan
+from ._models import SourceSpan
 from .namespaces import (
     POS_END,
     POS_START,

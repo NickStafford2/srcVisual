@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from ..core.models import SourceSpan, TreeNode, TreeNodeKind
+from ._models import SourceSpan, TreeNode, TreeNodeKind
 from .namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index, parse_position_spans
 from .attributes import parse_srcdiff_attributes

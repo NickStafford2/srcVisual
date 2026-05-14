@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Literal
 
-from ..core.models import VisualizedFile
+from .models import VisualizedFile
 
 
 PruningLevel = Literal["file-only", "file-and-tree", "move-only"]

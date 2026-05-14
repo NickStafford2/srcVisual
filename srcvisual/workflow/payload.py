@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from ..files.archive import extract_revision_files
 from ..files.filenames import sanitize_filename
-from ..core.models import VisualizationPayload
 from ..srcdiff.tree import build_tree_index
 from ..validation.payload import validate_visualization_payload
 from ..validation.srcmove_results import validate_srcmove_results_match_xml
@@ -17,6 +16,7 @@ from ._srcmove import (
 )
 from ._tempfiles import managed_tmpdir
 from ._visualized_files import build_visualized_files
+from .models import VisualizationPayload
 
 
 def build_visualization_payload(

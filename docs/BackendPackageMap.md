@@ -47,7 +47,8 @@ Rules for this layout:
 | `srcvisual/core/filenames.py` | `srcvisual/files/filenames.py` | Shared filename normalization and sanitization. |
 | `srcvisual/workflow/_commands.py` | `srcvisual/workflow/_commands.py` | Backend command execution is part of workflow runtime behavior. |
 | `srcvisual/workflow/_pruning.py` | `srcvisual/workflow/_pruning.py` | Payload pruning is workflow output shaping. |
-| `srcvisual/core/models.py` | `srcvisual/model/models.py` | Shared dataclasses and backend error types. Keep as one file for now. |
+| `srcvisual/workflow/models.py` | `srcvisual/workflow/models.py` | Workflow payload and file data stay close to workflow behavior. |
+| `srcvisual/srcdiff/_models.py` | `srcvisual/srcdiff/_models.py` | Tree and span data stay close to srcDiff tree behavior. |
 | `srcvisual/core/namespaces.py` | `srcvisual/srcdiff/_namespaces.py` | Internal XML namespace constants for srcDiff logic. |
 | `srcvisual/core/units.py` | `srcvisual/srcdiff/_units.py` | Internal XML unit helpers. |
 | `srcvisual/core/spans.py` | `srcvisual/srcdiff/spans.py` | Shared span building logic used across srcDiff and validation. |
@@ -98,14 +99,14 @@ srcvisual/
 4. Move validation from `core/validation/` to top-level `validation/`.
    Validation is a real package and should not live under `core/`.
 
-5. Move `core/models.py` into `model/`.
-   Keep it as one file until the new package shape settles.
+5. Keep workflow payload data and srcDiff tree data near the behavior that owns them.
+   Avoid recreating a generic shared model package unless a real need appears.
 
 6. Delete empty old packages.
    Remove `core/` and `transform/` only after all imports are updated.
 
 ## Notes
 
-- Do not split `model/models.py` yet. One shared model file is acceptable.
+- Do not recreate a generic `model/` package by reflex.
 - Do not create a separate `runtime/` package yet. It would add churn without a clear gain.
 - Keep one public workflow entry module. Everything else in `workflow/` should be private unless a new real boundary appears.
