@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from ..core.filenames import normalize_visualized_filename
+from ..files.filenames import normalize_visualized_filename
 from ..core.models import RevisionFile, VisualizedFile
 from ..core.units import get_srcdiff_file_unit_elements
 

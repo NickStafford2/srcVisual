@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..core.archive import extract_revision_files
-from ..core.filenames import sanitize_filename
+from ..files.archive import extract_revision_files
+from ..files.filenames import sanitize_filename
 from ..core.models import VisualizationPayload
 from ..core.pruning import get_pruning_level, prune_visualized_files
 from ..core.tree_builder import build_tree_index

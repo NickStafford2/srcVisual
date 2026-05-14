@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 import xml.etree.ElementTree as ET
 
-from .filenames import normalize_visualized_filename
+from ..files.filenames import normalize_visualized_filename
 from .namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
 from .units import get_srcdiff_file_unit_elements
 

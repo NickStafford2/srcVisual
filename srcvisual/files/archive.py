@@ -5,9 +5,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .commands import run_command
-from .models import RevisionFile
-from .source_files import write_source_file
+from ..core.commands import run_command
+from ..core.models import RevisionFile
+from ._source_files import write_source_file
 
 
 @dataclass(frozen=True)
