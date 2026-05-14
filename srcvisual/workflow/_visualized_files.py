@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 from ..files.filenames import normalize_visualized_filename
 from ..core.models import RevisionFile, VisualizedFile
-from ..core.units import get_srcdiff_file_unit_elements
+from ..srcdiff.units import get_srcdiff_file_unit_elements
 
 
 def build_visualized_files(

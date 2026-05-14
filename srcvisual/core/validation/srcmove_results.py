@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._srcmove_results import (
+from ...srcdiff.srcmove_results import (
     SrcMoveResultMove,
     build_filename_to_unit_index,
     parse_srcmove_result_moves,

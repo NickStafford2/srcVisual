@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from ..core.commands import run_command
-from ..core.namespaces import POS_END, POS_START
-from ..core.srcdiff_restore import restore_original_srcdiff_metadata
+from ..srcdiff.namespaces import POS_END, POS_START
+from ..srcdiff.restore import restore_original_srcdiff_metadata
 from ._notify import ProgressCallback, notify_progress
 
 

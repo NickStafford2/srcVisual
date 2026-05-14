@@ -3,8 +3,8 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from typing import Any
 
-from ..core._srcmove_results import build_filename_to_unit_index
-from ..core.srcdiff_attributes import MV_ID
+from ..srcdiff.attributes import MV_ID
+from ..srcdiff.srcmove_results import build_filename_to_unit_index
 from ..core.validation.move_regions import collect_xml_move_regions
 
 

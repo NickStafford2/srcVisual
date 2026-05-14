@@ -5,7 +5,7 @@ import re
 from typing import Any
 import xml.etree.ElementTree as ET
 
-from .srcmove_paths import split_srcmove_path_list
+from ._srcmove_paths import split_srcmove_path_list
 from .units import get_srcdiff_file_unit_elements
 
 

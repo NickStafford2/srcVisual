@@ -1,4 +1,4 @@
-from srcvisual.core.srcmove_paths import split_srcmove_path_list
+from srcvisual.srcdiff._srcmove_paths import split_srcmove_path_list
 
 
 def test_split_srcmove_path_list_splits_top_level_union_separator() -> None:

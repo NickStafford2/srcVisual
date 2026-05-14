@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from .._srcmove_results import build_filename_to_unit_index
 from ..models import RevisionFile, VisualizedFile
-from ..units import get_srcdiff_file_unit_elements
+from ...srcdiff.srcmove_results import build_filename_to_unit_index
+from ...srcdiff.units import get_srcdiff_file_unit_elements
 from .move_regions import (
     TreeMoveNode,
     XmlMoveRegion,

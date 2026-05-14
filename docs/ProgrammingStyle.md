@@ -26,5 +26,7 @@ Rules:
 8. Use `_` module filenames for subpackage-private files.
    If a file is only imported inside the same subpackage, prefix it with `_`. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. If a file is imported from outside that subpackage by non-test code, do not prefix it with `_`.
 
-9. Beware Fallbacks
-   the frontend should receive a specific and well known data type from the backend.
+9. functions not used outside the module it is defined in should be prefixed with a _. if a function is needed outside that module, rewrite it so that it has no _ prefix.
+
+10. Beware Fallbacks
+    the frontend should receive a specific and well known data type from the backend.

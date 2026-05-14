@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 import xml.etree.ElementTree as ET
 
 from .namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
-from .srcmove_paths import split_srcmove_path_list
+from ._srcmove_paths import split_srcmove_path_list
 
 POS_START = f"{{{POS_NS}}}start"
 POS_END = f"{{{POS_NS}}}end"
@@ -215,5 +215,5 @@ def assert_known_attributes(element: ET.Element) -> None:
     assert not unknown_attributes, (
         f"Unknown attributes on {prefixed_name(element.tag)}: "
         f"{[prefixed_name(attribute) for attribute in sorted(unknown_attributes)]}. "
-        "Add them to srcvisual/core/srcdiff_attributes.py."
+        "Add them to srcvisual/srcdiff/attributes.py."
     )

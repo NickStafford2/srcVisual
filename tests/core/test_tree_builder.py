@@ -1,4 +1,4 @@
-from srcvisual.core.tree_builder import build_tree_index
+from srcvisual.srcdiff.tree import build_tree_index
 
 
 def test_build_tree_index_keys_trees_by_unit_number() -> None:

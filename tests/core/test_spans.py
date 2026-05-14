@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 
-from srcvisual.core.namespaces import POS_END, POS_START
-from srcvisual.core.spans import (
+from srcvisual.srcdiff.namespaces import POS_END, POS_START
+from srcvisual.srcdiff.spans import (
     build_xml_span_index,
     parse_position_point,
     parse_position_points,
