@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..models import VisualizationPayload
-from ._moves import expect_optional_span_dict
+from .move_regions import expect_optional_span_dict
 
 
 def validate_visualization_payload(payload: VisualizationPayload) -> None:

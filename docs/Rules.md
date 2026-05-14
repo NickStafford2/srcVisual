@@ -22,3 +22,6 @@ High-level rules:
 
 6. Moves are a first-class use case.
    It must be easy to verify `srcMove` results, especially cross-file moves, new-file moves, deleted-file moves, and reordered units. File ownership and unit ordering must remain correct through the backend pipeline.
+
+7. Package boundaries should stay explicit.
+   Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Files imported from outside the subpackage should not use `_`.

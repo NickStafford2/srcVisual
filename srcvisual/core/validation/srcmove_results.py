@@ -7,7 +7,7 @@ from .._srcmove_results import (
     build_filename_to_unit_index,
     parse_srcmove_result_moves,
 )
-from ._moves import XmlMoveRegion, collect_xml_move_regions
+from .move_regions import XmlMoveRegion, collect_xml_move_regions
 
 
 def validate_srcmove_results_match_xml(

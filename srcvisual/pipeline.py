@@ -9,12 +9,10 @@ from .core.filenames import sanitize_filename
 from .core.models import VisualizationPayload
 from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.tree_builder import build_tree_index
-from .core.validation import (
-    validate_moved_srcdiff_and_tree,
-    validate_srcmove_results_match_xml,
-    validate_visualization_payload,
-    validate_xml_span_index,
-)
+from .core.validation.payload import validate_visualization_payload
+from .core.validation.srcmove_results import validate_srcmove_results_match_xml
+from .core.validation.tree import validate_moved_srcdiff_and_tree
+from .core.validation.xml import validate_xml_span_index
 from .notify import ProgressCallback, notify_progress
 from .srcmove import (
     is_strict_srcmove_validation_enabled,
