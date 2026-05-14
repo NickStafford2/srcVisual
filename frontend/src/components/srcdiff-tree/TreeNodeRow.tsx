@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   buildSourceLineTargetId,
   buildXmlLineTargetId,
@@ -13,7 +14,8 @@ type TreeNodeRowProps = {
   expandedIds: Set<string>;
   selectedNodeId: string | null;
   highlightedNodeIds: Set<string>;
-  onSelectNode: (nodeId: string) => void;
+  onHighlightNode: (nodeId: string) => void;
+  onHighlightMoveGroup: (nodeId: string) => void;
   onToggleNode: (nodeId: string) => void;
 };
 
@@ -24,7 +26,8 @@ export function TreeNodeRow({
   expandedIds,
   selectedNodeId,
   highlightedNodeIds,
-  onSelectNode,
+  onHighlightNode,
+  onHighlightMoveGroup,
   onToggleNode,
 }: TreeNodeRowProps) {
   const isExpanded = expandedIds.has(node.id);
@@ -32,6 +35,34 @@ export function TreeNodeRow({
   const isHighlighted = highlightedNodeIds.has(node.id);
   const hasChildren = node.children.length > 0;
   const lineBadges = getNodeLineBadges(node, fileIndex);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div>
@@ -63,11 +94,7 @@ export function TreeNodeRow({
           <span className="w-4 text-slate-700">·</span>
         )}
 
-        <button
-          type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          onClick={() => onSelectNode(node.id)}
-        >
+        <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
           <span className={getTreeNodeKindClasses(node.kind)}>{node.kind}</span>
 
           <span className="truncate text-sm text-slate-100">{node.label}</span>
@@ -77,7 +104,7 @@ export function TreeNodeRow({
               move={node.move_id}
             </span>
           ) : null}
-        </button>
+        </div>
 
         {lineBadges.length > 0 ? (
           <span className="ml-auto flex shrink-0 items-center gap-1 pl-2">
@@ -93,6 +120,45 @@ export function TreeNodeRow({
             ))}
           </span>
         ) : null}
+
+        <div ref={menuRef} className="relative ml-1 shrink-0">
+          <button
+            type="button"
+            aria-expanded={isMenuOpen}
+            aria-haspopup="menu"
+            aria-label={`Actions for ${node.label}`}
+            onClick={() => setIsMenuOpen((current) => !current)}
+            className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10"
+          >
+            ...
+          </button>
+
+          {isMenuOpen ? (
+            <div
+              role="menu"
+              aria-label={`${node.label} actions`}
+              className="absolute top-full right-0 z-30 mt-2 min-w-[180px] rounded-xl border border-white/10 bg-slate-950/98 p-1.5 shadow-2xl"
+            >
+              <MenuActionButton
+                label="Highlight node"
+                onClick={() => {
+                  onHighlightNode(node.id);
+                  setIsMenuOpen(false);
+                }}
+              />
+
+              {node.move_id ? (
+                <MenuActionButton
+                  label="Highlight move group"
+                  onClick={() => {
+                    onHighlightMoveGroup(node.id);
+                    setIsMenuOpen(false);
+                  }}
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {hasChildren && isExpanded ? (
@@ -106,13 +172,33 @@ export function TreeNodeRow({
               expandedIds={expandedIds}
               selectedNodeId={selectedNodeId}
               highlightedNodeIds={highlightedNodeIds}
-              onSelectNode={onSelectNode}
+              onHighlightNode={onHighlightNode}
+              onHighlightMoveGroup={onHighlightMoveGroup}
               onToggleNode={onToggleNode}
             />
           ))}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function MenuActionButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className="block w-full rounded-lg px-3 py-2 text-left text-xs text-slate-100 transition hover:bg-white/8"
+    >
+      {label}
+    </button>
   );
 }
 

@@ -9,7 +9,8 @@ type UnitTreeProps = {
   highlightedNodeIds: Set<string>;
   expandedIds: Set<string>;
   onSelectUnitIndex: (index: number) => void;
-  onSelectNode: (nodeId: string) => void;
+  onHighlightNode: (nodeId: string) => void;
+  onHighlightMoveGroup: (nodeId: string) => void;
   onToggleNode: (nodeId: string) => void;
 };
 
@@ -21,7 +22,8 @@ export function UnitTree({
   highlightedNodeIds,
   expandedIds,
   onSelectUnitIndex,
-  onSelectNode,
+  onHighlightNode,
+  onHighlightMoveGroup,
   onToggleNode,
 }: UnitTreeProps) {
   return (
@@ -40,7 +42,8 @@ export function UnitTree({
             expandedIds={expandedIds}
             selectedNodeId={selectedNodeId}
             highlightedNodeIds={highlightedNodeIds}
-            onSelectNode={onSelectNode}
+            onHighlightNode={onHighlightNode}
+            onHighlightMoveGroup={onHighlightMoveGroup}
             onToggleNode={onToggleNode}
           />
         ) : (

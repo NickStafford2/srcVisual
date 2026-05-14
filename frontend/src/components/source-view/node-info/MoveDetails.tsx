@@ -107,7 +107,7 @@ export function MoveDetails({
 
                     {isSelected ? (
                       <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[11px] text-amber-200">
-                        selected
+                        focused
                       </span>
                     ) : null}
                   </div>

@@ -8,7 +8,8 @@ type SrcDiffTreeProps = {
   selectedFileIndex: number;
   selectedNodeId: string | null;
   onSelectFileIndex: (index: number) => void;
-  onSelectNode: (nodeId: string) => void;
+  onHighlightNode: (nodeId: string) => void;
+  onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export default function SrcDiffTree({
@@ -16,7 +17,8 @@ export default function SrcDiffTree({
   selectedFileIndex,
   selectedNodeId,
   onSelectFileIndex,
-  onSelectNode,
+  onHighlightNode,
+  onHighlightMoveGroup,
 }: SrcDiffTreeProps) {
   const { highlightedNodeIds } = useSrcDiffHighlight();
 
@@ -139,7 +141,8 @@ export default function SrcDiffTree({
               highlightedNodeIds={highlightedNodeIds}
               expandedIds={expandedIds}
               onSelectUnitIndex={onSelectFileIndex}
-              onSelectNode={onSelectNode}
+              onHighlightNode={onHighlightNode}
+              onHighlightMoveGroup={onHighlightMoveGroup}
               onToggleNode={handleToggleNode}
             />
           ))}

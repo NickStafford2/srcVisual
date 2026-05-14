@@ -113,7 +113,7 @@ export function SourceFileCard({
 
           {isSelectedNodeFile ? (
             <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
-              selected source
+              focused node
             </span>
           ) : null}
 

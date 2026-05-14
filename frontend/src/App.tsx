@@ -1,7 +1,6 @@
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
 import { MoveSummary } from "./components/source-view/node-info/MoveSummary";
-import { SelectedNodeInfo } from "./components/source-view/node-info/SelectedNodeInfo";
 import { SourceCodeSection } from "./components/source-view/SourceCodeSection";
 import { XmlPane } from "./components/source-view/XmlPane";
 import SrcDiffTree from "./components/srcdiff-tree/SrcDiffTree";
@@ -72,30 +71,20 @@ export default function App() {
               selectedFileIndex={srcDiffSelection.selectedFileIndex}
               selectedNodeId={srcDiffSelection.selectedNodeId}
               onSelectFileIndex={srcDiffSelection.setSelectedFileIndex}
-              onSelectNode={srcDiffSelection.setSelectedNodeId}
+              onHighlightNode={srcDiffSelection.highlightNode}
+              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
             />
 
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SelectedNodeInfo
-                selectedNode={srcDiffSelection.selectedNode}
-                selectedFilename={
-                  srcDiffSelection.selectedFile?.filename ?? null
-                }
-                selectedNodeFileIndex={srcDiffSelection.selectedNodeFileIndex}
-                selectedSpans={srcDiffSelection.selectedSpans}
-              />
-
-              <HighlightedNodeInfo
-                moveResults={data.move_results}
-                moveNodesById={srcDiffSelection.moveNodesById}
-              />
-            </div>
+            <HighlightedNodeInfo
+              moveResults={data.move_results}
+              moveNodesById={srcDiffSelection.moveNodesById}
+            />
 
             <MoveSummary
               moveResults={data.move_results}
               moveNodesById={srcDiffSelection.moveNodesById}
               selectedMoveId={srcDiffSelection.selectedMoveId}
-              onSelectNode={srcDiffSelection.setSelectedNodeId}
+              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
             />
 
             <XmlPane

@@ -151,6 +151,54 @@ describe("App highlight all moves flow", () => {
       shouldHaveHighlights: true,
     });
   });
+
+  it("offers explicit node and move-group highlight actions in the tree menu", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: exampleFilename }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
+        exampleXml,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+    await screen.findByRole("heading", { name: "SrcDiff Tree" });
+
+    const _tree = screen.getByLabelText("SrcDiff Tree");
+
+    expect(getHighlightedTreeNodeIds(_tree)).toEqual([]);
+
+    await user.click(
+      within(_tree).getByRole("button", { name: "Actions for diff:delete" }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Highlight node" }));
+
+    await waitFor(() => {
+      expect(getHighlightedTreeNodeIds(_tree)).toEqual([
+        "/src:unit[1]/diff:delete[1]",
+      ]);
+    });
+
+    await user.click(
+      within(_tree).getByRole("button", { name: "Actions for diff:delete" }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: "Highlight move group" }),
+    );
+
+    await waitFor(() => {
+      expect(getHighlightedTreeNodeIds(_tree)).toEqual([
+        "/src:unit[1]/diff:delete[1]",
+        "/src:unit[2]/diff:insert[1]",
+      ]);
+    });
+  });
 });
 
 function jsonResponse(payload: unknown): Response {

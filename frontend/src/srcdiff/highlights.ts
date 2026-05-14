@@ -12,6 +12,7 @@ type GetBaseHighlightedEntriesInput = {
   highlightMode: HighlightMode;
   selectedNodeEntry: SrcDiffNodeEntry | null;
   selectedMoveId: string | null;
+  selectedNodeHighlightScope: "node" | "move-group";
   treeEntries: SrcDiffNodeEntry[];
   moveIndex: MoveIndex;
 };
@@ -86,13 +87,14 @@ function getBaseHighlightedEntries({
   highlightMode,
   selectedNodeEntry,
   selectedMoveId,
+  selectedNodeHighlightScope,
   treeEntries,
   moveIndex,
 }: GetBaseHighlightedEntriesInput): SrcDiffNodeEntry[] {
   const _entries: SrcDiffNodeEntry[] = [];
 
   if (selectedNodeEntry) {
-    if (selectedNodeEntry.node.kind === "move" && selectedMoveId) {
+    if (selectedNodeHighlightScope === "move-group" && selectedMoveId) {
       _entries.push(...(moveIndex.get(selectedMoveId) ?? [selectedNodeEntry]));
     } else {
       _entries.push(selectedNodeEntry);

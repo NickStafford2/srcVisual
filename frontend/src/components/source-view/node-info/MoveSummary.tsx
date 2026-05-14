@@ -5,14 +5,14 @@ type MoveSummaryProps = {
   moveResults: SrcMoveResults;
   moveNodesById: Map<string, MoveNodeEntry[]>;
   selectedMoveId: string | null;
-  onSelectNode: (nodeId: string) => void;
+  onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export function MoveSummary({
   moveResults,
   moveNodesById,
   selectedMoveId,
-  onSelectNode,
+  onHighlightMoveGroup,
 }: MoveSummaryProps) {
   const moveIds = buildMoveIds(moveResults, moveNodesById);
 
@@ -75,10 +75,10 @@ export function MoveSummary({
                   {anchorNode ? (
                     <button
                       type="button"
-                      onClick={() => onSelectNode(anchorNode.id)}
+                      onClick={() => onHighlightMoveGroup(anchorNode.id)}
                       className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
                     >
-                      Focus move
+                      Highlight move
                     </button>
                   ) : null}
                 </div>
