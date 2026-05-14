@@ -16,6 +16,7 @@ from .core.models import RevisionFile, VisualizationPayload, VisualizedFile
 from .core.namespaces import POS_END, POS_START
 from .core.pruning import get_pruning_level, prune_visualized_files
 from .core.srcdiff_attributes import MV_ID
+from .core.srcdiff_restore import restore_original_srcdiff_metadata
 from .core.tree_builder import build_tree_index
 from .core.units import get_srcdiff_file_unit_elements
 from .core.validation import (
@@ -259,7 +260,12 @@ def build_annotated_srcdiff_xml(
     annotated_srcdiff_xml, move_results = run_srcmove(
         positioned_path=positioned_path,
         tmpdir=tmpdir,
+        original_srcdiff_xml=uploaded_srcdiff_xml,
         progress=progress,
+    )
+    restore_original_metadata_on_path(
+        original_srcdiff_xml=uploaded_srcdiff_xml,
+        generated_path=positioned_path,
     )
 
     return annotated_srcdiff_xml, move_results, True
@@ -321,6 +327,7 @@ def run_srcmove(
     *,
     positioned_path: Path,
     tmpdir: Path,
+    original_srcdiff_xml: str | None = None,
     progress: ProgressCallback | None = None,
 ) -> tuple[str, dict[str, Any]]:
     annotated_path = tmpdir / "annotated.srcdiff.xml"
@@ -361,6 +368,13 @@ def run_srcmove(
     assert isinstance(move_results, dict), (
         f"srcMove results JSON must be an object; got {type(move_results).__name__}."
     )
+
+    if original_srcdiff_xml is not None:
+        annotated_srcdiff_xml = restore_original_srcdiff_metadata(
+            original_xml=original_srcdiff_xml,
+            generated_xml=annotated_srcdiff_xml,
+        )
+        annotated_path.write_text(annotated_srcdiff_xml, encoding="utf-8")
 
     notify_progress(progress, "Reading annotated srcdiff output.")
 
@@ -430,6 +444,18 @@ def build_move_results_from_annotated_xml(
         "annotated_regions": len(xml_regions),
         "moves": moves,
     }
+
+
+def restore_original_metadata_on_path(
+    *,
+    original_srcdiff_xml: str,
+    generated_path: Path,
+) -> None:
+    restored_xml = restore_original_srcdiff_metadata(
+        original_xml=original_srcdiff_xml,
+        generated_xml=generated_path.read_text(encoding="utf-8"),
+    )
+    generated_path.write_text(restored_xml, encoding="utf-8")
 
 
 def build_visualized_files(

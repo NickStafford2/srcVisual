@@ -5,7 +5,6 @@ import re
 from typing import Any
 import xml.etree.ElementTree as ET
 
-from .filenames import normalize_visualized_filename
 from .models import RevisionFile, VisualizedFile, VisualizationPayload
 from .namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
 from .spans import build_xml_span_index
@@ -183,9 +182,7 @@ def validate_annotated_srcdiff_and_tree(
         )
 
         if expected_filename is not None:
-            assert normalize_visualized_filename(
-                visualized_file.revision_file.filename
-            ) == normalize_visualized_filename(expected_filename), (
+            assert visualized_file.revision_file.filename == expected_filename, (
                 "Visualized file filename does not match annotated srcdiff unit. "
                 f"unit {unit_index} expected filename={expected_filename!r}, "
                 f"got {visualized_file.revision_file.filename!r}."
@@ -201,10 +198,7 @@ def validate_annotated_srcdiff_and_tree(
             )
 
             if expected_filename is not None:
-                normalized_expected_filename = normalize_visualized_filename(
-                    expected_filename
-                )
-                assert tree.get("label") == f"unit: {normalized_expected_filename}", (
+                assert tree.get("label") == f"unit: {expected_filename}", (
                     "Visualized tree root label does not match annotated srcdiff "
                     f"unit filename {expected_filename!r}. "
                     f"tree label={tree.get('label')!r}."

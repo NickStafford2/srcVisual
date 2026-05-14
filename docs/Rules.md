@@ -1,0 +1,1 @@
+when srcVisual accepts a srcDiff.xml files that does not have position information, it should generate a new srcDiff.xml file that is identical, except it has position information. Other than the new position information, all tags and tag content is identical.

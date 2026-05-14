@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -133,6 +134,9 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
 def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
+    original_root = ET.fromstring(example_path.read_text(encoding="utf-8"))
+    original_filename = original_root.attrib.get("filename")
+    assert isinstance(original_filename, str)
 
     response = client.post(
         "/api/visualize",
@@ -157,8 +161,11 @@ def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
     payload = response.get_json()
     assert isinstance(payload, dict)
     assert [file_payload["filename"] for file_payload in payload["files"]] == [
-        "original.cpp|modified.cpp"
+        original_filename
     ]
+
+    annotated_root = ET.fromstring(payload["annotated_srcdiff_xml"])
+    assert annotated_root.attrib.get("filename") == original_filename
 
 
 def build_expected_tree_records(
