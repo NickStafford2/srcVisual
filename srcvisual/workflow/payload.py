@@ -3,6 +3,7 @@ from __future__ import annotations
 from srcvisual.files.revision_archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
+from srcvisual.core.validation import is_payload_validation_enabled
 from srcvisual.srcdiff.validate_xml import validate_xml_span_index
 from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.workflow._validate_payload import validate_visualization_payload
@@ -33,6 +34,8 @@ def build_visualization_payload(
     pruning_level: PruningLevel | None = None,
     progress: ProgressCallback | None = None,
 ) -> VisualizationPayload:
+    payload_validation_enabled = is_payload_validation_enabled()
+
     with managed_tmpdir(progress=progress) as tmpdir:
         input_path = tmpdir / sanitize_filename(filename)
         _ = input_path.write_bytes(payload)
@@ -83,11 +86,14 @@ def build_visualization_payload(
                 "Skipping strict srcMove results validation.",
             )
 
-        notify_progress(progress, "Validating moved srcdiff XML.")
-        validate_xml_span_index(
-            moved_srcdiff_xml=moved_srcdiff_xml,
-            include_skipped_tags=include_skipped_tags,
-        )
+        if payload_validation_enabled:
+            notify_progress(progress, "Validating moved srcdiff XML.")
+            validate_xml_span_index(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                include_skipped_tags=include_skipped_tags,
+            )
+        else:
+            notify_progress(progress, "Skipping moved srcdiff validation.")
 
         notify_progress(progress, "Normalizing move partner node ids.")
         notify_progress(progress, "Building tree view data.")
@@ -102,13 +108,14 @@ def build_visualization_payload(
             tree_by_unit=tree_by_unit,
         )
 
-        notify_progress(progress, "Validating moved XML against full tree data.")
-        validate_moved_srcdiff_and_tree(
-            moved_srcdiff_xml=moved_srcdiff_xml,
-            revision_files=revision_files,
-            visualized_files=visualized_files,
-            include_skipped_tags=include_skipped_tags,
-        )
+        if payload_validation_enabled:
+            notify_progress(progress, "Validating moved XML against full tree data.")
+            validate_moved_srcdiff_and_tree(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                revision_files=revision_files,
+                visualized_files=visualized_files,
+                include_skipped_tags=include_skipped_tags,
+            )
 
     full_payload_result = VisualizationPayload(
         source_filename=filename,
@@ -118,8 +125,9 @@ def build_visualization_payload(
         files=visualized_files,
     )
 
-    notify_progress(progress, "Validating full visualization payload.")
-    validate_visualization_payload(full_payload_result)
+    if payload_validation_enabled:
+        notify_progress(progress, "Validating full visualization payload.")
+        validate_visualization_payload(full_payload_result)
 
     _original_file_count = len(visualized_files)
     _pruning_level = pruning_level or get_tree_pruning_level()
@@ -148,10 +156,11 @@ def build_visualization_payload(
             visualized_files=_pruned_visualized_files,
             include_skipped_tags=include_skipped_tags,
         )
-        validate_xml_span_index(
-            moved_srcdiff_xml=moved_srcdiff_xml,
-            include_skipped_tags=include_skipped_tags,
-        )
+        if payload_validation_enabled:
+            validate_xml_span_index(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                include_skipped_tags=include_skipped_tags,
+            )
         tree_by_unit, has_position_data = build_tree_index(
             moved_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
@@ -198,14 +207,17 @@ def build_visualization_payload(
         files=visualized_files,
     )
 
-    notify_progress(progress, "Validating pruned visualization payload.")
-    validate_moved_srcdiff_and_tree(
-        moved_srcdiff_xml=final_payload.moved_srcdiff_xml,
-        revision_files=revision_files,
-        visualized_files=final_payload.files,
-        include_skipped_tags=include_skipped_tags,
-    )
-    validate_visualization_payload(final_payload)
+    if payload_validation_enabled:
+        notify_progress(progress, "Validating pruned visualization payload.")
+        validate_moved_srcdiff_and_tree(
+            moved_srcdiff_xml=final_payload.moved_srcdiff_xml,
+            revision_files=revision_files,
+            visualized_files=final_payload.files,
+            include_skipped_tags=include_skipped_tags,
+        )
+        validate_visualization_payload(final_payload)
+    else:
+        notify_progress(progress, "Skipping pruned payload validation.")
 
     return final_payload
 
