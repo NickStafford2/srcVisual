@@ -16,7 +16,6 @@ import {
 const exampleFilename = "e2e_generated_to_new_file_diff.xml";
 const exampleLabel = "to_new_file_diff.xml";
 const exampleXml = "<unit>example srcdiff</unit>";
-let mockNow = 0;
 
 class MockEventSource {
   static instances: MockEventSource[] = [];
@@ -26,10 +25,14 @@ class MockEventSource {
     MockEventSource.instances.push(this);
   }
 
-  emit(type: "connected" | "progress" | "complete" | "error", message: string) {
+  emit(
+    type: "connected" | "progress" | "complete" | "error",
+    message: string,
+    timing: { elapsed_ms: number; delta_ms: number },
+  ) {
     this.onmessage?.(
       new MessageEvent("message", {
-        data: JSON.stringify({ type, message }),
+        data: JSON.stringify({ type, message, ...timing }),
       }),
     );
   }
@@ -48,12 +51,10 @@ describe("App highlight all moves flow", () => {
   beforeEach(() => {
     visualizeRequest = null;
     MockEventSource.instances = [];
-    mockNow = 0;
 
     vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
       "00000000-0000-4000-8000-000000000000",
     );
-    vi.spyOn(globalThis.performance, "now").mockImplementation(() => mockNow);
 
     vi.stubGlobal("EventSource", MockEventSource);
     vi.stubGlobal(
@@ -303,38 +304,41 @@ describe("App highlight all moves flow", () => {
       MockEventSource.instances[MockEventSource.instances.length - 1];
     expect(stream).toBeDefined();
 
-    mockNow = 1500;
-    stream?.emit("connected", "Connected to backend progress stream.");
-    mockNow = 5250;
-    stream?.emit("progress", "Rebuilding payload from filtered XML.");
+    stream?.emit("connected", "Connected.", {
+      elapsed_ms: 0,
+      delta_ms: 0,
+    });
+    stream?.emit("progress", "Rebuilding payload from filtered XML.", {
+      elapsed_ms: 5250,
+      delta_ms: 5250,
+    });
 
     const progressLog = screen.getByLabelText("Visualization progress log");
 
     await waitFor(() => {
       expect(
-        within(progressLog).getByText("Connecting to backend progress stream."),
-      ).toBeInTheDocument();
-      expect(
-        within(progressLog).getByText("Connected to backend progress stream."),
+        within(progressLog).getByText("Connected."),
       ).toBeInTheDocument();
       expect(
         within(progressLog).getByText("Rebuilding payload from filtered XML."),
       ).toBeInTheDocument();
-      expect(progressLog).toHaveTextContent("[0.00s]");
-      expect(progressLog).toHaveTextContent("[1.50s]");
-      expect(progressLog).toHaveTextContent("[5.25s]");
+      expect(progressLog).toHaveTextContent("+0.00s [0.00s]");
+      expect(progressLog).toHaveTextContent("+5.25s [5.25s]");
     });
 
     expect(resolveVisualize).not.toBeNull();
-    mockNow = 10000;
     resolveVisualize!(jsonResponse(toNewFileHighlightFixture));
+    stream?.emit("complete", "Visualization complete.", {
+      elapsed_ms: 10000,
+      delta_ms: 4750,
+    });
 
     await screen.findByRole("heading", { name: "srcDiff Tree" });
 
     expect(
       within(progressLog).getByText("Visualization complete."),
     ).toBeInTheDocument();
-    expect(progressLog).toHaveTextContent("[10.00s]");
+    expect(progressLog).toHaveTextContent("+4.75s [10.00s]");
   });
 });
 

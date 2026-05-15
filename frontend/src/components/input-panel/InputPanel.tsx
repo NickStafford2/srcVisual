@@ -201,7 +201,7 @@ export function InputPanel({
                   </span>
                   <span className="min-w-0 flex-1">{entry.message}</span>
                   <span className="shrink-0 text-emerald-500/80">
-                    [{formatElapsedTime(entry.elapsedMs)}]
+                    +{formatElapsedTime(entry.deltaMs)} [{formatElapsedTime(entry.elapsedMs)}]
                   </span>
                 </div>
               ))

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   fetchExampleContent,
@@ -6,12 +6,14 @@ import {
   openVisualizationProgressStream,
   visualizeSrcDiff,
 } from "../api";
+import type { VisualizationProgressEvent } from "../api";
 import type { TreePruningLevel, VisualizeResponse } from "../types";
 
 export type InputMode = "paste" | "upload";
 export type ProgressLogEntry = {
   message: string;
   elapsedMs: number;
+  deltaMs: number;
 };
 
 export function useSrcDiffData() {
@@ -31,7 +33,6 @@ export function useSrcDiffData() {
   const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
   const [examplesError, setExamplesError] = useState<string | null>(null);
   const [isLoadingExample, setIsLoadingExample] = useState(false);
-  const progressStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -77,16 +78,14 @@ export function useSrcDiffData() {
     }
   }
 
-  function appendProgressMessage(message: string) {
-    const now = performance.now();
-    const startedAt = progressStartedAtRef.current ?? now;
-
-    setProgressMessage(message);
+  function appendProgressMessage(event: VisualizationProgressEvent) {
+    setProgressMessage(event.message);
     setProgressMessages((current) => [
       ...current,
       {
-        message,
-        elapsedMs: Math.max(0, now - startedAt),
+        message: event.message,
+        elapsedMs: event.elapsed_ms,
+        deltaMs: event.delta_ms,
       },
     ]);
   }
@@ -144,25 +143,19 @@ export function useSrcDiffData() {
     const progressStream = openVisualizationProgressStream(
       progressToken,
       (event) => {
-        appendProgressMessage(event.message);
+        appendProgressMessage(event);
       },
     );
 
-    progressStartedAtRef.current = performance.now();
     setIsLoading(true);
     setError(null);
     setProgressMessage("Connecting to backend progress stream.");
-    setProgressMessages([
-      {
-        message: "Connecting to backend progress stream.",
-        elapsedMs: 0,
-      },
-    ]);
+    setProgressMessages([]);
 
     try {
       const payload = await visualizeSrcDiff(formData);
       setData(payload);
-      appendProgressMessage("Visualization complete.");
+      setProgressMessage("Visualization complete.");
     } catch (submissionError) {
       setData(null);
       const message =
@@ -170,7 +163,7 @@ export function useSrcDiffData() {
           ? submissionError.message
           : "Unable to visualize the uploaded srcdiff.";
       setError(message);
-      appendProgressMessage(`ERROR: ${message}`);
+      setProgressMessage(message);
     } finally {
       setIsLoading(false);
       progressStream.close();
