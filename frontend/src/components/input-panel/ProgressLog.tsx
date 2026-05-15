@@ -51,7 +51,7 @@ export function ProgressLog({ entries }: ProgressLogProps) {
       <div
         ref={progressLogRef}
         aria-label="Visualization progress log"
-        className="max-h-64 overflow-y-auto px-3 py-3 font-mono text-xs leading-6 text-emerald-100"
+        className="h-64 max-h-[70vh] w-full min-w-0 resize-y overflow-auto px-3 py-3 font-mono text-xs leading-6 text-emerald-100"
       >
         {entries.length > 0 ? (
           entries.map((entry, index) => (
