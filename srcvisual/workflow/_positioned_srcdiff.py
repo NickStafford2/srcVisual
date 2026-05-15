@@ -3,7 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from srcvisual.core._notify import ProgressCallback, notify_progress
+from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.core.commands import run_command
 from srcvisual.srcdiff.namespaces import POS_END, POS_START
 from srcvisual.srcdiff.restore import restore_original_srcdiff_metadata

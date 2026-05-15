@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from srcvisual.core.commands import run_command
-from srcvisual.core._notify import ProgressCallback, notify_progress
+from srcvisual.core.notify import ProgressCallback, notify_progress
 
 
 def run_srcmove(

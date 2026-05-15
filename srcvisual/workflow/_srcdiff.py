@@ -12,7 +12,7 @@ from srcvisual.workflow._positioned_srcdiff import (
     restore_original_metadata_on_path,
     run_srcdiff_with_positions,
 )
-from srcvisual.core._notify import ProgressCallback, notify_progress
+from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.srcmove._srcmove import run_srcmove
 
 

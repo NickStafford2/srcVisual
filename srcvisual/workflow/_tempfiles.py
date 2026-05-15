@@ -6,7 +6,7 @@ from contextlib import contextmanager
 import os
 from pathlib import Path
 
-from srcvisual.core._notify import notify_progress, ProgressCallback
+from srcvisual.core.notify import notify_progress, ProgressCallback
 
 DEFAULT_TMP_ROOT = Path(__file__).resolve().parents[2] / "temp"
 

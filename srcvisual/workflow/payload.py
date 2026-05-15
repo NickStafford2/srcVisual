@@ -5,7 +5,7 @@ from srcvisual.files.filenames import sanitize_filename
 from srcvisual.srcdiff.tree import build_tree_index
 from srcvisual.srcdiff.xml_validation import validate_xml_span_index
 from srcvisual.workflow._move_results import augment_move_results_with_node_ids
-from srcvisual.core._notify import ProgressCallback, notify_progress
+from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.workflow._payload_validation import validate_visualization_payload
 from srcvisual.workflow._pruning import get_pruning_level, prune_visualized_files
 from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
