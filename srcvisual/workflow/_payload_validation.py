@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..workflow.models import VisualizationPayload
-from .move_regions import expect_optional_span_dict
+from srcvisual.validation.move_regions import expect_optional_span_dict
+from srcvisual.workflow.models import VisualizationPayload
 
 
 def validate_visualization_payload(payload: VisualizationPayload) -> None:

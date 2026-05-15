@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from ..files.archive import extract_revision_files
-from ..files.filenames import sanitize_filename
-from ..srcdiff.tree import build_tree_index
-from ..validation.payload import validate_visualization_payload
-from ..validation.srcmove_results import validate_srcmove_results_match_xml
-from ..validation.tree import validate_moved_srcdiff_and_tree
-from ..validation.xml import validate_xml_span_index
-from ._pruning import get_pruning_level, prune_visualized_files
-from ._move_results import augment_move_results_with_node_ids
-from ._notify import ProgressCallback, notify_progress
-from ._srcdiff import build_moved_srcdiff_xml
-from ._srcmove import (
+from srcvisual.files.archive import extract_revision_files
+from srcvisual.files.filenames import sanitize_filename
+from srcvisual.srcdiff.tree import build_tree_index
+from srcvisual.validation.xml import validate_xml_span_index
+from srcvisual.workflow._move_results import augment_move_results_with_node_ids
+from srcvisual.workflow._notify import ProgressCallback, notify_progress
+from srcvisual.workflow._payload_validation import validate_visualization_payload
+from srcvisual.workflow._pruning import get_pruning_level, prune_visualized_files
+from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
+from srcvisual.workflow._srcmove import (
     is_strict_srcmove_validation_enabled,
 )
-from ._tempfiles import managed_tmpdir
-from ._visualized_files import build_visualized_files
-from .models import VisualizationPayload
+from srcvisual.workflow._srcmove_validation import validate_srcmove_results_match_xml
+from srcvisual.workflow._tempfiles import managed_tmpdir
+from srcvisual.workflow._tree_validation import validate_moved_srcdiff_and_tree
+from srcvisual.workflow._visualized_files import build_visualized_files
+from srcvisual.workflow.models import VisualizationPayload
 
 
 def build_visualization_payload(
