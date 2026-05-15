@@ -88,40 +88,40 @@ def prune_files_by_target_kinds(
     target_kinds: set[str],
     prune_tree_branches: bool,
 ) -> tuple[VisualizedFile, ...]:
-    pruned_files: list[VisualizedFile] = []
+    _pruned_files: list[VisualizedFile] = []
 
     for visualized_file in visualized_files:
-        tree = visualized_file.tree
+        _tree = visualized_file.tree
 
-        if tree is None:
+        if _tree is None:
             continue
 
-        if not tree_has_target_kind(tree, target_kinds=target_kinds):
+        if not tree_has_target_kind(_tree, target_kinds=target_kinds):
             continue
 
         if not prune_tree_branches:
-            pruned_files.append(visualized_file)
+            _pruned_files.append(visualized_file)
             continue
 
-        pruned_tree = prune_tree_to_target_branches(
-            tree,
+        _pruned_tree = prune_tree_to_target_branches(
+            _tree,
             target_kinds=target_kinds,
         )
 
-        assert pruned_tree is not None, (
+        assert _pruned_tree is not None, (
             "Tree was known to contain a target kind but pruning returned None. "
             f"unit_id={visualized_file.revision_file.unit_id}, "
             f"filename={visualized_file.revision_file.filename!r}."
         )
 
-        pruned_files.append(
+        _pruned_files.append(
             VisualizedFile(
                 revision_file=visualized_file.revision_file,
-                tree=pruned_tree,
+                tree=_pruned_tree,
             )
         )
 
-    return tuple(pruned_files)
+    return tuple(_pruned_files)
 
 
 def prune_tree_to_target_branches(
@@ -129,30 +129,26 @@ def prune_tree_to_target_branches(
     *,
     target_kinds: set[str],
 ) -> TreeNodeDict | None:
-    # Important:
-    # Once the node itself is a target, keep the whole subtree.
-    # Do not prune children inside insert/delete/move nodes for file-and-tree.
-    # Do not prune children inside move nodes for move-only.
     if node["kind"] in target_kinds:
         return node
 
-    pruned_children: list[TreeNodeDict] = []
+    _pruned_children: list[TreeNodeDict] = []
 
-    for child in node["children"]:
-        pruned_child = prune_tree_to_target_branches(
-            child,
+    for _child in node["children"]:
+        _pruned_child = prune_tree_to_target_branches(
+            _child,
             target_kinds=target_kinds,
         )
 
-        if pruned_child is not None:
-            pruned_children.append(pruned_child)
+        if _pruned_child is not None:
+            _pruned_children.append(_pruned_child)
 
-    if not pruned_children:
+    if not _pruned_children:
         return None
 
-    pruned_node = node.copy()
-    pruned_node["children"] = pruned_children
-    return pruned_node
+    _pruned_node = node.copy()
+    _pruned_node["children"] = _pruned_children
+    return _pruned_node
 
 
 def tree_has_target_kind(

@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
+from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.web.app import create_app
 from srcvisual.srcmove.srcmove_results import (
     build_filename_to_unit_index,
@@ -118,12 +119,11 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     assert files_by_filename["main.cpp"]["revision_0_source_code"].startswith(
         "int changed_function() {"
     )
-    assert (
-        "int main(int argc, char **argv)"
-        in files_by_filename["main.cpp"]["revision_0_source_code"]
-    )
-    assert files_by_filename["main.cpp"]["revision_1_source_code"].startswith(
-        '#include "foo.hpp"'
+    assert "int main(int argc, char **argv)" not in files_by_filename["main.cpp"][
+        "revision_0_source_code"
+    ]
+    assert files_by_filename["main.cpp"]["revision_1_source_code"] == (
+        '#include "foo.hpp"\n\n\n'
     )
     assert files_by_filename["|foo.hpp"]["revision_0_source_code"] == ""
     assert files_by_filename["|foo.hpp"]["revision_1_source_code"].startswith(
@@ -226,6 +226,50 @@ def test_function_content_example_keeps_raw_srcmove_xpaths_and_tree_node_ids() -
     assert "name='foo'" not in to_node_ids[0]
     assert from_node_ids[0].startswith("/src:unit[1]/function[")
     assert to_node_ids[0].startswith("/src:unit[1]/function[")
+
+
+def test_noop_single_file_srcdiff_keeps_file_tree_and_source_when_pruned() -> None:
+    client = create_app().test_client()
+    xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" revision="1.0.0" language="C++" filename="original.cpp|modified.cpp"><function><type><name>int</name></type> <name>foo</name><parameter_list>()</parameter_list> <block>{<block_content/>}</block></function>
+
+<function><type><name>int</name></type> <name>main</name><parameter_list>()</parameter_list> <block>{<block_content>
+  <decl_stmt><decl><type><name>int</name></type> <name>first</name>  <init>= <expr><literal type="number">123</literal></expr></init></decl>;</decl_stmt>
+  <decl_stmt><decl><type><name>int</name></type> <name>second</name> <init>= <expr><literal type="number">456</literal></expr></init></decl>;</decl_stmt>
+  <return>return <expr><literal type="number">0</literal></expr>;</return>
+</block_content>}</block></function>
+</unit>"""
+
+    response = client.post(
+        "/api/visualize",
+        data={
+            "srcdiff_xml": xml,
+            "include_skipped_tags": "false",
+            "pruning_level": "file-and-tree",
+        },
+    )
+
+    if response.status_code != 200:
+        payload = response.get_json(silent=True)
+        error_message = (
+            payload["error"]
+            if isinstance(payload, dict) and "error" in payload
+            else response.get_data(as_text=True)
+        )
+        pytest.fail(
+            "No-op single-file srcdiff failed with status "
+            f"{response.status_code}: {error_message}"
+        )
+
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert payload["unit_count"] == 0
+    assert len(payload["files"]) == 0
+    assert "<unit" not in payload["moved_srcdiff_xml"]
+    assert "<srcdiff" in payload["moved_srcdiff_xml"]
+
+    moved_root = ET.fromstring(payload["moved_srcdiff_xml"])
+    assert list(get_srcdiff_file_unit_elements(moved_root)) == []
 
 
 def build_expected_tree_records(

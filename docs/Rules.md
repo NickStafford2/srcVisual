@@ -23,5 +23,8 @@ High-level rules:
 6. Moves are a first-class use case.
    It must be easy to verify `srcMove` results, especially cross-file moves, new-file moves, deleted-file moves, and reordered units. File ownership and unit ordering must remain correct through the backend pipeline.
 
-7. Package boundaries should stay explicit.
+7. All visualization panes must reflect identical data.
+   The XML pane, srcDiff tree, and source-code panes must all be derived from the same final pruned dataset. If a file unit or XML tag appears in one pane, the corresponding file/tree/source content must appear in the others. Pruning must happen before final payload assembly so those panes can never diverge.
+
+8. Package boundaries should stay explicit.
    Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. Files imported from outside the subpackage by non-test code should not use `_`.

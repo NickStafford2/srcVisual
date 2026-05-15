@@ -106,8 +106,8 @@ export function InputPanel({
           <span className="font-medium text-slate-100">Pruning mode</span>
 
           <span className="text-xs leading-5 text-slate-400">
-            Choose how much non-diff context the backend keeps in the returned
-            file and tree payload.
+            Choose how aggressively the backend removes non-target files, XML
+            tags, tree branches, and source code before the payload is built.
           </span>
 
           <select
@@ -123,13 +123,13 @@ export function InputPanel({
               No pruning: keep all files and full trees
             </option>
             <option value="file-and-tree">
-              Diff-focused: keep changed files and matching tree branches
+              Changed branches: keep only changed files and changed XML/tree/source branches
             </option>
             <option value="file-only">
-              Changed files only: keep changed files with full trees
+              Changed files: keep only files with any diff, but preserve full file contents
             </option>
             <option value="move-only">
-              Moves only: keep move-related files and matching tree branches
+              Move branches: keep only files with moves and prune everything else away
             </option>
           </select>
         </label>
