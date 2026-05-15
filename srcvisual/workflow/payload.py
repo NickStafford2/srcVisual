@@ -8,7 +8,7 @@ from srcvisual.workflow._move_result_enrichment import (
     augment_move_results_with_node_ids,
 )
 from srcvisual.core.notify import ProgressCallback, notify_progress
-from srcvisual.workflow._payload_validation import validate_visualization_payload
+from srcvisual.workflow._validate_payload import validate_visualization_payload
 from srcvisual.workflow._tree_pruning import (
     get_tree_pruning_level,
     prune_visualized_files,
