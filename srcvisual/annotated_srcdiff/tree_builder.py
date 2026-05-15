@@ -13,7 +13,11 @@ from srcvisual.annotated_srcdiff.node_helpers import (
     should_skip_child,
     spans_for_element,
 )
-from srcvisual.annotated_srcdiff.tree_node import TreeNode, tree_has_positions
+from srcvisual.annotated_srcdiff.tree_node import (
+    TreeNode,
+    TreeNodeDict,
+    tree_has_positions,
+)
 from srcvisual.core.namespaces import prefixed_name
 from srcvisual.core.source_span import SourceSpan
 from srcvisual.core.units import get_srcdiff_file_unit_elements
@@ -24,7 +28,7 @@ def build_tree_index(
     moved_srcdiff_xml: str,
     *,
     include_skipped_tags: bool = False,
-) -> tuple[dict[int, dict[str, object]], bool]:
+) -> tuple[dict[int, TreeNodeDict], bool]:
     root = ET.fromstring(moved_srcdiff_xml)
     unit_elements = get_srcdiff_file_unit_elements(root)
 
@@ -32,8 +36,7 @@ def build_tree_index(
         moved_srcdiff_xml,
         include_skipped_tags=include_skipped_tags,
     )
-
-    tree_by_unit: dict[int, dict[str, object]] = {}
+    tree_by_unit: dict[int, TreeNodeDict] = {}
     has_position_data = False
 
     for unit_number, unit_element in enumerate(unit_elements, start=1):

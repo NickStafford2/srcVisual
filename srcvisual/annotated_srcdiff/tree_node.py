@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from srcvisual.annotated_srcdiff.attributes import AllAttributes
 from srcvisual.core.source_span import SourceSpan
 
 TreeNodeKind = Literal["plain", "insert", "delete", "move"]
+
+TreeNodeDict: TypeAlias = dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -23,7 +25,7 @@ class TreeNode:
     revision_1_span: SourceSpan | None
     children: tuple["TreeNode", ...]
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> TreeNodeDict:
         return {
             "id": self.id,
             "path": self.path,
