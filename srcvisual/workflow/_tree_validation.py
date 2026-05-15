@@ -3,7 +3,7 @@ from __future__ import annotations
 from srcvisual.srcdiff.tree_validation import (
     assert_srcdiff_units_match_visualized_files,
 )
-from srcvisual.srcmove.tree_validation import (
+from srcvisual.srcmove.tree_move_validation import (
     assert_moved_srcdiff_matches_visualized_tree_moves,
 )
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
