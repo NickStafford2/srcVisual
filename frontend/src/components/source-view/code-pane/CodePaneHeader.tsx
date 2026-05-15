@@ -16,7 +16,7 @@ export function CodePaneHeader({
   return (
     <header
       className={[
-        "px-4 pt-3 pb-2",
+        "flex flex-row items-baseline gap-3 p-2",
         isRevisionOne ? "text-right" : "text-left",
       ].join(" ")}
     >

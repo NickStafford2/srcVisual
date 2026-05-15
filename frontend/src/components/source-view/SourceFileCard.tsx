@@ -81,19 +81,13 @@ export function SourceFileCard({
     <article
       aria-label={`Source file ${file.filename}`}
       data-file-name={file.filename}
-      className="rounded-[20px] border border-white/10 bg-white/[0.03] p-3 transition"
+      className="rounded-[20px] border border-white/10 bg-white/[0.03] p-1 transition"
     >
-      <header className="mb-3 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-slate-50">
-            {file.filename}
-          </h3>
-
-          <p className="mt-0.5 text-xs text-slate-400">
-            unit {file.unit_id}
-            {file.language ? ` · ${file.language}` : ""}
-          </p>
-        </div>
+      <header className="m-2 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
+        <p className="mt-0.5 text-xs text-slate-400">
+          unit {file.unit_id}
+          {file.language ? ` · ${file.language}` : ""}
+        </p>
 
         <div className="flex flex-wrap gap-1.5">
           {highlightedSpans.length > 0 ? (
@@ -104,13 +98,13 @@ export function SourceFileCard({
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-1 lg:grid-cols-2">
         <CodePane
           fileIndex={fileIndex}
           filename={file.filename}
           revision="revision-0"
-          title="Revision 0"
-          subtitle={`${revision0Filename} revision 0`}
+          title={`${revision0Filename}`}
+          subtitle="revision 0"
           source={file.revision_0_source_code}
           highlights={revision0Highlights}
           registerMoveSegment={registerMoveSegment}
@@ -122,8 +116,8 @@ export function SourceFileCard({
           fileIndex={fileIndex}
           filename={file.filename}
           revision="revision-1"
-          title="Revision 1"
-          subtitle={`${revision1Filename} revision 1`}
+          title={`${revision0Filename}`}
+          subtitle="revision 1"
           source={file.revision_1_source_code}
           highlights={revision1Highlights}
           registerMoveSegment={registerMoveSegment}
