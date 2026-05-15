@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TypedDict
 import xml.etree.ElementTree as ET
 
-from srcvisual.core.namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
+from srcvisual.core.namespaces import MV_NS, prefixed_name
 from srcvisual.srcmove._path_lists import split_srcmove_path_list
 
 MV_ID = f"{{{MV_NS}}}id"
@@ -56,8 +56,8 @@ def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
     )
     assert move_id, f"Empty mv:id on {prefixed_name(element.tag)}."
 
-    from_paths = parse_move_path_list(from_value)
-    to_paths = parse_move_path_list(to_value)
+    from_paths = _parse_move_path_list(from_value)
+    to_paths = _parse_move_path_list(to_value)
 
     return MoveAttributes(
         id=move_id,
@@ -66,7 +66,7 @@ def parse_move_attributes(element: ET.Element) -> MoveAttributes | None:
     )
 
 
-def parse_move_path_list(value: str | None) -> tuple[str, ...]:
+def _parse_move_path_list(value: str | None) -> tuple[str, ...]:
     if value is None:
         return ()
 
