@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def expect_optional_span_dict(
+def assert_optional_span_dict(
     value: object,
     path: str,
     field_name: str,

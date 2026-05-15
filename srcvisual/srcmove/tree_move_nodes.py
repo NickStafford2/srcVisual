@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from srcvisual.srcmove.span_payloads import expect_optional_span_dict
+from srcvisual.srcmove.span_payloads import assert_optional_span_dict
 from srcvisual.srcmove.srcmove_results import normalize_srcmove_xpath_tuple
 
 
@@ -145,13 +145,13 @@ def collect_tree_move_nodes_from_node(
             ),
             position_start=position_start if isinstance(position_start, str) else None,
             position_end=position_end if isinstance(position_end, str) else None,
-            xml_span=expect_optional_span_dict(node.get("xml_span"), path, "xml_span"),
-            revision_0_span=expect_optional_span_dict(
+            xml_span=assert_optional_span_dict(node.get("xml_span"), path, "xml_span"),
+            revision_0_span=assert_optional_span_dict(
                 node.get("revision_0_span"),
                 path,
                 "revision_0_span",
             ),
-            revision_1_span=expect_optional_span_dict(
+            revision_1_span=assert_optional_span_dict(
                 node.get("revision_1_span"),
                 path,
                 "revision_1_span",

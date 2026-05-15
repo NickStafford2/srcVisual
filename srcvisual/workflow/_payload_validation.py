@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from srcvisual.workflow.models import VisualizationPayload
-from srcvisual.srcmove.span_payloads import expect_optional_span_dict
+from srcvisual.srcmove.span_payloads import assert_optional_span_dict
 
 
 def validate_visualization_payload(payload: VisualizationPayload) -> None:
@@ -87,9 +87,9 @@ def validate_tree_payload_node(node: dict[str, object]) -> None:
     assert node["move_id"] is None or isinstance(node["move_id"], str)
     assert isinstance(node["srcdiff_attributes"], dict)
 
-    expect_optional_span_dict(node["xml_span"], _path, "xml_span")
-    expect_optional_span_dict(node["revision_0_span"], _path, "revision_0_span")
-    expect_optional_span_dict(node["revision_1_span"], _path, "revision_1_span")
+    assert_optional_span_dict(node["xml_span"], _path, "xml_span")
+    assert_optional_span_dict(node["revision_0_span"], _path, "revision_0_span")
+    assert_optional_span_dict(node["revision_1_span"], _path, "revision_1_span")
 
     _children = node["children"]
     assert isinstance(_children, list)
