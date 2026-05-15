@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
-from ..workflow.payload import build_visualization_payload
-from ._examples import list_example_filenames, read_example_file
-from ._progress import progress_broker
+from srcvisual.workflow.payload import build_visualization_payload
+from srcvisual.web._examples import list_example_filenames, read_example_file
+from srcvisual.web._progress import progress_broker
 
 api = Blueprint("api", __name__)
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from ..files.filenames import normalize_visualized_filename
-from ..srcdiff.units import get_srcdiff_file_unit_elements
-from .models import RevisionFile, VisualizedFile
+from srcvisual.files.filenames import normalize_visualized_filename
+from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
+from srcvisual.workflow.models import RevisionFile, VisualizedFile
 
 
 def build_visualized_files(

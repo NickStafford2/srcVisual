@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from ._models import SourceSpan, TreeNode, TreeNodeKind
-from .namespaces import SKIPPED_TREE_TAGS, prefixed_name
-from .spans import build_xml_span_index, parse_position_spans
-from .attributes import parse_srcdiff_attributes
-from .units import get_srcdiff_file_unit_elements
+from srcvisual.srcdiff._models import SourceSpan, TreeNode, TreeNodeKind
+from srcvisual.srcdiff.namespaces import SKIPPED_TREE_TAGS, prefixed_name
+from srcvisual.srcdiff.spans import build_xml_span_index, parse_position_spans
+from srcvisual.srcdiff.attributes import parse_srcdiff_attributes
+from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
 
 
 def build_tree_index(

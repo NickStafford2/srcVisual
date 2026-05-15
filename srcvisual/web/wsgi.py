@@ -1,5 +1,5 @@
 from __future__ import annotations
 
-from .app import app
+from srcvisual.web.app import app
 
 __all__ = ["app"]

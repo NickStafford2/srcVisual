@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .move_regions import XmlMoveRegion, collect_xml_move_regions
-from .srcmove_results import (
-    SrcMoveResultMove,
-    build_filename_to_unit_index,
-    parse_srcmove_result_moves,
-)
+from srcvisual.srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
+from srcvisual.srcmove.srcmove_results import SrcMoveResultMove, build_filename_to_unit_index, parse_srcmove_result_moves
 
 
 def validate_srcmove_results_match_xml(

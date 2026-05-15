@@ -3,17 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ..srcmove._moved_srcdiff import (
+from srcvisual.srcmove._moved_srcdiff import (
     build_move_results_from_moved_srcdiff,
     has_srcmove_annotations,
 )
-from ._positioned_srcdiff import (
+from srcvisual.workflow._positioned_srcdiff import (
     has_position_annotations,
     restore_original_metadata_on_path,
     run_srcdiff_with_positions,
 )
-from ._notify import ProgressCallback, notify_progress
-from ..srcmove._srcmove import run_srcmove
+from srcvisual.core._notify import ProgressCallback, notify_progress
+from srcvisual.srcmove._srcmove import run_srcmove
 
 
 def build_moved_srcdiff_xml(

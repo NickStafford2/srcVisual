@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..srcmove.srcmove_results import (
-    build_filename_to_unit_index,
-    parse_srcmove_result_moves,
-)
-from ..srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
+from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index, parse_srcmove_result_moves
+from srcvisual.srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
 
 
 def augment_move_results_with_node_ids(

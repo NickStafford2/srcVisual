@@ -5,9 +5,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..core.commands import run_command
-from ..workflow.models import RevisionFile
-from ._source_files import write_source_file
+from srcvisual.core.commands import run_command
+from srcvisual.workflow.models import RevisionFile
+from srcvisual.files._source_files import write_source_file
 
 
 @dataclass(frozen=True)

@@ -3,9 +3,9 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from typing import Any
 
-from .attributes import MV_ID
-from .srcmove_results import build_filename_to_unit_index
-from .move_regions import collect_xml_move_regions
+from srcvisual.srcmove.attributes import MV_ID
+from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index
+from srcvisual.srcmove.move_regions import collect_xml_move_regions
 
 
 def has_srcmove_annotations(srcdiff_xml: str) -> bool:

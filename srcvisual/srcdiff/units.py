@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from .namespaces import SRC_NS
+from srcvisual.srcdiff.namespaces import SRC_NS
 
 SRC_UNIT_TAG = f"{{{SRC_NS}}}unit"
 

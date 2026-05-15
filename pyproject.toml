@@ -29,3 +29,5 @@ dev = [
   "pyright (>=1.1.409,<2.0.0)",
   "pytest (>=9.0.3,<10.0.0)",
 ]
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
