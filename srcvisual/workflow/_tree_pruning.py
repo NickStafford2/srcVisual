@@ -61,7 +61,7 @@ def prune_visualized_files(
             prune_tree_branches=True,
         )
 
-    raise AssertionError(f"Unhandled pruning level: {pruning_level}")
+    raise AssertionError(f"Unhandled pruning level: {pruning_level!r}")
 
 
 def prune_files_by_target_kinds(
@@ -73,13 +73,12 @@ def prune_files_by_target_kinds(
     pruned_files: list[VisualizedFile] = []
 
     for visualized_file in visualized_files:
-        if visualized_file.tree is None:
+        tree = visualized_file.tree
+
+        if tree is None:
             continue
 
-        if not tree_has_target_kind(
-            visualized_file.tree,
-            target_kinds=target_kinds,
-        ):
+        if not tree_has_target_kind(tree, target_kinds=target_kinds):
             continue
 
         if not prune_tree_branches:
@@ -87,7 +86,7 @@ def prune_files_by_target_kinds(
             continue
 
         pruned_tree = prune_tree_to_target_branches(
-            visualized_file.tree,
+            tree,
             target_kinds=target_kinds,
         )
 
@@ -112,18 +111,16 @@ def prune_tree_to_target_branches(
     *,
     target_kinds: set[str],
 ) -> TreeNodeDict | None:
-    kind = expect_tree_kind(node)
-
     # Important:
     # Once the node itself is a target, keep the whole subtree.
     # Do not prune children inside insert/delete/move nodes for file-and-tree.
     # Do not prune children inside move nodes for move-only.
-    if kind in target_kinds:
+    if node["kind"] in target_kinds:
         return node
 
     pruned_children: list[TreeNodeDict] = []
 
-    for child in expect_tree_children(node):
+    for child in node["children"]:
         pruned_child = prune_tree_to_target_branches(
             child,
             target_kinds=target_kinds,
@@ -132,22 +129,12 @@ def prune_tree_to_target_branches(
         if pruned_child is not None:
             pruned_children.append(pruned_child)
 
-    if pruned_children:
-        return {
-            "id": node["id"],
-            "path": node["path"],
-            "tag": node["tag"],
-            "label": node["label"],
-            "kind": node["kind"],
-            "move_id": node["move_id"],
-            "srcdiff_attributes": node["srcdiff_attributes"],
-            "xml_span": node["xml_span"],
-            "revision_0_span": node["revision_0_span"],
-            "revision_1_span": node["revision_1_span"],
-            "children": pruned_children,
-        }
+    if not pruned_children:
+        return None
 
-    return None
+    pruned_node = node.copy()
+    pruned_node["children"] = pruned_children
+    return pruned_node
 
 
 def tree_has_target_kind(
@@ -155,36 +142,10 @@ def tree_has_target_kind(
     *,
     target_kinds: set[str],
 ) -> bool:
-    kind = expect_tree_kind(node)
-
-    if kind in target_kinds:
+    if node["kind"] in target_kinds:
         return True
 
-    for child in expect_tree_children(node):
-        if tree_has_target_kind(child, target_kinds=target_kinds):
-            return True
-
-    return False
-
-
-def expect_tree_kind(node: TreeNodeDict) -> str:
-    kind = node.get("kind")
-
-    assert isinstance(kind, str), f"Tree node {node.get('path')!r} has invalid kind."
-
-    return kind
-
-
-def expect_tree_children(node: TreeNodeDict) -> list[TreeNodeDict]:
-    children = node.get("children")
-
-    assert isinstance(children, list), (
-        f"Tree node {node.get('path')!r} has invalid children."
+    return any(
+        tree_has_target_kind(child, target_kinds=target_kinds)
+        for child in node["children"]
     )
-
-    for child in children:
-        assert isinstance(child, dict), (
-            f"Tree node {node.get('path')!r} has a non-dict child."
-        )
-
-    return children
