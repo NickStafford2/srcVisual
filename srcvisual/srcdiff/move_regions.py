@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import xml.etree.ElementTree as ET
 
-from .srcmove_results import (
+from srcmove.srcmove_results import (
     normalize_srcmove_xpath_tuple,
     parse_xml_move_reference_list,
 )
-from .attributes import MV_FROM, MV_ID, MV_TO
+from ..srcmove.attributes import MV_FROM, MV_ID, MV_TO
 from .namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
 from .units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import VisualizedFile
@@ -230,7 +230,9 @@ def collect_tree_move_nodes_from_node(
                 tuple(_to_paths),
                 filename_to_unit_index=filename_to_unit_index,
             ),
-            position_start=_position_start if isinstance(_position_start, str) else None,
+            position_start=_position_start
+            if isinstance(_position_start, str)
+            else None,
             position_end=_position_end if isinstance(_position_end, str) else None,
             xml_span=expect_optional_span_dict(node.get("xml_span"), _path, "xml_span"),
             revision_0_span=expect_optional_span_dict(
