@@ -16,10 +16,6 @@ This is all wrong. it should be on the xml section. the goal is to be able to sh
 
 above the diff tree. we need a file or project name. if an example file was used, use its name.
 
-## highlights
-
-by default, moves, inserts, deletes should all be highlighted. as if upon recieving payload, user clicks the buttons to highlight all moves, deletes, and inserts.
-
 ## Collapsible.
 
 Need to make lots of things collapsible

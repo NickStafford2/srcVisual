@@ -33,6 +33,12 @@ const EMPTY_HIGHLIGHT_MODE: HighlightMode = {
   delete: false,
 };
 
+const DEFAULT_HIGHLIGHT_MODE: HighlightMode = {
+  move: true,
+  insert: false,
+  delete: false,
+};
+
 export function useSrcDiffSelection(
   data: VisualizeResponse | null,
 ): SrcDiffSelectionState {
@@ -107,7 +113,7 @@ export function useSrcDiffSelection(
   useEffect(() => {
     setManualHighlightNodeId(null);
     setManualHighlightScope("node");
-    setHighlightMode(EMPTY_HIGHLIGHT_MODE);
+    setHighlightMode(data ? DEFAULT_HIGHLIGHT_MODE : EMPTY_HIGHLIGHT_MODE);
     setSuppressedHighlightedNodeIds(new Set());
   }, [data]);
 

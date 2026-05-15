@@ -176,7 +176,10 @@ describe("App highlight all moves flow", () => {
 
     const _tree = screen.getByLabelText("SrcDiff Tree");
 
-    expect(getHighlightedTreeNodeIds(_tree)).toEqual([]);
+    expect(getHighlightedTreeNodeIds(_tree)).toEqual([
+      "/src:unit[1]/diff:delete[1]",
+      "/src:unit[2]/diff:insert[1]",
+    ]);
 
     await user.click(
       within(_tree).getByRole("button", { name: "Actions for diff:delete" }),
@@ -186,6 +189,7 @@ describe("App highlight all moves flow", () => {
     await waitFor(() => {
       expect(getHighlightedTreeNodeIds(_tree)).toEqual([
         "/src:unit[1]/diff:delete[1]",
+        "/src:unit[2]/diff:insert[1]",
       ]);
     });
 
@@ -273,8 +277,6 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
   await screen.findByRole("heading", { name: "SrcDiff Tree" });
-
-  await user.click(screen.getByRole("button", { name: "Highlight all moves" }));
 }
 
 function expectSourcePaneHighlightPresence({

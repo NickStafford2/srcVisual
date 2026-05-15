@@ -132,7 +132,6 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
   await screen.findByRole("heading", { name: "SrcDiff Tree" });
-  await user.click(screen.getByRole("button", { name: "Highlight all moves" }));
 }
 
 function expectFileToHaveHighlightedSourceLines(filename: string) {

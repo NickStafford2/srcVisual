@@ -71,7 +71,6 @@ describe("App single-unit move highlighting", () => {
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
     await screen.findByRole("heading", { name: "SrcDiff Tree" });
-    await user.click(screen.getByRole("button", { name: "Highlight all moves" }));
 
     const tree = screen.getByLabelText("SrcDiff Tree");
     await waitFor(() => {
