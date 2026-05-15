@@ -33,3 +33,6 @@ Rules:
 
 11. Validation
     all validation files should follow the format: validate_whatever.py
+
+12. assert functions
+    all functions that do nothing but assert should follow the format: assert_whatever()
