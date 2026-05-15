@@ -90,6 +90,36 @@ def test_build_tree_index_accepts_type_attribute_on_diff_nodes() -> None:
     assert has_position_data is False
 
 
+def test_build_tree_index_accepts_ref_attribute_on_type_nodes() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src">
+  <unit filename="example.cpp">
+    <decl_stmt>
+      <decl>
+        <type><name>double</name></type>
+        <name>minVal</name>
+      </decl>,
+      <decl>
+        <type ref="prev"/>
+        <name>maxVal</name>
+      </decl>;
+    </decl_stmt>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    decl_stmt = tree_by_unit[1]["children"][0]
+    second_decl = decl_stmt["children"][1]
+    second_type = second_decl["children"][0]
+
+    assert decl_stmt["tag"] == "decl_stmt"
+    assert second_decl["tag"] == "decl"
+    assert second_type["tag"] == "type"
+    assert has_position_data is False
+
+
 def test_build_tree_index_detects_move_nodes_from_srcmove_id() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"

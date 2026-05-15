@@ -16,6 +16,8 @@ from srcvisual.srcmove.attributes import (
     parse_move_attributes,
 )
 
+PLAIN_REF = "ref"
+
 from srcvisual.core.namespaces import (
     DIFF_NS,
     POS_END,
@@ -186,6 +188,10 @@ KNOWN_DIFF_ATTRIBUTES = {
     "type",
 }
 
+KNOWN_TYPE_ATTRIBUTES = {
+    PLAIN_REF,
+}
+
 
 def _assert_known_attributes(element: ET.Element) -> None:
     allowed_attributes = set(KNOWN_COMMON_ATTRIBUTES)
@@ -196,10 +202,13 @@ def _assert_known_attributes(element: ET.Element) -> None:
     if element.tag.startswith(f"{{{DIFF_NS}}}"):
         allowed_attributes |= KNOWN_DIFF_ATTRIBUTES
 
+    if element.tag == f"{{{SRC_NS}}}type":
+        allowed_attributes |= KNOWN_TYPE_ATTRIBUTES
+
     unknown_attributes = set(element.attrib) - allowed_attributes
 
     assert not unknown_attributes, (
         f"Unknown attributes on {prefixed_name(element.tag)}: "
         f"{[prefixed_name(attribute) for attribute in sorted(unknown_attributes)]}. "
-        "Add them to srcvisual/srcdiff/attributes.py."
+        "Add them to srcvisual/annotated_srcdiff/attributes.py."
     )
