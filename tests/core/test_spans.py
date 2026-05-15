@@ -3,18 +3,18 @@ import xml.etree.ElementTree as ET
 from srcvisual.core.namespaces import POS_END, POS_START
 from srcvisual.srcdiff.spans import (
     build_xml_span_index,
-    parse_position_point,
-    parse_position_points,
+    _parse_position_point,
+    _parse_position_points,
     parse_position_spans,
 )
 
 
 def test_parse_position_point() -> None:
-    assert parse_position_point("12:34") == (12, 34)
+    assert _parse_position_point("12:34") == (12, 34)
 
 
 def test_parse_position_points() -> None:
-    assert parse_position_points("1:2|3:4") == ((1, 2), (3, 4))
+    assert _parse_position_points("1:2|3:4") == ((1, 2), (3, 4))
 
 
 def test_parse_position_spans_returns_none_when_position_data_missing() -> None:
