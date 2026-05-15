@@ -4,6 +4,8 @@ import type { SrcDiffTreeNode } from "./srcdiff/types";
 export type VisualizationProgressEvent = {
   type: "connected" | "progress" | "complete" | "error";
   message: string;
+  elapsed_ms: number;
+  delta_ms: number;
 };
 
 export async function fetchExampleList(): Promise<string[]> {

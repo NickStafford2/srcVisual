@@ -1,9 +1,11 @@
 import type { FormEvent } from "react";
-import type { InputMode } from "../../srcdiff/useSrcDiffData";
+import type { InputMode, ProgressLogEntry } from "../../srcdiff/useSrcDiffData";
 import type { TreePruningLevel, VisualizeResponse } from "../../types";
 import { InputModeToggle } from "./InputModeToggle";
+import { InputPanelOptions } from "./InputPanelOptions";
+import { InputPanelSubmitRow } from "./InputPanelSubmitRow";
 import { PasteXmlInput } from "./PasteXmlInput";
-import { StatusPill } from "./StatusPill";
+import { ProgressLog } from "./ProgressLog";
 import { UploadFileInput } from "./UploadFileInput";
 
 type InputPanelProps = {
@@ -13,6 +15,7 @@ type InputPanelProps = {
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
+  progressMessages: ProgressLogEntry[];
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
   pruningLevel: TreePruningLevel;
@@ -35,6 +38,7 @@ export function InputPanel({
   isLoading,
   error,
   progressMessage,
+  progressMessages,
   data,
   includeSkippedTags,
   pruningLevel,
@@ -80,79 +84,22 @@ export function InputPanel({
           />
         )}
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.05]">
-          <input
-            type="checkbox"
-            checked={includeSkippedTags}
-            onChange={(event) =>
-              onIncludeSkippedTagsChange(event.target.checked)
-            }
-            className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950"
-          />
+        <InputPanelOptions
+          includeSkippedTags={includeSkippedTags}
+          pruningLevel={pruningLevel}
+          disabled={isLoading}
+          onIncludeSkippedTagsChange={onIncludeSkippedTagsChange}
+          onPruningLevelChange={onPruningLevelChange}
+        />
 
-          <span>
-            <span className="block font-medium text-slate-100">
-              Show every XML tag
-            </span>
+        <InputPanelSubmitRow
+          isLoading={isLoading}
+          error={error}
+          progressMessage={progressMessage}
+          data={data}
+        />
 
-            <span className="block text-xs leading-5 text-slate-400">
-              Includes tags normally hidden from the Units tree, such as
-              diff:ws.
-            </span>
-          </span>
-        </label>
-
-        <label className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200">
-          <span className="font-medium text-slate-100">Pruning mode</span>
-
-          <span className="text-xs leading-5 text-slate-400">
-            Choose how aggressively the backend removes non-target files, XML
-            tags, tree branches, and source code before the payload is built.
-          </span>
-
-          <select
-            value={pruningLevel}
-            disabled={isLoading}
-            onChange={(event) =>
-              onPruningLevelChange(event.target.value as TreePruningLevel)
-            }
-            className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-300/40"
-            aria-label="Pruning mode"
-          >
-            <option value="none">
-              No pruning: keep all files and full trees
-            </option>
-            <option value="file-and-tree">
-              Changed branches: keep only changed files and changed XML/tree/source branches
-            </option>
-            <option value="file-only">
-              Changed files: keep only files with any diff, but preserve full file contents
-            </option>
-            <option value="move-only">
-              Move branches: keep only files with moves and prune everything else away
-            </option>
-          </select>
-        </label>
-
-        <div className="flex flex-row gap-3">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="rounded-xl border border-sky-300/30 bg-green-900 px-4 py-2 text-sm font-medium text-slate-50 transition hover:-translate-y-0.5 hover:bg-sky-300/20 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
-          >
-            {isLoading ? "Submitting..." : "Submit"}
-          </button>
-
-          <StatusPill error={error}>
-            {error
-              ? error
-              : isLoading && progressMessage
-                ? progressMessage
-                : data
-                  ? `Loaded ${data.files.length} file${data.files.length === 1 ? "" : "s"} from ${data.source_filename}`
-                  : "Waiting for input"}
-          </StatusPill>
-        </div>
+        <ProgressLog entries={progressMessages} />
       </form>
     </section>
   );

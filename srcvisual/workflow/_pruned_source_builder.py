@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass
 import xml.etree.ElementTree as ET
 
@@ -72,6 +73,19 @@ class _RenderedUnitSources:
     revision_1_spans_by_path: dict[str, SourceSpan]
 
 
+@dataclass
+class _TextBuffer:
+    chunks: list[str]
+    length: int = 0
+
+    def append(self, text: str) -> None:
+        self.chunks.append(text)
+        self.length += len(text)
+
+    def render(self) -> str:
+        return "".join(self.chunks)
+
+
 def _render_unit_sources(
     *,
     unit_element: ET.Element,
@@ -79,8 +93,8 @@ def _render_unit_sources(
     include_skipped_tags: bool,
 ) -> _RenderedUnitSources:
     _buffers = {
-        REVISION_0: [],
-        REVISION_1: [],
+        REVISION_0: _TextBuffer(chunks=[]),
+        REVISION_1: _TextBuffer(chunks=[]),
     }
     _ranges = {
         REVISION_0: {},
@@ -96,8 +110,8 @@ def _render_unit_sources(
         ranges=_ranges,
     )
 
-    _revision_0_source = "".join(_buffers[REVISION_0])
-    _revision_1_source = "".join(_buffers[REVISION_1])
+    _revision_0_source = _buffers[REVISION_0].render()
+    _revision_1_source = _buffers[REVISION_1].render()
 
     return _RenderedUnitSources(
         revision_0_source_code=_revision_0_source,
@@ -119,13 +133,11 @@ def _render_element(
     path: str,
     include_skipped_tags: bool,
     parent_revisions: set[RevisionName],
-    buffers: dict[RevisionName, list[str]],
+    buffers: dict[RevisionName, _TextBuffer],
     ranges: dict[RevisionName, dict[str, tuple[int, int]]],
 ) -> None:
     _revisions = _active_revisions_for_element(element, parent_revisions)
-    _start_offsets = {
-        _revision: _buffer_length(buffers[_revision]) for _revision in _revisions
-    }
+    _start_offsets = {_revision: buffers[_revision].length for _revision in _revisions}
 
     _emit_text(element.text, _revisions, buffers)
 
@@ -150,7 +162,7 @@ def _render_element(
         _emit_text(_child.tail, _revisions, buffers)
 
     for _revision in _revisions:
-        _end_offset = _buffer_length(buffers[_revision])
+        _end_offset = buffers[_revision].length
         _start_offset = _start_offsets[_revision]
 
         if _end_offset > _start_offset:
@@ -175,17 +187,13 @@ def _active_revisions_for_element(
 def _emit_text(
     text: str | None,
     revisions: set[RevisionName],
-    buffers: dict[RevisionName, list[str]],
+    buffers: dict[RevisionName, _TextBuffer],
 ) -> None:
     if not text:
         return
 
     for _revision in revisions:
         buffers[_revision].append(text)
-
-
-def _buffer_length(chunks: list[str]) -> int:
-    return sum(len(_chunk) for _chunk in chunks)
 
 
 def _ranges_to_spans(
@@ -230,12 +238,6 @@ def _offset_to_line_col(
     offset: int,
     line_starts: list[int],
 ) -> tuple[int, int]:
-    _line_index = 0
-
-    for _candidate_index, _line_start in enumerate(line_starts):
-        if _line_start > offset:
-            break
-        _line_index = _candidate_index
-
+    _line_index = bisect_right(line_starts, offset) - 1
     _line_start = line_starts[_line_index]
     return _line_index + 1, offset - _line_start + 1

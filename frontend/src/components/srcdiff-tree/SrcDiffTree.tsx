@@ -94,14 +94,14 @@ export default function SrcDiffTree({
 
   return (
     <section
-      aria-label="SrcDiff Tree"
       className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+      aria-label="srcDiff Tree"
     >
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
         <div className="flex w-full flex-row justify-between gap-2">
           <div>
             <h2 className="text-2xl font-semibold text-slate-50">
-              SrcDiff Tree
+              srcDiff Tree
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-300">

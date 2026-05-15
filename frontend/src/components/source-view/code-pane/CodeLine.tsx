@@ -50,7 +50,7 @@ export function CodeLine({
       data-line-number={line.number}
       data-source-revision={revision}
       className={[
-        "grid grid-cols-[56px_1fr] gap-2 px-4",
+        "grid grid-cols-[56px_1fr] px-2",
         line.hasHighlight ? "bg-white/[0.04]" : "",
       ].join(" ")}
     >
@@ -60,13 +60,13 @@ export function CodeLine({
           event.preventDefault();
           jumpToLineTarget(lineTargetId);
         }}
-        className="border-r border-white/5 py-1 pr-2 text-right text-xs text-slate-500 transition select-none hover:text-sky-200"
+        className="border-r border-white/5 pr-2 text-right text-xs text-slate-500 transition select-none hover:text-sky-200"
         title={`Jump to ${title} line ${line.number}`}
       >
         {line.number}
       </a>
 
-      <span className="block py-1 text-xs break-words whitespace-pre-wrap text-slate-100">
+      <span className="block text-xs break-words whitespace-pre-wrap text-slate-100">
         {line.segments.map((segment, segmentIndex) => (
           <CodeSegment
             key={`${segment.nodeId ?? "plain"}-${segmentIndex}`}

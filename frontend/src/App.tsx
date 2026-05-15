@@ -39,6 +39,7 @@ export default function App() {
           isLoading={srcDiffData.isLoading}
           error={srcDiffData.error}
           progressMessage={srcDiffData.progressMessage}
+          progressMessages={srcDiffData.progressMessages}
           data={srcDiffData.data}
           includeSkippedTags={srcDiffData.includeSkippedTags}
           pruningLevel={srcDiffData.pruningLevel}

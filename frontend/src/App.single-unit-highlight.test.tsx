@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -59,9 +65,7 @@ describe("App single-unit move highlighting", () => {
 
     render(<App />);
 
-    await user.click(
-      await screen.findByRole("button", { name: exampleLabel }),
-    );
+    await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
@@ -70,9 +74,9 @@ describe("App single-unit move highlighting", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
-    await screen.findByRole("heading", { name: "SrcDiff Tree" });
+    await screen.findByRole("heading", { name: "srcDiff Tree" });
 
-    const tree = screen.getByLabelText("SrcDiff Tree");
+    const tree = screen.getByLabelText("srcDiff Tree");
     await waitFor(() => {
       expect(getHighlightedTreeNodeIds(tree)).toEqual([
         "/src:unit[1]/diff:delete[1]",
@@ -80,15 +84,17 @@ describe("App single-unit move highlighting", () => {
       ]);
     });
 
-    expect(getHighlightedLineNumbers(screen.getByLabelText("basic.cpp Revision 0"))).toEqual([
-      1,
-    ]);
-    expect(getHighlightedLineNumbers(screen.getByLabelText("basic.cpp Revision 1"))).toEqual([
-      1,
-    ]);
+    expect(
+      getHighlightedLineNumbers(screen.getByLabelText("basic.cpp Revision 0")),
+    ).toEqual([1]);
+    expect(
+      getHighlightedLineNumbers(screen.getByLabelText("basic.cpp Revision 1")),
+    ).toEqual([1]);
 
     const sourceSection = screen.getByLabelText("Source Code Section");
-    expect(within(sourceSection).getByText("2 highlighted")).toBeInTheDocument();
+    expect(
+      within(sourceSection).getByText("2 highlighted"),
+    ).toBeInTheDocument();
     expect(
       sourceSection.querySelectorAll(`[data-move-id="${singleUnitMoveId}"]`),
     ).not.toHaveLength(0);
@@ -106,7 +112,9 @@ function jsonResponse(payload: unknown): Response {
 
 function getHighlightedLineNumbers(region: HTMLElement): number[] {
   return Array.from(
-    region.querySelectorAll<HTMLElement>('[data-highlighted="true"][data-line-number]'),
+    region.querySelectorAll<HTMLElement>(
+      '[data-highlighted="true"][data-line-number]',
+    ),
   ).map((line) => Number(line.dataset.lineNumber));
 }
 
