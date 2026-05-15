@@ -30,3 +30,6 @@ Rules:
 
 10. Beware Fallbacks
     the frontend should receive a specific and well known data type from the backend.
+
+11. Validation
+    all validation files should follow the format: validate_whatever.py
