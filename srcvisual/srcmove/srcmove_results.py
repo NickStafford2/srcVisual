@@ -6,7 +6,7 @@ from typing import Any
 import xml.etree.ElementTree as ET
 
 from ._srcmove_paths import split_srcmove_path_list
-from .units import get_srcdiff_file_unit_elements
+from ..srcdiff.units import get_srcdiff_file_unit_elements
 
 
 FILENAME_UNIT_PATTERN = re.compile(

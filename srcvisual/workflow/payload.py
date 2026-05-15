@@ -9,10 +9,10 @@ from srcvisual.workflow._notify import ProgressCallback, notify_progress
 from srcvisual.workflow._payload_validation import validate_visualization_payload
 from srcvisual.workflow._pruning import get_pruning_level, prune_visualized_files
 from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
-from srcvisual.workflow._srcmove import (
+from srcvisual.srcmove._srcmove import (
     is_strict_srcmove_validation_enabled,
 )
-from srcvisual.workflow._srcmove_validation import validate_srcmove_results_match_xml
+from srcvisual.srcmove._srcmove_validation import validate_srcmove_results_match_xml
 from srcvisual.workflow._tempfiles import managed_tmpdir
 from srcvisual.workflow._tree_validation import validate_moved_srcdiff_and_tree
 from srcvisual.workflow._visualized_files import build_visualized_files

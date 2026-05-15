@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..srcdiff.srcmove_results import (
+from ..srcmove.srcmove_results import (
     build_filename_to_unit_index,
     parse_srcmove_result_moves,
 )
@@ -77,9 +77,7 @@ def build_move_region_paths_by_id(
             move_paths["to_node_ids"].append(path)
             continue
 
-        raise AssertionError(
-            f"Move region {path!r} has unexpected tag {region.tag!r}."
-        )
+        raise AssertionError(f"Move region {path!r} has unexpected tag {region.tag!r}.")
 
     return {
         move_id: {

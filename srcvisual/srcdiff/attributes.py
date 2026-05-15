@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 import xml.etree.ElementTree as ET
 
 from .namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
-from ._srcmove_paths import split_srcmove_path_list
+from ..srcmove._srcmove_paths import split_srcmove_path_list
 
 POS_START = f"{{{POS_NS}}}start"
 POS_END = f"{{{POS_NS}}}end"

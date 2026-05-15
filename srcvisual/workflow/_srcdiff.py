@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ._moved_srcdiff import (
+from ..srcmove._moved_srcdiff import (
     build_move_results_from_moved_srcdiff,
     has_srcmove_annotations,
 )
@@ -13,7 +13,7 @@ from ._positioned_srcdiff import (
     run_srcdiff_with_positions,
 )
 from ._notify import ProgressCallback, notify_progress
-from ._srcmove import run_srcmove
+from ..srcmove._srcmove import run_srcmove
 
 
 def build_moved_srcdiff_xml(

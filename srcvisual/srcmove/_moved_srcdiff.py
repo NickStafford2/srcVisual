@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Any
 
 from ..srcdiff.attributes import MV_ID
-from ..srcdiff.srcmove_results import build_filename_to_unit_index
+from .srcmove_results import build_filename_to_unit_index
 from ..srcdiff.move_regions import collect_xml_move_regions
 
 
@@ -40,9 +40,7 @@ def build_move_results_from_moved_srcdiff(
         _from_regions = [
             _region for _region in _regions if _region.tag == "diff:delete"
         ]
-        _to_regions = [
-            _region for _region in _regions if _region.tag == "diff:insert"
-        ]
+        _to_regions = [_region for _region in _regions if _region.tag == "diff:insert"]
 
         assert _from_regions, (
             f"Existing srcMove annotation {_move_id!r} has no diff:delete region."

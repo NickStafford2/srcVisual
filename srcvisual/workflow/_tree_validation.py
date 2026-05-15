@@ -9,7 +9,7 @@ from srcvisual.srcdiff.move_regions import (
     collect_xml_move_regions,
     format_move_groups,
 )
-from srcvisual.srcdiff.srcmove_results import build_filename_to_unit_index
+from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index
 from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
 
@@ -49,9 +49,7 @@ def validate_moved_srcdiff_and_tree(
         )
 
         if _expected_filename is not None:
-            assert (
-                _visualized_file.revision_file.filename == _expected_filename
-            ), (
+            assert _visualized_file.revision_file.filename == _expected_filename, (
                 "Visualized file filename does not match moved srcdiff unit. "
                 f"unit {_unit_index} expected filename={_expected_filename!r}, "
                 f"got {_visualized_file.revision_file.filename!r}."
