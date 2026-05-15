@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from srcvisual.srcmove.span_payloads import assert_optional_span_dict
+from srcvisual.srcmove.validate_span_payloads import assert_optional_span_dict
 from srcvisual.srcmove.srcmove_results import normalize_srcmove_xpath_tuple
 
 

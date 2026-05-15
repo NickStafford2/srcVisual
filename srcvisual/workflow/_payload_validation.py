@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from srcvisual.workflow.models import VisualizationPayload
-from srcvisual.srcmove.span_payloads import assert_optional_span_dict
+from srcvisual.srcmove.validate_span_payloads import assert_optional_span_dict
 
 
 def validate_visualization_payload(payload: VisualizationPayload) -> None:
