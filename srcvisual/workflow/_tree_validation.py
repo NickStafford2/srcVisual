@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from srcvisual.srcdiff.move_regions import (
+from srcvisual.srcmove.move_regions import (
     TreeMoveNode,
     XmlMoveRegion,
     collect_tree_move_nodes,

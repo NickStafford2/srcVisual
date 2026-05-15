@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from srcvisual.srcdiff.move_regions import XmlMoveRegion, collect_xml_move_regions
+from .move_regions import XmlMoveRegion, collect_xml_move_regions
 from .srcmove_results import (
     SrcMoveResultMove,
     build_filename_to_unit_index,

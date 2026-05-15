@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 import pytest
 
 from srcvisual.web.app import create_app
-from srcvisual.srcdiff.srcmove_results import (
+from srcvisual.srcmove.srcmove_results import (
     build_filename_to_unit_index,
     parse_srcmove_result_moves,
 )
@@ -17,11 +17,15 @@ EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
 SRCMOVE_FIXTURES_DIR = (
     Path(__file__).resolve().parents[2] / "srcMove" / "test" / "e2e_generated"
 )
-EXAMPLE_PATHS = sorted(
-    path
-    for path in EXAMPLES_DIR.iterdir()
-    if path.is_file() and path.suffix in {".xml", ".srcdiff"}
-) if EXAMPLES_DIR.is_dir() else []
+EXAMPLE_PATHS = (
+    sorted(
+        path
+        for path in EXAMPLES_DIR.iterdir()
+        if path.is_file() and path.suffix in {".xml", ".srcdiff"}
+    )
+    if EXAMPLES_DIR.is_dir()
+    else []
+)
 FILENAME_XPATH_PATTERN = re.compile(
     r"^/src:unit\[@filename=(?P<quote>['\"])(?P<filename>.*?)(?P=quote)\]"
 )
@@ -45,8 +49,14 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
 
     if response.status_code != 200:
         payload = response.get_json(silent=True)
-        error_message = payload["error"] if isinstance(payload, dict) and "error" in payload else response.get_data(as_text=True)
-        pytest.fail(f"{example_path.name} failed with status {response.status_code}: {error_message}")
+        error_message = (
+            payload["error"]
+            if isinstance(payload, dict) and "error" in payload
+            else response.get_data(as_text=True)
+        )
+        pytest.fail(
+            f"{example_path.name} failed with status {response.status_code}: {error_message}"
+        )
 
     payload = response.get_json()
     assert isinstance(payload, dict)
@@ -81,9 +91,7 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     payload = response.get_json()
     assert isinstance(payload, dict)
 
-    filename_to_unit_index = build_filename_to_unit_index(
-        payload["moved_srcdiff_xml"]
-    )
+    filename_to_unit_index = build_filename_to_unit_index(payload["moved_srcdiff_xml"])
     expected_results = json.loads(expected_results_path.read_text(encoding="utf-8"))
     actual_moves = parse_srcmove_result_moves(
         payload["move_results"],
@@ -95,12 +103,8 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     )
 
     assert [
-        (move.move_id, move.from_xpaths, move.to_xpaths)
-        for move in actual_moves
-    ] == [
-        (move.move_id, move.from_xpaths, move.to_xpaths)
-        for move in expected_moves
-    ]
+        (move.move_id, move.from_xpaths, move.to_xpaths) for move in actual_moves
+    ] == [(move.move_id, move.from_xpaths, move.to_xpaths) for move in expected_moves]
 
     for file_payload in payload["files"]:
         assert isinstance(file_payload, dict)
@@ -114,15 +118,14 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     assert files_by_filename["main.cpp"]["revision_0_source_code"].startswith(
         "int changed_function() {"
     )
-    assert "int main(int argc, char **argv)" in files_by_filename["main.cpp"][
-        "revision_0_source_code"
-    ]
+    assert (
+        "int main(int argc, char **argv)"
+        in files_by_filename["main.cpp"]["revision_0_source_code"]
+    )
     assert files_by_filename["main.cpp"]["revision_1_source_code"].startswith(
         '#include "foo.hpp"'
     )
-    assert (
-        files_by_filename["|foo.hpp"]["revision_0_source_code"] == ""
-    )
+    assert files_by_filename["|foo.hpp"]["revision_0_source_code"] == ""
     assert files_by_filename["|foo.hpp"]["revision_1_source_code"].startswith(
         "int changed_function() {"
     )
