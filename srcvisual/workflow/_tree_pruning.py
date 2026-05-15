@@ -14,7 +14,7 @@ MOVE_ONLY_KINDS = {"move"}
 DEFAULT_PRUNING_LEVEL: PruningLevel = "file-and-tree"
 
 
-def get_pruning_level() -> PruningLevel:
+def get_tree_pruning_level() -> PruningLevel:
     raw_level = os.environ.get("SRCVISUAL_PRUNING_LEVEL", DEFAULT_PRUNING_LEVEL)
     level = raw_level.strip().lower().replace("_", "-")
 
@@ -37,7 +37,7 @@ def prune_visualized_files(
     *,
     level: PruningLevel | None = None,
 ) -> tuple[VisualizedFile, ...]:
-    pruning_level = level or get_pruning_level()
+    pruning_level = level or get_tree_pruning_level()
 
     if pruning_level == "file-only":
         return prune_files_by_target_kinds(
