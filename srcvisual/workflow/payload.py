@@ -9,7 +9,7 @@ from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.workflow._payload_validation import validate_visualization_payload
 from srcvisual.workflow._pruning import get_pruning_level, prune_visualized_files
 from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
-from srcvisual.srcmove._srcmove import (
+from srcvisual.srcmove.runner import (
     is_strict_srcmove_validation_enabled,
 )
 from srcvisual.srcmove._srcmove_validation import validate_srcmove_results_match_xml
