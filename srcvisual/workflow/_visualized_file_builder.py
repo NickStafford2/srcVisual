@@ -7,7 +7,7 @@ from srcvisual.annotated_srcdiff.attributes import AllAttributesDict
 from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 from srcvisual.files.filenames import normalize_visualized_filename
 from srcvisual.core.units import get_srcdiff_file_unit_elements
-from srcvisual.workflow.models import RevisionFile, VisualizedFile
+from srcvisual.files.models import RevisionFile, VisualizedFile
 
 
 def build_visualized_files(

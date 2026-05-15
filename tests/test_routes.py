@@ -4,7 +4,7 @@ from pathlib import Path
 
 import srcvisual.web._routes as routes_module
 from srcvisual.web.app import create_app
-from srcvisual.workflow.models import RevisionFile, VisualizationPayload, VisualizedFile
+from srcvisual.files.models import RevisionFile, VisualizationPayload, VisualizedFile
 
 
 def test_visualize_events_requires_token() -> None:

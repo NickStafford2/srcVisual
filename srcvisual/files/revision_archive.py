@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from srcvisual.core.commands import run_command
-from srcvisual.workflow.models import RevisionFile
+from srcvisual.files.models import RevisionFile
 from srcvisual.files._source_file_extraction import write_source_file
 
 

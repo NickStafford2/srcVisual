@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 from srcvisual.core.validation import require
 from srcvisual.core.units import get_srcdiff_file_unit_elements
-from srcvisual.workflow.models import RevisionFile, VisualizedFile
+from srcvisual.files.models import RevisionFile, VisualizedFile
 
 
 def parse_srcdiff_file_unit_elements(srcdiff_xml: str) -> list[ET.Element]:

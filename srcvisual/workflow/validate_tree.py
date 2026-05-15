@@ -6,7 +6,7 @@ from srcvisual.srcdiff.validate_unit_tree import (
 from srcvisual.srcmove.validate_tree_move import (
     assert_moved_srcdiff_matches_visualized_tree_moves,
 )
-from srcvisual.workflow.models import RevisionFile, VisualizedFile
+from srcvisual.files.models import RevisionFile, VisualizedFile
 
 
 def validate_moved_srcdiff_and_tree(

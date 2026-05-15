@@ -4,7 +4,7 @@ import os
 from typing import Literal
 
 from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
-from srcvisual.workflow.models import VisualizedFile
+from srcvisual.files.models import VisualizedFile
 
 
 PruningLevel = Literal["file-only", "file-and-tree", "move-only"]
