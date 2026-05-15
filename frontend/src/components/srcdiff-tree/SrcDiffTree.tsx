@@ -98,15 +98,15 @@ export default function SrcDiffTree({
       className="overflow-hidden rounded-[20px] border border-white/10 bg-slate-950/65 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
     >
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-row gap-2">
+        <div className="flex w-full flex-row justify-between gap-2">
           <div>
             <h2 className="text-2xl font-semibold text-slate-50">
               SrcDiff Tree
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-300">
-              Use node actions to highlight one node or an entire move group,
-              or use the bulk highlight controls for moves, inserts, and deletes.
+              Use node actions to highlight one node or an entire move group, or
+              use the bulk highlight controls for moves, inserts, and deletes.
             </p>
           </div>
 

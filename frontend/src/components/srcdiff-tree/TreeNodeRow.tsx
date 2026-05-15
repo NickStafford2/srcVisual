@@ -62,7 +62,7 @@ export function TreeNodeRow({
   }, [isMenuOpen]);
 
   return (
-    <div>
+    <div className="w-full">
       <div
         data-highlight-kind={node.kind}
         data-highlighted={isHighlighted ? "true" : "false"}
