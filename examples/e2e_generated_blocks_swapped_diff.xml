@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" revision="1.0.0" language="C++" filename="/home/nick/Projects/srcMLBuildTemplate/srcMove/test/e2e_generated/blocks_swapped/original.cpp|/home/nick/Projects/srcMLBuildTemplate/srcMove/test/e2e_generated/blocks_swapped/modified.cpp">
+<block>{<block_content>
+  <decl_stmt><decl><type><name>int</name></type> <name>a</name> <init>= <expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt>
+  <decl_stmt><decl><type><name>int</name></type> <name>b</name> <init>= <expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt>
+<diff:delete><diff:ws>  </diff:ws><decl_stmt><decl><type><name>int</name></type><diff:ws> </diff:ws><name>c</name><diff:ws> </diff:ws><init>=<diff:ws> </diff:ws><expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt><diff:ws>
+</diff:ws></diff:delete></block_content>}</block>
+
+<block>{<block_content>
+<diff:insert><diff:ws>  </diff:ws><decl_stmt><decl><type><name>int</name></type><diff:ws> </diff:ws><name>c</name><diff:ws> </diff:ws><init>=<diff:ws> </diff:ws><expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt><diff:ws>
+</diff:ws></diff:insert>  <decl_stmt><decl><type><name>int</name></type> <name>x</name> <init>= <expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt>
+  <decl_stmt><decl><type><name>int</name></type> <name>z</name> <init>= <expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt>
+</block_content>}</block>
+
+</unit>
