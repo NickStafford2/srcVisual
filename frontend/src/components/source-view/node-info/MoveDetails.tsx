@@ -22,9 +22,9 @@ export function MoveDetails({ moveId, nodes, moveResults }: MoveDetailsProps) {
   }
 
   return (
-    <section className="flex flex-row rounded-[20px] border border-emerald-300/15 bg-emerald-500/[0.04] p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+    <section className="flex flex-row gap-1 rounded-[20px] shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <div className="flex w-fit flex-row">
-        <article className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+        <article className="flex flex-col justify-start gap-8 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
           <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
             Summary
           </p>
@@ -55,7 +55,7 @@ export function MoveDetails({ moveId, nodes, moveResults }: MoveDetailsProps) {
           <div className="min-w-100 space-y-3">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                Before
+                Revision 0
               </p>
               <pre className="overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
                 {formatRawTextBlock(move.fromRawTexts)}
@@ -64,7 +64,7 @@ export function MoveDetails({ moveId, nodes, moveResults }: MoveDetailsProps) {
 
             <div>
               <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                After
+                Revision 1
               </p>
               <pre className="overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
                 {formatRawTextBlock(move.toRawTexts)}
@@ -75,7 +75,7 @@ export function MoveDetails({ moveId, nodes, moveResults }: MoveDetailsProps) {
       </div>
 
       {move.nodes.length > 0 ? (
-        <article className="flex w-fit flex-col rounded-2xl border border-white/10 bg-amber-600 bg-white/[0.03] px-4 py-3">
+        <article className="flex w-fit flex-col gap-1 rounded-2xl border border-white/10 bg-amber-600 bg-white/[0.03] px-4 py-3">
           <p className="text-[11px] font-semibold tracking-[0.24em] text-slate-500 uppercase">
             Nodes
           </p>
