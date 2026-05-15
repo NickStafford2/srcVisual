@@ -33,8 +33,9 @@ def run_srcmove(
         f"srcMove did not create expected moved output: {moved_path}"
     )
 
-    f"srcMove did not create expected results JSON: {results_path}"
-    assert results_path.is_file(), ()
+    assert results_path.is_file(), (
+        f"srcMove did not create expected results JSON: {results_path}"
+    )
 
     moved_srcdiff_xml = moved_path.read_text(encoding="utf-8")
     results_text = results_path.read_text(encoding="utf-8")
