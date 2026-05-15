@@ -21,7 +21,7 @@ from srcvisual.srcmove.validate_results import validate_srcmove_results_match_xm
 from srcvisual.workflow._tempfiles import managed_tmpdir
 from srcvisual.workflow.validate_tree import validate_moved_srcdiff_and_tree
 from srcvisual.workflow._visualized_file_builder import build_visualized_files
-from srcvisual.files.models import VisualizationPayload
+from srcvisual.workflow._models import VisualizationPayload
 
 
 def build_visualization_payload(

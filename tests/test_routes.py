@@ -3,8 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import srcvisual.web._routes as routes_module
+from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.web.app import create_app
-from srcvisual.files.models import RevisionFile, VisualizationPayload, VisualizedFile
+from srcvisual.workflow._models import VisualizationPayload
 
 
 def test_visualize_events_requires_token() -> None:
