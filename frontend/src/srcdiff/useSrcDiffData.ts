@@ -19,7 +19,7 @@ export function useSrcDiffData() {
   const [error, setError] = useState<string | null>(null);
   const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
   const [pruningLevel, setPruningLevel] =
-    useState<TreePruningLevel>("file-and-tree");
+    useState<TreePruningLevel>("none");
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
   const [examplesError, setExamplesError] = useState<string | null>(null);

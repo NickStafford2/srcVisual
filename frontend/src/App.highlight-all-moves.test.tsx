@@ -91,7 +91,7 @@ describe("App highlight all moves flow", () => {
 
     expect(visualizeRequest).toEqual({
       includeSkippedTags: "false",
-      pruningLevel: "file-and-tree",
+      pruningLevel: "none",
       progressToken: "00000000-0000-4000-8000-000000000000",
       srcdiffXml: exampleXml,
     });
