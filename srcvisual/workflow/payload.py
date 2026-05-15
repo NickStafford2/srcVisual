@@ -3,7 +3,7 @@ from __future__ import annotations
 from srcvisual.files.revision_archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
-from srcvisual.srcdiff.xml_validation import validate_xml_span_index
+from srcvisual.srcdiff.validate_xml import validate_xml_span_index
 from srcvisual.workflow._move_result_enrichment import (
     augment_move_results_with_node_ids,
 )
@@ -17,7 +17,7 @@ from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
 from srcvisual.srcmove.runner import (
     is_strict_srcmove_validation_enabled,
 )
-from srcvisual.srcmove.results_validation import validate_srcmove_results_match_xml
+from srcvisual.srcmove.validate_results import validate_srcmove_results_match_xml
 from srcvisual.workflow._tempfiles import managed_tmpdir
 from srcvisual.workflow._tree_validation import validate_moved_srcdiff_and_tree
 from srcvisual.workflow._visualized_file_builder import build_visualized_files
