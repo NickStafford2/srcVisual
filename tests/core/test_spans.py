@@ -1,12 +1,12 @@
 import xml.etree.ElementTree as ET
 
 from srcvisual.core.namespaces import POS_END, POS_START
-from srcvisual.srcdiff.spans import (
-    build_xml_span_index,
+from srcvisual.srcdiff.position_spans import (
     _parse_position_point,
     _parse_position_points,
     parse_position_spans,
 )
+from srcvisual.srcdiff.xml_spans import build_xml_span_index
 
 
 def test_parse_position_point() -> None:
