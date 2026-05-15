@@ -3,7 +3,7 @@ from __future__ import annotations
 from srcvisual.files.archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.srcdiff.tree import build_tree_index
-from srcvisual.validation.xml import validate_xml_span_index
+from srcvisual.srcdiff.xml_validation import validate_xml_span_index
 from srcvisual.workflow._move_results import augment_move_results_with_node_ids
 from srcvisual.workflow._notify import ProgressCallback, notify_progress
 from srcvisual.workflow._payload_validation import validate_visualization_payload

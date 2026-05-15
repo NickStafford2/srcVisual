@@ -61,7 +61,7 @@ Rules for this layout:
 | `srcvisual/workflow/_srcmove_validation.py` | `srcvisual/workflow/_srcmove_validation.py` | Cross-check results JSON against moved XML during workflow execution. |
 | `srcvisual/workflow/_tree_validation.py` | `srcvisual/workflow/_tree_validation.py` | Cross-check tree payload against moved XML during workflow execution. |
 | `srcvisual/workflow/_payload_validation.py` | `srcvisual/workflow/_payload_validation.py` | Validate final workflow payload structure. |
-| `srcvisual/validation/xml.py` | `srcvisual/validation/xml.py` | Validate XML span index. |
+| `srcvisual/srcdiff/xml_validation.py` | `srcvisual/srcdiff/xml_validation.py` | Validate XML span index next to span logic. |
 | `srcvisual/test_runner.py` | `srcvisual/test_runner.py` | CLI helper. Fine at package root for now. |
 
 ## End State
