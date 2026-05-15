@@ -90,7 +90,8 @@ def build_visualization_payload(
         notify_progress(
             progress,
             "Prepared moved srcdiff XML: "
-            f"files={len(revision_files)}, moves={move_results.get('move_count', '?')}.",
+            f"files={len(revision_files)}, moves={move_results.get('move_count', '?')}, "
+            f"xml_bytes={len(moved_srcdiff_xml.encode('utf-8'))}.",
         )
 
         if strict_srcmove_validation_enabled:
@@ -106,7 +107,8 @@ def build_visualization_payload(
         else:
             notify_progress(
                 progress,
-                "Skipping strict srcMove results validation.",
+                "Skipping strict srcMove results validation "
+                "(strict_srcmove_validation=false).",
             )
 
         if payload_validation_enabled:
@@ -117,7 +119,11 @@ def build_visualization_payload(
             )
             notify_progress(progress, "Validated moved srcdiff XML.")
         else:
-            notify_progress(progress, "Skipping moved srcdiff validation.")
+            notify_progress(
+                progress,
+                "Skipping moved srcdiff validation "
+                "(payload_validation=false).",
+            )
 
         notify_progress(progress, "Normalizing move partner node ids.")
         notify_progress(progress, "Building tree view data.")
@@ -125,10 +131,14 @@ def build_visualization_payload(
             moved_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
+        _tree_node_count, _tree_move_count = _count_tree_nodes_and_moves(tree_by_unit)
         notify_progress(
             progress,
             "Built tree view data: "
-            f"units={len(tree_by_unit)}, has_position_data={has_position_data}.",
+            f"units={len(tree_by_unit)}, "
+            f"nodes={_tree_node_count}, "
+            f"move_nodes={_tree_move_count}, "
+            f"has_position_data={has_position_data}.",
         )
 
         visualized_files = build_visualized_files(
@@ -136,9 +146,13 @@ def build_visualization_payload(
             revision_files=revision_files,
             tree_by_unit=tree_by_unit,
         )
+        _revision_0_chars, _revision_1_chars = _count_source_chars(visualized_files)
         notify_progress(
             progress,
-            f"Built visualized file payloads for {len(visualized_files)} file(s).",
+            "Built visualized file payloads for "
+            f"{len(visualized_files)} file(s): "
+            f"revision_0_chars={_revision_0_chars}, "
+            f"revision_1_chars={_revision_1_chars}.",
         )
 
         if payload_validation_enabled:
@@ -177,9 +191,12 @@ def build_visualization_payload(
     )
 
     _pruned_file_count = _original_file_count - len(_pruned_visualized_files)
+    _kept_tree_nodes, _kept_move_nodes = _count_visualized_tree_nodes(_pruned_visualized_files)
     notify_progress(
         progress,
-        f"Pruned {_pruned_file_count} file(s) using level: {_pruning_level}.",
+        f"Pruned {_pruned_file_count} file(s) using level: {_pruning_level}. "
+        f"Kept files={len(_pruned_visualized_files)}/{_original_file_count}, "
+        f"kept_tree_nodes={_kept_tree_nodes}, kept_move_nodes={_kept_move_nodes}.",
     )
 
     _needs_filtered_rebuild = _pruning_level != "none" or not include_skipped_tags
@@ -200,7 +217,11 @@ def build_visualization_payload(
             visualized_files=_pruned_visualized_files,
             include_skipped_tags=include_skipped_tags,
         )
-        notify_progress(progress, "Rebuilt pruned srcdiff XML.")
+        notify_progress(
+            progress,
+            "Rebuilt pruned srcdiff XML: "
+            f"xml_bytes={len(moved_srcdiff_xml.encode('utf-8'))}.",
+        )
         if payload_validation_enabled:
             notify_progress(progress, "Validating pruned srcdiff XML.")
             validate_xml_span_index(
@@ -213,10 +234,16 @@ def build_visualization_payload(
             moved_srcdiff_xml,
             include_skipped_tags=include_skipped_tags,
         )
+        _pruned_tree_node_count, _pruned_tree_move_count = _count_tree_nodes_and_moves(
+            tree_by_unit
+        )
         notify_progress(
             progress,
             "Rebuilt pruned tree view data: "
-            f"units={len(tree_by_unit)}, has_position_data={has_position_data}.",
+            f"units={len(tree_by_unit)}, "
+            f"nodes={_pruned_tree_node_count}, "
+            f"move_nodes={_pruned_tree_move_count}, "
+            f"has_position_data={has_position_data}.",
         )
         _kept_revision_files = tuple(
             _visualized_file.revision_file for _visualized_file in _pruned_visualized_files
@@ -230,9 +257,15 @@ def build_visualization_payload(
             revision_files=_kept_revision_files,
             include_skipped_tags=include_skipped_tags,
         )
+        _rendered_revision_0_chars, _rendered_revision_1_chars = _count_rendered_source_chars(
+            _rendered_revision_files
+        )
         notify_progress(
             progress,
-            f"Rendered pruned revision sources for {len(_rendered_revision_files)} file(s).",
+            "Rendered pruned revision sources for "
+            f"{len(_rendered_revision_files)} file(s): "
+            f"revision_0_chars={_rendered_revision_0_chars}, "
+            f"revision_1_chars={_rendered_revision_1_chars}.",
         )
         revision_files = tuple(
             _rendered_file.revision_file for _rendered_file in _rendered_revision_files
@@ -298,9 +331,74 @@ def build_visualization_payload(
         validate_visualization_payload(final_payload)
         notify_progress(progress, "Validated pruned visualization payload.")
     else:
-        notify_progress(progress, "Skipping pruned payload validation.")
+        notify_progress(
+            progress,
+            "Skipping pruned payload validation "
+            "(payload_validation=false).",
+        )
 
     return final_payload
+
+
+def _count_tree_nodes_and_moves(tree_by_unit) -> tuple[int, int]:
+    total_nodes = 0
+    move_nodes = 0
+
+    for tree in tree_by_unit.values():
+        _nodes, _moves = _count_tree_node_subtree(tree)
+        total_nodes += _nodes
+        move_nodes += _moves
+
+    return total_nodes, move_nodes
+
+
+def _count_tree_node_subtree(node) -> tuple[int, int]:
+    total_nodes = 1
+    move_nodes = 1 if node.get("kind") == "move" else 0
+
+    for child in node["children"]:
+        _child_nodes, _child_moves = _count_tree_node_subtree(child)
+        total_nodes += _child_nodes
+        move_nodes += _child_moves
+
+    return total_nodes, move_nodes
+
+
+def _count_visualized_tree_nodes(visualized_files) -> tuple[int, int]:
+    total_nodes = 0
+    move_nodes = 0
+
+    for visualized_file in visualized_files:
+        if visualized_file.tree is None:
+            continue
+
+        _nodes, _moves = _count_tree_node_subtree(visualized_file.tree)
+        total_nodes += _nodes
+        move_nodes += _moves
+
+    return total_nodes, move_nodes
+
+
+def _count_source_chars(visualized_files) -> tuple[int, int]:
+    revision_0_chars = 0
+    revision_1_chars = 0
+
+    for visualized_file in visualized_files:
+        revision_0_chars += len(visualized_file.revision_file.revision_0_source_code)
+        revision_1_chars += len(visualized_file.revision_file.revision_1_source_code)
+
+    return revision_0_chars, revision_1_chars
+
+
+def _count_rendered_source_chars(rendered_revision_files) -> tuple[int, int]:
+    revision_0_chars = 0
+    revision_1_chars = 0
+
+    for rendered_file in rendered_revision_files:
+        revision_0_chars += len(rendered_file.revision_file.revision_0_source_code)
+        revision_1_chars += len(rendered_file.revision_file.revision_1_source_code)
+
+    return revision_0_chars, revision_1_chars
 
 
 def _apply_rendered_source_spans(
