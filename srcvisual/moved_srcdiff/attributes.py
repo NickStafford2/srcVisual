@@ -68,18 +68,18 @@ class AllAttributes:
         }
 
 
-def parse_srcdiff_attributes(element: ET.Element) -> AllAttributes:
+def parse_all_attributes(element: ET.Element) -> AllAttributes:
     _assert_known_attributes(element)
 
     return AllAttributes(
-        position=parse_position_attributes(element),
+        position=_parse_position_attributes(element),
         move=parse_move_attributes(element),
-        unit=parse_unit_attributes(element),
-        diff=parse_diff_attributes(element),
+        unit=_parse_unit_attributes(element),
+        diff=_parse_diff_attributes(element),
     )
 
 
-def parse_position_attributes(element: ET.Element) -> PositionAttributes | None:
+def _parse_position_attributes(element: ET.Element) -> PositionAttributes | None:
     start = element.attrib.get(POS_START)
     end = element.attrib.get(POS_END)
 
@@ -92,7 +92,7 @@ def parse_position_attributes(element: ET.Element) -> PositionAttributes | None:
     return PositionAttributes(start=start, end=end)
 
 
-def parse_unit_attributes(element: ET.Element) -> UnitAttributes | None:
+def _parse_unit_attributes(element: ET.Element) -> UnitAttributes | None:
     if element.tag != f"{{{SRC_NS}}}unit":
         return None
 
@@ -106,7 +106,7 @@ def parse_unit_attributes(element: ET.Element) -> UnitAttributes | None:
     )
 
 
-def parse_diff_attributes(element: ET.Element) -> DiffAttributes | None:
+def _parse_diff_attributes(element: ET.Element) -> DiffAttributes | None:
     if not element.tag.startswith(f"{{{DIFF_NS}}}"):
         return None
 
