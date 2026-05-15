@@ -53,3 +53,4 @@ context-export.toml
 out.txt
 temp/
 examples/.gitkeep
+docs/notes/
