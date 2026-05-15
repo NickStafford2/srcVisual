@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from flask import Blueprint, Response, request
 from werkzeug.datastructures import FileStorage
 
+from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
 from srcvisual.workflow.payload import build_visualization_payload
 from srcvisual.web._examples import list_example_filenames, read_example_file
 from srcvisual.web._progress import progress_broker
@@ -17,6 +18,7 @@ class VisualizationRequest:
     filename: str
     payload: bytes
     include_skipped_tags: bool
+    pruning_level: PruningLevel | None
     progress_token: str | None
 
 
@@ -71,6 +73,7 @@ def visualize() -> tuple[dict[str, object], int]:
             "filename": visualization_request.filename,
             "payload_bytes": len(visualization_request.payload),
             "include_skipped_tags": visualization_request.include_skipped_tags,
+            "pruning_level": visualization_request.pruning_level,
             "has_progress_token": progress_token is not None,
         },
         flush=True,
@@ -81,6 +84,7 @@ def visualize() -> tuple[dict[str, object], int]:
             filename=visualization_request.filename,
             payload=visualization_request.payload,
             include_skipped_tags=visualization_request.include_skipped_tags,
+            pruning_level=visualization_request.pruning_level,
             progress=(
                 None
                 if progress_token is None
@@ -135,6 +139,7 @@ def parse_visualization_request() -> VisualizationRequest:
         filename=filename,
         payload=payload,
         include_skipped_tags=request.form.get("include_skipped_tags") == "true",
+        pruning_level=get_pruning_level(),
         progress_token=get_progress_token(),
     )
 
@@ -160,3 +165,12 @@ def get_progress_token() -> str | None:
         return None
 
     return token
+
+
+def get_pruning_level() -> PruningLevel | None:
+    raw_level = request.form.get("pruning_level", "").strip()
+
+    if not raw_level:
+        return None
+
+    return parse_tree_pruning_level(raw_level)

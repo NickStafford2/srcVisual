@@ -15,22 +15,33 @@ MOVE_ONLY_KINDS = {"move"}
 DEFAULT_PRUNING_LEVEL: PruningLevel = "file-and-tree"
 
 
-def get_tree_pruning_level() -> PruningLevel:
-    raw_level = os.environ.get("SRCVISUAL_PRUNING_LEVEL", DEFAULT_PRUNING_LEVEL)
-    level = raw_level.strip().lower().replace("_", "-")
+def parse_tree_pruning_level(raw_level: str) -> PruningLevel:
+    _level = raw_level.strip().lower().replace("_", "-")
 
-    if level in {"file", "files", "file-only"}:
+    if _level in {"file", "files", "file-only"}:
         return "file-only"
 
-    if level in {"tree", "file-and-tree", "files-and-tree"}:
+    if _level in {"tree", "file-and-tree", "files-and-tree"}:
         return "file-and-tree"
 
-    if level in {"move", "moves", "move-only"}:
+    if _level in {"move", "moves", "move-only"}:
         return "move-only"
 
     raise ValueError(
-        "SRCVISUAL_PRUNING_LEVEL must be one of: file-only, file-and-tree, move-only."
+        "Pruning level must be one of: file-only, file-and-tree, move-only."
     )
+
+
+def get_tree_pruning_level() -> PruningLevel:
+    _raw_level = os.environ.get("SRCVISUAL_PRUNING_LEVEL", DEFAULT_PRUNING_LEVEL)
+
+    try:
+        return parse_tree_pruning_level(_raw_level)
+    except ValueError as exc:
+        raise ValueError(
+            "SRCVISUAL_PRUNING_LEVEL must be one of: "
+            "file-only, file-and-tree, move-only."
+        ) from exc
 
 
 def prune_visualized_files(

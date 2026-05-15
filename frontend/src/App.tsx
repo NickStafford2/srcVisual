@@ -41,6 +41,7 @@ export default function App() {
           progressMessage={srcDiffData.progressMessage}
           data={srcDiffData.data}
           includeSkippedTags={srcDiffData.includeSkippedTags}
+          pruningLevel={srcDiffData.pruningLevel}
           exampleFilenames={srcDiffData.exampleFilenames}
           examplesError={srcDiffData.examplesError}
           isLoadingExample={srcDiffData.isLoadingExample}
@@ -49,6 +50,7 @@ export default function App() {
           onUploadChange={srcDiffData.setSelectedUpload}
           onXmlInputChange={srcDiffData.handleXmlInputChange}
           onIncludeSkippedTagsChange={srcDiffData.setIncludeSkippedTags}
+          onPruningLevelChange={srcDiffData.setPruningLevel}
           onSubmit={srcDiffData.handleSubmit}
         />
 

@@ -6,7 +6,7 @@ import {
   openVisualizationProgressStream,
   visualizeSrcDiff,
 } from "../api";
-import type { VisualizeResponse } from "../types";
+import type { TreePruningLevel, VisualizeResponse } from "../types";
 
 export type InputMode = "paste" | "upload";
 
@@ -18,6 +18,8 @@ export function useSrcDiffData() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
+  const [pruningLevel, setPruningLevel] =
+    useState<TreePruningLevel>("file-and-tree");
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
   const [examplesError, setExamplesError] = useState<string | null>(null);
@@ -112,6 +114,7 @@ export function useSrcDiffData() {
       "include_skipped_tags",
       includeSkippedTags ? "true" : "false",
     );
+    formData.append("pruning_level", pruningLevel);
 
     const progressToken = crypto.randomUUID();
     formData.append("progress_token", progressToken);
@@ -154,11 +157,13 @@ export function useSrcDiffData() {
     error,
     progressMessage,
     includeSkippedTags,
+    pruningLevel,
     exampleFilenames,
     examplesError,
     isLoadingExample,
     setInputMode: handleInputModeChange,
     setIncludeSkippedTags,
+    setPruningLevel,
     setSelectedUpload: handleUploadChange,
     handleXmlInputChange,
     handleLoadExample,

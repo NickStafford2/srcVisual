@@ -11,6 +11,7 @@ from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.workflow._validate_payload import validate_visualization_payload
 from srcvisual.workflow._tree_pruning import (
     get_tree_pruning_level,
+    PruningLevel,
     prune_visualized_files,
 )
 from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
@@ -29,6 +30,7 @@ def build_visualization_payload(
     filename: str,
     payload: bytes,
     include_skipped_tags: bool = False,
+    pruning_level: PruningLevel | None = None,
     progress: ProgressCallback | None = None,
 ) -> VisualizationPayload:
     with managed_tmpdir(progress=progress) as tmpdir:
@@ -125,7 +127,7 @@ def build_visualization_payload(
     validate_visualization_payload(full_payload_result)
 
     original_file_count = len(visualized_files)
-    pruning_level = get_tree_pruning_level()
+    pruning_level = pruning_level or get_tree_pruning_level()
 
     notify_progress(
         progress,

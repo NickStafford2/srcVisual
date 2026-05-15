@@ -1,5 +1,7 @@
 import type { SrcDiffTreeNode } from "./srcdiff/types";
 
+export type TreePruningLevel = "file-only" | "file-and-tree" | "move-only";
+
 export interface VisualizedFile {
   unit_id: number;
   filename: string;

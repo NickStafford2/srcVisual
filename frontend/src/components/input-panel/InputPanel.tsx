@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import type { InputMode } from "../../srcdiff/useSrcDiffData";
-import type { VisualizeResponse } from "../../types";
+import type { TreePruningLevel, VisualizeResponse } from "../../types";
 import { InputModeToggle } from "./InputModeToggle";
 import { PasteXmlInput } from "./PasteXmlInput";
 import { StatusPill } from "./StatusPill";
@@ -15,6 +15,7 @@ type InputPanelProps = {
   progressMessage: string | null;
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
+  pruningLevel: TreePruningLevel;
   exampleFilenames: string[];
   examplesError: string | null;
   isLoadingExample: boolean;
@@ -23,6 +24,7 @@ type InputPanelProps = {
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
   onIncludeSkippedTagsChange: (value: boolean) => void;
+  onPruningLevelChange: (value: TreePruningLevel) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -35,6 +37,7 @@ export function InputPanel({
   progressMessage,
   data,
   includeSkippedTags,
+  pruningLevel,
   exampleFilenames,
   examplesError,
   isLoadingExample,
@@ -43,6 +46,7 @@ export function InputPanel({
   onUploadChange,
   onXmlInputChange,
   onIncludeSkippedTagsChange,
+  onPruningLevelChange,
   onSubmit,
 }: InputPanelProps) {
   return (
@@ -96,6 +100,29 @@ export function InputPanel({
               diff:ws.
             </span>
           </span>
+        </label>
+
+        <label className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200">
+          <span className="font-medium text-slate-100">Pruning mode</span>
+
+          <span className="text-xs leading-5 text-slate-400">
+            Choose how much non-diff context the backend keeps in the returned
+            file and tree payload.
+          </span>
+
+          <select
+            value={pruningLevel}
+            disabled={isLoading}
+            onChange={(event) =>
+              onPruningLevelChange(event.target.value as TreePruningLevel)
+            }
+            className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-300/40"
+            aria-label="Pruning mode"
+          >
+            <option value="file-and-tree">Files and matching tree branches</option>
+            <option value="file-only">Files with full tree</option>
+            <option value="move-only">Move-only files and tree branches</option>
+          </select>
         </label>
 
         <div className="flex flex-row gap-3">

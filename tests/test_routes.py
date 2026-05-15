@@ -71,8 +71,10 @@ def test_get_example_rejects_unknown_filename(
 
 
 def test_visualize_returns_move_results(monkeypatch) -> None:
+    captured_kwargs: dict[str, object] = {}
+
     def fake_build_visualization_payload(**kwargs) -> VisualizationPayload:
-        del kwargs
+        captured_kwargs.update(kwargs)
         return VisualizationPayload(
             source_filename="example.xml",
             moved_srcdiff_xml="<unit />",
@@ -118,10 +120,14 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
     client = create_app().test_client()
     response = client.post(
         "/api/visualize",
-        data={"srcdiff_xml": "<unit />"},
+        data={
+            "srcdiff_xml": "<unit />",
+            "pruning_level": "move-only",
+        },
     )
 
     assert response.status_code == 200
+    assert captured_kwargs["pruning_level"] == "move-only"
     assert response.get_json()["move_results"] == {
         "move_count": 1,
         "moves": [
