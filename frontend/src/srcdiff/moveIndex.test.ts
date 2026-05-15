@@ -31,6 +31,8 @@ describe("buildMoveIndex", () => {
       {
         unit_id: 1,
         filename: "example.cpp",
+        revision_0_filename: "example.cpp",
+        revision_1_filename: "example.cpp",
         language: "C++",
         revision_0_source_code: "",
         revision_1_source_code: "",

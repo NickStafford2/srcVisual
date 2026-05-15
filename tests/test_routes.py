@@ -102,6 +102,8 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
                     revision_file=RevisionFile(
                         unit_id=1,
                         filename="a.cpp",
+                        revision_0_filename="before/a.cpp",
+                        revision_1_filename="after/a.cpp",
                         language="C++",
                         revision_0_source_code="int a;\n",
                         revision_1_source_code="int a;\n",
@@ -146,3 +148,15 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
         "candidates_total": 2,
         "groups_total": 1,
     }
+    assert response.get_json()["files"] == [
+        {
+            "unit_id": 1,
+            "filename": "a.cpp",
+            "revision_0_filename": "before/a.cpp",
+            "revision_1_filename": "after/a.cpp",
+            "language": "C++",
+            "revision_0_source_code": "int a;\n",
+            "revision_1_source_code": "int a;\n",
+            "tree": None,
+        }
+    ]

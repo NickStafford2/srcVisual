@@ -9,6 +9,8 @@ from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 class RevisionFile:
     unit_id: int
     filename: str
+    revision_0_filename: str
+    revision_1_filename: str
     language: str | None
     revision_0_source_code: str
     revision_1_source_code: str
@@ -17,6 +19,8 @@ class RevisionFile:
         return {
             "unit_id": self.unit_id,
             "filename": self.filename,
+            "revision_0_filename": self.revision_0_filename,
+            "revision_1_filename": self.revision_1_filename,
             "language": self.language,
             "revision_0_source_code": self.revision_0_source_code,
             "revision_1_source_code": self.revision_1_source_code,

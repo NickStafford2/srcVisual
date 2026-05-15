@@ -38,6 +38,14 @@ def validate_visualization_payload(payload: VisualizationPayload) -> None:
             f"files[{_file_index}].filename must be a string."
         )
 
+        assert isinstance(_file_payload.get("revision_0_filename"), str), (
+            f"files[{_file_index}].revision_0_filename must be a string."
+        )
+
+        assert isinstance(_file_payload.get("revision_1_filename"), str), (
+            f"files[{_file_index}].revision_1_filename must be a string."
+        )
+
         assert isinstance(_file_payload.get("revision_0_source_code"), str), (
             f"files[{_file_index}].revision_0_source_code must be a string."
         )

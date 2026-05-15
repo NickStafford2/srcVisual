@@ -75,6 +75,8 @@ def extract_revision_files(
             RevisionFile(
                 unit_id=unit,
                 filename=filename,
+                revision_0_filename=get_revision_filenames(filename)[0],
+                revision_1_filename=get_revision_filenames(filename)[1],
                 language=language,
                 revision_0_source_code=revision_0_source_code,
                 revision_1_source_code=revision_1_source_code,
@@ -112,6 +114,10 @@ def get_unit_filename(unit_info: dict[str, Any], unit: int) -> str:
         return filename
 
     return f"unit-{unit}.cpp"
+
+
+def get_revision_filenames(filename: str) -> tuple[str, str]:
+    return split_revision_pair(filename)
 
 
 def get_unit_language(unit_info: dict[str, Any]) -> str | None:

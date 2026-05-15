@@ -9,6 +9,8 @@ export type TreePruningLevel =
 export interface VisualizedFile {
   unit_id: number;
   filename: string;
+  revision_0_filename?: string;
+  revision_1_filename?: string;
   language: string | null;
   revision_0_source_code: string;
   revision_1_source_code: string;

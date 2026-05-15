@@ -30,6 +30,8 @@ export function SourceFileCard({
     () => buildMoveTooltipInfoById(moveResults?.moves ?? []),
     [moveResults?.moves],
   );
+  const revision0Filename = file.revision_0_filename || file.filename;
+  const revision1Filename = file.revision_1_filename || file.filename;
 
   for (const highlight of highlightedSpans) {
     if (highlight.unitId !== file.unit_id) {
@@ -108,7 +110,7 @@ export function SourceFileCard({
           filename={file.filename}
           revision="revision-0"
           title="Revision 0"
-          subtitle={`${file.filename} revision 0`}
+          subtitle={`${revision0Filename} revision 0`}
           source={file.revision_0_source_code}
           highlights={revision0Highlights}
           registerMoveSegment={registerMoveSegment}
@@ -121,7 +123,7 @@ export function SourceFileCard({
           filename={file.filename}
           revision="revision-1"
           title="Revision 1"
-          subtitle={`${file.filename} revision 1`}
+          subtitle={`${revision1Filename} revision 1`}
           source={file.revision_1_source_code}
           highlights={revision1Highlights}
           registerMoveSegment={registerMoveSegment}

@@ -9,6 +9,8 @@ describe("SourceFileCard", () => {
     const _file: VisualizedFile = {
       unit_id: 7,
       filename: "sample.cpp",
+      revision_0_filename: "before/sample.cpp",
+      revision_1_filename: "after/sample.cpp",
       language: "C++",
       revision_0_source_code: "old_line();\nmove_from();\n",
       revision_1_source_code: "new_line();\nmove_to();\n",
@@ -83,6 +85,8 @@ describe("SourceFileCard", () => {
     const _revision1Pane = screen.getByLabelText("sample.cpp Revision 1");
 
     expect(screen.getByText("3 highlighted")).toBeInTheDocument();
+    expect(screen.getByText("before/sample.cpp revision 0")).toBeInTheDocument();
+    expect(screen.getByText("after/sample.cpp revision 1")).toBeInTheDocument();
     expect(
       _revision0Pane.querySelector(
         '[data-highlighted-segment="true"][data-highlight-kind="delete"]',

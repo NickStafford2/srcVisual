@@ -50,6 +50,8 @@ def build_pruned_revision_files(
                 revision_file=RevisionFile(
                     unit_id=_unit_index,
                     filename=_revision_file.filename,
+                    revision_0_filename=_revision_file.revision_0_filename,
+                    revision_1_filename=_revision_file.revision_1_filename,
                     language=_revision_file.language,
                     revision_0_source_code=_rendered_unit.revision_0_source_code,
                     revision_1_source_code=_rendered_unit.revision_1_source_code,
