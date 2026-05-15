@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from srcvisual.annotated_srcdiff.attributes import AllAttributes
-
 
 @dataclass(frozen=True)
 class SourceSpan:

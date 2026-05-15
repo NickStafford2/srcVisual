@@ -4,7 +4,7 @@ from bisect import bisect_right
 from dataclasses import dataclass
 from xml.parsers import expat
 
-from srcvisual.srcdiff.source_span import SourceSpan
+from srcvisual.core.source_span import SourceSpan
 from srcvisual.core.namespaces import (
     POS_END,
     POS_START,
