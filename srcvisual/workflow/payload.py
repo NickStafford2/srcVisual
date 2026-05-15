@@ -4,7 +4,7 @@ from srcvisual.files.revision_archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
 from srcvisual.srcdiff.validate_xml import validate_xml_span_index
-from srcvisual.srcmove._move_result_enrichment import (
+from srcvisual.srcmove.move_result_enrichment import (
     augment_move_results_with_node_ids,
 )
 from srcvisual.core.notify import ProgressCallback, notify_progress
