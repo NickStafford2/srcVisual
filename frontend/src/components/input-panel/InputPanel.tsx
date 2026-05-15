@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import type { FormEvent } from "react";
-import type { InputMode } from "../../srcdiff/useSrcDiffData";
+import type {
+  InputMode,
+  ProgressLogEntry,
+} from "../../srcdiff/useSrcDiffData";
 import type { TreePruningLevel, VisualizeResponse } from "../../types";
 import { InputModeToggle } from "./InputModeToggle";
 import { PasteXmlInput } from "./PasteXmlInput";
@@ -14,7 +17,7 @@ type InputPanelProps = {
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
-  progressMessages: string[];
+  progressMessages: ProgressLogEntry[];
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
   pruningLevel: TreePruningLevel;
@@ -61,6 +64,10 @@ export function InputPanel({
 
     progressLogRef.current.scrollTop = progressLogRef.current.scrollHeight;
   }, [progressMessages]);
+
+  function formatElapsedTime(elapsedMs: number): string {
+    return `${(elapsedMs / 1000).toFixed(2)}s`;
+  }
 
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
@@ -184,15 +191,18 @@ export function InputPanel({
             className="max-h-64 overflow-y-auto px-3 py-3 font-mono text-xs leading-6 text-emerald-100"
           >
             {progressMessages.length > 0 ? (
-              progressMessages.map((message, index) => (
+              progressMessages.map((entry, index) => (
                 <div
-                  key={`${index}:${message}`}
-                  className="border-l border-emerald-400/15 pl-3 whitespace-pre-wrap break-words"
+                  key={`${index}:${entry.message}:${entry.elapsedMs}`}
+                  className="flex gap-3 border-l border-emerald-400/15 pl-3 whitespace-pre-wrap break-words"
                 >
-                  <span className="mr-3 select-none text-emerald-500">
+                  <span className="select-none text-emerald-500">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <span>{message}</span>
+                  <span className="min-w-0 flex-1">{entry.message}</span>
+                  <span className="shrink-0 text-emerald-500/80">
+                    [{formatElapsedTime(entry.elapsedMs)}]
+                  </span>
                 </div>
               ))
             ) : (

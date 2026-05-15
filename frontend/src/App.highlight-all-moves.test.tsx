@@ -16,6 +16,7 @@ import {
 const exampleFilename = "e2e_generated_to_new_file_diff.xml";
 const exampleLabel = "to_new_file_diff.xml";
 const exampleXml = "<unit>example srcdiff</unit>";
+let mockNow = 0;
 
 class MockEventSource {
   static instances: MockEventSource[] = [];
@@ -47,10 +48,12 @@ describe("App highlight all moves flow", () => {
   beforeEach(() => {
     visualizeRequest = null;
     MockEventSource.instances = [];
+    mockNow = 0;
 
     vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
       "00000000-0000-4000-8000-000000000000",
     );
+    vi.spyOn(globalThis.performance, "now").mockImplementation(() => mockNow);
 
     vi.stubGlobal("EventSource", MockEventSource);
     vi.stubGlobal(
@@ -300,23 +303,38 @@ describe("App highlight all moves flow", () => {
       MockEventSource.instances[MockEventSource.instances.length - 1];
     expect(stream).toBeDefined();
 
+    mockNow = 1500;
     stream?.emit("connected", "Connected to backend progress stream.");
+    mockNow = 5250;
     stream?.emit("progress", "Rebuilding payload from filtered XML.");
 
     const progressLog = screen.getByLabelText("Visualization progress log");
 
     await waitFor(() => {
-      expect(within(progressLog).getByText("Connecting to backend progress stream.")).toBeInTheDocument();
-      expect(within(progressLog).getByText("Connected to backend progress stream.")).toBeInTheDocument();
-      expect(within(progressLog).getByText("Rebuilding payload from filtered XML.")).toBeInTheDocument();
+      expect(
+        within(progressLog).getByText("Connecting to backend progress stream."),
+      ).toBeInTheDocument();
+      expect(
+        within(progressLog).getByText("Connected to backend progress stream."),
+      ).toBeInTheDocument();
+      expect(
+        within(progressLog).getByText("Rebuilding payload from filtered XML."),
+      ).toBeInTheDocument();
+      expect(progressLog).toHaveTextContent("[0.00s]");
+      expect(progressLog).toHaveTextContent("[1.50s]");
+      expect(progressLog).toHaveTextContent("[5.25s]");
     });
 
     expect(resolveVisualize).not.toBeNull();
+    mockNow = 10000;
     resolveVisualize!(jsonResponse(toNewFileHighlightFixture));
 
     await screen.findByRole("heading", { name: "srcDiff Tree" });
 
-    expect(within(progressLog).getByText("Visualization complete.")).toBeInTheDocument();
+    expect(
+      within(progressLog).getByText("Visualization complete."),
+    ).toBeInTheDocument();
+    expect(progressLog).toHaveTextContent("[10.00s]");
   });
 });
 

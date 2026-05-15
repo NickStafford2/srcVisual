@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   fetchExampleContent,
@@ -9,6 +9,10 @@ import {
 import type { TreePruningLevel, VisualizeResponse } from "../types";
 
 export type InputMode = "paste" | "upload";
+export type ProgressLogEntry = {
+  message: string;
+  elapsedMs: number;
+};
 
 export function useSrcDiffData() {
   const [inputMode, setInputMode] = useState<InputMode>("paste");
@@ -21,10 +25,13 @@ export function useSrcDiffData() {
   const [pruningLevel, setPruningLevel] =
     useState<TreePruningLevel>("none");
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
-  const [progressMessages, setProgressMessages] = useState<string[]>([]);
+  const [progressMessages, setProgressMessages] = useState<ProgressLogEntry[]>(
+    [],
+  );
   const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
   const [examplesError, setExamplesError] = useState<string | null>(null);
   const [isLoadingExample, setIsLoadingExample] = useState(false);
+  const progressStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -68,6 +75,20 @@ export function useSrcDiffData() {
     if (file) {
       setInputMode("upload");
     }
+  }
+
+  function appendProgressMessage(message: string) {
+    const now = performance.now();
+    const startedAt = progressStartedAtRef.current ?? now;
+
+    setProgressMessage(message);
+    setProgressMessages((current) => [
+      ...current,
+      {
+        message,
+        elapsedMs: Math.max(0, now - startedAt),
+      },
+    ]);
   }
 
   async function handleLoadExample(filename: string) {
@@ -123,21 +144,25 @@ export function useSrcDiffData() {
     const progressStream = openVisualizationProgressStream(
       progressToken,
       (event) => {
-        setProgressMessage(event.message);
-        setProgressMessages((current) => [...current, event.message]);
+        appendProgressMessage(event.message);
       },
     );
 
+    progressStartedAtRef.current = performance.now();
     setIsLoading(true);
     setError(null);
     setProgressMessage("Connecting to backend progress stream.");
-    setProgressMessages(["Connecting to backend progress stream."]);
+    setProgressMessages([
+      {
+        message: "Connecting to backend progress stream.",
+        elapsedMs: 0,
+      },
+    ]);
 
     try {
       const payload = await visualizeSrcDiff(formData);
       setData(payload);
-      setProgressMessage("Visualization complete.");
-      setProgressMessages((current) => [...current, "Visualization complete."]);
+      appendProgressMessage("Visualization complete.");
     } catch (submissionError) {
       setData(null);
       const message =
@@ -145,8 +170,7 @@ export function useSrcDiffData() {
           ? submissionError.message
           : "Unable to visualize the uploaded srcdiff.";
       setError(message);
-      setProgressMessage(message);
-      setProgressMessages((current) => [...current, `ERROR: ${message}`]);
+      appendProgressMessage(`ERROR: ${message}`);
     } finally {
       setIsLoading(false);
       progressStream.close();
