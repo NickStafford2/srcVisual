@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from srcvisual.srcdiff.position_spans import build_xml_span_index
+from srcvisual.srcdiff.xml_spans import build_xml_span_index
 
 
 def validate_xml_span_index(
