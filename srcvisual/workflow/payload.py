@@ -15,7 +15,7 @@ from srcvisual.srcmove.runner import (
 from srcvisual.srcmove._srcmove_validation import validate_srcmove_results_match_xml
 from srcvisual.workflow._tempfiles import managed_tmpdir
 from srcvisual.workflow._tree_validation import validate_moved_srcdiff_and_tree
-from srcvisual.workflow._visualized_files import build_visualized_files
+from srcvisual.workflow._visualized_file_builder import build_visualized_files
 from srcvisual.workflow.models import VisualizationPayload
 
 
