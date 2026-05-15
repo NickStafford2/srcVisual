@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from srcvisual.srcdiff._models import SourceSpan, TreeNode, TreeNodeKind
 from srcvisual.core.namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from srcvisual.srcdiff.spans import build_xml_span_index, parse_position_spans
-from srcvisual.srcdiff.attributes import parse_srcdiff_attributes
+from srcvisual.moved_srcdiff.attributes import parse_srcdiff_attributes
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 
 

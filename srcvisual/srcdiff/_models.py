@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from srcvisual.srcdiff.attributes import SrcDiffAttributes
+from srcvisual.moved_srcdiff.attributes import SrcDiffAttributes
 
 
 @dataclass(frozen=True)
