@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from srcvisual.files.archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
-from srcvisual.annotated_srcdiff.tree import build_tree_index
+from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
 from srcvisual.srcdiff.xml_validation import validate_xml_span_index
 from srcvisual.workflow._move_results import augment_move_results_with_node_ids
 from srcvisual.core.notify import ProgressCallback, notify_progress
