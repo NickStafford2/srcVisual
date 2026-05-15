@@ -4,8 +4,13 @@ from bisect import bisect_right
 from dataclasses import dataclass
 from xml.parsers import expat
 
-from srcvisual.moved_srcdiff.models import SourceSpan
-from srcvisual.core.namespaces import POS_END, POS_START, prefixed_name_from_expat, skipped_tree_tag_names
+from srcvisual.srcdiff.source_span import SourceSpan
+from srcvisual.core.namespaces import (
+    POS_END,
+    POS_START,
+    prefixed_name_from_expat,
+    skipped_tree_tag_names,
+)
 from srcvisual.core.units import is_single_file_srcdiff_root
 import xml.etree.ElementTree as ET
 
@@ -18,8 +23,8 @@ def parse_position_spans(element) -> tuple[SourceSpan, ...] | None:
         return None
 
     try:
-        start_points = parse_position_points(start)
-        end_points = parse_position_points(end)
+        start_points = _parse_position_points(start)
+        end_points = _parse_position_points(end)
     except ValueError:
         return None
 
@@ -44,13 +49,13 @@ def parse_position_spans(element) -> tuple[SourceSpan, ...] | None:
     return tuple(spans)
 
 
-def parse_position_point(value: str) -> tuple[int, int]:
+def _parse_position_point(value: str) -> tuple[int, int]:
     line_text, col_text = value.split(":", 1)
     return int(line_text), int(col_text)
 
 
-def parse_position_points(value: str) -> tuple[tuple[int, int], ...]:
-    return tuple(parse_position_point(part) for part in value.split("|"))
+def _parse_position_points(value: str) -> tuple[tuple[int, int], ...]:
+    return tuple(_parse_position_point(part) for part in value.split("|"))
 
 
 def build_xml_span_index(
@@ -87,7 +92,12 @@ def build_xml_span_index(
 
         if not stack:
             path = "/src:unit[1]" if root_is_file_unit and tag == "unit" else None
-        elif not root_is_file_unit and len(stack) == 1 and stack[0].tag == "unit" and tag == "unit":
+        elif (
+            not root_is_file_unit
+            and len(stack) == 1
+            and stack[0].tag == "unit"
+            and tag == "unit"
+        ):
             nested_unit_count += 1
             path = f"/src:unit[{nested_unit_count}]"
         elif stack[-1].path is not None and tag not in skipped_names:
