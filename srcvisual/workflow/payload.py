@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from srcvisual.files.archive import extract_revision_files
+from srcvisual.files.revision_archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
 from srcvisual.srcdiff.xml_validation import validate_xml_span_index
