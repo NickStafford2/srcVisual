@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import xml.etree.ElementTree as ET
 
 from srcvisual.core.namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
-from srcvisual.srcmove._srcmove_paths import split_srcmove_path_list
+from srcvisual.srcmove._path_lists import split_srcmove_path_list
 
 MV_ID = f"{{{MV_NS}}}id"
 MV_FROM = f"{{{MV_NS}}}from"
