@@ -1,5 +1,16 @@
 import { SampleButton } from "./SampleButton";
 
+type ExampleEntry = {
+  filename: string;
+  label: string;
+};
+
+type ExampleGroup = {
+  id: string;
+  title: string;
+  examples: ExampleEntry[];
+};
+
 type PasteXmlInputProps = {
   exampleFilenames: string[];
   examplesError: string | null;
@@ -19,24 +30,36 @@ export function PasteXmlInput({
   onLoadExample,
   onXmlInputChange,
 }: PasteXmlInputProps) {
+  const _exampleGroups = build_example_groups(exampleFilenames);
+
   return (
     <div className="space-y-3">
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <p className="text-sm font-medium text-slate-100">Examples</p>
         <p className="mt-1 text-xs leading-5 text-slate-400">
-          Example inputs are discovered from the examples directory and shown by
-          filename.
+          Example inputs are discovered from the examples directory and grouped
+          by source.
         </p>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          {exampleFilenames.map((filename) => (
-            <SampleButton
-              key={filename}
-              disabled={disabled || isLoadingExample}
-              onClick={() => onLoadExample(filename)}
-            >
-              {filename}
-            </SampleButton>
+        <div className="mt-3 space-y-4">
+          {_exampleGroups.map((group) => (
+            <section key={group.id} aria-label={`${group.title} examples`}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                {group.title}
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {group.examples.map((example) => (
+                  <SampleButton
+                    key={example.filename}
+                    disabled={disabled || isLoadingExample}
+                    onClick={() => onLoadExample(example.filename)}
+                  >
+                    {example.label}
+                  </SampleButton>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
 
@@ -61,4 +84,63 @@ export function PasteXmlInput({
       />
     </div>
   );
+}
+
+function build_example_groups(exampleFilenames: string[]): ExampleGroup[] {
+  const _custom_examples: ExampleEntry[] = [];
+  const _generated_examples: ExampleEntry[] = [];
+  const _other_examples: ExampleEntry[] = [];
+
+  for (const _filename of exampleFilenames) {
+    const _entry = {
+      filename: _filename,
+      label: format_example_label(_filename),
+    };
+
+    if (_filename.startsWith("e2e_custom_")) {
+      _custom_examples.push(_entry);
+      continue;
+    }
+
+    if (_filename.startsWith("e2e_generated_")) {
+      _generated_examples.push(_entry);
+      continue;
+    }
+
+    _other_examples.push(_entry);
+  }
+
+  const _groups: ExampleGroup[] = [];
+
+  if (_custom_examples.length > 0) {
+    _groups.push({
+      id: "custom",
+      title: "Custom",
+      examples: _custom_examples,
+    });
+  }
+
+  if (_generated_examples.length > 0) {
+    _groups.push({
+      id: "generated",
+      title: "Generated",
+      examples: _generated_examples,
+    });
+  }
+
+  if (_other_examples.length > 0) {
+    _groups.push({
+      id: "other",
+      title: "Other",
+      examples: _other_examples,
+    });
+  }
+
+  return _groups;
+}
+
+function format_example_label(filename: string): string {
+  return filename
+    .replace(/^e2e_custom_/, "")
+    .replace(/^e2e_generated_/, "");
 }

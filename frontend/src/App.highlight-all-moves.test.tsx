@@ -14,6 +14,7 @@ import {
 } from "./test/fixtures/toNewFileHighlightFixture";
 
 const exampleFilename = "e2e_generated_to_new_file_diff.xml";
+const exampleLabel = "to_new_file_diff.xml";
 const exampleXml = "<unit>example srcdiff</unit>";
 
 class MockEventSource {
@@ -161,7 +162,7 @@ describe("App highlight all moves flow", () => {
     render(<App />);
 
     await user.click(
-      await screen.findByRole("button", { name: exampleFilename }),
+      await screen.findByRole("button", { name: exampleLabel }),
     );
 
     await waitFor(() => {
@@ -214,7 +215,7 @@ describe("App highlight all moves flow", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: exampleFilename }),
+      await screen.findByRole("button", { name: exampleLabel }),
     );
 
     await waitFor(() => {
@@ -260,7 +261,7 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
   render(<App />);
 
   await user.click(
-    await screen.findByRole("button", { name: exampleFilename }),
+    await screen.findByRole("button", { name: exampleLabel }),
   );
 
   await waitFor(() => {

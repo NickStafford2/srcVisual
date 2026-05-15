@@ -8,6 +8,7 @@ import {
 } from "./test/fixtures/singleUnitHighlightFixture";
 
 const exampleFilename = "e2e_custom_1x1_basic.xml";
+const exampleLabel = "1x1_basic.xml";
 const exampleXml = "<unit>single unit srcdiff</unit>";
 
 class MockEventSource {
@@ -59,7 +60,7 @@ describe("App single-unit move highlighting", () => {
     render(<App />);
 
     await user.click(
-      await screen.findByRole("button", { name: exampleFilename }),
+      await screen.findByRole("button", { name: exampleLabel }),
     );
 
     await waitFor(() => {

@@ -9,6 +9,7 @@ import {
 } from "./test/fixtures/complexHighlightFixture";
 
 const exampleFilename = "e2e_generated_complex_diff.xml";
+const exampleLabel = "complex_diff.xml";
 const exampleXml = "<unit>complex example srcdiff</unit>";
 
 class MockEventSource {
@@ -120,7 +121,7 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
   render(<App />);
 
   await user.click(
-    await screen.findByRole("button", { name: exampleFilename }),
+    await screen.findByRole("button", { name: exampleLabel }),
   );
 
   await waitFor(() => {
