@@ -36,7 +36,7 @@ export function CopyToClipboardButton({
       type="button"
       disabled={disabled || !value}
       onClick={handleCopy}
-      className={`cursor-pointer rounded-lg border border-white/10 px-2 py-1 font-mono text-[11px] text-slate-400 transition hover:-translate-y-0.5 hover:border-emerald-300/40 hover:bg-emerald-300/10 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:border-white/10 disabled:hover:bg-transparent disabled:hover:text-slate-400 ${className}`}
+      className={`cursor-pointer rounded-lg border border-white/10 px-2 py-1 font-mono text-[11px] text-slate-400 transition hover:border-emerald-300/40 hover:bg-white/10 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:border-white/10 disabled:hover:bg-transparent disabled:hover:text-slate-400 ${className}`}
     >
       {didCopy ? copiedLabel : label}
     </button>
