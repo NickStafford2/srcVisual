@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from srcvisual.validation.move_regions import expect_optional_span_dict
+from srcvisual.srcdiff.move_regions import expect_optional_span_dict
 from srcvisual.workflow.models import VisualizationPayload
 
 

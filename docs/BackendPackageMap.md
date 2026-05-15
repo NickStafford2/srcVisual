@@ -57,7 +57,7 @@ Rules for this layout:
 | `srcvisual/core/tree_builder.py` | `srcvisual/srcdiff/tree.py` | Build tree payload from annotated XML. |
 | `srcvisual/core/srcmove_paths.py` | `srcvisual/srcdiff/_srcmove_paths.py` | Internal srcMove path parsing helpers. |
 | `srcvisual/core/_srcmove_results.py` | `srcvisual/srcdiff/_srcmove_results.py` | Internal srcMove results parsing helpers. |
-| `srcvisual/validation/move_regions.py` | `srcvisual/validation/move_regions.py` | Shared move-region validation support. |
+| `srcvisual/srcdiff/move_regions.py` | `srcvisual/srcdiff/move_regions.py` | srcDiff/srcMove move-region extraction and normalization. |
 | `srcvisual/workflow/_srcmove_validation.py` | `srcvisual/workflow/_srcmove_validation.py` | Cross-check results JSON against moved XML during workflow execution. |
 | `srcvisual/workflow/_tree_validation.py` | `srcvisual/workflow/_tree_validation.py` | Cross-check tree payload against moved XML during workflow execution. |
 | `srcvisual/workflow/_payload_validation.py` | `srcvisual/workflow/_payload_validation.py` | Validate final workflow payload structure. |

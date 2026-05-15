@@ -5,7 +5,7 @@ from typing import Any
 
 from ..srcdiff.attributes import MV_ID
 from ..srcdiff.srcmove_results import build_filename_to_unit_index
-from ..validation.move_regions import collect_xml_move_regions
+from ..srcdiff.move_regions import collect_xml_move_regions
 
 
 def has_srcmove_annotations(srcdiff_xml: str) -> bool:

@@ -6,7 +6,7 @@ from ..srcdiff.srcmove_results import (
     build_filename_to_unit_index,
     parse_srcmove_result_moves,
 )
-from ..validation.move_regions import XmlMoveRegion, collect_xml_move_regions
+from ..srcdiff.move_regions import XmlMoveRegion, collect_xml_move_regions
 
 
 def augment_move_results_with_node_ids(

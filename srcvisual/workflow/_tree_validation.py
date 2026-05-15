@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from srcvisual.srcdiff.srcmove_results import build_filename_to_unit_index
-from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
-from srcvisual.validation.move_regions import (
+from srcvisual.srcdiff.move_regions import (
     TreeMoveNode,
     XmlMoveRegion,
     collect_tree_move_nodes,
     collect_xml_move_regions,
     format_move_groups,
 )
+from srcvisual.srcdiff.srcmove_results import build_filename_to_unit_index
+from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
 
 
