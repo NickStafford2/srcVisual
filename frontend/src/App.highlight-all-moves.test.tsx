@@ -18,9 +18,20 @@ const exampleLabel = "to_new_file_diff.xml";
 const exampleXml = "<unit>example srcdiff</unit>";
 
 class MockEventSource {
+  static instances: MockEventSource[] = [];
   onmessage: ((event: MessageEvent<string>) => void) | null = null;
 
-  constructor(public readonly url: string) {}
+  constructor(public readonly url: string) {
+    MockEventSource.instances.push(this);
+  }
+
+  emit(type: "connected" | "progress" | "complete" | "error", message: string) {
+    this.onmessage?.(
+      new MessageEvent("message", {
+        data: JSON.stringify({ type, message }),
+      }),
+    );
+  }
 
   close() {}
 }
@@ -35,6 +46,7 @@ describe("App highlight all moves flow", () => {
 
   beforeEach(() => {
     visualizeRequest = null;
+    MockEventSource.instances = [];
 
     vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
       "00000000-0000-4000-8000-000000000000",
@@ -229,6 +241,82 @@ describe("App highlight all moves flow", () => {
     await waitFor(() => {
       expect(visualizeRequest?.pruningLevel).toBe("none");
     });
+  });
+
+  it("keeps prior progress events in the cli-style log", async () => {
+    const user = userEvent.setup();
+    let resolveVisualize: ((response: Response) => void) | null = null;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+
+        if (url === "/api/examples") {
+          return jsonResponse({ examples: [exampleFilename] });
+        }
+
+        if (url === `/api/examples/${encodeURIComponent(exampleFilename)}`) {
+          return jsonResponse({ content: exampleXml });
+        }
+
+        if (url === "/api/visualize") {
+          const formData = init?.body;
+
+          if (!(formData instanceof FormData)) {
+            throw new Error("Expected visualize request to send FormData.");
+          }
+
+          visualizeRequest = {
+            includeSkippedTags:
+              formData.get("include_skipped_tags")?.toString() ?? null,
+            pruningLevel: formData.get("pruning_level")?.toString() ?? null,
+            progressToken: formData.get("progress_token")?.toString() ?? null,
+            srcdiffXml: formData.get("srcdiff_xml")?.toString() ?? null,
+          };
+
+          return await new Promise<Response>((resolve) => {
+            resolveVisualize = resolve;
+          });
+        }
+
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      }),
+    );
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: exampleLabel }));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
+        exampleXml,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: "Submit" }));
+
+    const stream =
+      MockEventSource.instances[MockEventSource.instances.length - 1];
+    expect(stream).toBeDefined();
+
+    stream?.emit("connected", "Connected to backend progress stream.");
+    stream?.emit("progress", "Rebuilding payload from filtered XML.");
+
+    const progressLog = screen.getByLabelText("Visualization progress log");
+
+    await waitFor(() => {
+      expect(within(progressLog).getByText("Connecting to backend progress stream.")).toBeInTheDocument();
+      expect(within(progressLog).getByText("Connected to backend progress stream.")).toBeInTheDocument();
+      expect(within(progressLog).getByText("Rebuilding payload from filtered XML.")).toBeInTheDocument();
+    });
+
+    expect(resolveVisualize).not.toBeNull();
+    resolveVisualize!(jsonResponse(toNewFileHighlightFixture));
+
+    await screen.findByRole("heading", { name: "srcDiff Tree" });
+
+    expect(within(progressLog).getByText("Visualization complete.")).toBeInTheDocument();
   });
 });
 

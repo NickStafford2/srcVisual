@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { FormEvent } from "react";
 import type { InputMode } from "../../srcdiff/useSrcDiffData";
 import type { TreePruningLevel, VisualizeResponse } from "../../types";
@@ -13,6 +14,7 @@ type InputPanelProps = {
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
+  progressMessages: string[];
   data: VisualizeResponse | null;
   includeSkippedTags: boolean;
   pruningLevel: TreePruningLevel;
@@ -35,6 +37,7 @@ export function InputPanel({
   isLoading,
   error,
   progressMessage,
+  progressMessages,
   data,
   includeSkippedTags,
   pruningLevel,
@@ -49,6 +52,16 @@ export function InputPanel({
   onPruningLevelChange,
   onSubmit,
 }: InputPanelProps) {
+  const progressLogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!progressLogRef.current) {
+      return;
+    }
+
+    progressLogRef.current.scrollTop = progressLogRef.current.scrollHeight;
+  }, [progressMessages]);
+
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -153,6 +166,42 @@ export function InputPanel({
                   : "Waiting for input"}
           </StatusPill>
         </div>
+
+        <section className="rounded-xl border border-emerald-400/20 bg-slate-950/90 shadow-inner shadow-black/30">
+          <header className="flex items-center justify-between border-b border-emerald-400/15 px-3 py-2">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">
+              Progress Log
+            </h3>
+
+            <span className="font-mono text-[11px] text-slate-500">
+              {progressMessages.length} line{progressMessages.length === 1 ? "" : "s"}
+            </span>
+          </header>
+
+          <div
+            ref={progressLogRef}
+            aria-label="Visualization progress log"
+            className="max-h-64 overflow-y-auto px-3 py-3 font-mono text-xs leading-6 text-emerald-100"
+          >
+            {progressMessages.length > 0 ? (
+              progressMessages.map((message, index) => (
+                <div
+                  key={`${index}:${message}`}
+                  className="border-l border-emerald-400/15 pl-3 whitespace-pre-wrap break-words"
+                >
+                  <span className="mr-3 select-none text-emerald-500">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span>{message}</span>
+                </div>
+              ))
+            ) : (
+              <div className="border-l border-emerald-400/15 pl-3 text-slate-500">
+                No progress messages yet.
+              </div>
+            )}
+          </div>
+        </section>
       </form>
     </section>
   );

@@ -21,6 +21,7 @@ export function useSrcDiffData() {
   const [pruningLevel, setPruningLevel] =
     useState<TreePruningLevel>("none");
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [progressMessages, setProgressMessages] = useState<string[]>([]);
   const [exampleFilenames, setExampleFilenames] = useState<string[]>([]);
   const [examplesError, setExamplesError] = useState<string | null>(null);
   const [isLoadingExample, setIsLoadingExample] = useState(false);
@@ -123,25 +124,29 @@ export function useSrcDiffData() {
       progressToken,
       (event) => {
         setProgressMessage(event.message);
+        setProgressMessages((current) => [...current, event.message]);
       },
     );
 
     setIsLoading(true);
     setError(null);
     setProgressMessage("Connecting to backend progress stream.");
+    setProgressMessages(["Connecting to backend progress stream."]);
 
     try {
       const payload = await visualizeSrcDiff(formData);
       setData(payload);
       setProgressMessage("Visualization complete.");
+      setProgressMessages((current) => [...current, "Visualization complete."]);
     } catch (submissionError) {
       setData(null);
-      setError(
+      const message =
         submissionError instanceof Error
           ? submissionError.message
-          : "Unable to visualize the uploaded srcdiff.",
-      );
-      setProgressMessage(null);
+          : "Unable to visualize the uploaded srcdiff.";
+      setError(message);
+      setProgressMessage(message);
+      setProgressMessages((current) => [...current, `ERROR: ${message}`]);
     } finally {
       setIsLoading(false);
       progressStream.close();
@@ -156,6 +161,7 @@ export function useSrcDiffData() {
     isLoading,
     error,
     progressMessage,
+    progressMessages,
     includeSkippedTags,
     pruningLevel,
     exampleFilenames,
