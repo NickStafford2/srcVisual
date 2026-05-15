@@ -1,21 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Protocol
 import xml.etree.ElementTree as ET
 
 from srcvisual.core.validation import require
 from srcvisual.core.units import get_srcdiff_file_unit_elements
-
-
-class RevisionFileLike(Protocol):
-    unit_id: int
-    filename: str
-
-
-class VisualizedFileLike(Protocol):
-    revision_file: RevisionFileLike
-    tree: dict[str, Any] | None
+from srcvisual.workflow.models import RevisionFile, VisualizedFile
 
 
 def parse_srcdiff_file_unit_elements(srcdiff_xml: str) -> list[ET.Element]:
@@ -28,7 +18,7 @@ def parse_srcdiff_file_unit_elements(srcdiff_xml: str) -> list[ET.Element]:
 def assert_srcdiff_unit_count_matches_revisions(
     *,
     unit_elements: Sequence[ET.Element],
-    revision_files: Sequence[RevisionFileLike],
+    revision_files: Sequence[RevisionFile],
 ) -> None:
     require(
         len(unit_elements) == len(revision_files),
@@ -39,8 +29,8 @@ def assert_srcdiff_unit_count_matches_revisions(
 
 def assert_visualized_file_count_matches_revisions(
     *,
-    visualized_files: Sequence[VisualizedFileLike],
-    revision_files: Sequence[RevisionFileLike],
+    visualized_files: Sequence[VisualizedFile],
+    revision_files: Sequence[RevisionFile],
 ) -> None:
     require(
         len(visualized_files) == len(revision_files),
@@ -52,7 +42,7 @@ def assert_visualized_file_count_matches_revisions(
 def assert_visualized_files_match_srcdiff_units(
     *,
     unit_elements: Sequence[ET.Element],
-    visualized_files: Sequence[VisualizedFileLike],
+    visualized_files: Sequence[VisualizedFile],
 ) -> None:
     for unit_index, (unit_element, visualized_file) in enumerate(
         zip(unit_elements, visualized_files, strict=True),
@@ -86,7 +76,7 @@ def assert_visualized_tree_root_matches_srcdiff_unit(
     *,
     unit_index: int,
     expected_filename: str | None,
-    visualized_file: VisualizedFileLike,
+    visualized_file: VisualizedFile,
 ) -> None:
     tree = visualized_file.tree
 
@@ -112,8 +102,8 @@ def assert_visualized_tree_root_matches_srcdiff_unit(
 def assert_srcdiff_units_match_visualized_files(
     *,
     moved_srcdiff_xml: str,
-    revision_files: Sequence[RevisionFileLike],
-    visualized_files: Sequence[VisualizedFileLike],
+    revision_files: Sequence[RevisionFile],
+    visualized_files: Sequence[VisualizedFile],
 ) -> None:
     unit_elements = parse_srcdiff_file_unit_elements(moved_srcdiff_xml)
 

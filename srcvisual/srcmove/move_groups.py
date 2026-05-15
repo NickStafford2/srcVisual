@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Protocol
+from collections.abc import Mapping
+
+from srcvisual.srcmove.move_regions import XmlMoveRegion
+from srcvisual.srcmove.tree_move_nodes import TreeMoveNode
 
 
-class MoveLike(Protocol):
-    move_id: str
+MoveNode = XmlMoveRegion | TreeMoveNode
 
 
 def group_move_paths_by_move_id(
-    moves: dict[str, MoveLike],
+    moves: Mapping[str, MoveNode],
 ) -> dict[str, set[str]]:
     groups: dict[str, set[str]] = {}
 
