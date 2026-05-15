@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 from srcvisual.srcmove.srcmove_results import normalize_srcmove_xpath_tuple, parse_xml_move_reference_list
 from srcvisual.srcmove.attributes import MV_FROM, MV_ID, MV_TO
-from srcvisual.srcdiff.namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
+from srcvisual.core.namespaces import POS_END, POS_START, SKIPPED_TREE_TAGS, prefixed_name
 from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import VisualizedFile
 

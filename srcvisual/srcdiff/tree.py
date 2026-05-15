@@ -3,7 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from srcvisual.srcdiff._models import SourceSpan, TreeNode, TreeNodeKind
-from srcvisual.srcdiff.namespaces import SKIPPED_TREE_TAGS, prefixed_name
+from srcvisual.core.namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from srcvisual.srcdiff.spans import build_xml_span_index, parse_position_spans
 from srcvisual.srcdiff.attributes import parse_srcdiff_attributes
 from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements

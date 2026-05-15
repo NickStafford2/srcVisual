@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from xml.parsers import expat
 
 from srcvisual.srcdiff._models import SourceSpan
-from srcvisual.srcdiff.namespaces import POS_END, POS_START, prefixed_name_from_expat, skipped_tree_tag_names
+from srcvisual.core.namespaces import POS_END, POS_START, prefixed_name_from_expat, skipped_tree_tag_names
 from srcvisual.srcdiff.units import is_single_file_srcdiff_root
 import xml.etree.ElementTree as ET
 
