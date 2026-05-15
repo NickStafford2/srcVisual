@@ -3,11 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 import xml.etree.ElementTree as ET
 
+from srcvisual.annotated_srcdiff.attributes import AllAttributesDict
 from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 from srcvisual.files.filenames import normalize_visualized_filename
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
-from srcvisual.annotated_srcdiff.tree_node import AllAttributesDict, TreeNodeDict
 
 
 def build_visualized_files(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypedDict
 import xml.etree.ElementTree as ET
 
 from srcvisual.core.namespaces import DIFF_NS, MV_NS, POS_NS, SRC_NS, prefixed_name
@@ -15,13 +16,19 @@ PLAIN_TYPE = "type"
 PLAIN_FORMAT = "format"
 
 
+class MoveAttributesDict(TypedDict):
+    id: str
+    from_paths: list[str]
+    to_paths: list[str]
+
+
 @dataclass(frozen=True)
 class MoveAttributes:
     id: str
     from_paths: tuple[str, ...]
     to_paths: tuple[str, ...]
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> MoveAttributesDict:
         return {
             "id": self.id,
             "from_paths": list(self.from_paths),

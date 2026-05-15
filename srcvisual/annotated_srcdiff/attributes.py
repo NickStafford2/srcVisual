@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
+from typing import TypedDict
 import xml.etree.ElementTree as ET
 
 from srcvisual.srcmove.attributes import (
@@ -11,6 +12,7 @@ from srcvisual.srcmove.attributes import (
     PLAIN_MOVE,
     PLAIN_TYPE,
     MoveAttributes,
+    MoveAttributesDict,
     parse_move_attributes,
 )
 
@@ -24,13 +26,42 @@ from srcvisual.core.namespaces import (
 )
 
 
+class PositionAttributesDict(TypedDict):
+    start: str
+    end: str
+
+
+class UnitAttributesDict(TypedDict):
+    filename: str | None
+    language: str | None
+    revision: str | None
+    url: str | None
+    hash: str | None
+    timestamp: str | None
+
+
+class DiffAttributesDict(TypedDict):
+    revision: str | None
+    type: str | None
+
+
+class AllAttributesDict(TypedDict):
+    position: PositionAttributesDict | None
+    move: MoveAttributesDict | None
+    unit: UnitAttributesDict | None
+    diff: DiffAttributesDict | None
+
+
 @dataclass(frozen=True)
 class PositionAttributes:
     start: str
     end: str
 
-    def to_dict(self) -> dict[str, str]:
-        return asdict(self)
+    def to_dict(self) -> PositionAttributesDict:
+        return {
+            "start": self.start,
+            "end": self.end,
+        }
 
 
 @dataclass(frozen=True)
@@ -42,8 +73,15 @@ class UnitAttributes:
     hash: str | None = None
     timestamp: str | None = None
 
-    def to_dict(self) -> dict[str, str | None]:
-        return asdict(self)
+    def to_dict(self) -> UnitAttributesDict:
+        return {
+            "filename": self.filename,
+            "language": self.language,
+            "revision": self.revision,
+            "url": self.url,
+            "hash": self.hash,
+            "timestamp": self.timestamp,
+        }
 
 
 @dataclass(frozen=True)
@@ -51,8 +89,11 @@ class DiffAttributes:
     revision: str | None = None
     type: str | None = None
 
-    def to_dict(self) -> dict[str, str | None]:
-        return asdict(self)
+    def to_dict(self) -> DiffAttributesDict:
+        return {
+            "revision": self.revision,
+            "type": self.type,
+        }
 
 
 @dataclass(frozen=True)
@@ -62,7 +103,7 @@ class AllAttributes:
     unit: UnitAttributes | None
     diff: DiffAttributes | None
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> AllAttributesDict:
         return {
             "position": self.position.to_dict() if self.position else None,
             "move": self.move.to_dict() if self.move else None,

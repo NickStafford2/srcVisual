@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
-from srcvisual.annotated_srcdiff.attributes import AllAttributes
+from srcvisual.annotated_srcdiff.attributes import AllAttributes, AllAttributesDict
 from srcvisual.core.source_span import SourceSpan
 
 TreeNodeKind = Literal["plain", "insert", "delete", "move"]
@@ -23,7 +23,7 @@ class TreeNodeDict(TypedDict):
     label: str
     kind: TreeNodeKind
     move_id: str | None
-    srcdiff_attributes: dict[str, object]
+    srcdiff_attributes: AllAttributesDict
     xml_span: SpanDict | None
     revision_0_span: SpanDict | None
     revision_1_span: SpanDict | None

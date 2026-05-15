@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Literal
 
+from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 from srcvisual.workflow.models import VisualizedFile
 
 
@@ -107,10 +108,10 @@ def prune_files_by_target_kinds(
 
 
 def prune_tree_to_target_branches(
-    node: dict[str, object],
+    node: TreeNodeDict,
     *,
     target_kinds: set[str],
-) -> dict[str, object] | None:
+) -> TreeNodeDict | None:
     kind = expect_tree_kind(node)
 
     # Important:
@@ -120,7 +121,7 @@ def prune_tree_to_target_branches(
     if kind in target_kinds:
         return node
 
-    pruned_children: list[dict[str, object]] = []
+    pruned_children: list[TreeNodeDict] = []
 
     for child in expect_tree_children(node):
         pruned_child = prune_tree_to_target_branches(
@@ -133,7 +134,16 @@ def prune_tree_to_target_branches(
 
     if pruned_children:
         return {
-            **node,
+            "id": node["id"],
+            "path": node["path"],
+            "tag": node["tag"],
+            "label": node["label"],
+            "kind": node["kind"],
+            "move_id": node["move_id"],
+            "srcdiff_attributes": node["srcdiff_attributes"],
+            "xml_span": node["xml_span"],
+            "revision_0_span": node["revision_0_span"],
+            "revision_1_span": node["revision_1_span"],
             "children": pruned_children,
         }
 
@@ -141,7 +151,7 @@ def prune_tree_to_target_branches(
 
 
 def tree_has_target_kind(
-    node: dict[str, object],
+    node: TreeNodeDict,
     *,
     target_kinds: set[str],
 ) -> bool:
@@ -157,7 +167,7 @@ def tree_has_target_kind(
     return False
 
 
-def expect_tree_kind(node: dict[str, object]) -> str:
+def expect_tree_kind(node: TreeNodeDict) -> str:
     kind = node.get("kind")
 
     assert isinstance(kind, str), f"Tree node {node.get('path')!r} has invalid kind."
@@ -165,7 +175,7 @@ def expect_tree_kind(node: dict[str, object]) -> str:
     return kind
 
 
-def expect_tree_children(node: dict[str, object]) -> list[dict[str, object]]:
+def expect_tree_children(node: TreeNodeDict) -> list[TreeNodeDict]:
     children = node.get("children")
 
     assert isinstance(children, list), (
