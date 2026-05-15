@@ -69,7 +69,7 @@ class SrcDiffAttributes:
 
 
 def parse_srcdiff_attributes(element: ET.Element) -> SrcDiffAttributes:
-    assert_known_attributes(element)
+    _assert_known_attributes(element)
 
     return SrcDiffAttributes(
         position=parse_position_attributes(element),
@@ -143,7 +143,7 @@ KNOWN_DIFF_ATTRIBUTES = {
 }
 
 
-def assert_known_attributes(element: ET.Element) -> None:
+def _assert_known_attributes(element: ET.Element) -> None:
     allowed_attributes = set(KNOWN_COMMON_ATTRIBUTES)
 
     if element.tag == f"{{{SRC_NS}}}unit":
