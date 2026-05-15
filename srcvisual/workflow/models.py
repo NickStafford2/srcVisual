@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
+
 
 @dataclass(frozen=True)
 class RevisionFile:
@@ -25,7 +27,8 @@ class RevisionFile:
 @dataclass(frozen=True)
 class VisualizedFile:
     revision_file: RevisionFile
-    tree: dict[str, object] | None
+    tree: TreeNodeDict | None
+    move_regions: tuple[Any, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {

@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import xml.etree.ElementTree as ET
 
 from srcvisual.files.filenames import normalize_visualized_filename
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
+from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 
 
 def build_visualized_files(
     *,
     moved_srcdiff_xml: str,
     revision_files: tuple[RevisionFile, ...],
-    tree_by_unit: dict[int, dict[str, object]],
+    tree_by_unit: Mapping[int, TreeNodeDict],
 ) -> tuple[VisualizedFile, ...]:
     moved_filenames = _read_moved_unit_filenames(moved_srcdiff_xml)
     revision_files_by_filename = _build_revision_file_index_by_filename(revision_files)
@@ -41,7 +43,7 @@ def build_visualized_files(
             f"filename={moved_filename!r}, moved unit={moved_unit_id}."
         )
 
-        tree = tree_by_unit.get(moved_unit_id)
+        tree: TreeNodeDict | None = tree_by_unit.get(moved_unit_id)
 
         if tree is not None and visualized_filename != moved_filename:
             tree = _build_visualized_tree_root(
@@ -103,8 +105,7 @@ def _read_moved_unit_filenames(moved_srcdiff_xml: str) -> tuple[str, ...]:
         filename = unit_element.attrib.get("filename")
 
         assert isinstance(filename, str) and filename, (
-            "Moved srcdiff unit is missing a filename attribute at "
-            f"index {unit_index}."
+            f"Moved srcdiff unit is missing a filename attribute at index {unit_index}."
         )
 
         filenames.append(filename)
