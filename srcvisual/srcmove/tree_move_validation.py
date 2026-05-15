@@ -4,14 +4,13 @@ from collections.abc import Iterable
 from typing import Any
 
 from srcvisual.core.validation import require
-from srcvisual.srcmove.move_regions import (
-    TreeMoveNode,
-    XmlMoveRegion,
-    collect_tree_move_nodes,
-    collect_xml_move_regions,
+from srcvisual.srcmove.move_groups import (
     format_move_groups,
+    group_move_paths_by_move_id,
 )
+from srcvisual.srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
 from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index
+from srcvisual.srcmove.tree_move_nodes import TreeMoveNode, collect_tree_move_nodes
 
 
 def assert_moved_srcdiff_matches_visualized_tree_moves(
@@ -29,7 +28,7 @@ def assert_moved_srcdiff_matches_visualized_tree_moves(
     )
 
     tree_moves = collect_tree_move_nodes(
-        visualized_files,
+        tuple(visualized_files),
         filename_to_unit_index=filename_to_unit_index,
     )
 
@@ -88,9 +87,14 @@ def assert_tree_move_node_payload_matches_xml_region(
     tree_move: TreeMoveNode,
 ) -> None:
     require(
+        xml_region.path == tree_move.path,
+        f"Move path mismatch at {path}: "
+        f"XML path={xml_region.path!r}, tree path={tree_move.path!r}.",
+    )
+
+    require(
         tree_move.kind == "move",
-        f"Tree node at {path} has mv:id={tree_move.move_id!r} "
-        f"but kind={tree_move.kind!r}; expected kind='move'.",
+        f"Tree node at {path} has move payload but kind={tree_move.kind!r}.",
     )
 
     require(
@@ -156,14 +160,3 @@ def assert_move_groups_match(
             f"Move id {move_id!r} only appears once in the tree payload: "
             f"{sorted(paths)}. Expected a move pair or move group.",
         )
-
-
-def group_move_paths_by_move_id(
-    moves: dict[str, XmlMoveRegion] | dict[str, TreeMoveNode],
-) -> dict[str, set[str]]:
-    groups: dict[str, set[str]] = {}
-
-    for path, move in moves.items():
-        groups.setdefault(move.move_id, set()).add(path)
-
-    return groups
