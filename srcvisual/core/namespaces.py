@@ -7,6 +7,7 @@ POS_NS = "http://www.srcML.org/srcML/position"
 
 POS_START = f"{{{POS_NS}}}start"
 POS_END = f"{{{POS_NS}}}end"
+POS_TABS = f"{{{POS_NS}}}tabs"
 
 SKIPPED_TREE_TAGS = {f"{{{DIFF_NS}}}ws"}
 

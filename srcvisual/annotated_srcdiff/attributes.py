@@ -14,11 +14,14 @@ from srcvisual.srcmove.attributes import (
     parse_move_attributes,
 )
 
-from srcvisual.core.namespaces import DIFF_NS, POS_NS, SRC_NS, prefixed_name
-
-POS_START = f"{{{POS_NS}}}start"
-POS_END = f"{{{POS_NS}}}end"
-POS_TABS = f"{{{POS_NS}}}tabs"
+from srcvisual.core.namespaces import (
+    DIFF_NS,
+    POS_END,
+    POS_START,
+    POS_TABS,
+    SRC_NS,
+    prefixed_name,
+)
 
 
 @dataclass(frozen=True)
