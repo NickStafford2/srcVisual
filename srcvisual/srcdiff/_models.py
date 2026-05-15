@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from srcvisual.moved_srcdiff.attributes import SrcDiffAttributes
+from srcvisual.moved_srcdiff.attributes import AllAttributes
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,7 @@ class TreeNode:
     label: str
     kind: TreeNodeKind
     move_id: str | None
-    srcdiff_attributes: SrcDiffAttributes
+    srcdiff_attributes: AllAttributes
     xml_span: SourceSpan | None
     revision_0_span: SourceSpan | None
     revision_1_span: SourceSpan | None

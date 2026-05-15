@@ -53,7 +53,7 @@ class DiffAttributes:
 
 
 @dataclass(frozen=True)
-class SrcDiffAttributes:
+class AllAttributes:
     position: PositionAttributes | None
     move: MoveAttributes | None
     unit: UnitAttributes | None
@@ -68,10 +68,10 @@ class SrcDiffAttributes:
         }
 
 
-def parse_srcdiff_attributes(element: ET.Element) -> SrcDiffAttributes:
+def parse_srcdiff_attributes(element: ET.Element) -> AllAttributes:
     _assert_known_attributes(element)
 
-    return SrcDiffAttributes(
+    return AllAttributes(
         position=parse_position_attributes(element),
         move=parse_move_attributes(element),
         unit=parse_unit_attributes(element),
