@@ -5,7 +5,7 @@ from typing import Any, Protocol
 import xml.etree.ElementTree as ET
 
 from srcvisual.core.validation import require
-from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
+from srcvisual.core.units import get_srcdiff_file_unit_elements
 
 
 class RevisionFileLike(Protocol):

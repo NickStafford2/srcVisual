@@ -3,7 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from srcvisual.files.filenames import normalize_visualized_filename
-from srcvisual.srcdiff.units import get_srcdiff_file_unit_elements
+from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
 
 
