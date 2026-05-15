@@ -9,7 +9,7 @@ from flask import Flask, abort, send_from_directory
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from ..workflow._commands import get_command_timeout_seconds
+from ..core.commands import get_command_timeout_seconds
 from ._routes import api
 
 DEFAULT_MAX_CONTENT_LENGTH_MB = 64
@@ -96,9 +96,7 @@ def get_frontend_dist() -> Path | None:
             )
 
         if not index_path.is_file():
-            raise ValueError(
-                "SRCVISUAL_FRONTEND_DIST must contain an index.html file."
-            )
+            raise ValueError("SRCVISUAL_FRONTEND_DIST must contain an index.html file.")
 
         return frontend_dist
 

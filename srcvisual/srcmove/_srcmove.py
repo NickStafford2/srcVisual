@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from ..workflow._commands import run_command
+from ..core.commands import run_command
 from ..workflow._notify import ProgressCallback, notify_progress
 
 
