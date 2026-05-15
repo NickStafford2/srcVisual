@@ -29,6 +29,30 @@ class XmlMoveRegion:
     position_end: str | None
 
 
+def classify_xml_move_region_side(region: XmlMoveRegion) -> str:
+    if region.from_paths and region.to_paths:
+        raise AssertionError(
+            f"Move region {region.path!r} has both mv:from and mv:to paths."
+        )
+
+    if region.to_paths:
+        return "from"
+
+    if region.from_paths:
+        return "to"
+
+    if region.tag == "diff:delete":
+        return "from"
+
+    if region.tag == "diff:insert":
+        return "to"
+
+    raise AssertionError(
+        f"Move region {region.path!r} has unexpected tag {region.tag!r} "
+        "without mv:from/mv:to direction attributes."
+    )
+
+
 def collect_xml_move_regions(
     *,
     moved_srcdiff_xml: str,

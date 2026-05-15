@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index, parse_srcmove_result_moves
-from srcvisual.srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
+from srcvisual.srcmove.move_regions import (
+    XmlMoveRegion,
+    classify_xml_move_region_side,
+    collect_xml_move_regions,
+)
 
 
 def augment_move_results_with_node_ids(
@@ -66,15 +70,15 @@ def build_move_region_paths_by_id(
             },
         )
 
-        if region.tag == "diff:delete":
+        side = classify_xml_move_region_side(region)
+
+        if side == "from":
             move_paths["from_node_ids"].append(path)
             continue
 
-        if region.tag == "diff:insert":
+        if side == "to":
             move_paths["to_node_ids"].append(path)
             continue
-
-        raise AssertionError(f"Move region {path!r} has unexpected tag {region.tag!r}.")
 
     return {
         move_id: {

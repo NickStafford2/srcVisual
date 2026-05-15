@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from srcvisual.srcmove.move_regions import XmlMoveRegion, collect_xml_move_regions
+from srcvisual.srcmove.move_regions import (
+    XmlMoveRegion,
+    classify_xml_move_region_side,
+    collect_xml_move_regions,
+)
 from srcvisual.srcmove.srcmove_results import SrcMoveResultMove, build_filename_to_unit_index, parse_srcmove_result_moves
 
 
@@ -77,9 +81,9 @@ def validate_single_srcmove_result_move(
             f"but XML node has mv:id={_region.move_id!r}."
         )
 
-        assert _region.tag == "diff:delete", (
+        assert classify_xml_move_region_side(_region) == "from", (
             f"results.json move {move.move_id!r} from_xpath {_xpath!r} points to "
-            f"{_region.tag!r}; expected 'diff:delete'."
+            f"{_region.tag!r}; expected a move source region."
         )
 
         assert set(_region.to_paths) == set(move.to_xpaths), (
@@ -102,9 +106,9 @@ def validate_single_srcmove_result_move(
             f"but XML node has mv:id={_region.move_id!r}."
         )
 
-        assert _region.tag == "diff:insert", (
+        assert classify_xml_move_region_side(_region) == "to", (
             f"results.json move {move.move_id!r} to_xpath {_xpath!r} points to "
-            f"{_region.tag!r}; expected 'diff:insert'."
+            f"{_region.tag!r}; expected a move destination region."
         )
 
         assert set(_region.from_paths) == set(move.from_xpaths), (

@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Any
 
 from srcvisual.srcmove.attributes import MV_ID
+from srcvisual.srcmove.move_regions import classify_xml_move_region_side
 from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index
 from srcvisual.srcmove.move_regions import collect_xml_move_regions
 
@@ -38,15 +39,21 @@ def build_move_results_from_moved_srcdiff(
         _regions = sorted(_grouped_regions[_move_id], key=lambda _region: _region.path)
 
         _from_regions = [
-            _region for _region in _regions if _region.tag == "diff:delete"
+            _region
+            for _region in _regions
+            if classify_xml_move_region_side(_region) == "from"
         ]
-        _to_regions = [_region for _region in _regions if _region.tag == "diff:insert"]
+        _to_regions = [
+            _region
+            for _region in _regions
+            if classify_xml_move_region_side(_region) == "to"
+        ]
 
         assert _from_regions, (
-            f"Existing srcMove annotation {_move_id!r} has no diff:delete region."
+            f"Existing srcMove annotation {_move_id!r} has no source region."
         )
         assert _to_regions, (
-            f"Existing srcMove annotation {_move_id!r} has no diff:insert region."
+            f"Existing srcMove annotation {_move_id!r} has no destination region."
         )
 
         _moves.append(
