@@ -99,6 +99,8 @@ export default function App() {
                 srcDiffSelection.sourceHighlightedSpansByUnitId
               }
               moveResults={data.move_results}
+              moveNodesById={srcDiffSelection.moveNodesById}
+              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
             />
           </SrcDiffHighlightProvider>
         ) : null}

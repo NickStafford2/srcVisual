@@ -1,5 +1,6 @@
 import type { SrcMoveResults } from "../../../types";
-import { buildMoveIds, buildMoveInfo, summarizeTextList, type MoveNodeEntry } from "./moveInfo";
+import { buildMoveIds, type MoveNodeEntry } from "./moveInfo";
+import { MoveSummaryCard } from "./MoveSummaryCard";
 
 type MoveSummaryProps = {
   moveResults: SrcMoveResults;
@@ -42,71 +43,14 @@ export function MoveSummary({
       ) : (
         <div className="mt-4 grid gap-3 xl:grid-cols-2">
           {moveIds.map((moveId) => {
-            const move = buildMoveInfo(
-              moveId,
-              moveResults,
-              moveNodesById.get(moveId) ?? [],
-            );
-            const anchorNode = move.nodes[0]?.node ?? null;
-
             return (
-              <article
+              <MoveSummaryCard
                 key={moveId}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-100">
-                      move={moveId}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {move.nodes.length} node{move.nodes.length === 1 ? "" : "s"} across{" "}
-                      {move.files.length} file{move.files.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-
-                  {anchorNode ? (
-                    <button
-                      type="button"
-                      onClick={() => onHighlightMoveGroup(anchorNode.id)}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-                    >
-                      Highlight move
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {move.files.map((file) => (
-                    <span
-                      key={`${moveId}-${file}`}
-                      className="rounded-full border border-white/10 bg-slate-900/80 px-3 py-1 text-xs text-slate-200"
-                    >
-                      {file}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Before
-                    </p>
-                    <pre className="mt-1 overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
-                      {summarizeTextList(move.fromRawTexts)}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      After
-                    </p>
-                    <pre className="mt-1 overflow-x-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-slate-200">
-                      {summarizeTextList(move.toRawTexts)}
-                    </pre>
-                  </div>
-                </div>
-              </article>
+                moveId={moveId}
+                moveResults={moveResults}
+                moveNodes={moveNodesById.get(moveId) ?? []}
+                onHighlightMoveGroup={onHighlightMoveGroup}
+              />
             );
           })}
         </div>

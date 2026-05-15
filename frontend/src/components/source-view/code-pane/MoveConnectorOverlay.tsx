@@ -2,9 +2,25 @@ import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
 
 type MoveConnectorOverlayProps = {
   groups: MoveConnectorGroup[];
+  activeMoveId?: string | null;
+  onHubHover?: (
+    moveId: string,
+    event: React.MouseEvent<SVGCircleElement>,
+  ) => void;
+  onHubLeave?: (moveId: string) => void;
+  onHubClick?: (
+    moveId: string,
+    event: React.MouseEvent<SVGCircleElement>,
+  ) => void;
 };
 
-export function MoveConnectorOverlay({ groups }: MoveConnectorOverlayProps) {
+export function MoveConnectorOverlay({
+  groups,
+  activeMoveId = null,
+  onHubHover,
+  onHubLeave,
+  onHubClick,
+}: MoveConnectorOverlayProps) {
   if (groups.length === 0) {
     return null;
   }
@@ -35,19 +51,32 @@ export function MoveConnectorOverlay({ groups }: MoveConnectorOverlayProps) {
               d={path.d}
               fill="none"
               stroke="currentColor"
-              strokeWidth={2}
+              strokeWidth={activeMoveId === group.moveId ? 3.5 : 2}
               className="drop-shadow"
             />
           ))}
 
           {group.hub ? (
-            <circle
-              cx={group.hub.cx}
-              cy={group.hub.cy}
-              r={group.hub.r}
-              fill="currentColor"
-              className="drop-shadow"
-            />
+            <>
+              <circle
+                cx={group.hub.cx}
+                cy={group.hub.cy}
+                r={group.hub.r}
+                fill="currentColor"
+                className="drop-shadow"
+              />
+              <circle
+                cx={group.hub.cx}
+                cy={group.hub.cy}
+                r={group.hub.hitR}
+                fill="transparent"
+                className="pointer-events-auto cursor-pointer"
+                onMouseEnter={(event) => onHubHover?.(group.moveId, event)}
+                onMouseMove={(event) => onHubHover?.(group.moveId, event)}
+                onMouseLeave={() => onHubLeave?.(group.moveId)}
+                onClick={(event) => onHubClick?.(group.moveId, event)}
+              />
+            </>
           ) : null}
         </g>
       ))}

@@ -14,9 +14,11 @@ export type MoveConnectorPath = {
 
 export type MoveConnectorHub = {
   key: string;
+  moveId: string;
   cx: number;
   cy: number;
   r: number;
+  hitR: number;
 };
 
 export type MoveConnectorBox = {
@@ -30,6 +32,7 @@ export type MoveConnectorBox = {
 
 export type MoveConnectorGroup = {
   key: string;
+  moveId: string;
   boxes: MoveConnectorBox[];
   paths: MoveConnectorPath[];
   hub: MoveConnectorHub | null;
@@ -94,6 +97,7 @@ export function buildMoveConnectorGroup({
 
     return {
       key: moveId,
+      moveId,
       boxes: _boxes,
       hub: null,
       paths: [
@@ -116,6 +120,7 @@ export function buildMoveConnectorGroup({
 
   return {
     key: moveId,
+    moveId,
     boxes: _boxes,
     hub: _hub,
     paths: [
@@ -212,9 +217,11 @@ function buildHub(
 
   return {
     key: `${moveId}-hub`,
+    moveId,
     cx: _hubX,
     cy: _hubY,
-    r: 4,
+    r: 6,
+    hitR: 14,
   };
 }
 

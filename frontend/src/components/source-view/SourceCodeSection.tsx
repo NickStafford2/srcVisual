@@ -1,22 +1,39 @@
+import { useState } from "react";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
+import type { SrcDiffNodeEntry } from "../../srcdiff/treeIndex";
 import type { SrcMoveResults, VisualizedFile } from "../../types";
 import { SourceFileCard } from "./SourceFileCard";
 import { MoveConnectorOverlay } from "./code-pane/MoveConnectorOverlay";
+import { MoveConnectorPopup } from "./code-pane/MoveConnectorPopup";
 import { useMoveConnectorOverlay } from "./code-pane/useMoveConnectorOverlay";
 
 type SourceCodeSectionProps = {
   files: VisualizedFile[];
   highlightedSpansByUnitId: Map<number, SrcDiffHighlight[]>;
   moveResults?: SrcMoveResults;
+  moveNodesById: Map<string, SrcDiffNodeEntry[]>;
+  onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export function SourceCodeSection({
   files,
   highlightedSpansByUnitId,
   moveResults,
+  moveNodesById,
+  onHighlightMoveGroup,
 }: SourceCodeSectionProps) {
   const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
+  const [hoveredMove, setHoveredMove] = useState<{
+    moveId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [pinnedMoves, setPinnedMoves] = useState<
+    { moveId: string; x: number; y: number }[]
+  >([]);
+
+  const activeMoveId = hoveredMove?.moveId ?? null;
 
   return (
     <section
@@ -25,7 +42,62 @@ export function SourceCodeSection({
     >
       <div ref={containerRef} className="relative isolate">
         <h1 className="mb-3 text-2xl">Source Code Section</h1>
-        <MoveConnectorOverlay groups={groups} />
+        <MoveConnectorOverlay
+          groups={groups}
+          activeMoveId={activeMoveId}
+          onHubHover={(moveId, event) => {
+            setHoveredMove({
+              moveId,
+              x: event.clientX,
+              y: event.clientY,
+            });
+          }}
+          onHubLeave={() => {
+            setHoveredMove(null);
+          }}
+          onHubClick={(moveId, event) => {
+            setPinnedMoves((current) => {
+              const _next = current.filter((entry) => entry.moveId !== moveId);
+
+              return [
+                ..._next,
+                {
+                  moveId,
+                  x: event.clientX,
+                  y: event.clientY,
+                },
+              ];
+            });
+          }}
+        />
+
+        {moveResults && hoveredMove ? (
+          <MoveConnectorPopup
+            moveId={hoveredMove.moveId}
+            moveResults={moveResults}
+            moveNodes={moveNodesById.get(hoveredMove.moveId) ?? []}
+            position={{ x: hoveredMove.x, y: hoveredMove.y }}
+            temporary
+          />
+        ) : null}
+
+        {moveResults
+          ? pinnedMoves.map((move) => (
+              <MoveConnectorPopup
+                key={move.moveId}
+                moveId={move.moveId}
+                moveResults={moveResults}
+                moveNodes={moveNodesById.get(move.moveId) ?? []}
+                position={{ x: move.x, y: move.y }}
+                onHighlightMoveGroup={onHighlightMoveGroup}
+                onClose={() => {
+                  setPinnedMoves((current) =>
+                    current.filter((entry) => entry.moveId !== move.moveId),
+                  );
+                }}
+              />
+            ))
+          : null}
 
         <div className="relative z-10 space-y-4">
           {files.map((file, fileIndex) => {
