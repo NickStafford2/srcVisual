@@ -15,7 +15,7 @@ export function SourceCodeSection({
   highlightedSpansByUnitId,
   moveResults,
 }: SourceCodeSectionProps) {
-  const { containerRef, paths, registerMoveSegment, unregisterMoveSegment } =
+  const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
 
   return (
@@ -25,7 +25,7 @@ export function SourceCodeSection({
     >
       <div ref={containerRef} className="relative isolate">
         <h1 className="mb-3 text-2xl">Source Code Section</h1>
-        <MoveConnectorOverlay paths={paths} />
+        <MoveConnectorOverlay groups={groups} />
 
         <div className="relative z-10 space-y-4">
           {files.map((file, fileIndex) => {

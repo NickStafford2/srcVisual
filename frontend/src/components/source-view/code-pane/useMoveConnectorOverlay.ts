@@ -5,20 +5,15 @@ import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "./moveConnectors";
-import type { MoveConnectorPath } from "./MoveConnectorOverlay";
+import {
+  buildMoveConnectorGroup,
+  type MoveConnectorGroup,
+  type RectLike,
+} from "./_moveConnectorGeometry";
 
 type MoveSegmentElements = {
   "revision-0": Set<HTMLElement>;
   "revision-1": Set<HTMLElement>;
-};
-
-type RectLike = {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  width: number;
-  height: number;
 };
 
 function createMoveSegmentElements(): MoveSegmentElements {
@@ -28,26 +23,8 @@ function createMoveSegmentElements(): MoveSegmentElements {
   };
 }
 
-function getCombinedRect(elements: HTMLElement[]): RectLike | null {
-  if (elements.length === 0) {
-    return null;
-  }
-
-  const rects = elements.map((element) => element.getBoundingClientRect());
-
-  const left = Math.min(...rects.map((rect) => rect.left));
-  const right = Math.max(...rects.map((rect) => rect.right));
-  const top = Math.min(...rects.map((rect) => rect.top));
-  const bottom = Math.max(...rects.map((rect) => rect.bottom));
-
-  return {
-    left,
-    right,
-    top,
-    bottom,
-    width: right - left,
-    height: bottom - top,
-  };
+function getElementRects(elements: HTMLElement[]): RectLike[] {
+  return elements.map((element) => element.getBoundingClientRect());
 }
 
 export function useMoveConnectorOverlay() {
@@ -55,51 +32,33 @@ export function useMoveConnectorOverlay() {
   const segmentElementsByMoveIdRef = useRef<Map<string, MoveSegmentElements>>(
     new Map(),
   );
-  const [paths, setPaths] = useState<MoveConnectorPath[]>([]);
+  const [groups, setGroups] = useState<MoveConnectorGroup[]>([]);
 
   const updatePaths = useCallback(() => {
     const container = containerRef.current;
 
     if (!container) {
-      setPaths([]);
+      setGroups([]);
       return;
     }
 
     const containerRect = container.getBoundingClientRect();
-    const nextPaths: MoveConnectorPath[] = [];
+    const nextGroups: MoveConnectorGroup[] = [];
 
     for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
-      const fromRect = getCombinedRect(Array.from(elements["revision-0"]));
-      const toRect = getCombinedRect(Array.from(elements["revision-1"]));
-
-      if (!fromRect || !toRect) {
-        continue;
-      }
-
-      const start = {
-        x: fromRect.right - containerRect.left,
-        y: fromRect.top + fromRect.height / 2 - containerRect.top,
-      };
-
-      const end = {
-        x: toRect.left - containerRect.left,
-        y: toRect.top + toRect.height / 2 - containerRect.top,
-      };
-
-      const controlOffset = Math.max(48, Math.abs(end.x - start.x) * 0.35);
-
-      nextPaths.push({
-        key: moveId,
-        d: [
-          `M ${start.x} ${start.y}`,
-          `C ${start.x + controlOffset} ${start.y}`,
-          `${end.x - controlOffset} ${end.y}`,
-          `${end.x} ${end.y}`,
-        ].join(" "),
+      const group = buildMoveConnectorGroup({
+        moveId,
+        containerRect,
+        fromRects: getElementRects(Array.from(elements["revision-0"])),
+        toRects: getElementRects(Array.from(elements["revision-1"])),
       });
+
+      if (group) {
+        nextGroups.push(group);
+      }
     }
 
-    setPaths(nextPaths);
+    setGroups(nextGroups);
   }, []);
 
   const registerMoveSegment = useCallback(
@@ -161,7 +120,7 @@ export function useMoveConnectorOverlay() {
 
   return {
     containerRef,
-    paths,
+    groups,
     registerMoveSegment: registerMoveSegment as RegisterMoveSegment,
     unregisterMoveSegment: unregisterMoveSegment as UnregisterMoveSegment,
     updatePaths,

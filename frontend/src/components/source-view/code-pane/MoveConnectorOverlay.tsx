@@ -1,28 +1,39 @@
-export type MoveConnectorPath = {
-  key: string;
-  d: string;
-};
+import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
 
 type MoveConnectorOverlayProps = {
-  paths: MoveConnectorPath[];
+  groups: MoveConnectorGroup[];
 };
 
-export function MoveConnectorOverlay({ paths }: MoveConnectorOverlayProps) {
-  if (paths.length === 0) {
+export function MoveConnectorOverlay({ groups }: MoveConnectorOverlayProps) {
+  if (groups.length === 0) {
     return null;
   }
 
   return (
     <svg className="pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible">
-      {paths.map((path) => (
-        <path
-          key={path.key}
-          d={path.d}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          className="text-diff-move-1/70 drop-shadow"
-        />
+      {groups.map((group) => (
+        <g key={group.key} className="text-diff-move-1/70">
+          {group.paths.map((path) => (
+            <path
+              key={path.key}
+              d={path.d}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="drop-shadow"
+            />
+          ))}
+
+          {group.hub ? (
+            <circle
+              cx={group.hub.cx}
+              cy={group.hub.cy}
+              r={group.hub.r}
+              fill="currentColor"
+              className="drop-shadow"
+            />
+          ) : null}
+        </g>
       ))}
     </svg>
   );
