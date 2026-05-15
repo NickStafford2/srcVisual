@@ -11,11 +11,7 @@ type MoveDetailsProps = {
   moveResults: SrcMoveResults;
 };
 
-export function MoveDetails({
-  moveId,
-  nodes,
-  moveResults,
-}: MoveDetailsProps) {
+export function MoveDetails({ moveId, nodes, moveResults }: MoveDetailsProps) {
   if (!moveId) {
     return null;
   }
@@ -56,7 +52,7 @@ export function MoveDetails({
         </article>
 
         <article className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <div className="space-y-3">
+          <div className="min-w-100 space-y-3">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
                 Before
