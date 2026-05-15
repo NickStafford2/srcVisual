@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from srcvisual.srcdiff._models import SourceSpan, TreeNode, TreeNodeKind
 from srcvisual.core.namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from srcvisual.srcdiff.spans import build_xml_span_index, parse_position_spans
-from srcvisual.moved_srcdiff.attributes import parse_srcdiff_attributes
+from srcvisual.moved_srcdiff.attributes import parse_all_attributes
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 
 
@@ -47,7 +47,7 @@ def build_tree_node(
     include_skipped_tags: bool = False,
 ) -> TreeNode:
     tag = prefixed_name(element.tag)
-    srcdiff_attributes = parse_srcdiff_attributes(element)
+    srcdiff_attributes = parse_all_attributes(element)
 
     current_diff_kind = get_current_diff_kind(tag)
     current_move_id = (
