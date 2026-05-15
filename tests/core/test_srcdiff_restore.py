@@ -1,6 +1,6 @@
 import re
 
-from srcvisual.srcdiff.restore import restore_original_srcdiff_metadata
+from srcvisual.srcdiff.metadata_restore import restore_original_srcdiff_metadata
 
 
 def test_restore_original_srcdiff_metadata_does_not_emit_synthetic_prefixes() -> None:

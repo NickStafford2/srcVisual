@@ -6,7 +6,7 @@ from pathlib import Path
 from srcvisual.core.notify import ProgressCallback, notify_progress
 from srcvisual.core.commands import run_command
 from srcvisual.core.namespaces import POS_END, POS_START
-from srcvisual.srcdiff.restore import restore_original_srcdiff_metadata
+from srcvisual.srcdiff.metadata_restore import restore_original_srcdiff_metadata
 
 
 def run_srcdiff_with_positions(
