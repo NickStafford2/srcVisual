@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
 
-from srcvisual.moved_srcdiff.attributes import AllAttributes
+from srcvisual.annotated_srcdiff.attributes import AllAttributes
 
 
 @dataclass(frozen=True)

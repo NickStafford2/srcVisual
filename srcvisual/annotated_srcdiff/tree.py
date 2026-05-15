@@ -6,7 +6,7 @@ from typing import Literal
 
 from srcvisual.core.namespaces import SKIPPED_TREE_TAGS, prefixed_name
 from srcvisual.core.units import get_srcdiff_file_unit_elements
-from srcvisual.moved_srcdiff.attributes import AllAttributes, parse_all_attributes
+from srcvisual.annotated_srcdiff.attributes import AllAttributes, parse_all_attributes
 from srcvisual.srcdiff.source_span import SourceSpan
 from srcvisual.srcdiff.spans import build_xml_span_index, parse_position_spans
 
