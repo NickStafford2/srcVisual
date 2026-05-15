@@ -7,7 +7,7 @@ from srcvisual.srcmove._moved_srcdiff import (
     build_move_results_from_moved_srcdiff,
     has_srcmove_annotations,
 )
-from srcvisual.workflow._positioned_srcdiff import (
+from srcvisual.workflow._positioned_srcdiff_builder import (
     has_position_annotations,
     restore_original_metadata_on_path,
     run_srcdiff_with_positions,
