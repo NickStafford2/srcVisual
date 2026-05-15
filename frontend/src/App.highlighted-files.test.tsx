@@ -117,12 +117,12 @@ function jsonResponse(payload: unknown): Response {
   });
 }
 
-async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup>) {
+async function renderHighlightedMovesApp(
+  user: ReturnType<typeof userEvent.setup>,
+) {
   render(<App />);
 
-  await user.click(
-    await screen.findByRole("button", { name: exampleLabel }),
-  );
+  await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
   await waitFor(() => {
     expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
@@ -131,7 +131,7 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
   });
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
-  await screen.findByRole("heading", { name: "SrcDiff Tree" });
+  await screen.findByRole("heading", { name: "srcDiff Tree" });
 }
 
 function expectFileToHaveHighlightedSourceLines(filename: string) {

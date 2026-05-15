@@ -26,14 +26,12 @@ class MockEventSource {
 }
 
 describe("App highlight all moves flow", () => {
-  let visualizeRequest:
-    | {
-        includeSkippedTags: string | null;
-        pruningLevel: string | null;
-        progressToken: string | null;
-        srcdiffXml: string | null;
-      }
-    | null;
+  let visualizeRequest: {
+    includeSkippedTags: string | null;
+    pruningLevel: string | null;
+    progressToken: string | null;
+    srcdiffXml: string | null;
+  } | null;
 
   beforeEach(() => {
     visualizeRequest = null;
@@ -64,7 +62,8 @@ describe("App highlight all moves flow", () => {
           }
 
           visualizeRequest = {
-            includeSkippedTags: formData.get("include_skipped_tags")?.toString() ?? null,
+            includeSkippedTags:
+              formData.get("include_skipped_tags")?.toString() ?? null,
             pruningLevel: formData.get("pruning_level")?.toString() ?? null,
             progressToken: formData.get("progress_token")?.toString() ?? null,
             srcdiffXml: formData.get("srcdiff_xml")?.toString() ?? null,
@@ -97,15 +96,14 @@ describe("App highlight all moves flow", () => {
     });
 
     await waitFor(() => {
-      expect(getHighlightedTreeNodeIds(screen.getByLabelText("SrcDiff Tree"))).toEqual([
-        "/src:unit[1]/diff:delete[1]",
-        "/src:unit[2]/diff:insert[1]",
-      ]);
+      expect(
+        getHighlightedTreeNodeIds(screen.getByLabelText("srcDiff Tree")),
+      ).toEqual(["/src:unit[1]/diff:delete[1]", "/src:unit[2]/diff:insert[1]"]);
     });
 
-    expect(getHighlightedLineNumbers(screen.getByLabelText("srcDiff XML"))).toEqual([
-      4, 5, 6, 7, 8, 16, 17, 18, 19, 20, 21,
-    ]);
+    expect(
+      getHighlightedLineNumbers(screen.getByLabelText("srcDiff XML")),
+    ).toEqual([4, 5, 6, 7, 8, 16, 17, 18, 19, 20, 21]);
 
     expect(
       getHighlightedLineNumbers(screen.getByLabelText("main.cpp Revision 0")),
@@ -120,13 +118,15 @@ describe("App highlight all moves flow", () => {
       getHighlightedLineNumbers(screen.getByLabelText("|foo.hpp Revision 1")),
     ).toEqual([1, 2, 3, 4, 5]);
 
-    expect(within(screen.getByLabelText("SrcDiff Tree")).getByText("diff:delete")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("SrcDiff Tree")).getByText("diff:insert")).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("srcDiff Tree")).getByText("diff:delete"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("srcDiff Tree")).getByText("diff:insert"),
+    ).toBeInTheDocument();
 
     const sourceSection = screen.getByLabelText("Source Code Section");
-    expect(
-      within(sourceSection).getAllByText("1 highlighted"),
-    ).toHaveLength(2);
+    expect(within(sourceSection).getAllByText("1 highlighted")).toHaveLength(2);
 
     expect(
       sourceSection.querySelectorAll(`[data-move-id="${toNewFileMoveId}"]`),
@@ -161,9 +161,7 @@ describe("App highlight all moves flow", () => {
 
     render(<App />);
 
-    await user.click(
-      await screen.findByRole("button", { name: exampleLabel }),
-    );
+    await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
@@ -172,9 +170,9 @@ describe("App highlight all moves flow", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
-    await screen.findByRole("heading", { name: "SrcDiff Tree" });
+    await screen.findByRole("heading", { name: "srcDiff Tree" });
 
-    const _tree = screen.getByLabelText("SrcDiff Tree");
+    const _tree = screen.getByLabelText("srcDiff Tree");
 
     expect(getHighlightedTreeNodeIds(_tree)).toEqual([
       "/src:unit[1]/diff:delete[1]",
@@ -218,9 +216,7 @@ describe("App highlight all moves flow", () => {
       "none",
     );
 
-    await user.click(
-      await screen.findByRole("button", { name: exampleLabel }),
-    );
+    await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
@@ -247,7 +243,9 @@ function jsonResponse(payload: unknown): Response {
 
 function getHighlightedLineNumbers(region: HTMLElement): number[] {
   return Array.from(
-    region.querySelectorAll<HTMLElement>('[data-highlighted="true"][data-line-number]'),
+    region.querySelectorAll<HTMLElement>(
+      '[data-highlighted="true"][data-line-number]',
+    ),
   ).map((line) => Number(line.dataset.lineNumber));
 }
 
@@ -261,12 +259,12 @@ function getHighlightedTreeNodeIds(region: HTMLElement): string[] {
     .filter(Boolean);
 }
 
-async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup>) {
+async function renderHighlightedMovesApp(
+  user: ReturnType<typeof userEvent.setup>,
+) {
   render(<App />);
 
-  await user.click(
-    await screen.findByRole("button", { name: exampleLabel }),
-  );
+  await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
   await waitFor(() => {
     expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
@@ -276,7 +274,7 @@ async function renderHighlightedMovesApp(user: ReturnType<typeof userEvent.setup
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
-  await screen.findByRole("heading", { name: "SrcDiff Tree" });
+  await screen.findByRole("heading", { name: "srcDiff Tree" });
 }
 
 function expectSourcePaneHighlightPresence({
