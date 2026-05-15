@@ -28,7 +28,6 @@ class RevisionFile:
 class VisualizedFile:
     revision_file: RevisionFile
     tree: TreeNodeDict | None
-    move_regions: tuple[Any, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {

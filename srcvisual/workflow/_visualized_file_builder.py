@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 import xml.etree.ElementTree as ET
 
+from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 from srcvisual.files.filenames import normalize_visualized_filename
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.workflow.models import RevisionFile, VisualizedFile
-from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
+from srcvisual.annotated_srcdiff.tree_node import AllAttributesDict, TreeNodeDict
 
 
 def build_visualized_files(
@@ -43,7 +44,7 @@ def build_visualized_files(
             f"filename={moved_filename!r}, moved unit={moved_unit_id}."
         )
 
-        tree: TreeNodeDict | None = tree_by_unit.get(moved_unit_id)
+        tree = tree_by_unit.get(moved_unit_id)
 
         if tree is not None and visualized_filename != moved_filename:
             tree = _build_visualized_tree_root(
@@ -69,29 +70,43 @@ def build_visualized_files(
 
 def _build_visualized_tree_root(
     *,
-    tree: dict[str, object],
+    tree: TreeNodeDict,
     filename: str,
-) -> dict[str, object]:
-    srcdiff_attributes = tree.get("srcdiff_attributes")
+) -> TreeNodeDict:
+    srcdiff_attributes = tree["srcdiff_attributes"]
+    unit_attributes = srcdiff_attributes["unit"]
 
-    if not isinstance(srcdiff_attributes, dict):
-        return {**tree, "label": f"unit: {filename}"}
+    updated_srcdiff_attributes: AllAttributesDict
 
-    unit_attributes = srcdiff_attributes.get("unit")
-
-    if not isinstance(unit_attributes, dict):
-        return {**tree, "label": f"unit: {filename}"}
+    if unit_attributes is None:
+        updated_srcdiff_attributes = srcdiff_attributes
+    else:
+        updated_srcdiff_attributes = {
+            "position": srcdiff_attributes["position"],
+            "move": srcdiff_attributes["move"],
+            "unit": {
+                "filename": filename,
+                "language": unit_attributes["language"],
+                "revision": unit_attributes["revision"],
+                "url": unit_attributes["url"],
+                "hash": unit_attributes["hash"],
+                "timestamp": unit_attributes["timestamp"],
+            },
+            "diff": srcdiff_attributes["diff"],
+        }
 
     return {
-        **tree,
+        "id": tree["id"],
+        "path": tree["path"],
+        "tag": tree["tag"],
         "label": f"unit: {filename}",
-        "srcdiff_attributes": {
-            **srcdiff_attributes,
-            "unit": {
-                **unit_attributes,
-                "filename": filename,
-            },
-        },
+        "kind": tree["kind"],
+        "move_id": tree["move_id"],
+        "srcdiff_attributes": updated_srcdiff_attributes,
+        "xml_span": tree["xml_span"],
+        "revision_0_span": tree["revision_0_span"],
+        "revision_1_span": tree["revision_1_span"],
+        "children": tree["children"],
     }
 
 
