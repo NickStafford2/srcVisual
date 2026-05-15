@@ -29,7 +29,7 @@ export function CodePaneBody({
 }: CodePaneBodyProps) {
   return (
     <div
-      className="max-h-[58vh] overflow-auto border-t border-white/10 bg-slate-950/85 font-mono"
+      className="border-t border-white/10 bg-slate-950/85 font-mono"
       style={getCodePaneBodyStyle(revision)}
     >
       {lines.length === 0 ? (
