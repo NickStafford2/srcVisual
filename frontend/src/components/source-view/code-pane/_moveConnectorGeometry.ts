@@ -19,8 +19,18 @@ export type MoveConnectorHub = {
   r: number;
 };
 
+export type MoveConnectorBox = {
+  key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rx: number;
+};
+
 export type MoveConnectorGroup = {
   key: string;
+  boxes: MoveConnectorBox[];
   paths: MoveConnectorPath[];
   hub: MoveConnectorHub | null;
 };
@@ -65,6 +75,14 @@ export function buildMoveConnectorGroup({
 }: BuildMoveConnectorGroupOptions): MoveConnectorGroup | null {
   const _fromBlocks = clusterMoveRects(fromRects);
   const _toBlocks = clusterMoveRects(toRects);
+  const _boxes = [
+    ..._fromBlocks.map((_block, _index) =>
+      buildOverlayBox(moveId, "revision-0", _index, _block, containerRect),
+    ),
+    ..._toBlocks.map((_block, _index) =>
+      buildOverlayBox(moveId, "revision-1", _index, _block, containerRect),
+    ),
+  ];
 
   if (_fromBlocks.length === 0 || _toBlocks.length === 0) {
     return null;
@@ -76,6 +94,7 @@ export function buildMoveConnectorGroup({
 
     return {
       key: moveId,
+      boxes: _boxes,
       hub: null,
       paths: [
         {
@@ -97,6 +116,7 @@ export function buildMoveConnectorGroup({
 
   return {
     key: moveId,
+    boxes: _boxes,
     hub: _hub,
     paths: [
       ..._fromAnchors.map((anchor, index) => ({
@@ -138,6 +158,30 @@ export function clusterMoveRects(rects: RectLike[]): RectLike[] {
 
   _blocks.push(_currentBlock);
   return _blocks;
+}
+
+function buildOverlayBox(
+  moveId: string,
+  revision: "revision-0" | "revision-1",
+  index: number,
+  rect: RectLike,
+  containerRect: RectLike,
+): MoveConnectorBox {
+  const _paddingX = 6;
+  const _paddingY = 4;
+  const _x = rect.left - containerRect.left - _paddingX;
+  const _y = rect.top - containerRect.top - _paddingY;
+  const _width = rect.width + _paddingX * 2;
+  const _height = rect.height + _paddingY * 2;
+
+  return {
+    key: `${moveId}-${revision}-box-${index}`,
+    x: _x,
+    y: _y,
+    width: _width,
+    height: _height,
+    rx: 8,
+  };
 }
 
 function buildRevision0Anchor(rect: RectLike, containerRect: RectLike): Point {

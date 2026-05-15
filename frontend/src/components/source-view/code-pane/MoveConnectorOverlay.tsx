@@ -13,6 +13,22 @@ export function MoveConnectorOverlay({ groups }: MoveConnectorOverlayProps) {
     <svg className="pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible">
       {groups.map((group) => (
         <g key={group.key} className="text-diff-move-1/70">
+          {group.boxes.map((box) => (
+            <rect
+              key={box.key}
+              x={box.x}
+              y={box.y}
+              width={box.width}
+              height={box.height}
+              rx={box.rx}
+              fill="currentColor"
+              fillOpacity={0.14}
+              stroke="currentColor"
+              strokeOpacity={0.45}
+              strokeWidth={1.5}
+            />
+          ))}
+
           {group.paths.map((path) => (
             <path
               key={path.key}

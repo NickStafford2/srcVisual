@@ -31,9 +31,17 @@ describe("move connector geometry", () => {
     });
 
     expect(_group).not.toBeNull();
+    expect(_group?.boxes).toHaveLength(2);
     expect(_group?.hub).toBeNull();
     expect(_group?.paths).toHaveLength(1);
     expect(_group?.paths[0]?.key).toBe("move-1-direct");
+    expect(_group?.boxes[0]).toMatchObject({
+      key: "move-1-revision-0-box-0",
+      x: 94,
+      y: 16,
+      width: 132,
+      height: 48,
+    });
   });
 
   it("clusters nearby move spans into one block per side", () => {
@@ -63,6 +71,7 @@ describe("move connector geometry", () => {
     });
 
     expect(_group).not.toBeNull();
+    expect(_group?.boxes).toHaveLength(4);
     expect(_group?.hub).not.toBeNull();
     expect(_group?.paths).toHaveLength(4);
     expect(_group?.hub?.cx).toBeGreaterThan(220);
