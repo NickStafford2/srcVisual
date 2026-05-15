@@ -7,7 +7,7 @@ from srcvisual.annotated_srcdiff.tree_node import TreeNodeDict
 from srcvisual.files.models import VisualizedFile
 
 
-PruningLevel = Literal["file-only", "file-and-tree", "move-only"]
+PruningLevel = Literal["none", "file-only", "file-and-tree", "move-only"]
 
 ALL_DIFF_KINDS = {"insert", "delete", "move"}
 MOVE_ONLY_KINDS = {"move"}
@@ -17,6 +17,9 @@ DEFAULT_PRUNING_LEVEL: PruningLevel = "file-and-tree"
 
 def parse_tree_pruning_level(raw_level: str) -> PruningLevel:
     _level = raw_level.strip().lower().replace("_", "-")
+
+    if _level in {"none", "off", "no-pruning", "no-prune"}:
+        return "none"
 
     if _level in {"file", "files", "file-only"}:
         return "file-only"
@@ -28,7 +31,8 @@ def parse_tree_pruning_level(raw_level: str) -> PruningLevel:
         return "move-only"
 
     raise ValueError(
-        "Pruning level must be one of: file-only, file-and-tree, move-only."
+        "Pruning level must be one of: "
+        "none, file-only, file-and-tree, move-only."
     )
 
 
@@ -40,7 +44,7 @@ def get_tree_pruning_level() -> PruningLevel:
     except ValueError as exc:
         raise ValueError(
             "SRCVISUAL_PRUNING_LEVEL must be one of: "
-            "file-only, file-and-tree, move-only."
+            "none, file-only, file-and-tree, move-only."
         ) from exc
 
 
@@ -50,6 +54,9 @@ def prune_visualized_files(
     level: PruningLevel | None = None,
 ) -> tuple[VisualizedFile, ...]:
     pruning_level = level or get_tree_pruning_level()
+
+    if pruning_level == "none":
+        return visualized_files
 
     if pruning_level == "file-only":
         return prune_files_by_target_kinds(

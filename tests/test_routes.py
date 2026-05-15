@@ -122,12 +122,12 @@ def test_visualize_returns_move_results(monkeypatch) -> None:
         "/api/visualize",
         data={
             "srcdiff_xml": "<unit />",
-            "pruning_level": "move-only",
+            "pruning_level": "none",
         },
     )
 
     assert response.status_code == 200
-    assert captured_kwargs["pruning_level"] == "move-only"
+    assert captured_kwargs["pruning_level"] == "none"
     assert response.get_json()["move_results"] == {
         "move_count": 1,
         "moves": [

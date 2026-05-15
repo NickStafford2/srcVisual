@@ -215,7 +215,7 @@ describe("App highlight all moves flow", () => {
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Pruning mode" }),
-      "move-only",
+      "none",
     );
 
     await user.click(
@@ -231,7 +231,7 @@ describe("App highlight all moves flow", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => {
-      expect(visualizeRequest?.pruningLevel).toBe("move-only");
+      expect(visualizeRequest?.pruningLevel).toBe("none");
     });
   });
 });

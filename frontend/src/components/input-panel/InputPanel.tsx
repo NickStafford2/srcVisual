@@ -119,9 +119,18 @@ export function InputPanel({
             className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-300/40"
             aria-label="Pruning mode"
           >
-            <option value="file-and-tree">Files and matching tree branches</option>
-            <option value="file-only">Files with full tree</option>
-            <option value="move-only">Move-only files and tree branches</option>
+            <option value="none">
+              No pruning: keep all files and full trees
+            </option>
+            <option value="file-and-tree">
+              Diff-focused: keep changed files and matching tree branches
+            </option>
+            <option value="file-only">
+              Changed files only: keep changed files with full trees
+            </option>
+            <option value="move-only">
+              Moves only: keep move-related files and matching tree branches
+            </option>
           </select>
         </label>
 
