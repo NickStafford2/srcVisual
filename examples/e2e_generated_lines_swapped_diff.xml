@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" revision="1.0.0" language="C++" filename="/home/nick/Projects/srcMLBuildTemplate/srcMove/test/e2e_generated/lines_swapped/original.cpp|/home/nick/Projects/srcMLBuildTemplate/srcMove/test/e2e_generated/lines_swapped/modified.cpp">
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" revision="1.0.0" language="C++" filename="original.cpp|modified.cpp">
 <diff:delete move="1"><decl_stmt><decl><type><name>int</name></type><diff:ws> </diff:ws><name>i</name><diff:ws> </diff:ws><init>=<diff:ws> </diff:ws><expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt></diff:delete><diff:delete><diff:ws>
 </diff:ws></diff:delete><decl_stmt><decl><type><name>int</name></type> <name>k</name> <init>= <expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt>
 <diff:insert move="1"><decl_stmt><decl><type><name>int</name></type><diff:ws> </diff:ws><name>i</name><diff:ws> </diff:ws><init>=<diff:ws> </diff:ws><expr><literal type="number">1</literal></expr></init></decl>;</decl_stmt></diff:insert><diff:insert><diff:ws>
