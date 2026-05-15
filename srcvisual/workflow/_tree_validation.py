@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from srcvisual.srcdiff.tree_validation import (
+from srcvisual.srcdiff.unit_tree_validation import (
     assert_srcdiff_units_match_visualized_files,
 )
 from srcvisual.srcmove.tree_move_validation import (
