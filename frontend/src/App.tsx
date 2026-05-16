@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AppHeader } from "./components/AppHeader";
 import { InputDialog } from "./components/input-panel/InputDialog";
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
@@ -51,28 +52,12 @@ export default function App() {
     <SrcDiffHighlightProvider value={_highlightContextValue}>
       <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
         <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1720px] flex-col gap-4 md:min-h-[calc(100vh-2rem)]">
-          <header className="flex shrink-0 items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-slate-950/80 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
-                srcVisual
-              </p>
-              <h1 className="mt-1 truncate text-sm font-semibold text-slate-100">
-                Workspace
-              </h1>
-            </div>
-
-            <button
-              type="button"
-              aria-expanded={_isInputOpen}
-              aria-controls="input-dialog-title"
-              onClick={() => {
-                _setIsInputOpen((current) => !current);
-              }}
-              className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
-            >
-              {_isInputOpen ? "Hide Input" : "Show Input"}
-            </button>
-          </header>
+          <AppHeader
+            isInputOpen={_isInputOpen}
+            onToggleInput={() => {
+              _setIsInputOpen((current) => !current);
+            }}
+          />
 
           <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
             <aside
