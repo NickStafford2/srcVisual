@@ -64,7 +64,10 @@ export default function App() {
   useEffect(() => {
     if (!_data) {
       _setActiveMainTab("input");
+      return;
     }
+
+    _setActiveMainTab("source-code");
   }, [_data]);
 
   return (
@@ -92,34 +95,36 @@ export default function App() {
                   className="sticky top-0 z-10 flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-slate-950/85 p-2 backdrop-blur"
                   role="tablist"
                 >
-                  {_data
-                    ? resultTabs.map((_tab) => {
-                        const _tabId = `${_tab.id}-tab`;
-                        const _panelId = `${_tab.id}-panel`;
-                        const _isActive = _activeMainTab === _tab.id;
+                  {resultTabs.map((_tab) => {
+                    const _tabId = `${_tab.id}-tab`;
+                    const _panelId = `${_tab.id}-panel`;
+                    const _isActive = _activeMainTab === _tab.id;
+                    const _isDisabled = !_data;
 
-                        return (
-                          <button
-                            key={_tab.id}
-                            aria-controls={_panelId}
-                            aria-selected={_isActive}
-                            className={`rounded-[14px] px-4 py-2 text-sm font-medium transition ${
-                              _isActive
-                                ? "bg-cyan-300 text-slate-950 shadow-[0_10px_30px_rgba(103,232,249,0.28)]"
-                                : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
-                            }`}
-                            id={_tabId}
-                            onClick={() => {
-                              _setActiveMainTab(_tab.id);
-                            }}
-                            role="tab"
-                            type="button"
-                          >
-                            {_tab.label}
-                          </button>
-                        );
-                      })
-                    : null}
+                    return (
+                      <button
+                        key={_tab.id}
+                        aria-controls={_panelId}
+                        aria-selected={_isActive}
+                        className={`rounded-[14px] px-4 py-2 text-sm font-medium transition ${
+                          _isActive
+                            ? "bg-cyan-300 text-slate-950 shadow-[0_10px_30px_rgba(103,232,249,0.28)]"
+                            : _isDisabled
+                              ? "cursor-not-allowed bg-white/5 text-slate-500 opacity-60"
+                              : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                        }`}
+                        disabled={_isDisabled}
+                        id={_tabId}
+                        onClick={() => {
+                          _setActiveMainTab(_tab.id);
+                        }}
+                        role="tab"
+                        type="button"
+                      >
+                        {_tab.label}
+                      </button>
+                    );
+                  })}
 
                   <button
                     aria-controls="input-panel"

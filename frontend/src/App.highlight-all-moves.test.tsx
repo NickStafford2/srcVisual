@@ -178,9 +178,17 @@ describe("App highlight all moves flow", () => {
     render(<App />);
 
     const _inputTab = screen.getByRole("tab", { name: "Input" });
+    const _sourceTab = screen.getByRole("tab", { name: "Source" });
+    const _xmlTab = screen.getByRole("tab", { name: "XML" });
+    const _nodeInfoTab = screen.getByRole("tab", { name: "Node Info" });
+    const _moveSummaryTab = screen.getByRole("tab", { name: "Move Summary" });
+
     expect(_inputTab).toHaveAttribute("aria-selected", "true");
     expect(_inputTab).toHaveClass("ml-auto");
-    expect(screen.queryByRole("tab", { name: "Source" })).toBeNull();
+    expect(_sourceTab).toBeDisabled();
+    expect(_xmlTab).toBeDisabled();
+    expect(_nodeInfoTab).toBeDisabled();
+    expect(_moveSummaryTab).toBeDisabled();
     expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toBeInTheDocument();
   });
 
