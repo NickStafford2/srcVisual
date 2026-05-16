@@ -15,8 +15,11 @@ type MoveConnectorPopupProps = {
   moveNodes: MoveNodeEntry[];
   position: PopupPosition;
   temporary?: boolean;
+  active?: boolean;
   autoCloseEnabled?: boolean;
   onHighlightMoveGroup?: (nodeId: string) => void;
+  onHoverStart?: (moveId: string) => void;
+  onHoverEnd?: (moveId: string) => void;
   onToggleAutoClose?: () => void;
   onClose?: () => void;
 };
@@ -37,8 +40,11 @@ export function MoveConnectorPopup({
   moveNodes,
   position,
   temporary = false,
+  active = false,
   autoCloseEnabled = true,
   onHighlightMoveGroup,
+  onHoverStart,
+  onHoverEnd,
   onToggleAutoClose,
   onClose,
 }: MoveConnectorPopupProps) {
@@ -113,15 +119,36 @@ export function MoveConnectorPopup({
   const _popup = (
     <div
       data-move-popup="true"
+      data-move-popup-active={active ? "true" : "false"}
       className={[
-        "fixed z-50 w-[460px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl",
+        "fixed z-50 w-[460px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border bg-slate-950/96 backdrop-blur-xl",
+        active
+          ? "border-diff-move-1/60 ring-1 ring-diff-move-1/30 shadow-[0_20px_60px_rgba(0,0,0,0.45),0_0_24px_rgba(251,191,36,0.16)]"
+          : "border-diff-move-1/30 ring-1 ring-diff-move-1/12 shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
         temporary ? "pointer-events-none" : "",
       ].join(" ")}
       style={_popupPosition}
+      onMouseEnter={
+        temporary
+          ? undefined
+          : () => {
+              onHoverStart?.(moveId);
+            }
+      }
+      onMouseLeave={
+        temporary
+          ? undefined
+          : () => {
+              onHoverEnd?.(moveId);
+            }
+      }
     >
       <div
         className={[
-          "flex items-center justify-between border-b border-white/10 bg-white/[0.05] px-4 py-2.5",
+          "flex items-center justify-between border-b px-4 py-2.5",
+          active
+            ? "border-diff-move-1/35 bg-diff-move-1/[0.10]"
+            : "border-diff-move-1/20 bg-diff-move-1/[0.06]",
           temporary ? "" : _dragState ? "cursor-grabbing" : "cursor-grab",
         ].join(" ")}
         style={temporary ? undefined : { touchAction: "none" }}
@@ -137,7 +164,12 @@ export function MoveConnectorPopup({
               }
         }
       >
-        <span className="text-xs font-semibold tracking-[0.2em] text-slate-300 uppercase">
+        <span
+          className={[
+            "text-xs font-semibold tracking-[0.2em] uppercase",
+            active ? "text-diff-move-1" : "text-slate-300",
+          ].join(" ")}
+        >
           Move Window
         </span>
 

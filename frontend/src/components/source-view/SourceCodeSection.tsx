@@ -32,8 +32,12 @@ export function SourceCodeSection({
     x: number;
     y: number;
   } | null>(null);
+  const [hoveredPopupMoveId, setHoveredPopupMoveId] = useState<string | null>(
+    null,
+  );
 
-  const activeMoveId = hoveredMove?.moveId ?? null;
+  const pinnedMoveIds = new Set(pinnedMoves.map((move) => move.moveId));
+  const activeMoveId = hoveredPopupMoveId ?? hoveredMove?.moveId ?? null;
 
   useEffect(() => {
     if (pinnedMoves.length === 0) {
@@ -44,7 +48,9 @@ export function SourceCodeSection({
       const _target = event.target;
 
       if (!(_target instanceof Element)) {
-        setPinnedMoves([]);
+        setPinnedMoves((current) =>
+          current.filter((entry) => !entry.autoCloseEnabled),
+        );
         return;
       }
 
@@ -105,13 +111,16 @@ export function SourceCodeSection({
         />
 
         {moveResults && hoveredMove ? (
-          <MoveConnectorPopup
-            moveId={hoveredMove.moveId}
-            moveResults={moveResults}
-            moveNodes={moveNodesById.get(hoveredMove.moveId) ?? []}
-            position={{ x: hoveredMove.x, y: hoveredMove.y }}
-            temporary
-          />
+          pinnedMoveIds.has(hoveredMove.moveId) ? null : (
+            <MoveConnectorPopup
+              moveId={hoveredMove.moveId}
+              moveResults={moveResults}
+              moveNodes={moveNodesById.get(hoveredMove.moveId) ?? []}
+              position={{ x: hoveredMove.x, y: hoveredMove.y }}
+              active={activeMoveId === hoveredMove.moveId}
+              temporary
+            />
+          )
         ) : null}
 
         {moveResults
@@ -122,8 +131,17 @@ export function SourceCodeSection({
                 moveResults={moveResults}
                 moveNodes={moveNodesById.get(move.moveId) ?? []}
                 position={{ x: move.x, y: move.y }}
+                active={activeMoveId === move.moveId}
                 autoCloseEnabled={move.autoCloseEnabled}
                 onHighlightMoveGroup={onHighlightMoveGroup}
+                onHoverStart={(moveId) => {
+                  setHoveredPopupMoveId(moveId);
+                }}
+                onHoverEnd={(moveId) => {
+                  setHoveredPopupMoveId((current) =>
+                    current === moveId ? null : current,
+                  );
+                }}
                 onToggleAutoClose={() => {
                   setPinnedMoves((current) =>
                     current.map((entry) =>
