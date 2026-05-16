@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { SrcMoveResults } from "../../../types";
 import type { MoveNodeEntry } from "../node-info/moveInfo";
 import { MoveSummaryCard } from "../node-info/MoveSummaryCard";
@@ -21,6 +22,12 @@ type MoveConnectorPopupProps = {
 const POPUP_WIDTH = 460;
 const VIEWPORT_PADDING = 12;
 const CURSOR_OFFSET = 18;
+const MIN_BOTTOM_SPACE = 240;
+
+type PopupWindowPosition = {
+  left: number;
+  top: number;
+};
 
 export function MoveConnectorPopup({
   moveId,
@@ -31,18 +38,14 @@ export function MoveConnectorPopup({
   onHighlightMoveGroup,
   onClose,
 }: MoveConnectorPopupProps) {
-  const [_windowPosition, _setWindowPosition] = useState(position);
+  const [_windowPosition, _setWindowPosition] = useState<PopupWindowPosition>(
+    () => buildPopupPosition(position),
+  );
   const [_dragState, _setDragState] = useState<{
     pointerId: number;
     offsetX: number;
     offsetY: number;
   } | null>(null);
-
-  useEffect(() => {
-    if (temporary) {
-      _setWindowPosition(position);
-    }
-  }, [position, temporary]);
 
   useEffect(() => {
     if (!_dragState) {
@@ -57,8 +60,10 @@ export function MoveConnectorPopup({
       }
 
       _setWindowPosition({
-        x: event.clientX - _activeDragState.offsetX,
-        y: event.clientY - _activeDragState.offsetY,
+        ...clampPopupPosition({
+          left: event.clientX - _activeDragState.offsetX,
+          top: event.clientY - _activeDragState.offsetY,
+        }),
       });
     }
 
@@ -81,16 +86,34 @@ export function MoveConnectorPopup({
     };
   }, [_dragState]);
 
-  const _style = buildPopupStyle(temporary ? position : _windowPosition);
+  useEffect(() => {
+    if (temporary) {
+      return;
+    }
 
-  return (
+    function _handleResize() {
+      _setWindowPosition((_current) => clampPopupPosition(_current));
+    }
+
+    window.addEventListener("resize", _handleResize);
+
+    return () => {
+      window.removeEventListener("resize", _handleResize);
+    };
+  }, [temporary]);
+
+  const _popupPosition = temporary
+    ? buildPopupPosition(position)
+    : _windowPosition;
+
+  const _popup = (
     <div
       data-move-popup="true"
       className={[
         "fixed z-50 w-[460px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl",
         temporary ? "pointer-events-none" : "",
       ].join(" ")}
-      style={_style}
+      style={_popupPosition}
     >
       <div
         className={[
@@ -104,8 +127,8 @@ export function MoveConnectorPopup({
             : (event) => {
                 _setDragState({
                   pointerId: event.pointerId,
-                  offsetX: event.clientX - _windowPosition.x,
-                  offsetY: event.clientY - _windowPosition.y,
+                  offsetX: event.clientX - _popupPosition.left,
+                  offsetY: event.clientY - _popupPosition.top,
                 });
               }
         }
@@ -138,26 +161,38 @@ export function MoveConnectorPopup({
       />
     </div>
   );
+
+  if (typeof document === "undefined") {
+    return _popup;
+  }
+
+  return createPortal(_popup, document.body);
 }
 
-function buildPopupStyle(position: PopupPosition) {
+function buildPopupPosition(position: PopupPosition): PopupWindowPosition {
+  return clampPopupPosition({
+    left: position.x + CURSOR_OFFSET,
+    top: position.y + CURSOR_OFFSET,
+  });
+}
+
+function clampPopupPosition(
+  position: PopupWindowPosition,
+): PopupWindowPosition {
   if (typeof window === "undefined") {
-    return {
-      left: position.x + CURSOR_OFFSET,
-      top: position.y + CURSOR_OFFSET,
-    };
+    return position;
   }
 
   const _maxLeft = window.innerWidth - POPUP_WIDTH - VIEWPORT_PADDING;
   const _left = clamp(
-    position.x + CURSOR_OFFSET,
+    position.left,
     VIEWPORT_PADDING,
     Math.max(VIEWPORT_PADDING, _maxLeft),
   );
   const _top = clamp(
-    position.y + CURSOR_OFFSET,
+    position.top,
     VIEWPORT_PADDING,
-    Math.max(VIEWPORT_PADDING, window.innerHeight - 240),
+    Math.max(VIEWPORT_PADDING, window.innerHeight - MIN_BOTTOM_SPACE),
   );
 
   return {
