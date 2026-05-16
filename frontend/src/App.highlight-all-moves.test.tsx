@@ -117,6 +117,8 @@ describe("App highlight all moves flow", () => {
       ).toEqual(["/src:unit[1]/diff:delete[1]", "/src:unit[2]/diff:insert[1]"]);
     });
 
+    await user.click(screen.getByRole("tab", { name: "XML" }));
+
     expect(
       getHighlightedLineNumbers(screen.getByLabelText("srcDiff XML")),
     ).toEqual([4, 5, 6, 7, 8, 16, 17, 18, 19, 20, 21]);
@@ -179,7 +181,7 @@ describe("App highlight all moves flow", () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Show Input" }));
+    await user.click(screen.getByRole("button", { name: "Upload File" }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Hide Input" })).toHaveAttribute(
@@ -207,7 +209,7 @@ describe("App highlight all moves flow", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
-    await screen.findByRole("heading", { name: "srcDiff Tree" });
+    await screen.findByLabelText("srcDiff Tree");
 
     const _tree = screen.getByLabelText("srcDiff Tree");
 
@@ -354,7 +356,7 @@ describe("App highlight all moves flow", () => {
       delta_ms: 4750,
     });
 
-    await screen.findByRole("heading", { name: "srcDiff Tree" });
+    await screen.findByLabelText("srcDiff Tree");
 
     expect(
       within(progressLog).getByText("Visualization complete."),
@@ -406,11 +408,11 @@ async function renderHighlightedMovesApp(
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
-  await screen.findByRole("heading", { name: "srcDiff Tree" });
+  await screen.findByLabelText("srcDiff Tree");
 }
 
 async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Show Input" }));
+  await user.click(screen.getByRole("button", { name: "Upload File" }));
   await screen.findByRole("dialog");
 }
 

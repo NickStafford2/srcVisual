@@ -74,6 +74,8 @@ describe("App file-level highlight behavior", () => {
 
     await renderHighlightedMovesApp(user);
 
+    await user.click(screen.getByRole("tab", { name: "Node Info" }));
+
     const _movesButton = screen.getByRole("button", {
       name: "Highlight all moves",
     });
@@ -87,14 +89,12 @@ describe("App file-level highlight behavior", () => {
     expect(_movesButton).toHaveAttribute("aria-pressed", "true");
     expect(_deletesButton).toHaveAttribute("aria-pressed", "false");
     expect(_insertsButton).toHaveAttribute("aria-pressed", "false");
-    expectFileToHaveHighlightedSourceLines("foo.hpp");
 
     await user.click(_deletesButton);
 
     await waitFor(() => {
       expect(_movesButton).toHaveAttribute("aria-pressed", "true");
       expect(_deletesButton).toHaveAttribute("aria-pressed", "true");
-      expectFileToHaveHighlightedSourceLines("foo.hpp");
     });
 
     await user.click(_insertsButton);
@@ -103,8 +103,12 @@ describe("App file-level highlight behavior", () => {
       expect(_movesButton).toHaveAttribute("aria-pressed", "true");
       expect(_deletesButton).toHaveAttribute("aria-pressed", "true");
       expect(_insertsButton).toHaveAttribute("aria-pressed", "true");
-      expectFileToHaveHighlightedSourceLines("foo.cpp");
     });
+
+    await user.click(screen.getByRole("tab", { name: "Source" }));
+
+    expectFileToHaveHighlightedSourceLines("foo.hpp");
+    expectFileToHaveHighlightedSourceLines("foo.cpp");
   });
 });
 
@@ -132,11 +136,11 @@ async function renderHighlightedMovesApp(
   });
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
-  await screen.findByRole("heading", { name: "srcDiff Tree" });
+  await screen.findByLabelText("srcDiff Tree");
 }
 
 async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Show Input" }));
+  await user.click(screen.getByRole("button", { name: "Upload File" }));
   await screen.findByRole("dialog");
 }
 

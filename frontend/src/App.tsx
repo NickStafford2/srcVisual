@@ -12,10 +12,24 @@ import type { SourceViewHighlight } from "./srcdiff/srcView";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 
+type MainTabId =
+  | "source-code"
+  | "xml-pane"
+  | "highlighted-node-info"
+  | "move-summary";
+
+const mainTabs: { id: MainTabId; label: string }[] = [
+  { id: "source-code", label: "Source" },
+  { id: "xml-pane", label: "XML" },
+  { id: "highlighted-node-info", label: "Node Info" },
+  { id: "move-summary", label: "Move Summary" },
+];
+
 export default function App() {
   const _srcDiffData = useSrcDiffData();
   const _srcDiffSelection = useSrcDiffSelection(_srcDiffData.data);
   const [_isInputOpen, _setIsInputOpen] = useState(false);
+  const [_activeMainTab, _setActiveMainTab] = useState<MainTabId>("source-code");
 
   const _data = _srcDiffData.data;
   const _hasData = Boolean(_data);
@@ -73,34 +87,97 @@ export default function App() {
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
               {_data ? (
-                <div className="space-y-6">
-                  <HighlightedNodeInfo
-                    moveResults={_data.move_results}
-                    moveNodesById={_srcDiffSelection.moveNodesById}
-                  />
+                <div className="flex min-h-0 flex-1 flex-col gap-4">
+                  <div
+                    aria-label="Main view tabs"
+                    className="sticky top-0 z-10 flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-slate-950/85 p-2 backdrop-blur"
+                    role="tablist"
+                  >
+                    {mainTabs.map((_tab) => {
+                      const _tabId = `${_tab.id}-tab`;
+                      const _panelId = `${_tab.id}-panel`;
+                      const _isActive = _activeMainTab === _tab.id;
 
-                  <MoveSummary
-                    moveResults={_data.move_results}
-                    moveNodesById={_srcDiffSelection.moveNodesById}
-                    onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
-                  />
+                      return (
+                        <button
+                          key={_tab.id}
+                          aria-controls={_panelId}
+                          aria-selected={_isActive}
+                          className={`rounded-[14px] px-4 py-2 text-sm font-medium transition ${
+                            _isActive
+                              ? "bg-cyan-300 text-slate-950 shadow-[0_10px_30px_rgba(103,232,249,0.28)]"
+                              : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                          }`}
+                          id={_tabId}
+                          onClick={() => {
+                            _setActiveMainTab(_tab.id);
+                          }}
+                          role="tab"
+                          type="button"
+                        >
+                          {_tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                  <XmlPane
-                    title="srcDiff XML"
-                    subtitle="Moved srcdiff XML returned by the backend"
-                    source={_data.moved_srcdiff_xml}
-                    highlights={_xmlHighlights}
-                  />
+                  <div className="min-h-0">
+                    <div
+                      aria-labelledby="source-code-tab"
+                      hidden={_activeMainTab !== "source-code"}
+                      id="source-code-panel"
+                      role="tabpanel"
+                    >
+                      <SourceCodeSection
+                        files={_files}
+                        highlightedSpansByUnitId={
+                          _srcDiffSelection.sourceHighlightedSpansByUnitId
+                        }
+                        moveResults={_data.move_results}
+                        moveNodesById={_srcDiffSelection.moveNodesById}
+                        onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                      />
+                    </div>
 
-                  <SourceCodeSection
-                    files={_files}
-                    highlightedSpansByUnitId={
-                      _srcDiffSelection.sourceHighlightedSpansByUnitId
-                    }
-                    moveResults={_data.move_results}
-                    moveNodesById={_srcDiffSelection.moveNodesById}
-                    onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
-                  />
+                    <div
+                      aria-labelledby="xml-pane-tab"
+                      hidden={_activeMainTab !== "xml-pane"}
+                      id="xml-pane-panel"
+                      role="tabpanel"
+                    >
+                      <XmlPane
+                        title="srcDiff XML"
+                        subtitle="Moved srcdiff XML returned by the backend"
+                        source={_data.moved_srcdiff_xml}
+                        highlights={_xmlHighlights}
+                      />
+                    </div>
+
+                    <div
+                      aria-labelledby="highlighted-node-info-tab"
+                      hidden={_activeMainTab !== "highlighted-node-info"}
+                      id="highlighted-node-info-panel"
+                      role="tabpanel"
+                    >
+                      <HighlightedNodeInfo
+                        moveResults={_data.move_results}
+                        moveNodesById={_srcDiffSelection.moveNodesById}
+                      />
+                    </div>
+
+                    <div
+                      aria-labelledby="move-summary-tab"
+                      hidden={_activeMainTab !== "move-summary"}
+                      id="move-summary-panel"
+                      role="tabpanel"
+                    >
+                      <MoveSummary
+                        moveResults={_data.move_results}
+                        moveNodesById={_srcDiffSelection.moveNodesById}
+                        onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <section className="flex min-h-[60vh] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/50 text-center shadow-[0_18px_48px_rgba(0,0,0,0.18)] lg:min-h-full">

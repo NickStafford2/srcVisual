@@ -75,7 +75,7 @@ describe("App single-unit move highlighting", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
-    await screen.findByRole("heading", { name: "srcDiff Tree" });
+    await screen.findByLabelText("srcDiff Tree");
 
     const tree = screen.getByLabelText("srcDiff Tree");
     await waitFor(() => {
@@ -103,7 +103,7 @@ describe("App single-unit move highlighting", () => {
 });
 
 async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Show Input" }));
+  await user.click(screen.getByRole("button", { name: "Upload File" }));
   await screen.findByRole("dialog");
 }
 
