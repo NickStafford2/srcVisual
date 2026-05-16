@@ -68,7 +68,7 @@ export function TreeNodeRow({
         data-highlighted={isHighlighted ? "true" : "false"}
         data-node-id={node.id}
         className={[
-          "flex items-center gap-1.5 rounded-md px-1 transition",
+          "flex items-center gap-1.5 rounded-md transition",
           isHighlighted
             ? getTreeNodeHighlightClasses(node.kind)
             : "hover:bg-white/5",
@@ -92,12 +92,6 @@ export function TreeNodeRow({
           <span className={getTreeNodeKindClasses(node.kind)}>{node.kind}</span>
 
           <span className="truncate text-sm text-slate-100">{node.label}</span>
-
-          {node.move_id ? (
-            <span className="text-xs text-emerald-300">
-              move={node.move_id}
-            </span>
-          ) : null}
         </div>
 
         {lineBadges.length > 0 ? (
