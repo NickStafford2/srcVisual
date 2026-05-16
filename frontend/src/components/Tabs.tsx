@@ -21,7 +21,7 @@ export function Tabs<TTabId extends string>({
   return (
     <div
       aria-label={ariaLabel}
-      className="sticky top-0 z-10 flex flex-wrap gap-2 rounded-[20px] border border-white/10 bg-slate-950/85 p-2 backdrop-blur"
+      className="sticky top-0 z-10 flex flex-wrap items-end gap-1 border-b border-white/10 bg-slate-950/85 px-3 pt-2 backdrop-blur"
       role="tablist"
     >
       {tabs.map((tab) => {
@@ -34,12 +34,12 @@ export function Tabs<TTabId extends string>({
             key={tab.id}
             aria-controls={panelId}
             aria-selected={isActive}
-            className={`${tab.className ?? ""} rounded-[14px] px-4 py-2 text-sm font-medium transition ${
+            className={`${tab.className ?? ""} h-10 px-6 text-sm font-medium transition [clip-path:polygon(10px_0,calc(100%-10px)_0,100%_100%,0_100%)] ${
               isActive
-                ? "bg-cyan-300 text-slate-950 shadow-[0_10px_30px_rgba(103,232,249,0.28)]"
+                ? "bg-site-bg z-10 -mb-px text-cyan-100"
                 : tab.disabled
-                  ? "cursor-not-allowed bg-white/5 text-slate-500 opacity-60"
-                  : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                  ? "cursor-not-allowed bg-white/[0.03] text-slate-600 opacity-60"
+                  : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-100"
             }`}
             disabled={tab.disabled}
             id={tabId}
