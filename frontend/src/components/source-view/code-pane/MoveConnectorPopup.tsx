@@ -39,10 +39,10 @@ export function MoveConnectorPopup({
   } | null>(null);
 
   useEffect(() => {
-    if (temporary || !_dragState) {
+    if (temporary) {
       _setWindowPosition(position);
     }
-  }, [position, temporary, _dragState]);
+  }, [position, temporary]);
 
   useEffect(() => {
     if (!_dragState) {
