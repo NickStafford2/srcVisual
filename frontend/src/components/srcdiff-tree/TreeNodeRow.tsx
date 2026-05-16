@@ -89,9 +89,14 @@ export function TreeNodeRow({
         )}
 
         <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
-          <span className={getTreeNodeKindClasses(node.kind)}>{node.kind}</span>
-
-          <span className="truncate text-sm text-slate-100">{node.label}</span>
+          <span
+            className={[
+              "truncate text-sm",
+              getTreeNodeLabelClasses(node.kind),
+            ].join(" ")}
+          >
+            {node.label}
+          </span>
         </div>
 
         {lineBadges.length > 0 ? (
@@ -284,6 +289,19 @@ export function getTreeNodeKindClasses(kind: SrcDiffTreeNode["kind"]): string {
       return "rounded-full bg-diff-move-1/20 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-move-1 uppercase";
     default:
       return "rounded-full bg-diff-plain/15 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-plain uppercase";
+  }
+}
+
+function getTreeNodeLabelClasses(kind: SrcDiffTreeNode["kind"]): string {
+  switch (kind) {
+    case "delete":
+      return "text-diff-delete";
+    case "insert":
+      return "text-diff-insert";
+    case "move":
+      return "text-diff-move-1";
+    default:
+      return "text-slate-100";
   }
 }
 
