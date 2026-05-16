@@ -107,7 +107,6 @@ export default function SrcDiffTree({
       aria-label="srcDiff Tree"
     >
       <div className="relative overflow-hidden border-b border-white/10 px-4 py-4">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.14),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.12),transparent_36%)]" />
         <div className="relative">
           <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
             Navigator
@@ -155,7 +154,7 @@ export default function SrcDiffTree({
       <div
         id="srcdiff-tree-content"
         className={[
-          "font-mono text-sm transition-all duration-300",
+          "bg-text-sm font-mono transition-all duration-300",
           hasData
             ? "max-h-[60vh] overflow-auto opacity-100"
             : "max-h-0 overflow-hidden opacity-0",
