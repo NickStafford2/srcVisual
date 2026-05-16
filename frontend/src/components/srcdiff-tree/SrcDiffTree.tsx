@@ -109,28 +109,25 @@ export default function SrcDiffTree({
       <div className="relative overflow-hidden border-b border-white/10 px-4 py-4">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.14),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.12),transparent_36%)]" />
         <div className="relative">
-          <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+          <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
             Navigator
           </p>
-          <h2 className="mt-2 text-lg font-semibold text-slate-50">
-            srcDiff Tree
-          </h2>
 
-          <div className="mt-4 grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <div className="grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
                 Files
               </div>
-              <div className="mt-1 text-lg font-semibold text-slate-100">
+              <div className="text-lg font-semibold text-slate-100">
                 {files.length}
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
                 Highlighted
               </div>
-              <div className="mt-1 text-lg font-semibold text-slate-100">
+              <div className="text-lg font-semibold text-slate-100">
                 {_highlightedCount}
               </div>
             </div>
@@ -159,7 +156,9 @@ export default function SrcDiffTree({
         id="srcdiff-tree-content"
         className={[
           "font-mono text-sm transition-all duration-300",
-          hasData ? "max-h-[60vh] overflow-auto opacity-100" : "max-h-0 overflow-hidden opacity-0",
+          hasData
+            ? "max-h-[60vh] overflow-auto opacity-100"
+            : "max-h-0 overflow-hidden opacity-0",
         ].join(" ")}
       >
         <div className="divide-y divide-white/10">

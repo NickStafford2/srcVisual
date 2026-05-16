@@ -51,7 +51,7 @@ export default function App() {
   return (
     <SrcDiffHighlightProvider value={_highlightContextValue}>
       <main className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
-        <div className="mx-auto flex min-h-screen w-full max-w-[1720px] flex-1 flex-col gap-4">
+        <div className="mx-auto flex min-h-screen w-full max-w-[1720px] flex-1 flex-col">
           <AppHeader
             isInputOpen={_isInputOpen}
             onToggleInput={() => {
