@@ -3,23 +3,23 @@ import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
 type MoveConnectorOverlayProps = {
   groups: MoveConnectorGroup[];
   activeMoveId?: string | null;
-  onHubHover?: (
+  onMoveHover?: (
     moveId: string,
-    event: React.MouseEvent<SVGCircleElement>,
+    event: React.MouseEvent<SVGElement>,
   ) => void;
-  onHubLeave?: (moveId: string) => void;
-  onHubClick?: (
+  onMoveLeave?: (moveId: string) => void;
+  onMoveClick?: (
     moveId: string,
-    event: React.MouseEvent<SVGCircleElement>,
+    event: React.MouseEvent<SVGElement>,
   ) => void;
 };
 
 export function MoveConnectorOverlay({
   groups,
   activeMoveId = null,
-  onHubHover,
-  onHubLeave,
-  onHubClick,
+  onMoveHover,
+  onMoveLeave,
+  onMoveClick,
 }: MoveConnectorOverlayProps) {
   if (groups.length === 0) {
     return null;
@@ -46,14 +46,26 @@ export function MoveConnectorOverlay({
           ))}
 
           {group.paths.map((path) => (
-            <path
-              key={path.key}
-              d={path.d}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={activeMoveId === group.moveId ? 3.5 : 2}
-              className="drop-shadow"
-            />
+            <g key={path.key}>
+              <path
+                d={path.d}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={activeMoveId === group.moveId ? 3.5 : 2}
+                className="drop-shadow"
+              />
+              <path
+                d={path.d}
+                fill="none"
+                stroke="transparent"
+                strokeWidth={16}
+                className="pointer-events-auto cursor-pointer"
+                onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
+                onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
+                onMouseLeave={() => onMoveLeave?.(group.moveId)}
+                onClick={(event) => onMoveClick?.(group.moveId, event)}
+              />
+            </g>
           ))}
 
           {group.hub ? (
@@ -71,10 +83,10 @@ export function MoveConnectorOverlay({
                 r={group.hub.hitR}
                 fill="transparent"
                 className="pointer-events-auto cursor-pointer"
-                onMouseEnter={(event) => onHubHover?.(group.moveId, event)}
-                onMouseMove={(event) => onHubHover?.(group.moveId, event)}
-                onMouseLeave={() => onHubLeave?.(group.moveId)}
-                onClick={(event) => onHubClick?.(group.moveId, event)}
+                onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
+                onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
+                onMouseLeave={() => onMoveLeave?.(group.moveId)}
+                onClick={(event) => onMoveClick?.(group.moveId, event)}
               />
             </>
           ) : null}

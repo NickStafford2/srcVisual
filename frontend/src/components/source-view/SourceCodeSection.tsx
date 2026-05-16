@@ -45,17 +45,17 @@ export function SourceCodeSection({
         <MoveConnectorOverlay
           groups={groups}
           activeMoveId={activeMoveId}
-          onHubHover={(moveId, event) => {
+          onMoveHover={(moveId, event) => {
             setHoveredMove({
               moveId,
               x: event.clientX,
               y: event.clientY,
             });
           }}
-          onHubLeave={() => {
+          onMoveLeave={() => {
             setHoveredMove(null);
           }}
-          onHubClick={(moveId, event) => {
+          onMoveClick={(moveId, event) => {
             setPinnedMoves((current) => {
               const _next = current.filter((entry) => entry.moveId !== moveId);
 
