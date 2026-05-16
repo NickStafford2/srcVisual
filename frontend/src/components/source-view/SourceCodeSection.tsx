@@ -74,10 +74,7 @@ export function SourceCodeSection({
   }, [pinnedMoves.length]);
 
   return (
-    <section
-      aria-label="Source Code"
-      className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
-    >
+    <section aria-label="Source Code" className="p-4">
       <div ref={containerRef} className="relative isolate">
         <MoveConnectorOverlay
           groups={groups}
