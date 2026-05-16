@@ -95,6 +95,12 @@ export function SourceCodeSection({
           }}
           onMoveClick={(moveId, event) => {
             setPinnedMoves((current) => {
+              const _existingMove = current.find((entry) => entry.moveId === moveId);
+
+              if (_existingMove) {
+                return current;
+              }
+
               const _next = current.filter((entry) => entry.moveId !== moveId);
 
               return [

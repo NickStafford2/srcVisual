@@ -110,6 +110,55 @@ describe("SourceCodeSection", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not reset a manual-close window when the same move is clicked again", () => {
+    _useMoveConnectorOverlay.mockReturnValue({
+      containerRef: { current: null },
+      groups: _groups,
+      registerMoveSegment: vi.fn(),
+      unregisterMoveSegment: vi.fn(),
+    });
+
+    render(
+      <SourceCodeSection
+        files={[]}
+        highlightedSpansByUnitId={new Map()}
+        moveResults={_moveResults}
+        moveNodesById={new Map()}
+        onHighlightMoveGroup={vi.fn()}
+      />,
+    );
+
+    const _overlayHit = document.querySelector("[data-move-overlay-hit='true']");
+
+    fireEvent.click(_overlayHit as Element, {
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Disable auto close for move move-1",
+      }),
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Enable auto close for move move-1",
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(_overlayHit as Element, {
+      clientX: 120,
+      clientY: 140,
+    });
+
+    expect(document.querySelectorAll("[data-move-popup='true']")).toHaveLength(1);
+    expect(
+      screen.getByRole("button", {
+        name: "Enable auto close for move move-1",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("shares the active hover state between the popup and connector overlay", () => {
     _useMoveConnectorOverlay.mockReturnValue({
       containerRef: { current: null },
