@@ -125,7 +125,6 @@ async function renderHighlightedMovesApp(
   user: ReturnType<typeof userEvent.setup>,
 ) {
   render(<App />);
-  await openInputDialog(user);
 
   await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -138,12 +137,6 @@ async function renderHighlightedMovesApp(
   await user.click(screen.getByRole("button", { name: "Submit" }));
   await screen.findByLabelText("srcDiff Tree");
 }
-
-async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Upload File" }));
-  await screen.findByRole("dialog");
-}
-
 function expectFileToHaveHighlightedSourceLines(filename: string) {
   expect(getHighlightedSourceLineCountForFile(filename)).toBeGreaterThan(0);
 }

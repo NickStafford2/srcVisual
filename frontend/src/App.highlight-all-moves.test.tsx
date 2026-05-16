@@ -174,32 +174,20 @@ describe("App highlight all moves flow", () => {
     });
   });
 
-  it("opens and closes the input popup from the sidebar header", async () => {
-    const user = userEvent.setup();
-
+  it("shows the input tab by default and keeps it pinned to the right", () => {
     render(<App />);
 
-    expect(screen.queryByRole("dialog")).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Upload File" }));
-
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Hide Input" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-
-    await user.click(screen.getByRole("button", { name: "Hide Input" }));
-
-    expect(screen.queryByRole("dialog")).toBeNull();
+    const _inputTab = screen.getByRole("tab", { name: "Input" });
+    expect(_inputTab).toHaveAttribute("aria-selected", "true");
+    expect(_inputTab).toHaveClass("ml-auto");
+    expect(screen.queryByRole("tab", { name: "Source" })).toBeNull();
+    expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toBeInTheDocument();
   });
 
   it("offers explicit node and move-group highlight actions in the tree menu", async () => {
     const user = userEvent.setup();
 
     render(<App />);
-    await openInputDialog(user);
-
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
     await waitFor(() => {
@@ -249,8 +237,6 @@ describe("App highlight all moves flow", () => {
     const user = userEvent.setup();
 
     render(<App />);
-    await openInputDialog(user);
-
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Pruning mode" }),
       "none",
@@ -313,8 +299,6 @@ describe("App highlight all moves flow", () => {
     );
 
     render(<App />);
-    await openInputDialog(user);
-
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
     await waitFor(() => {
@@ -396,7 +380,6 @@ async function renderHighlightedMovesApp(
   user: ReturnType<typeof userEvent.setup>,
 ) {
   render(<App />);
-  await openInputDialog(user);
 
   await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -410,12 +393,6 @@ async function renderHighlightedMovesApp(
 
   await screen.findByLabelText("srcDiff Tree");
 }
-
-async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Upload File" }));
-  await screen.findByRole("dialog");
-}
-
 function expectSourcePaneHighlightPresence({
   paneLabel,
   shouldHaveHighlights,
