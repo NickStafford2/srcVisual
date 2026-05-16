@@ -26,7 +26,7 @@ export function HighlightedNodeCard({
   const moveNodes = node.move_id ? (moveNodesById.get(node.move_id) ?? []) : [];
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+    <article className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
