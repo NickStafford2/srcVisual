@@ -68,7 +68,7 @@ export function TreeNodeRow({
         data-highlighted={isHighlighted ? "true" : "false"}
         data-node-id={node.id}
         className={[
-          "mb-0.5 flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition",
+          "flex items-center gap-1.5 rounded-md px-1 transition",
           isHighlighted
             ? getTreeNodeHighlightClasses(node.kind)
             : "hover:bg-white/5",
