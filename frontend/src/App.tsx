@@ -74,8 +74,10 @@ export default function App() {
               clearHighlights: srcDiffSelection.clearHighlights,
             }}
           >
-            <div className={`grid gap-6 ${_resultsLayoutClass} xl:items-start`}>
-              <div className="min-w-0 xl:sticky xl:top-4">
+            <div
+              className={`grid gap-6 bg-red-600 ${_resultsLayoutClass} xl:items-start`}
+            >
+              <div className="h-full min-w-0 bg-blue-500 xl:sticky xl:top-4">
                 <SrcDiffTree
                   files={_files}
                   sidebarCollapsed={_isSidebarCollapsed}

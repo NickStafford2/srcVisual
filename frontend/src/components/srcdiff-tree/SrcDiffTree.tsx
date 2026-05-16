@@ -102,7 +102,7 @@ export default function SrcDiffTree({
     <section
       data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
       className={[
-        "overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl",
+        "h-full overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl",
         sidebarCollapsed ? "xl:min-h-[36rem]" : "",
       ].join(" ")}
       aria-label="srcDiff Tree"
@@ -124,7 +124,7 @@ export default function SrcDiffTree({
             ].join(" ")}
           >
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.28em] text-slate-400">
+              <div className="flex items-center gap-2 text-[11px] font-medium tracking-[0.28em] text-slate-400 uppercase">
                 <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.85)]" />
                 {sidebarCollapsed ? "Tree" : "Navigator"}
               </div>
@@ -144,8 +144,9 @@ export default function SrcDiffTree({
                   sidebarCollapsed ? "xl:hidden" : "",
                 ].join(" ")}
               >
-                Use node actions to highlight one node or an entire move group, or
-                use the bulk highlight controls for moves, inserts, and deletes.
+                Use node actions to highlight one node or an entire move group,
+                or use the bulk highlight controls for moves, inserts, and
+                deletes.
               </p>
             </div>
 
@@ -170,7 +171,7 @@ export default function SrcDiffTree({
             ].join(" ")}
           >
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
                 Files
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-100">
@@ -179,7 +180,7 @@ export default function SrcDiffTree({
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
                 Highlighted
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-100">
@@ -219,7 +220,9 @@ export default function SrcDiffTree({
         id="srcdiff-tree-content"
         className={[
           "font-mono text-sm transition-all duration-300",
-          sidebarCollapsed ? "max-h-0 overflow-hidden opacity-0" : "max-h-[60vh] overflow-auto opacity-100",
+          sidebarCollapsed
+            ? "max-h-0 overflow-hidden opacity-0"
+            : "max-h-[60vh] overflow-auto opacity-100",
         ].join(" ")}
       >
         <div className="divide-y divide-white/10">
