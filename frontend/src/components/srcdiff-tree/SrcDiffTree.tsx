@@ -106,49 +106,27 @@ export default function SrcDiffTree({
       ].join(" ")}
       aria-label="srcDiff Tree"
     >
-      <div className="relative shrink-0 overflow-hidden border-b border-white/10 px-4 py-4">
-        <div className="relative">
-          <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
-            Navigator
-          </p>
+      <div className="shrink-0 overflow-hidden border-b border-white/10 px-4 py-4">
+        <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
+          Navigator
+        </p>
 
-          <div className="grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
-                Files
-              </div>
-              <div className="text-lg font-semibold text-slate-100">
-                {files.length}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
-                Highlighted
-              </div>
-              <div className="text-lg font-semibold text-slate-100">
-                {_highlightedCount}
-              </div>
-            </div>
+        {hasData ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleToggleAllNodes}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+            >
+              {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
+            </button>
           </div>
-
-          {hasData ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleToggleAllNodes}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-              >
-                {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
-              </button>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              Waiting for input. This rail expands automatically when a result
-              arrives.
-            </p>
-          )}
-        </div>
+        ) : (
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            Waiting for input. This rail expands automatically when a result
+            arrives.
+          </p>
+        )}
       </div>
 
       <div
