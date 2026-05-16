@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
 import { MoveConnectorOverlay } from "./MoveConnectorOverlay";
@@ -58,6 +58,28 @@ describe("MoveConnectorOverlay", () => {
     expect(_box).toHaveAttribute("stroke-opacity", "0.72");
     expect(_line).toHaveAttribute("stroke-opacity", "0.72");
     expect(_hub).toHaveAttribute("fill-opacity", "0.72");
+  });
+
+  it("uses the box border as a hover target, not the box body", () => {
+    const _hoveredMoveIds: string[] = [];
+
+    render(
+      <MoveConnectorOverlay
+        groups={[_group]}
+        onMoveHover={(moveId) => {
+          _hoveredMoveIds.push(moveId);
+        }}
+      />,
+    );
+
+    const _visibleBox = document.querySelector("[data-move-overlay-box='true']");
+    const _boxHit = document.querySelector("[data-move-overlay-box-hit='true']");
+
+    fireEvent.mouseEnter(_visibleBox as Element);
+    expect(_hoveredMoveIds).toHaveLength(0);
+
+    fireEvent.mouseEnter(_boxHit as Element);
+    expect(_hoveredMoveIds).toEqual(["move-1"]);
   });
 
   it("fades the outer box border edge for each revision", () => {

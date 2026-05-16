@@ -6,6 +6,7 @@ const INACTIVE_STROKE_OPACITY = 0.72;
 const ACTIVE_STROKE_OPACITY = 0.96;
 const INACTIVE_BOX_STROKE_WIDTH = 1.5;
 const ACTIVE_BOX_STROKE_WIDTH = 2;
+const BOX_BORDER_HIT_WIDTH = 12;
 const EDGE_FADE_OPACITY = 0.28;
 const MID_FADE_OPACITY = 0.92;
 
@@ -98,22 +99,41 @@ export function MoveConnectorOverlay({
         return (
           <g key={group.key} className="text-diff-move-1/70">
             {group.boxes.map((box) => (
-              <rect
-                key={box.key}
-                data-move-overlay-box="true"
-                x={box.x}
-                y={box.y}
-                width={box.width}
-                height={box.height}
-                rx={box.rx}
-                fill="currentColor"
-                fillOpacity={_fillOpacity}
-                stroke="currentColor"
-                strokeOpacity={_strokeOpacity}
-                strokeWidth={_boxStrokeWidth}
-                mask={`url(#${buildBoxStrokeMaskId(box.key)})`}
-                className="drop-shadow"
-              />
+              <g key={box.key}>
+                <rect
+                  data-move-overlay-box="true"
+                  x={box.x}
+                  y={box.y}
+                  width={box.width}
+                  height={box.height}
+                  rx={box.rx}
+                  fill="currentColor"
+                  fillOpacity={_fillOpacity}
+                  stroke="currentColor"
+                  strokeOpacity={_strokeOpacity}
+                  strokeWidth={_boxStrokeWidth}
+                  mask={`url(#${buildBoxStrokeMaskId(box.key)})`}
+                  className="drop-shadow"
+                />
+                <rect
+                  data-move-overlay-box-hit="true"
+                  data-move-overlay-hit="true"
+                  x={box.x}
+                  y={box.y}
+                  width={box.width}
+                  height={box.height}
+                  rx={box.rx}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={BOX_BORDER_HIT_WIDTH}
+                  pointerEvents="stroke"
+                  className="cursor-pointer"
+                  onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
+                  onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
+                  onMouseLeave={() => onMoveLeave?.(group.moveId)}
+                  onClick={(event) => onMoveClick?.(group.moveId, event)}
+                />
+              </g>
             ))}
 
             {group.paths.map((path) => (
