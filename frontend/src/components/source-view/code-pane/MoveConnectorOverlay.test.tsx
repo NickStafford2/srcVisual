@@ -8,8 +8,18 @@ const _group: MoveConnectorGroup = {
   moveId: "move-1",
   boxes: [
     {
-      key: "move-1-box-0",
+      key: "move-1-revision-0-box-0",
+      revision: "revision-0",
       x: 10,
+      y: 20,
+      width: 100,
+      height: 40,
+      rx: 8,
+    },
+    {
+      key: "move-1-revision-1-box-0",
+      revision: "revision-1",
+      x: 210,
       y: 20,
       width: 100,
       height: 40,
@@ -48,6 +58,29 @@ describe("MoveConnectorOverlay", () => {
     expect(_box).toHaveAttribute("stroke-opacity", "0.72");
     expect(_line).toHaveAttribute("stroke-opacity", "0.72");
     expect(_hub).toHaveAttribute("fill-opacity", "0.72");
+  });
+
+  it("fades the outer box border edge for each revision", () => {
+    render(<MoveConnectorOverlay groups={[_group]} />);
+
+    const _revision0Gradient = document.querySelector(
+      "#move-box-stroke-mask-gradient-move-1-revision-0-box-0",
+    );
+    const _revision1Gradient = document.querySelector(
+      "#move-box-stroke-mask-gradient-move-1-revision-1-box-0",
+    );
+    const _revision0Stops = _revision0Gradient?.querySelectorAll("stop");
+    const _revision1Stops = _revision1Gradient?.querySelectorAll("stop");
+    const _box = document.querySelector("[data-move-overlay-box='true']");
+
+    expect(_box).toHaveAttribute(
+      "mask",
+      "url(#move-box-stroke-mask-move-1-revision-0-box-0)",
+    );
+    expect(_revision0Stops?.[0]).toHaveAttribute("stop-opacity", "0.28");
+    expect(_revision0Stops?.[3]).toHaveAttribute("stop-opacity", "1");
+    expect(_revision1Stops?.[0]).toHaveAttribute("stop-opacity", "1");
+    expect(_revision1Stops?.[3]).toHaveAttribute("stop-opacity", "0.28");
   });
 
   it("brightens the whole group together when active", () => {

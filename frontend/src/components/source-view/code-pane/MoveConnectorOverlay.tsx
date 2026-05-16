@@ -6,6 +6,8 @@ const INACTIVE_STROKE_OPACITY = 0.72;
 const ACTIVE_STROKE_OPACITY = 0.96;
 const INACTIVE_BOX_STROKE_WIDTH = 1.5;
 const ACTIVE_BOX_STROKE_WIDTH = 2;
+const EDGE_FADE_OPACITY = 0.28;
+const MID_FADE_OPACITY = 0.92;
 
 type MoveConnectorOverlayProps = {
   groups: MoveConnectorGroup[];
@@ -34,6 +36,53 @@ export function MoveConnectorOverlay({
 
   return (
     <svg className="pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible">
+      <defs>
+        {groups.flatMap((group) =>
+          group.boxes.map((box) => {
+            const _gradientId = buildBoxStrokeMaskGradientId(box.key);
+            const _maskId = buildBoxStrokeMaskId(box.key);
+            const _startOpacity =
+              box.revision === "revision-0" ? EDGE_FADE_OPACITY : 1;
+            const _endOpacity =
+              box.revision === "revision-1" ? EDGE_FADE_OPACITY : 1;
+
+            return (
+              <g key={box.key}>
+                <linearGradient
+                  id={_gradientId}
+                  gradientUnits="userSpaceOnUse"
+                  x1={box.x}
+                  y1={box.y}
+                  x2={box.x + box.width}
+                  y2={box.y}
+                >
+                  <stop offset="0%" stopColor="white" stopOpacity={_startOpacity} />
+                  <stop offset="35%" stopColor="white" stopOpacity={MID_FADE_OPACITY} />
+                  <stop offset="65%" stopColor="white" stopOpacity={MID_FADE_OPACITY} />
+                  <stop offset="100%" stopColor="white" stopOpacity={_endOpacity} />
+                </linearGradient>
+                <mask
+                  id={_maskId}
+                  maskUnits="userSpaceOnUse"
+                  x={box.x - ACTIVE_BOX_STROKE_WIDTH}
+                  y={box.y - ACTIVE_BOX_STROKE_WIDTH}
+                  width={box.width + ACTIVE_BOX_STROKE_WIDTH * 2}
+                  height={box.height + ACTIVE_BOX_STROKE_WIDTH * 2}
+                >
+                  <rect
+                    x={box.x - ACTIVE_BOX_STROKE_WIDTH}
+                    y={box.y - ACTIVE_BOX_STROKE_WIDTH}
+                    width={box.width + ACTIVE_BOX_STROKE_WIDTH * 2}
+                    height={box.height + ACTIVE_BOX_STROKE_WIDTH * 2}
+                    fill={`url(#${_gradientId})`}
+                  />
+                </mask>
+              </g>
+            );
+          }),
+        )}
+      </defs>
+
       {groups.map((group) => {
         const _isActive = activeMoveId === group.moveId;
         const _strokeOpacity = _isActive
@@ -62,6 +111,7 @@ export function MoveConnectorOverlay({
                 stroke="currentColor"
                 strokeOpacity={_strokeOpacity}
                 strokeWidth={_boxStrokeWidth}
+                mask={`url(#${buildBoxStrokeMaskId(box.key)})`}
                 className="drop-shadow"
               />
             ))}
@@ -122,4 +172,12 @@ export function MoveConnectorOverlay({
       })}
     </svg>
   );
+}
+
+function buildBoxStrokeMaskGradientId(boxKey: string) {
+  return `move-box-stroke-mask-gradient-${boxKey}`;
+}
+
+function buildBoxStrokeMaskId(boxKey: string) {
+  return `move-box-stroke-mask-${boxKey}`;
 }

@@ -23,6 +23,7 @@ export type MoveConnectorHub = {
 
 export type MoveConnectorBox = {
   key: string;
+  revision: "revision-0" | "revision-1";
   x: number;
   y: number;
   width: number;
@@ -182,6 +183,7 @@ function buildOverlayBox(
 
   return {
     key: `${moveId}-${revision}-box-${index}`,
+    revision,
     x: _x,
     y: _y,
     width: _width,
