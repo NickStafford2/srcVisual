@@ -49,91 +49,91 @@ export default function App() {
 
   return (
     <SrcDiffHighlightProvider value={_highlightContextValue}>
-      <main className="min-h-screen bg-amber-400 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-3 py-3 text-slate-100 md:px-4 md:py-4 xl:pb-10">
-        <div className="mx-auto flex h-full w-full flex-col gap-4 bg-blue-400 lg:flex-row lg:items-start">
-          <aside
-            className={`shrink-0 space-y-3 transition-[width] duration-300 lg:sticky lg:top-4 ${_sidebarWidthClass}`}
-          >
-            <section className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
-                    srcVisual
-                  </p>
-                  <h1 className="mt-1 truncate text-sm font-semibold text-slate-100">
-                    Workspace
-                  </h1>
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-3 py-3 text-slate-100 md:px-4 md:py-4 xl:pb-10">
+        <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1720px] flex-col gap-4 md:min-h-[calc(100vh-2rem)]">
+          <header className="flex shrink-0 items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-slate-950/80 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                srcVisual
+              </p>
+              <h1 className="mt-1 truncate text-sm font-semibold text-slate-100">
+                Workspace
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              aria-expanded={_isInputOpen}
+              aria-controls="input-dialog-title"
+              onClick={() => {
+                _setIsInputOpen((current) => !current);
+              }}
+              className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+            >
+              {_isInputOpen ? "Hide Input" : "Show Input"}
+            </button>
+          </header>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
+            <aside
+              className={`shrink-0 space-y-3 transition-[width] duration-300 lg:sticky lg:top-4 lg:self-start ${_sidebarWidthClass}`}
+            >
+              <SrcDiffTree
+                files={_files}
+                hasData={_hasData}
+                onHighlightNode={_srcDiffSelection.highlightNode}
+                onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+              />
+            </aside>
+
+            <div className="min-h-0 min-w-0 flex-1">
+              {_data ? (
+                <div className="space-y-6">
+                  <HighlightedNodeInfo
+                    moveResults={_data.move_results}
+                    moveNodesById={_srcDiffSelection.moveNodesById}
+                  />
+
+                  <MoveSummary
+                    moveResults={_data.move_results}
+                    moveNodesById={_srcDiffSelection.moveNodesById}
+                    onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                  />
+
+                  <XmlPane
+                    title="srcDiff XML"
+                    subtitle="Moved srcdiff XML returned by the backend"
+                    source={_data.moved_srcdiff_xml}
+                    highlights={_xmlHighlights}
+                  />
+
+                  <SourceCodeSection
+                    files={_files}
+                    highlightedSpansByUnitId={
+                      _srcDiffSelection.sourceHighlightedSpansByUnitId
+                    }
+                    moveResults={_data.move_results}
+                    moveNodesById={_srcDiffSelection.moveNodesById}
+                    onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                  />
                 </div>
-
-                <button
-                  type="button"
-                  aria-expanded={_isInputOpen}
-                  aria-controls="input-dialog-title"
-                  onClick={() => {
-                    _setIsInputOpen((current) => !current);
-                  }}
-                  className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
-                >
-                  {_isInputOpen ? "Hide Input" : "Show Input"}
-                </button>
-              </div>
-            </section>
-
-            <SrcDiffTree
-              files={_files}
-              hasData={_hasData}
-              onHighlightNode={_srcDiffSelection.highlightNode}
-              onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
-            />
-          </aside>
-
-          <div className="h-full w-full min-w-0 flex-1 bg-red-500">
-            {_data ? (
-              <div className="space-y-6">
-                <HighlightedNodeInfo
-                  moveResults={_data.move_results}
-                  moveNodesById={_srcDiffSelection.moveNodesById}
-                />
-
-                <MoveSummary
-                  moveResults={_data.move_results}
-                  moveNodesById={_srcDiffSelection.moveNodesById}
-                  onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
-                />
-
-                <XmlPane
-                  title="srcDiff XML"
-                  subtitle="Moved srcdiff XML returned by the backend"
-                  source={_data.moved_srcdiff_xml}
-                  highlights={_xmlHighlights}
-                />
-
-                <SourceCodeSection
-                  files={_files}
-                  highlightedSpansByUnitId={
-                    _srcDiffSelection.sourceHighlightedSpansByUnitId
-                  }
-                  moveResults={_data.move_results}
-                  moveNodesById={_srcDiffSelection.moveNodesById}
-                  onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
-                />
-              </div>
-            ) : (
-              <section className="flex min-h-[60vh] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/50 text-center shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
-                <div className="max-w-xl">
-                  <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
-                    Ready
-                  </p>
-                  <h2 className="mt-3 text-2xl font-semibold text-slate-50">
-                    Open the input window to load srcDiff XML.
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
-                    The left rail stays in place. Once a result arrives, the
-                    tree grows into the full navigator.
-                  </p>
-                </div>
-              </section>
-            )}
+              ) : (
+                <section className="flex min-h-[60vh] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/50 text-center shadow-[0_18px_48px_rgba(0,0,0,0.18)] lg:min-h-full">
+                  <div className="max-w-xl">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                      Ready
+                    </p>
+                    <h2 className="mt-3 text-2xl font-semibold text-slate-50">
+                      Open the input window to load srcDiff XML.
+                    </h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      The top bar is separate now. The left rail stays fixed.
+                      The work area fills the rest.
+                    </p>
+                  </div>
+                </section>
+              )}
+            </div>
           </div>
         </div>
 
