@@ -92,7 +92,7 @@ describe("App single-unit move highlighting", () => {
       getHighlightedLineNumbers(screen.getByLabelText("basic.cpp Revision 1")),
     ).toEqual([1]);
 
-    const sourceSection = screen.getByLabelText("Source Code Section");
+    const sourceSection = screen.getByLabelText("Source Code");
     expect(
       within(sourceSection).getByText("2 highlighted"),
     ).toBeInTheDocument();

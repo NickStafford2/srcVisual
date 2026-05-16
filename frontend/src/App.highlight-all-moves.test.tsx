@@ -141,7 +141,7 @@ describe("App highlight all moves flow", () => {
       within(screen.getByLabelText("srcDiff Tree")).getByText("diff:insert"),
     ).toBeInTheDocument();
 
-    const sourceSection = screen.getByLabelText("Source Code Section");
+    const sourceSection = screen.getByLabelText("Source Code");
     expect(within(sourceSection).getAllByText("1 highlighted")).toHaveLength(2);
 
     expect(
@@ -182,9 +182,10 @@ describe("App highlight all moves flow", () => {
     await user.click(screen.getByRole("button", { name: "Show Input" }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Hide Input" }),
-    ).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Hide Input" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
 
     await user.click(screen.getByRole("button", { name: "Hide Input" }));
 
@@ -338,9 +339,7 @@ describe("App highlight all moves flow", () => {
     const progressLog = screen.getByLabelText("Visualization progress log");
 
     await waitFor(() => {
-      expect(
-        within(progressLog).getByText("Connected."),
-      ).toBeInTheDocument();
+      expect(within(progressLog).getByText("Connected.")).toBeInTheDocument();
       expect(
         within(progressLog).getByText("Rebuilding payload from filtered XML."),
       ).toBeInTheDocument();
