@@ -50,8 +50,8 @@ export default function App() {
 
   return (
     <SrcDiffHighlightProvider value={_highlightContextValue}>
-      <main className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
-        <div className="mx-auto flex min-h-screen w-full max-w-[2220px] flex-1 flex-col">
+      <main className="flex h-screen flex-col bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
+        <div className="mx-auto flex h-full w-full max-w-[2220px] flex-col">
           <AppHeader
             isInputOpen={_isInputOpen}
             onToggleInput={() => {
@@ -59,9 +59,9 @@ export default function App() {
             }}
           />
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 bg-orange-400 lg:flex-row lg:items-stretch">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
             <aside
-              className={`h-full shrink-0 space-y-3 bg-red-600 transition-[width] duration-300 ${_sidebarWidthClass}`}
+              className={`shrink-0 space-y-3 self-stretch transition-[width] duration-300 ${_sidebarWidthClass}`}
             >
               <SrcDiffTree
                 files={_files}
@@ -71,7 +71,7 @@ export default function App() {
               />
             </aside>
 
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-amber-200">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto bg-amber-200">
               {_data ? (
                 <div className="space-y-6">
                   <HighlightedNodeInfo

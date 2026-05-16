@@ -101,7 +101,7 @@ export default function SrcDiffTree({
     <section
       data-sidebar-state={hasData ? "expanded" : "compact"}
       className={[
-        "overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all duration-300",
+        "h-full overflow-hidden border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all duration-300",
         hasData ? "min-h-[36rem]" : "min-h-[20rem]",
       ].join(" ")}
       aria-label="srcDiff Tree"
