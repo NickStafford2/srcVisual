@@ -59,7 +59,7 @@ export default function App() {
             }}
           />
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
+          <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:items-stretch">
             <aside
               className={`shrink-0 space-y-3 self-stretch transition-[width] duration-300 ${_sidebarWidthClass}`}
             >
@@ -71,7 +71,7 @@ export default function App() {
               />
             </aside>
 
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto bg-amber-200">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
               {_data ? (
                 <div className="space-y-6">
                   <HighlightedNodeInfo
