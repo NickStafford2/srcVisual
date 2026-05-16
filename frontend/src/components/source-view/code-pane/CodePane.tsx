@@ -9,7 +9,6 @@ import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "./moveConnectors";
-import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneProps = {
   fileIndex: number;
@@ -19,7 +18,6 @@ type CodePaneProps = {
   subtitle: string;
   source?: string;
   highlights: SourceViewHighlight[];
-  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
 };
@@ -32,7 +30,6 @@ export function CodePane({
   subtitle,
   source = "",
   highlights,
-  moveTooltipInfoById,
   registerMoveSegment,
   unregisterMoveSegment,
 }: CodePaneProps) {
@@ -58,7 +55,6 @@ export function CodePane({
         lines={lines}
         registerMoveSegment={registerMoveSegment}
         unregisterMoveSegment={unregisterMoveSegment}
-        moveTooltipInfoById={moveTooltipInfoById}
       />
     </article>
   );

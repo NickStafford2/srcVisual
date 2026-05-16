@@ -1,19 +1,16 @@
-import { useMemo } from "react";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import type { SourceViewHighlight } from "../../srcdiff/srcView";
-import type { SrcMoveResults, VisualizedFile } from "../../types";
+import type { VisualizedFile } from "../../types";
 import { CodePane } from "./code-pane/CodePane";
 import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "./code-pane/moveConnectors";
-import { buildMoveTooltipInfoById } from "./code-pane/MoveTooltip";
 
 type SourceFileCardProps = {
   fileIndex: number;
   file: VisualizedFile;
   highlightedSpans: SrcDiffHighlight[];
-  moveResults?: SrcMoveResults;
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
 };
@@ -22,14 +19,9 @@ export function SourceFileCard({
   fileIndex,
   file,
   highlightedSpans,
-  moveResults,
   registerMoveSegment,
   unregisterMoveSegment,
 }: SourceFileCardProps) {
-  const moveTooltipInfoById = useMemo(
-    () => buildMoveTooltipInfoById(moveResults?.moves ?? []),
-    [moveResults?.moves],
-  );
   const revision0Filename = file.revision_0_filename || file.filename;
   const revision1Filename = file.revision_1_filename || file.filename;
 
@@ -109,20 +101,18 @@ export function SourceFileCard({
           highlights={revision0Highlights}
           registerMoveSegment={registerMoveSegment}
           unregisterMoveSegment={unregisterMoveSegment}
-          moveTooltipInfoById={moveTooltipInfoById}
         />
 
         <CodePane
           fileIndex={fileIndex}
           filename={file.filename}
           revision="revision-1"
-          title={`${revision0Filename}`}
+          title={`${revision1Filename}`}
           subtitle="revision 1"
           source={file.revision_1_source_code}
           highlights={revision1Highlights}
           registerMoveSegment={registerMoveSegment}
           unregisterMoveSegment={unregisterMoveSegment}
-          moveTooltipInfoById={moveTooltipInfoById}
         />
       </div>
     </article>

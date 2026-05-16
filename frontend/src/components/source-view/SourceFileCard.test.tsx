@@ -81,12 +81,14 @@ describe("SourceFileCard", () => {
       />,
     );
 
-    const _revision0Pane = screen.getByLabelText("sample.cpp Revision 0");
-    const _revision1Pane = screen.getByLabelText("sample.cpp Revision 1");
+    const _revision0Pane = screen.getByLabelText("sample.cpp before/sample.cpp");
+    const _revision1Pane = screen.getByLabelText("sample.cpp after/sample.cpp");
 
     expect(screen.getByText("3 highlighted")).toBeInTheDocument();
-    expect(screen.getByText("before/sample.cpp revision 0")).toBeInTheDocument();
-    expect(screen.getByText("after/sample.cpp revision 1")).toBeInTheDocument();
+    expect(screen.getByText("before/sample.cpp")).toBeInTheDocument();
+    expect(screen.getByText("after/sample.cpp")).toBeInTheDocument();
+    expect(screen.getByText("revision 0")).toBeInTheDocument();
+    expect(screen.getByText("revision 1")).toBeInTheDocument();
     expect(
       _revision0Pane.querySelector(
         '[data-highlighted-segment="true"][data-highlight-kind="delete"]',

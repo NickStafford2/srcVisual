@@ -6,7 +6,6 @@ import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "./moveConnectors";
-import type { MoveTooltipInfo } from "./MoveTooltip";
 
 type CodePaneBodyProps = {
   fileIndex: number;
@@ -15,7 +14,6 @@ type CodePaneBodyProps = {
   lines: SourceViewLine[];
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
-  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
 };
 
 export function CodePaneBody({
@@ -25,7 +23,6 @@ export function CodePaneBody({
   lines,
   registerMoveSegment,
   unregisterMoveSegment,
-  moveTooltipInfoById,
 }: CodePaneBodyProps) {
   return (
     <div
@@ -46,7 +43,6 @@ export function CodePaneBody({
             line={line}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
-            moveTooltipInfoById={moveTooltipInfoById}
           />
         ))
       )}

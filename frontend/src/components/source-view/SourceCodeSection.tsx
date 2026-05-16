@@ -156,7 +156,6 @@ export function SourceCodeSection({
                 fileIndex={fileIndex}
                 file={file}
                 highlightedSpans={highlightedSpans}
-                moveResults={moveResults}
                 registerMoveSegment={registerMoveSegment}
                 unregisterMoveSegment={unregisterMoveSegment}
               />

@@ -10,7 +10,6 @@ import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "./moveConnectors";
-import type { MoveTooltipInfo } from "./MoveTooltip";
 
 export type SourceViewLine = {
   number: number;
@@ -23,7 +22,6 @@ type CodeLineProps = {
   revision: SourceRevision;
   title: string;
   line: SourceViewLine;
-  moveTooltipInfoById?: Map<string, MoveTooltipInfo>;
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
 };
@@ -33,7 +31,6 @@ export function CodeLine({
   revision,
   title,
   line,
-  moveTooltipInfoById,
   registerMoveSegment,
   unregisterMoveSegment,
 }: CodeLineProps) {
@@ -74,7 +71,6 @@ export function CodeLine({
             segment={segment}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
-            moveTooltipInfoById={moveTooltipInfoById}
           />
         ))}
       </span>
