@@ -124,4 +124,51 @@ describe("MoveConnectorPopup", () => {
       top: "260px",
     });
   });
+
+  it("shows and toggles the auto-close state in the header", () => {
+    const _toggleCalls: boolean[] = [];
+    const { rerender } = render(
+      <MoveConnectorPopup
+        moveId="move-1"
+        moveResults={_moveResults}
+        moveNodes={[]}
+        position={{ x: 50, y: 60 }}
+        autoCloseEnabled
+        onToggleAutoClose={() => {
+          _toggleCalls.push(true);
+        }}
+      />,
+    );
+
+    const _autoCloseButton = screen.getByRole("button", {
+      name: "Disable auto close for move move-1",
+    });
+
+    expect(_autoCloseButton).toHaveTextContent("Auto-close");
+    expect(_autoCloseButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(_autoCloseButton);
+
+    expect(_toggleCalls).toHaveLength(1);
+
+    rerender(
+      <MoveConnectorPopup
+        moveId="move-1"
+        moveResults={_moveResults}
+        moveNodes={[]}
+        position={{ x: 50, y: 60 }}
+        autoCloseEnabled={false}
+        onToggleAutoClose={() => {
+          _toggleCalls.push(true);
+        }}
+      />,
+    );
+
+    const _manualCloseButton = screen.getByRole("button", {
+      name: "Enable auto close for move move-1",
+    });
+
+    expect(_manualCloseButton).toHaveTextContent("Manual close");
+    expect(_manualCloseButton).toHaveAttribute("aria-pressed", "true");
+  });
 });

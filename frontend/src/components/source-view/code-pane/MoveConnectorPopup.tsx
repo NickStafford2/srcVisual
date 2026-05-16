@@ -15,7 +15,9 @@ type MoveConnectorPopupProps = {
   moveNodes: MoveNodeEntry[];
   position: PopupPosition;
   temporary?: boolean;
+  autoCloseEnabled?: boolean;
   onHighlightMoveGroup?: (nodeId: string) => void;
+  onToggleAutoClose?: () => void;
   onClose?: () => void;
 };
 
@@ -35,7 +37,9 @@ export function MoveConnectorPopup({
   moveNodes,
   position,
   temporary = false,
+  autoCloseEnabled = true,
   onHighlightMoveGroup,
+  onToggleAutoClose,
   onClose,
 }: MoveConnectorPopupProps) {
   const [_windowPosition, _setWindowPosition] = useState<PopupWindowPosition>(
@@ -137,18 +141,46 @@ export function MoveConnectorPopup({
           Move Window
         </span>
 
-        {!temporary && onClose ? (
-          <button
-            type="button"
-            aria-label={`Close move ${moveId}`}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-            }}
-            onClick={onClose}
-            className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-300 transition hover:bg-white/10"
-          >
-            X
-          </button>
+        {!temporary ? (
+          <div className="flex items-center gap-2">
+            {onToggleAutoClose ? (
+              <button
+                type="button"
+                aria-pressed={!autoCloseEnabled}
+                aria-label={
+                  autoCloseEnabled
+                    ? `Disable auto close for move ${moveId}`
+                    : `Enable auto close for move ${moveId}`
+                }
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onClick={onToggleAutoClose}
+                className={[
+                  "rounded-lg border px-2 py-1 text-xs font-semibold transition",
+                  autoCloseEnabled
+                    ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                    : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20",
+                ].join(" ")}
+              >
+                {autoCloseEnabled ? "Auto-close" : "Manual close"}
+              </button>
+            ) : null}
+
+            {onClose ? (
+              <button
+                type="button"
+                aria-label={`Close move ${moveId}`}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onClick={onClose}
+                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-300 transition hover:bg-white/10"
+              >
+                X
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

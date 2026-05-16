@@ -24,14 +24,14 @@ export function SourceCodeSection({
 }: SourceCodeSectionProps) {
   const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
+  const [pinnedMoves, setPinnedMoves] = useState<
+    { moveId: string; x: number; y: number; autoCloseEnabled: boolean }[]
+  >([]);
   const [hoveredMove, setHoveredMove] = useState<{
     moveId: string;
     x: number;
     y: number;
   } | null>(null);
-  const [pinnedMoves, setPinnedMoves] = useState<
-    { moveId: string; x: number; y: number }[]
-  >([]);
 
   const activeMoveId = hoveredMove?.moveId ?? null;
 
@@ -55,7 +55,9 @@ export function SourceCodeSection({
         return;
       }
 
-      setPinnedMoves([]);
+      setPinnedMoves((current) =>
+        current.filter((entry) => !entry.autoCloseEnabled),
+      );
     }
 
     document.addEventListener("pointerdown", _handlePointerDown);
@@ -95,6 +97,7 @@ export function SourceCodeSection({
                   moveId,
                   x: event.clientX,
                   y: event.clientY,
+                  autoCloseEnabled: true,
                 },
               ];
             });
@@ -119,7 +122,20 @@ export function SourceCodeSection({
                 moveResults={moveResults}
                 moveNodes={moveNodesById.get(move.moveId) ?? []}
                 position={{ x: move.x, y: move.y }}
+                autoCloseEnabled={move.autoCloseEnabled}
                 onHighlightMoveGroup={onHighlightMoveGroup}
+                onToggleAutoClose={() => {
+                  setPinnedMoves((current) =>
+                    current.map((entry) =>
+                      entry.moveId === move.moveId
+                        ? {
+                            ...entry,
+                            autoCloseEnabled: !entry.autoCloseEnabled,
+                          }
+                        : entry,
+                    ),
+                  );
+                }}
                 onClose={() => {
                   setPinnedMoves((current) =>
                     current.filter((entry) => entry.moveId !== move.moveId),
