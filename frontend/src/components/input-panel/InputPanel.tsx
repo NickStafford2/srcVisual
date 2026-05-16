@@ -56,10 +56,6 @@ export function InputPanel({
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold text-slate-50">
-          srcDiff Visualizer
-        </h2>
-
         <InputModeToggle
           mode={inputMode}
           disabled={isLoading}

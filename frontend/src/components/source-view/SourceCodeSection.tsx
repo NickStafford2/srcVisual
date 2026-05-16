@@ -79,7 +79,6 @@ export function SourceCodeSection({
       className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl"
     >
       <div ref={containerRef} className="relative isolate">
-        <h1 className="mb-3 text-2xl">Source Code</h1>
         <MoveConnectorOverlay
           groups={groups}
           activeMoveId={activeMoveId}

@@ -26,15 +26,6 @@ export function HighlightedNodeInfo({
   return (
     <section className="rounded-[18px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)]">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-100">
-            Highlighted Nodes
-          </h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Nodes currently highlighted in the XML and source views.
-          </p>
-        </div>
-
         <HighlightSelector
           highlightMode={highlightMode}
           onHighlightAllMoves={highlightAllMoves}

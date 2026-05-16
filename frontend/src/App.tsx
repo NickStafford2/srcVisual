@@ -170,7 +170,9 @@ export default function App() {
                       onLoadExample={_srcDiffData.handleLoadExample}
                       onUploadChange={_srcDiffData.setSelectedUpload}
                       onXmlInputChange={_srcDiffData.handleXmlInputChange}
-                      onIncludeSkippedTagsChange={_srcDiffData.setIncludeSkippedTags}
+                      onIncludeSkippedTagsChange={
+                        _srcDiffData.setIncludeSkippedTags
+                      }
                       onPruningLevelChange={_srcDiffData.setPruningLevel}
                       onSubmit={_srcDiffData.handleSubmit}
                     />
@@ -191,7 +193,9 @@ export default function App() {
                           }
                           moveResults={_data.move_results}
                           moveNodesById={_srcDiffSelection.moveNodesById}
-                          onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                          onHighlightMoveGroup={
+                            _srcDiffSelection.highlightMoveGroup
+                          }
                         />
                       </div>
 
@@ -202,8 +206,6 @@ export default function App() {
                         role="tabpanel"
                       >
                         <XmlPane
-                          title="srcDiff XML"
-                          subtitle="Moved srcdiff XML returned by the backend"
                           source={_data.moved_srcdiff_xml}
                           highlights={_xmlHighlights}
                         />
@@ -230,7 +232,9 @@ export default function App() {
                         <MoveSummary
                           moveResults={_data.move_results}
                           moveNodesById={_srcDiffSelection.moveNodesById}
-                          onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+                          onHighlightMoveGroup={
+                            _srcDiffSelection.highlightMoveGroup
+                          }
                         />
                       </div>
                     </>

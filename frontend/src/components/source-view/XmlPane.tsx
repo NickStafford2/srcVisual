@@ -12,18 +12,11 @@ import { buildSourceView } from "../../srcdiff/srcView";
 import { getSourceSegmentClasses } from "./segmentStyles";
 
 type XmlPaneProps = {
-  title: string;
-  subtitle: string;
   source: string;
   highlights: SourceViewHighlight[];
 };
 
-export function XmlPane({
-  title,
-  subtitle,
-  source,
-  highlights,
-}: XmlPaneProps) {
+export function XmlPane({ source, highlights }: XmlPaneProps) {
   const [showPositions, setShowPositions] = useState(false);
 
   const displayModel = useMemo(
@@ -35,19 +28,15 @@ export function XmlPane({
     () => buildSourceView(displayModel.source, displayModel.highlights),
     [displayModel],
   );
+  const title = "XML";
 
   return (
     <article
       id={XML_PANE_ID}
-      aria-label={title}
+      aria-label="srcDiff XML"
       className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55"
     >
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
-        <div>
-          <h3 className="text-base font-semibold text-slate-50">{title}</h3>
-          <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
-        </div>
-
         <button
           type="button"
           onClick={() => setShowPositions((current) => !current)}
@@ -57,9 +46,7 @@ export function XmlPane({
         </button>
       </header>
 
-      <div
-        className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono"
-      >
+      <div className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
         {lines.length === 0 ? (
           <div className="px-5 py-5 text-sm text-slate-400">
             No XML to render yet.

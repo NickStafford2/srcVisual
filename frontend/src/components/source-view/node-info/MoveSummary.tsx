@@ -18,12 +18,9 @@ export function MoveSummary({
   return (
     <section className="rounded-[20px] border border-white/10 bg-slate-950/65 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl">
       <header className="flex flex-col gap-3 border-b border-white/10 pb-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-50">Move Summary</h2>
-          <p className="mt-1 text-xs text-slate-400">
-            {moveIds.length} move{moveIds.length === 1 ? "" : "s"} in this result
-          </p>
-        </div>
+        <p className="mt-1 text-xs text-slate-400">
+          {moveIds.length} move{moveIds.length === 1 ? "" : "s"} in this result
+        </p>
 
         <div className="flex flex-wrap gap-2 text-xs text-slate-300">
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
