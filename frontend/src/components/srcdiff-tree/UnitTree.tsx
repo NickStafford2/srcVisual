@@ -21,7 +21,7 @@ export function UnitTree({
   onToggleNode,
 }: UnitTreeProps) {
   return (
-    <section className="flex flex-row px-3 py-2.5 transition">
+    <section className="flex flex-row px-1 py-1.5 transition">
       {unit.tree ? (
         <TreeNodeRow
           fileIndex={unitIndex}
@@ -34,7 +34,7 @@ export function UnitTree({
           onToggleNode={onToggleNode}
         />
       ) : (
-        <div className="px-3 py-2 text-sm text-slate-400">
+        <div className="px-1 py-1.5 text-sm text-slate-400">
           No tree returned for this unit.
         </div>
       )}
