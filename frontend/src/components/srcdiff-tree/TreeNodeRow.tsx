@@ -32,6 +32,7 @@ export function TreeNodeRow({
   const isHighlighted = highlightedNodeIds.has(node.id);
   const hasChildren = node.children.length > 0;
   const lineBadges = getNodeLineBadges(node, fileIndex);
+  const displayLabel = getTreeNodeDisplayLabel(node, depth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -95,7 +96,7 @@ export function TreeNodeRow({
               getTreeNodeLabelClasses(node.kind),
             ].join(" ")}
           >
-            {node.label}
+            {displayLabel}
           </span>
         </div>
 
@@ -192,6 +193,17 @@ function MenuActionButton({
       {label}
     </button>
   );
+}
+
+function getTreeNodeDisplayLabel(
+  node: SrcDiffTreeNode,
+  depth: number,
+): string {
+  if (depth === 0 && node.label.startsWith("unit: ")) {
+    return node.label.slice("unit: ".length);
+  }
+
+  return node.label;
 }
 
 type LineBadge = {
