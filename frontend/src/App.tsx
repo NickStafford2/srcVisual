@@ -35,7 +35,7 @@ export default function App() {
     });
 
   return (
-    <main className="bg-site-bg min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
+    <main className="bg-site-bg min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100 xl:pb-10">
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6">
         <InputPanel
           inputMode={srcDiffData.inputMode}
@@ -74,10 +74,8 @@ export default function App() {
               clearHighlights: srcDiffSelection.clearHighlights,
             }}
           >
-            <div
-              className={`grid gap-6 bg-red-600 ${_resultsLayoutClass} xl:items-start`}
-            >
-              <div className="h-full min-w-0 bg-blue-500 xl:sticky xl:top-4">
+            <div className={`grid gap-6 ${_resultsLayoutClass} xl:items-start`}>
+              <div className="h-full min-w-0 xl:sticky xl:top-4">
                 <SrcDiffTree
                   files={_files}
                   sidebarCollapsed={_isSidebarCollapsed}
