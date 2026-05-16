@@ -49,7 +49,7 @@ export function TreeNodeActionsMenu({
         aria-haspopup="menu"
         aria-label={`Actions for ${node.label}`}
         onClick={() => setIsMenuOpen((current) => !current)}
-        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10"
+        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[0.5em] text-slate-200 transition hover:bg-white/10"
       >
         ...
       </button>
@@ -58,7 +58,7 @@ export function TreeNodeActionsMenu({
         <div
           role="menu"
           aria-label={`${node.label} actions`}
-          className="absolute top-full right-0 z-30 mt-2 min-w-[180px] rounded-xl border border-white/10 bg-slate-950/98 p-1.5 shadow-2xl"
+          className="absolute top-full right-0 z-30 mt-1 min-w-[180px] rounded-xl border border-white/10 bg-slate-950/98 p-1 shadow-2xl"
         >
           <MenuActionButton
             label="Highlight node"

@@ -60,7 +60,7 @@ export function TreeNodeRow({
           <span className="w-4 text-slate-700">·</span>
         )}
 
-        <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        <div className="idems-center flex min-w-0 flex-1 gap-2 text-left">
           <span
             className={[
               "truncate text-sm",

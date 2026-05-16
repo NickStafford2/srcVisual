@@ -18,7 +18,7 @@ export function TreeNodeLineBadges({
   }
 
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+    <span className="flex shrink-0 items-center gap-1">
       {lineBadges.map((badge) => (
         <LineTargetPill
           key={`${badge.targetId}-${badge.label}`}
