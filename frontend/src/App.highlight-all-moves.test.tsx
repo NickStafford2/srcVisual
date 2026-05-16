@@ -172,6 +172,28 @@ describe("App highlight all moves flow", () => {
     });
   });
 
+  it("collapses and reopens the srcDiff tree sidebar", async () => {
+    const user = userEvent.setup();
+
+    await renderHighlightedMovesApp(user);
+
+    const _tree = screen.getByLabelText("srcDiff Tree");
+    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "false");
+
+    await user.click(
+      within(_tree).getByRole("button", { name: "Collapse tree" }),
+    );
+
+    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "true");
+    expect(
+      within(_tree).getByRole("button", { name: "Open tree" }),
+    ).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(within(_tree).getByRole("button", { name: "Open tree" }));
+
+    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "false");
+  });
+
   it("offers explicit node and move-group highlight actions in the tree menu", async () => {
     const user = userEvent.setup();
 

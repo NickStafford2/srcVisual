@@ -37,10 +37,14 @@ export function CodePane({
     () => buildSourceView(source, highlights),
     [source, highlights],
   );
+  const _accessibleLabel =
+    title === filename
+      ? `${title} ${subtitle.replace("revision", "Revision")}`
+      : `${filename} ${title}`;
 
   return (
     <article
-      aria-label={`${filename} ${title}`}
+      aria-label={_accessibleLabel}
       data-file-name={filename}
       data-source-revision={revision}
       className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/45"

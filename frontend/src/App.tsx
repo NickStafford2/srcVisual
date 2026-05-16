@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
 import { MoveSummary } from "./components/source-view/node-info/MoveSummary";
@@ -12,9 +13,13 @@ import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 export default function App() {
   const srcDiffData = useSrcDiffData();
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
+  const [_isSidebarCollapsed, _setIsSidebarCollapsed] = useState(false);
 
-  const data = srcDiffData.data;
-  const files = data?.files ?? [];
+  const _data = srcDiffData.data;
+  const _files = _data?.files ?? [];
+  const _resultsLayoutClass = _isSidebarCollapsed
+    ? "xl:grid-cols-[96px_minmax(0,1fr)]"
+    : "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]";
 
   const xmlHighlights: SourceViewHighlight[] =
     srcDiffSelection.highlightedSpans.flatMap((highlight) => {
@@ -30,8 +35,8 @@ export default function App() {
     });
 
   return (
-    <main className="bg-site-bg min-h-screen px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
+    <main className="bg-site-bg min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-4 pb-8 text-slate-100 md:px-6 md:pb-10">
+      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6">
         <InputPanel
           inputMode={srcDiffData.inputMode}
           selectedUpload={srcDiffData.selectedUpload}
@@ -55,7 +60,7 @@ export default function App() {
           onSubmit={srcDiffData.handleSubmit}
         />
 
-        {data ? (
+        {_data ? (
           <SrcDiffHighlightProvider
             value={{
               highlightedNodes: srcDiffSelection.highlightedNodes,
@@ -69,39 +74,49 @@ export default function App() {
               clearHighlights: srcDiffSelection.clearHighlights,
             }}
           >
-            <SrcDiffTree
-              files={files}
-              onHighlightNode={srcDiffSelection.highlightNode}
-              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
-            />
+            <div className={`grid gap-6 ${_resultsLayoutClass} xl:items-start`}>
+              <div className="min-w-0 xl:sticky xl:top-4">
+                <SrcDiffTree
+                  files={_files}
+                  sidebarCollapsed={_isSidebarCollapsed}
+                  onToggleSidebar={() => {
+                    _setIsSidebarCollapsed((current) => !current);
+                  }}
+                  onHighlightNode={srcDiffSelection.highlightNode}
+                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                />
+              </div>
 
-            <HighlightedNodeInfo
-              moveResults={data.move_results}
-              moveNodesById={srcDiffSelection.moveNodesById}
-            />
+              <div className="min-w-0 space-y-6">
+                <HighlightedNodeInfo
+                  moveResults={_data.move_results}
+                  moveNodesById={srcDiffSelection.moveNodesById}
+                />
 
-            <MoveSummary
-              moveResults={data.move_results}
-              moveNodesById={srcDiffSelection.moveNodesById}
-              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
-            />
+                <MoveSummary
+                  moveResults={_data.move_results}
+                  moveNodesById={srcDiffSelection.moveNodesById}
+                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                />
 
-            <XmlPane
-              title="srcDiff XML"
-              subtitle="Moved srcdiff XML returned by the backend"
-              source={data.moved_srcdiff_xml}
-              highlights={xmlHighlights}
-            />
+                <XmlPane
+                  title="srcDiff XML"
+                  subtitle="Moved srcdiff XML returned by the backend"
+                  source={_data.moved_srcdiff_xml}
+                  highlights={xmlHighlights}
+                />
 
-            <SourceCodeSection
-              files={files}
-              highlightedSpansByUnitId={
-                srcDiffSelection.sourceHighlightedSpansByUnitId
-              }
-              moveResults={data.move_results}
-              moveNodesById={srcDiffSelection.moveNodesById}
-              onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
-            />
+                <SourceCodeSection
+                  files={_files}
+                  highlightedSpansByUnitId={
+                    srcDiffSelection.sourceHighlightedSpansByUnitId
+                  }
+                  moveResults={_data.move_results}
+                  moveNodesById={srcDiffSelection.moveNodesById}
+                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                />
+              </div>
+            </div>
           </SrcDiffHighlightProvider>
         ) : null}
       </div>
