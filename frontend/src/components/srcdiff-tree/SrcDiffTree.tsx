@@ -101,12 +101,12 @@ export default function SrcDiffTree({
     <section
       data-sidebar-state={hasData ? "expanded" : "compact"}
       className={[
-        "h-full overflow-hidden border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all duration-300",
+        "flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all duration-300",
         hasData ? "min-h-[36rem]" : "min-h-[20rem]",
       ].join(" ")}
       aria-label="srcDiff Tree"
     >
-      <div className="relative overflow-hidden border-b border-white/10 px-4 py-4">
+      <div className="relative shrink-0 overflow-hidden border-b border-white/10 px-4 py-4">
         <div className="relative">
           <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
             Navigator
@@ -154,10 +154,10 @@ export default function SrcDiffTree({
       <div
         id="srcdiff-tree-content"
         className={[
-          "bg-text-sm font-mono transition-all duration-300",
+          "min-h-0 flex-1 font-mono text-sm transition-all duration-300",
           hasData
-            ? "max-h-[60vh] overflow-auto opacity-100"
-            : "max-h-0 overflow-hidden opacity-0",
+            ? "overflow-auto opacity-100"
+            : "h-0 overflow-hidden opacity-0",
         ].join(" ")}
       >
         <div className="divide-y divide-white/10">
@@ -177,7 +177,7 @@ export default function SrcDiffTree({
       </div>
 
       {_isTreeEmpty ? (
-        <div className="flex items-center justify-center px-4 py-6 text-center text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-slate-400">
           No tree data loaded yet.
         </div>
       ) : null}
