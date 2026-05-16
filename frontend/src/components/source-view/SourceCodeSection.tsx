@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SrcDiffHighlight } from "../../srcdiff/selection";
 import type { SrcDiffNodeEntry } from "../../srcdiff/treeIndex";
 import type { SrcMoveResults, VisualizedFile } from "../../types";
@@ -34,6 +34,36 @@ export function SourceCodeSection({
   >([]);
 
   const activeMoveId = hoveredMove?.moveId ?? null;
+
+  useEffect(() => {
+    if (pinnedMoves.length === 0) {
+      return;
+    }
+
+    function _handlePointerDown(event: PointerEvent) {
+      const _target = event.target;
+
+      if (!(_target instanceof Element)) {
+        setPinnedMoves([]);
+        return;
+      }
+
+      if (
+        _target.closest("[data-move-popup='true']") ||
+        _target.closest("[data-move-overlay-hit='true']")
+      ) {
+        return;
+      }
+
+      setPinnedMoves([]);
+    }
+
+    document.addEventListener("pointerdown", _handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", _handlePointerDown);
+    };
+  }, [pinnedMoves.length]);
 
   return (
     <section

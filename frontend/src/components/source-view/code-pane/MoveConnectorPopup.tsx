@@ -34,6 +34,7 @@ export function MoveConnectorPopup({
 
   return (
     <div
+      data-move-popup="true"
       className={[
         "fixed z-50 w-[460px] max-w-[calc(100vw-24px)]",
         temporary ? "pointer-events-none" : "",

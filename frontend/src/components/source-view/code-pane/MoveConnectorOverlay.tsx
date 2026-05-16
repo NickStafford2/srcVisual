@@ -59,6 +59,7 @@ export function MoveConnectorOverlay({
                 fill="none"
                 stroke="transparent"
                 strokeWidth={16}
+                data-move-overlay-hit="true"
                 className="pointer-events-auto cursor-pointer"
                 onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
                 onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
@@ -82,6 +83,7 @@ export function MoveConnectorOverlay({
                 cy={group.hub.cy}
                 r={group.hub.hitR}
                 fill="transparent"
+                data-move-overlay-hit="true"
                 className="pointer-events-auto cursor-pointer"
                 onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
                 onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
