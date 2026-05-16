@@ -93,7 +93,7 @@ export default function App() {
 
   return (
     <SrcDiffHighlightProvider value={highlightContextValue}>
-      <main className="flex h-screen flex-col bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
+      <main className="bg-site-bg flex h-screen flex-col text-slate-100">
         <div className="mx-auto flex h-full w-full max-w-[2220px] flex-col">
           <AppHeader />
 
@@ -118,7 +118,7 @@ export default function App() {
                   onTabChange={setActiveMainTab}
                 />
 
-                <div className="min-h-0">
+                <div className="min-h-0 p-2">
                   <TabPanel tabId="input" activeTabId={activeMainTab}>
                     <InputPanel
                       inputMode={srcDiffData.inputMode}

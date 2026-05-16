@@ -24,7 +24,7 @@ export function HighlightedNodeInfo({
   } = useSrcDiffHighlight();
 
   return (
-    <section className="flex flex-col gap-2 p-4">
+    <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-[18px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)]">
         <HighlightSelector
           highlightMode={highlightMode}

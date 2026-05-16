@@ -74,7 +74,7 @@ export function SourceCodeSection({
   }, [pinnedMoves.length]);
 
   return (
-    <section aria-label="Source Code" className="p-4">
+    <section aria-label="Source Code" className="">
       <div ref={containerRef} className="relative isolate">
         <MoveConnectorOverlay
           groups={groups}
