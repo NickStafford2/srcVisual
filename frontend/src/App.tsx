@@ -50,8 +50,8 @@ export default function App() {
 
   return (
     <SrcDiffHighlightProvider value={_highlightContextValue}>
-      <main className="min-h-screen bg-green-400 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
-        <div className="mx-auto flex h-full min-h-[calc(100vh-1.5rem)] w-full flex-col gap-4 bg-blue-400 md:min-h-[calc(100vh-2rem)]">
+      <main className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
+        <div className="mx-auto flex min-h-screen w-full max-w-[1720px] flex-1 flex-col gap-4">
           <AppHeader
             isInputOpen={_isInputOpen}
             onToggleInput={() => {
@@ -59,7 +59,7 @@ export default function App() {
             }}
           />
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 bg-red-500 lg:flex-row lg:items-stretch">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
             <aside
               className={`shrink-0 space-y-3 transition-[width] duration-300 lg:sticky lg:top-4 lg:self-start ${_sidebarWidthClass}`}
             >
@@ -71,7 +71,7 @@ export default function App() {
               />
             </aside>
 
-            <div className="min-h-0 min-w-0 flex-1">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {_data ? (
                 <div className="space-y-6">
                   <HighlightedNodeInfo
