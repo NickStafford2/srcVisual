@@ -5,16 +5,14 @@ import { UnitTree } from "./UnitTree";
 
 type SrcDiffTreeProps = {
   files: VisualizedFile[];
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
+  hasData: boolean;
   onHighlightNode: (nodeId: string) => void;
   onHighlightMoveGroup: (nodeId: string) => void;
 };
 
 export default function SrcDiffTree({
   files,
-  sidebarCollapsed,
-  onToggleSidebar,
+  hasData,
   onHighlightNode,
   onHighlightMoveGroup,
 }: SrcDiffTreeProps) {
@@ -76,7 +74,8 @@ export default function SrcDiffTree({
     return true;
   }, [allExpandableIds, expandedIds]);
 
-  const highlightedCount = highlightedNodeIds.size;
+  const _highlightedCount = highlightedNodeIds.size;
+  const _isTreeEmpty = files.length === 0;
 
   function handleToggleNode(nodeId: string) {
     setExpandedIds((current) => {
@@ -100,78 +99,26 @@ export default function SrcDiffTree({
 
   return (
     <section
-      data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
+      data-sidebar-state={hasData ? "expanded" : "compact"}
       className={[
-        "h-full overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl",
-        sidebarCollapsed ? "xl:min-h-[36rem]" : "",
+        "overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/75 shadow-[0_20px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all duration-300",
+        hasData ? "min-h-[36rem]" : "min-h-[20rem]",
       ].join(" ")}
       aria-label="srcDiff Tree"
     >
-      <div className="relative overflow-hidden border-b border-white/10">
+      <div className="relative overflow-hidden border-b border-white/10 px-4 py-4">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.14),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.12),transparent_36%)]" />
-        <div
-          className={[
-            "relative flex flex-col gap-4",
-            sidebarCollapsed ? "px-3 py-4" : "px-5 py-4",
-          ].join(" ")}
-        >
-          <div
-            className={[
-              "flex gap-3",
-              sidebarCollapsed
-                ? "items-start justify-between xl:flex-col"
-                : "items-start justify-between",
-            ].join(" ")}
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-medium tracking-[0.28em] text-slate-400 uppercase">
-                <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.85)]" />
-                {sidebarCollapsed ? "Tree" : "Navigator"}
-              </div>
+        <div className="relative">
+          <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+            Navigator
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-50">
+            srcDiff Tree
+          </h2>
 
-              <h2
-                className={[
-                  "mt-3 font-semibold text-slate-50",
-                  sidebarCollapsed ? "text-lg" : "text-2xl",
-                ].join(" ")}
-              >
-                srcDiff Tree
-              </h2>
-
-              <p
-                className={[
-                  "mt-1 text-sm leading-5 text-slate-300",
-                  sidebarCollapsed ? "xl:hidden" : "",
-                ].join(" ")}
-              >
-                Use node actions to highlight one node or an entire move group,
-                or use the bulk highlight controls for moves, inserts, and
-                deletes.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              aria-expanded={!sidebarCollapsed}
-              aria-controls="srcdiff-tree-content"
-              className={[
-                "inline-flex shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-slate-100 transition hover:-translate-y-0.5 hover:bg-white/10",
-                sidebarCollapsed ? "xl:w-full" : "",
-              ].join(" ")}
-            >
-              {sidebarCollapsed ? "Open tree" : "Collapse tree"}
-            </button>
-          </div>
-
-          <div
-            className={[
-              "grid gap-2 text-xs text-slate-300",
-              sidebarCollapsed ? "grid-cols-1" : "grid-cols-2",
-            ].join(" ")}
-          >
+          <div className="mt-4 grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                 Files
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-100">
@@ -180,49 +127,39 @@ export default function SrcDiffTree({
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5">
-              <div className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                 Highlighted
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-100">
-                {highlightedCount}
+                {_highlightedCount}
               </div>
             </div>
           </div>
 
-          <div
-            className={[
-              "flex flex-wrap gap-2",
-              sidebarCollapsed ? "xl:hidden" : "",
-            ].join(" ")}
-          >
-            <button
-              type="button"
-              onClick={handleToggleAllNodes}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
-            >
-              {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
-            </button>
-          </div>
+          {hasData ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleToggleAllNodes}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:-translate-y-0.5 hover:bg-white/10"
+              >
+                {areAllNodesExpanded ? "Retract all nodes" : "Expand all nodes"}
+              </button>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm leading-6 text-slate-300">
+              Waiting for input. This rail expands automatically when a result
+              arrives.
+            </p>
+          )}
         </div>
       </div>
-
-      {sidebarCollapsed ? (
-        <div className="flex h-full flex-col justify-end gap-3 p-3 text-xs text-slate-400">
-          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-3 py-4 leading-5">
-            Left rail stays small.
-            <br />
-            Open it when you need node-level work.
-          </div>
-        </div>
-      ) : null}
 
       <div
         id="srcdiff-tree-content"
         className={[
           "font-mono text-sm transition-all duration-300",
-          sidebarCollapsed
-            ? "max-h-0 overflow-hidden opacity-0"
-            : "max-h-[60vh] overflow-auto opacity-100",
+          hasData ? "max-h-[60vh] overflow-auto opacity-100" : "max-h-0 overflow-hidden opacity-0",
         ].join(" ")}
       >
         <div className="divide-y divide-white/10">
@@ -240,6 +177,12 @@ export default function SrcDiffTree({
           ))}
         </div>
       </div>
+
+      {_isTreeEmpty ? (
+        <div className="flex items-center justify-center px-4 py-6 text-center text-sm text-slate-400">
+          No tree data loaded yet.
+        </div>
+      ) : null}
     </section>
   );
 }

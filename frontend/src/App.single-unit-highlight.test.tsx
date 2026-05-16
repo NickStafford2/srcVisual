@@ -64,6 +64,7 @@ describe("App single-unit move highlighting", () => {
     const user = userEvent.setup();
 
     render(<App />);
+    await openInputDialog(user);
 
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -100,6 +101,11 @@ describe("App single-unit move highlighting", () => {
     ).not.toHaveLength(0);
   });
 });
+
+async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Show Input" }));
+  await screen.findByRole("dialog");
+}
 
 function jsonResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), {

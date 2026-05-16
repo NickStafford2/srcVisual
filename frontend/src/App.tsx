@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { InputDialog } from "./components/input-panel/InputDialog";
 import { InputPanel } from "./components/input-panel/InputPanel";
 import { HighlightedNodeInfo } from "./components/source-view/node-info/HighlightedNodeInfo";
 import { MoveSummary } from "./components/source-view/node-info/MoveSummary";
@@ -11,18 +12,16 @@ import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 
 export default function App() {
-  const srcDiffData = useSrcDiffData();
-  const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
-  const [_isSidebarCollapsed, _setIsSidebarCollapsed] = useState(false);
+  const _srcDiffData = useSrcDiffData();
+  const _srcDiffSelection = useSrcDiffSelection(_srcDiffData.data);
+  const [_isInputOpen, _setIsInputOpen] = useState(false);
 
-  const _data = srcDiffData.data;
+  const _data = _srcDiffData.data;
+  const _hasData = Boolean(_data);
   const _files = _data?.files ?? [];
-  const _resultsLayoutClass = _isSidebarCollapsed
-    ? "xl:grid-cols-[96px_minmax(0,1fr)]"
-    : "xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]";
-
-  const xmlHighlights: SourceViewHighlight[] =
-    srcDiffSelection.highlightedSpans.flatMap((highlight) => {
+  const _sidebarWidthClass = _hasData ? "lg:w-[360px]" : "lg:w-[108px]";
+  const _xmlHighlights: SourceViewHighlight[] =
+    _srcDiffSelection.highlightedSpans.flatMap((highlight) => {
       if (!highlight.xmlSpan) return [];
 
       return [
@@ -33,93 +32,142 @@ export default function App() {
         },
       ];
     });
+  const _highlightContextValue = useMemo(
+    () => ({
+      highlightedNodes: _srcDiffSelection.highlightedNodes,
+      highlightedNodeIds: _srcDiffSelection.highlightedNodeIds,
+      highlightedSpans: _srcDiffSelection.highlightedSpans,
+      highlightMode: _srcDiffSelection.highlightMode,
+      unhighlightNode: _srcDiffSelection.unhighlightNode,
+      highlightAllMoves: _srcDiffSelection.highlightAllMoves,
+      highlightAllInserts: _srcDiffSelection.highlightAllInserts,
+      highlightAllDeletes: _srcDiffSelection.highlightAllDeletes,
+      clearHighlights: _srcDiffSelection.clearHighlights,
+    }),
+    [_srcDiffSelection],
+  );
 
   return (
-    <main className="bg-site-bg min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100 xl:pb-10">
-      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6">
-        <InputPanel
-          inputMode={srcDiffData.inputMode}
-          selectedUpload={srcDiffData.selectedUpload}
-          xmlInput={srcDiffData.xmlInput}
-          isLoading={srcDiffData.isLoading}
-          error={srcDiffData.error}
-          progressMessage={srcDiffData.progressMessage}
-          progressMessages={srcDiffData.progressMessages}
-          data={srcDiffData.data}
-          includeSkippedTags={srcDiffData.includeSkippedTags}
-          pruningLevel={srcDiffData.pruningLevel}
-          exampleFilenames={srcDiffData.exampleFilenames}
-          examplesError={srcDiffData.examplesError}
-          isLoadingExample={srcDiffData.isLoadingExample}
-          onInputModeChange={srcDiffData.setInputMode}
-          onLoadExample={srcDiffData.handleLoadExample}
-          onUploadChange={srcDiffData.setSelectedUpload}
-          onXmlInputChange={srcDiffData.handleXmlInputChange}
-          onIncludeSkippedTagsChange={srcDiffData.setIncludeSkippedTags}
-          onPruningLevelChange={srcDiffData.setPruningLevel}
-          onSubmit={srcDiffData.handleSubmit}
-        />
-
-        {_data ? (
-          <SrcDiffHighlightProvider
-            value={{
-              highlightedNodes: srcDiffSelection.highlightedNodes,
-              highlightedNodeIds: srcDiffSelection.highlightedNodeIds,
-              highlightedSpans: srcDiffSelection.highlightedSpans,
-              highlightMode: srcDiffSelection.highlightMode,
-              unhighlightNode: srcDiffSelection.unhighlightNode,
-              highlightAllMoves: srcDiffSelection.highlightAllMoves,
-              highlightAllInserts: srcDiffSelection.highlightAllInserts,
-              highlightAllDeletes: srcDiffSelection.highlightAllDeletes,
-              clearHighlights: srcDiffSelection.clearHighlights,
-            }}
+    <SrcDiffHighlightProvider value={_highlightContextValue}>
+      <main className="min-h-screen bg-amber-400 bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-3 py-3 text-slate-100 md:px-4 md:py-4 xl:pb-10">
+        <div className="mx-auto flex h-full w-full flex-col gap-4 bg-blue-400 lg:flex-row lg:items-start">
+          <aside
+            className={`shrink-0 space-y-3 transition-[width] duration-300 lg:sticky lg:top-4 ${_sidebarWidthClass}`}
           >
-            <div className={`grid gap-6 ${_resultsLayoutClass} xl:items-start`}>
-              <div className="h-full min-w-0 xl:sticky xl:top-4">
-                <SrcDiffTree
-                  files={_files}
-                  sidebarCollapsed={_isSidebarCollapsed}
-                  onToggleSidebar={() => {
-                    _setIsSidebarCollapsed((current) => !current);
-                  }}
-                  onHighlightNode={srcDiffSelection.highlightNode}
-                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
-                />
-              </div>
+            <section className="overflow-hidden rounded-[18px] border border-white/10 bg-slate-950/80 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
+                    srcVisual
+                  </p>
+                  <h1 className="mt-1 truncate text-sm font-semibold text-slate-100">
+                    Workspace
+                  </h1>
+                </div>
 
-              <div className="min-w-0 space-y-6">
+                <button
+                  type="button"
+                  aria-expanded={_isInputOpen}
+                  aria-controls="input-dialog-title"
+                  onClick={() => {
+                    _setIsInputOpen((current) => !current);
+                  }}
+                  className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+                >
+                  {_isInputOpen ? "Hide Input" : "Show Input"}
+                </button>
+              </div>
+            </section>
+
+            <SrcDiffTree
+              files={_files}
+              hasData={_hasData}
+              onHighlightNode={_srcDiffSelection.highlightNode}
+              onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
+            />
+          </aside>
+
+          <div className="h-full w-full min-w-0 flex-1 bg-red-500">
+            {_data ? (
+              <div className="space-y-6">
                 <HighlightedNodeInfo
                   moveResults={_data.move_results}
-                  moveNodesById={srcDiffSelection.moveNodesById}
+                  moveNodesById={_srcDiffSelection.moveNodesById}
                 />
 
                 <MoveSummary
                   moveResults={_data.move_results}
-                  moveNodesById={srcDiffSelection.moveNodesById}
-                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                  moveNodesById={_srcDiffSelection.moveNodesById}
+                  onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
                 />
 
                 <XmlPane
                   title="srcDiff XML"
                   subtitle="Moved srcdiff XML returned by the backend"
                   source={_data.moved_srcdiff_xml}
-                  highlights={xmlHighlights}
+                  highlights={_xmlHighlights}
                 />
 
                 <SourceCodeSection
                   files={_files}
                   highlightedSpansByUnitId={
-                    srcDiffSelection.sourceHighlightedSpansByUnitId
+                    _srcDiffSelection.sourceHighlightedSpansByUnitId
                   }
                   moveResults={_data.move_results}
-                  moveNodesById={srcDiffSelection.moveNodesById}
-                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                  moveNodesById={_srcDiffSelection.moveNodesById}
+                  onHighlightMoveGroup={_srcDiffSelection.highlightMoveGroup}
                 />
               </div>
-            </div>
-          </SrcDiffHighlightProvider>
-        ) : null}
-      </div>
-    </main>
+            ) : (
+              <section className="flex min-h-[60vh] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/50 text-center shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
+                <div className="max-w-xl">
+                  <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
+                    Ready
+                  </p>
+                  <h2 className="mt-3 text-2xl font-semibold text-slate-50">
+                    Open the input window to load srcDiff XML.
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                    The left rail stays in place. Once a result arrives, the
+                    tree grows into the full navigator.
+                  </p>
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+
+        <InputDialog
+          isOpen={_isInputOpen}
+          title="srcDiff Visualizer"
+          onClose={() => {
+            _setIsInputOpen(false);
+          }}
+        >
+          <InputPanel
+            inputMode={_srcDiffData.inputMode}
+            selectedUpload={_srcDiffData.selectedUpload}
+            xmlInput={_srcDiffData.xmlInput}
+            isLoading={_srcDiffData.isLoading}
+            error={_srcDiffData.error}
+            progressMessage={_srcDiffData.progressMessage}
+            progressMessages={_srcDiffData.progressMessages}
+            data={_srcDiffData.data}
+            includeSkippedTags={_srcDiffData.includeSkippedTags}
+            pruningLevel={_srcDiffData.pruningLevel}
+            exampleFilenames={_srcDiffData.exampleFilenames}
+            examplesError={_srcDiffData.examplesError}
+            isLoadingExample={_srcDiffData.isLoadingExample}
+            onInputModeChange={_srcDiffData.setInputMode}
+            onLoadExample={_srcDiffData.handleLoadExample}
+            onUploadChange={_srcDiffData.setSelectedUpload}
+            onXmlInputChange={_srcDiffData.handleXmlInputChange}
+            onIncludeSkippedTagsChange={_srcDiffData.setIncludeSkippedTags}
+            onPruningLevelChange={_srcDiffData.setPruningLevel}
+            onSubmit={_srcDiffData.handleSubmit}
+          />
+        </InputDialog>
+      </main>
+    </SrcDiffHighlightProvider>
   );
 }

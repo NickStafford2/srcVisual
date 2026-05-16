@@ -172,32 +172,30 @@ describe("App highlight all moves flow", () => {
     });
   });
 
-  it("collapses and reopens the srcDiff tree sidebar", async () => {
+  it("opens and closes the input popup from the sidebar header", async () => {
     const user = userEvent.setup();
 
-    await renderHighlightedMovesApp(user);
+    render(<App />);
 
-    const _tree = screen.getByLabelText("srcDiff Tree");
-    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "false");
+    expect(screen.queryByRole("dialog")).toBeNull();
 
-    await user.click(
-      within(_tree).getByRole("button", { name: "Collapse tree" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Show Input" }));
 
-    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "true");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(
-      within(_tree).getByRole("button", { name: "Open tree" }),
-    ).toHaveAttribute("aria-expanded", "false");
+      screen.getByRole("button", { name: "Hide Input" }),
+    ).toHaveAttribute("aria-expanded", "true");
 
-    await user.click(within(_tree).getByRole("button", { name: "Open tree" }));
+    await user.click(screen.getByRole("button", { name: "Hide Input" }));
 
-    expect(_tree).toHaveAttribute("data-sidebar-collapsed", "false");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("offers explicit node and move-group highlight actions in the tree menu", async () => {
     const user = userEvent.setup();
 
     render(<App />);
+    await openInputDialog(user);
 
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -248,6 +246,7 @@ describe("App highlight all moves flow", () => {
     const user = userEvent.setup();
 
     render(<App />);
+    await openInputDialog(user);
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Pruning mode" }),
@@ -311,6 +310,7 @@ describe("App highlight all moves flow", () => {
     );
 
     render(<App />);
+    await openInputDialog(user);
 
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -395,6 +395,7 @@ async function renderHighlightedMovesApp(
   user: ReturnType<typeof userEvent.setup>,
 ) {
   render(<App />);
+  await openInputDialog(user);
 
   await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -407,6 +408,11 @@ async function renderHighlightedMovesApp(
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
   await screen.findByRole("heading", { name: "srcDiff Tree" });
+}
+
+async function openInputDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Show Input" }));
+  await screen.findByRole("dialog");
 }
 
 function expectSourcePaneHighlightPresence({
