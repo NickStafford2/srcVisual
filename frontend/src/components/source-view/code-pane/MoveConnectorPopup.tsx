@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { SrcMoveResults } from "../../../types";
 import type { MoveNodeEntry } from "../node-info/moveInfo";
 import { MoveSummaryCard } from "../node-info/MoveSummaryCard";
@@ -30,24 +31,110 @@ export function MoveConnectorPopup({
   onHighlightMoveGroup,
   onClose,
 }: MoveConnectorPopupProps) {
-  const _style = buildPopupStyle(position);
+  const [_windowPosition, _setWindowPosition] = useState(position);
+  const [_dragState, _setDragState] = useState<{
+    pointerId: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (temporary || !_dragState) {
+      _setWindowPosition(position);
+    }
+  }, [position, temporary, _dragState]);
+
+  useEffect(() => {
+    if (!_dragState) {
+      return;
+    }
+
+    const _activeDragState = _dragState;
+
+    function _handlePointerMove(event: PointerEvent) {
+      if (event.pointerId !== _activeDragState.pointerId) {
+        return;
+      }
+
+      _setWindowPosition({
+        x: event.clientX - _activeDragState.offsetX,
+        y: event.clientY - _activeDragState.offsetY,
+      });
+    }
+
+    function _handlePointerEnd(event: PointerEvent) {
+      if (event.pointerId !== _activeDragState.pointerId) {
+        return;
+      }
+
+      _setDragState(null);
+    }
+
+    window.addEventListener("pointermove", _handlePointerMove);
+    window.addEventListener("pointerup", _handlePointerEnd);
+    window.addEventListener("pointercancel", _handlePointerEnd);
+
+    return () => {
+      window.removeEventListener("pointermove", _handlePointerMove);
+      window.removeEventListener("pointerup", _handlePointerEnd);
+      window.removeEventListener("pointercancel", _handlePointerEnd);
+    };
+  }, [_dragState]);
+
+  const _style = buildPopupStyle(temporary ? position : _windowPosition);
 
   return (
     <div
       data-move-popup="true"
       className={[
-        "fixed z-50 w-[460px] max-w-[calc(100vw-24px)]",
+        "fixed z-50 w-[460px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl",
         temporary ? "pointer-events-none" : "",
       ].join(" ")}
       style={_style}
     >
+      <div
+        className={[
+          "flex items-center justify-between border-b border-white/10 bg-white/[0.05] px-4 py-2.5",
+          temporary ? "" : _dragState ? "cursor-grabbing" : "cursor-grab",
+        ].join(" ")}
+        style={temporary ? undefined : { touchAction: "none" }}
+        onPointerDown={
+          temporary
+            ? undefined
+            : (event) => {
+                _setDragState({
+                  pointerId: event.pointerId,
+                  offsetX: event.clientX - _windowPosition.x,
+                  offsetY: event.clientY - _windowPosition.y,
+                });
+              }
+        }
+      >
+        <span className="text-xs font-semibold tracking-[0.2em] text-slate-300 uppercase">
+          Move Window
+        </span>
+
+        {!temporary && onClose ? (
+          <button
+            type="button"
+            aria-label={`Close move ${moveId}`}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+            }}
+            onClick={onClose}
+            className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-300 transition hover:bg-white/10"
+          >
+            X
+          </button>
+        ) : null}
+      </div>
+
       <MoveSummaryCard
         moveId={moveId}
         moveResults={moveResults}
         moveNodes={moveNodes}
+        embedded
         onHighlightMoveGroup={temporary ? undefined : onHighlightMoveGroup}
-        onClose={temporary ? undefined : onClose}
-        className="bg-slate-950/96 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl"
       />
     </div>
   );

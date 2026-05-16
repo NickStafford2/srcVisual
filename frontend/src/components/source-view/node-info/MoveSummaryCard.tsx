@@ -8,6 +8,7 @@ type MoveSummaryCardProps = {
   onHighlightMoveGroup?: (nodeId: string) => void;
   onClose?: () => void;
   className?: string;
+  embedded?: boolean;
 };
 
 export function MoveSummaryCard({
@@ -17,6 +18,7 @@ export function MoveSummaryCard({
   onHighlightMoveGroup,
   onClose,
   className,
+  embedded = false,
 }: MoveSummaryCardProps) {
   const move = buildMoveInfo(moveId, moveResults, moveNodes);
   const anchorNode = move.nodes[0]?.node ?? null;
@@ -24,7 +26,9 @@ export function MoveSummaryCard({
   return (
     <article
       className={[
-        "rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3",
+        embedded
+          ? "px-4 py-3"
+          : "rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3",
         className ?? "",
       ].join(" ")}
     >
