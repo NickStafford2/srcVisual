@@ -217,21 +217,8 @@ function getNodeLineBadges(
     "revision-1",
     "Revision 1",
   );
-  const revision0Range = formatLineRange(node.revision_0_span);
-  const revision1Range = formatLineRange(node.revision_1_span);
-
+ 
   if (revision0Badge && revision1Badge) {
-    if (revision0Range && revision0Range === revision1Range) {
-      return [
-        {
-          label: `L${revision0Range}`,
-          targetId: revision0Badge.targetId,
-          title: "Jump to revision 0 source line",
-          variant: "revision-0",
-        },
-      ];
-    }
-
     return [revision0Badge, revision1Badge];
   }
 
@@ -247,9 +234,9 @@ function getNodeLineBadges(
   return node.xml_span && xmlLabel
     ? [
         {
-          label: `xml L${xmlLabel}`,
+          label: "xml",
           targetId: buildXmlLineTargetId(node.xml_span.start_line),
-          title: "Jump to XML line",
+          title: `XML L${xmlLabel}`,
           variant: "xml",
         },
       ]
@@ -269,12 +256,9 @@ function buildSourceLineBadge(
   }
 
   return {
-    label: `${revisionLabel} L${lineLabel}`,
+    label: revision === "revision-0" ? "r0" : "r1",
     targetId: buildSourceLineTargetId(fileIndex, revision, span.start_line),
-    title:
-      revision === "revision-0"
-        ? "Jump to revision 0 source line"
-        : "Jump to revision 1 source line",
+    title: `${revisionLabel} L${lineLabel}`,
     variant: revision,
   };
 }
