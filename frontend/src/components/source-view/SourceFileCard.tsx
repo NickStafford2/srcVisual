@@ -73,7 +73,7 @@ export function SourceFileCard({
     <article
       aria-label={`Source file ${file.filename}`}
       data-file-name={file.filename}
-      className="rounded-[20px] border border-white/10 bg-white/[0.03] p-1 transition"
+      className="rounded-[20px] border border-white/10 bg-slate-900 p-1 transition"
     >
       <header className="m-2 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
         <p className="mt-0.5 text-xs text-slate-400">
