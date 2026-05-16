@@ -46,14 +46,7 @@ describe("XmlPane", () => {
       },
     ];
 
-    render(
-      <XmlPane
-        title="srcDiff XML"
-        subtitle="Moved srcdiff XML"
-        source={_source}
-        highlights={_highlights}
-      />,
-    );
+    render(<XmlPane source={_source} highlights={_highlights} />);
 
     const _xmlPane = screen.getByLabelText("srcDiff XML");
 

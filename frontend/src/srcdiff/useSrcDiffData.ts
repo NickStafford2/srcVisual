@@ -9,7 +9,7 @@ import {
 import type { VisualizationProgressEvent } from "../api";
 import type { TreePruningLevel, VisualizeResponse } from "../types";
 
-export type InputMode = "paste" | "upload";
+export type InputMode = "examples" | "paste" | "upload";
 export type ProgressLogEntry = {
   message: string;
   elapsedMs: number;
@@ -17,9 +17,12 @@ export type ProgressLogEntry = {
 };
 
 export function useSrcDiffData() {
-  const [inputMode, setInputMode] = useState<InputMode>("paste");
+  const [inputMode, setInputMode] = useState<InputMode>("examples");
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
   const [xmlInput, setXmlInput] = useState("");
+  const [loadedExampleFilename, setLoadedExampleFilename] = useState<
+    string | null
+  >(null);
   const [data, setData] = useState<VisualizeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +67,7 @@ export function useSrcDiffData() {
 
   function handleXmlInputChange(value: string) {
     setXmlInput(value);
+    setLoadedExampleFilename(null);
   }
 
   function handleInputModeChange(mode: InputMode) {
@@ -97,7 +101,8 @@ export function useSrcDiffData() {
     try {
       const content = await fetchExampleContent(filename);
       setXmlInput(content);
-      setInputMode("paste");
+      setLoadedExampleFilename(filename);
+      setInputMode("examples");
       setExamplesError(null);
     } catch (loadError) {
       setExamplesError(
@@ -118,7 +123,10 @@ export function useSrcDiffData() {
       return;
     }
 
-    if (inputMode === "paste" && !xmlInput.trim()) {
+    if (
+      (inputMode === "examples" || inputMode === "paste") &&
+      !xmlInput.trim()
+    ) {
       setError("Paste srcdiff XML or load an example before submitting.");
       return;
     }
@@ -174,6 +182,7 @@ export function useSrcDiffData() {
     inputMode,
     selectedUpload,
     xmlInput,
+    loadedExampleFilename,
     data,
     isLoading,
     error,

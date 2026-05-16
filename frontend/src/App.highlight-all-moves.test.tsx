@@ -189,7 +189,16 @@ describe("App highlight all moves flow", () => {
     expect(_xmlTab).toBeDisabled();
     expect(_nodeInfoTab).toBeDisabled();
     expect(_moveSummaryTab).toBeDisabled();
-    expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /^Examples/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(
+      screen.getByRole("tab", { name: /^Custom XML/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: /^File Upload/ }),
+    ).toBeInTheDocument();
   });
 
   it("offers explicit node and move-group highlight actions in the tree menu", async () => {
@@ -198,11 +207,7 @@ describe("App highlight all moves flow", () => {
     render(<App />);
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
-        exampleXml,
-      );
-    });
+    await waitForLoadedExample(exampleLabel);
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
     await screen.findByLabelText("srcDiff Tree");
@@ -252,11 +257,7 @@ describe("App highlight all moves flow", () => {
 
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
-        exampleXml,
-      );
-    });
+    await waitForLoadedExample(exampleLabel);
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
@@ -309,11 +310,7 @@ describe("App highlight all moves flow", () => {
     render(<App />);
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
-        exampleXml,
-      );
-    });
+    await waitForLoadedExample(exampleLabel);
 
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
@@ -391,15 +388,19 @@ async function renderHighlightedMovesApp(
 
   await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
-  await waitFor(() => {
-    expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
-      exampleXml,
-    );
-  });
+  await waitForLoadedExample(exampleLabel);
 
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
   await screen.findByLabelText("srcDiff Tree");
+}
+
+async function waitForLoadedExample(exampleName: string) {
+  await waitFor(() => {
+    expect(
+      screen.getByText(`Loaded example: ${exampleName}`),
+    ).toBeInTheDocument();
+  });
 }
 function expectSourcePaneHighlightPresence({
   paneLabel,

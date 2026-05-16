@@ -1,15 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { PasteXmlInput } from "./PasteXmlInput";
+import { ExampleInput } from "./ExampleInput";
 
-describe("PasteXmlInput", () => {
+describe("ExampleInput", () => {
   it("groups custom and generated examples and strips the repeated prefix", async () => {
     const _user = userEvent.setup();
     const _onLoadExample = vi.fn();
 
     render(
-      <PasteXmlInput
+      <ExampleInput
         exampleFilenames={[
           "e2e_custom_1x1_basic.xml",
           "e2e_generated_to_new_file_diff.xml",
@@ -17,10 +17,9 @@ describe("PasteXmlInput", () => {
         ]}
         examplesError={null}
         isLoadingExample={false}
-        xmlInput=""
         disabled={false}
+        loadedExampleFilename={null}
         onLoadExample={_onLoadExample}
-        onXmlInputChange={() => {}}
       />,
     );
 

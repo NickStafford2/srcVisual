@@ -129,9 +129,9 @@ async function renderHighlightedMovesApp(
   await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
   await waitFor(() => {
-    expect(screen.getByPlaceholderText("Paste srcDiff XML here")).toHaveValue(
-      exampleXml,
-    );
+    expect(
+      screen.getByText(`Loaded example: ${exampleLabel}`),
+    ).toBeInTheDocument();
   });
 
   await user.click(screen.getByRole("button", { name: "Submit" }));

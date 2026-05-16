@@ -124,6 +124,7 @@ export default function App() {
                       inputMode={srcDiffData.inputMode}
                       selectedUpload={srcDiffData.selectedUpload}
                       xmlInput={srcDiffData.xmlInput}
+                      loadedExampleFilename={srcDiffData.loadedExampleFilename}
                       isLoading={srcDiffData.isLoading}
                       error={srcDiffData.error}
                       progressMessage={srcDiffData.progressMessage}

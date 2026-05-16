@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import type { InputMode, ProgressLogEntry } from "../../srcdiff/useSrcDiffData";
 import type { TreePruningLevel, VisualizeResponse } from "../../types";
+import { ExampleInput } from "./ExampleInput";
 import { InputModeToggle } from "./InputModeToggle";
 import { InputPanelOptions } from "./InputPanelOptions";
 import { InputPanelSubmitRow } from "./InputPanelSubmitRow";
@@ -12,6 +13,7 @@ type InputPanelProps = {
   inputMode: InputMode;
   selectedUpload: File | null;
   xmlInput: string;
+  loadedExampleFilename: string | null;
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
@@ -35,6 +37,7 @@ export function InputPanel({
   inputMode,
   selectedUpload,
   xmlInput,
+  loadedExampleFilename,
   isLoading,
   error,
   progressMessage,
@@ -62,23 +65,32 @@ export function InputPanel({
           onChange={onInputModeChange}
         />
 
-        {inputMode === "paste" ? (
-          <PasteXmlInput
+        {inputMode === "examples" ? (
+          <ExampleInput
             exampleFilenames={exampleFilenames}
             examplesError={examplesError}
             isLoadingExample={isLoadingExample}
+            disabled={isLoading}
+            loadedExampleFilename={loadedExampleFilename}
+            onLoadExample={onLoadExample}
+          />
+        ) : null}
+
+        {inputMode === "paste" ? (
+          <PasteXmlInput
             xmlInput={xmlInput}
             disabled={isLoading}
-            onLoadExample={onLoadExample}
             onXmlInputChange={onXmlInputChange}
           />
-        ) : (
+        ) : null}
+
+        {inputMode === "upload" ? (
           <UploadFileInput
             selectedUpload={selectedUpload}
             disabled={isLoading}
             onUploadChange={onUploadChange}
           />
-        )}
+        ) : null}
 
         <InputPanelOptions
           includeSkippedTags={includeSkippedTags}
