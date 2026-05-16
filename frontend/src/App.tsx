@@ -49,11 +49,11 @@ export default function App() {
 
   return (
     <SrcDiffHighlightProvider value={_highlightContextValue}>
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] px-3 py-3 text-slate-100 md:px-4 md:py-4 xl:pb-10">
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_24%)] text-slate-100">
         <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-[1720px] flex-col gap-4 md:min-h-[calc(100vh-2rem)]">
           <header className="flex shrink-0 items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-slate-950/80 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-xl">
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+              <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
                 srcVisual
               </p>
               <h1 className="mt-1 truncate text-sm font-semibold text-slate-100">
@@ -120,7 +120,7 @@ export default function App() {
               ) : (
                 <section className="flex min-h-[60vh] items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-slate-950/50 text-center shadow-[0_18px_48px_rgba(0,0,0,0.18)] lg:min-h-full">
                   <div className="max-w-xl">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                    <p className="text-[11px] font-medium tracking-[0.28em] text-slate-500 uppercase">
                       Ready
                     </p>
                     <h2 className="mt-3 text-2xl font-semibold text-slate-50">
