@@ -34,7 +34,7 @@ export function Tabs<TTabId extends string>({
             key={tab.id}
             aria-controls={panelId}
             aria-selected={isActive}
-            className={`${tab.className ?? ""} h-10 px-6 text-sm font-medium transition [clip-path:polygon(10px_0,calc(100%-10px)_0,100%_100%,0_100%)] ${
+            className={`${tab.className ?? ""} h-10 px-6 text-sm font-medium transition [clip-path:polygon(4px_0,calc(100%-4px)_0,100%_100%,0_100%)] ${
               isActive
                 ? "bg-site-bg z-10 -mb-px text-cyan-100"
                 : tab.disabled
