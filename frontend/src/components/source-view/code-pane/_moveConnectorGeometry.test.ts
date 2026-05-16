@@ -42,6 +42,8 @@ describe("move connector geometry", () => {
       width: 132,
       height: 48,
     });
+    expect(_group?.paths[0]?.d).toContain("M 226 40");
+    expect(_group?.paths[0]?.d).toContain("514 60");
   });
 
   it("clusters nearby move spans into one block per side", () => {

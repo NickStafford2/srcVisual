@@ -50,6 +50,9 @@ type BuildMoveConnectorGroupOptions = {
   toRects: RectLike[];
 };
 
+const OVERLAY_BOX_PADDING_X = 6;
+const OVERLAY_BOX_PADDING_Y = 4;
+
 export function getCombinedRect(rects: RectLike[]): RectLike | null {
   if (rects.length === 0) {
     return null;
@@ -172,12 +175,10 @@ function buildOverlayBox(
   rect: RectLike,
   containerRect: RectLike,
 ): MoveConnectorBox {
-  const _paddingX = 6;
-  const _paddingY = 4;
-  const _x = rect.left - containerRect.left - _paddingX;
-  const _y = rect.top - containerRect.top - _paddingY;
-  const _width = rect.width + _paddingX * 2;
-  const _height = rect.height + _paddingY * 2;
+  const _x = rect.left - containerRect.left - OVERLAY_BOX_PADDING_X;
+  const _y = rect.top - containerRect.top - OVERLAY_BOX_PADDING_Y;
+  const _width = rect.width + OVERLAY_BOX_PADDING_X * 2;
+  const _height = rect.height + OVERLAY_BOX_PADDING_Y * 2;
 
   return {
     key: `${moveId}-${revision}-box-${index}`,
@@ -191,14 +192,14 @@ function buildOverlayBox(
 
 function buildRevision0Anchor(rect: RectLike, containerRect: RectLike): Point {
   return {
-    x: rect.right - containerRect.left,
+    x: rect.right - containerRect.left + OVERLAY_BOX_PADDING_X,
     y: rect.top + rect.height / 2 - containerRect.top,
   };
 }
 
 function buildRevision1Anchor(rect: RectLike, containerRect: RectLike): Point {
   return {
-    x: rect.left - containerRect.left,
+    x: rect.left - containerRect.left - OVERLAY_BOX_PADDING_X,
     y: rect.top + rect.height / 2 - containerRect.top,
   };
 }
