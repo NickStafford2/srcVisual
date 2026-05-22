@@ -46,9 +46,12 @@ FROM ubuntu:24.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV HOME="/home/appuser"
 ENV PATH="/opt/venv/bin:/opt/srcML-install/bin:/opt/srcDiff/bin:/opt/srcMove/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin"
 ENV SRCVISUAL_FRONTEND_DIST="/app/frontend/dist"
+ENV SRCVISUAL_EXAMPLES_DIR="/app/examples"
+ENV SRCVISUAL_TMP_ROOT="/tmp/srcvisual"
 ENV PORT=5000
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -66,10 +69,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN python3 -m venv /opt/venv
 
+RUN useradd --system --create-home --home-dir /home/appuser --shell /usr/sbin/nologin appuser
+
 WORKDIR /app
 
 COPY srcVisual/pyproject.toml srcVisual/poetry.lock ./
 COPY srcVisual/srcvisual /app/srcvisual
+COPY srcVisual/examples /app/examples
 COPY srcVisual/gunicorn.conf.py /app/gunicorn.conf.py
 COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 
@@ -81,6 +87,10 @@ COPY --from=native-builder /workspace/srcDiff/build/bin /opt/srcDiff/bin
 COPY --from=native-builder /workspace/srcReader/build/bin /opt/srcReader/bin
 RUN mkdir -p /opt/srcMove/bin
 COPY --from=native-builder /workspace/srcMove/build/srcMove /opt/srcMove/bin/srcMove
+
+RUN mkdir -p /tmp/srcvisual && chown -R appuser:appuser /tmp/srcvisual
+
+USER appuser
 
 EXPOSE 5000
 

@@ -1,8 +1,11 @@
 services:
   srcvisual:
+    image: srcvisual:latest
     build:
       context: ..
       dockerfile: srcVisual/Dockerfile
+    restart: unless-stopped
+    init: true
     ports:
       - "5000:5000"
     environment:
@@ -12,5 +15,69 @@ services:
       SRCVISUAL_GUNICORN_WORKERS: "2"
       SRCVISUAL_GUNICORN_THREADS: "4"
       SRCVISUAL_GUNICORN_TIMEOUT_SECONDS: "120"
+      SRCVISUAL_EXAMPLES_DIR: "/app/examples"
+      SRCVISUAL_TMP_ROOT: "/tmp/srcvisual"
+    read_only: true
     tmpfs:
       - /tmp
+      - /dev/shm
+
+
+# docker-compose.yml
+services:
+  reverse-proxy:
+    container_name: di-reverse-proxy
+    image: traefik:v3.3
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik_dynamic.yaml:/etc/traefik/traefik_dynamic.yaml:ro
+      - letsencrypt:/letsencrypt
+    security_opt:
+      - no-new-privileges:true
+  frontend-service:
+    container_name: di-frontend_container
+    labels:
+      - "traefik.enable=true"
+    build:
+      context: ./frontend
+      args:
+        - VITE_APP_BACKEND_ADDRESS=http://backend-service:5001/
+    depends_on:
+      backend-service:
+        condition: service_healthy
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+  backend-service:
+    labels:
+      - "traefik.enable=true"
+    build:
+      context: ./backend
+      target: production
+    volumes:
+      - ./backend:/backendApp
+      - ./neo4j_auth.txt:/app/neo4j_auth.txt
+    depends_on:
+      neo4j-service:
+        condition: service_healthy
+    healthcheck:
+      test: wget http://backend-service:5001/healthcheck || exit 1
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    environment:
+      - PORT=5001
+      - SECRET_KEY="you-will-never-guess"
+      - ENV_FOR_DYNACONF=docker
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  letsencrypt:
+secrets:
+  neo4j_auth_file:
+    file: ./neo4j_auth.txt

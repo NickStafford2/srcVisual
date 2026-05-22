@@ -356,7 +356,7 @@ def _count_tree_node_subtree(node) -> tuple[int, int]:
     total_nodes = 1
     move_nodes = 1 if node.get("kind") == "move" else 0
 
-    for child in node["children"]:
+    for child in node.get("children", ()):
         _child_nodes, _child_moves = _count_tree_node_subtree(child)
         total_nodes += _child_nodes
         move_nodes += _child_moves
