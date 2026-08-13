@@ -23,6 +23,7 @@ services:
       - /dev/shm
 
 
+# below is an example docker config from a completely unrelated project.
 # docker-compose.yml
 services:
   reverse-proxy:
