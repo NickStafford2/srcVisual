@@ -1,21 +1,43 @@
-srcVisual visualizes `srcDiff` and `srcMove` results in a frontend UI.
+# srcVisual
 
-Main purpose:
+srcVisual is the visualization companion to `srcMove`, a cross-file move
+detector developed as a master's thesis project. Move annotations are difficult
+to evaluate by reading XML alone, so srcVisual presents srcDiff structure,
+source code, and detected moves together in a code-editor-like interface.
 
-- make it easy to inspect `srcDiff` structure and correlate XML tags with source code
-- make move detection from `srcMove` easy to verify visually
-- make highlighting trustworthy across the tree view, XML view, and source-code panes
+## Current application
 
-High-level backend flow:
+srcVisual consists of a Python/Flask backend and a React frontend. It can accept
+uploaded or pasted srcDiff XML, including XML that has already been annotated
+by srcMove.
 
-- accept uploaded or pasted `srcDiff` XML
-- add position information with `srcdiff --position` when needed
-- add move annotations with `srcMove` when needed
-- return a normalized payload for the frontend with annotated XML, move results, file/source data, and tree data
+The backend:
 
-Important expectations:
+- extracts the original and modified source with `archive_reader`
+- adds position information with `srcdiff --position` when needed
+- adds move annotations with `srcMove` when needed
+- builds one normalized payload containing annotated XML, move results, file
+  metadata, source code, and tree data
 
-- support both archive-style srcDiff input and single-root file-unit srcDiff input
-- use temporary generated files only as an internal implementation detail
-- preserve original srcDiff metadata in the final positioned/annotated XML
-- the frontend should clearly show which file/unit each highlight belongs to
+The frontend uses that payload to keep its XML, tree, source-code, diff, and
+move views synchronized. This is especially valuable for moves across files,
+where the matching deletion and insertion cannot be understood in one local
+source view.
+
+Important implementation expectations are documented in
+[docs/Rules.md](docs/Rules.md).
+
+## Hosted application vision
+
+The long-term goal is a secure hosted service where users can:
+
+- upload srcDiff XML and inspect its structured differences
+- upload srcMove-annotated XML and inspect its moves
+- select a GitHub repository and two commits
+- let srcVisual obtain both revisions, run srcDiff and srcMove, and visualize
+  the resulting cross-file differences and moves
+
+Public hosting is a future goal, not a current security guarantee. The backend
+runs native analysis tools and processes user-controlled repositories and XML.
+It must be threat-modeled, sandboxed, resource-limited, and hardened before it
+is exposed to untrusted public input.
