@@ -25,3 +25,4 @@ graceful_timeout = _get_int("SRCVISUAL_GUNICORN_GRACEFUL_TIMEOUT_SECONDS", 30)
 accesslog = "-"
 errorlog = "-"
 worker_tmp_dir = "/dev/shm"
+control_socket_disable = True

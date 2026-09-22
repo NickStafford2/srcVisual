@@ -1,10 +1,13 @@
 services:
   srcvisual:
+    image: srcvisual:local
     build:
       context: ..
       dockerfile: srcVisual/Dockerfile
+    init: true
+    read_only: true
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     environment:
       PORT: "5000"
       SRCVISUAL_COMMAND_TIMEOUT_SECONDS: "30"
@@ -12,5 +15,12 @@ services:
       SRCVISUAL_GUNICORN_WORKERS: "2"
       SRCVISUAL_GUNICORN_THREADS: "4"
       SRCVISUAL_GUNICORN_TIMEOUT_SECONDS: "120"
+      SRCVISUAL_HISTORY_REPOSITORY: "/history/repository"
+      SRCVISUAL_TMP_ROOT: "/tmp/srcvisual"
+    volumes:
+      - ../srcMove/reference-repositories/notepadpp:/history/repository:ro
+    security_opt:
+      - no-new-privileges:true
     tmpfs:
       - /tmp
+      - /dev/shm

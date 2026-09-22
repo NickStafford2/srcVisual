@@ -27,6 +27,36 @@ source view.
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).
 
+## Run locally with Docker
+
+On macOS, run srcVisual from the parent workspace directory. Docker builds the
+Linux frontend, backend, srcML, srcReader, srcDiff, and srcMove dependencies;
+the host does not need native build tools for those projects.
+
+```bash
+docker compose -f srcVisual/compose.yaml up --build -d
+```
+
+Open <http://127.0.0.1:5000>. The service is bound only to the local machine.
+Inspect its status and logs with:
+
+```bash
+docker compose -f srcVisual/compose.yaml ps
+docker compose -f srcVisual/compose.yaml logs -f
+```
+
+Stop and remove the local container with:
+
+```bash
+docker compose -f srcVisual/compose.yaml down
+```
+
+The image contains a compiled snapshot of the sibling source checkouts at build
+time; building it does not edit those checkouts. Re-run the build command after
+changing srcVisual or a native dependency such as srcMove. This Compose setup
+is currently a production-style local build, not a hot-reload development
+server.
+
 ## Hosted application vision
 
 The long-term goal is a secure hosted service where users can:
