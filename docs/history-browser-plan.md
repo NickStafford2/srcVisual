@@ -1,6 +1,16 @@
 # Repository History Browser Plan
 
-This is a planning document, not a description of implemented behavior.
+This document tracks the phased history-browser design. Phase 1 is implemented;
+later phases remain plans rather than descriptions of current behavior.
+
+## Implementation Status
+
+- Phase 1 implemented: Docker packages the history CLI and Git; Compose mounts
+  one configured repository read-only; the backend exposes status, bounded
+  pair-list, and pair-detail endpoints; and the frontend provides summary,
+  filters, pagination, and compact evidence inspection.
+- Phase 2 not implemented: a selected pair cannot yet be materialized into the
+  synchronized source, tree, XML, and move visualization.
 
 ## Goal
 
@@ -59,7 +69,7 @@ payload builder. The current upload, paste, and example flows remain available.
 
 ## Delivery Phases
 
-### 1. Read-only history browsing
+### 1. Read-only history browsing — implemented
 
 - Package the `srcmove_history` Python package, its command wrapper, and Git in
   the srcVisual runtime image.

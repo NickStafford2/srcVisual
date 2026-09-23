@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+import srcvisual.history.client as history_client
+from srcvisual.core.commands import CommandResult
+from srcvisual.history.client import (
+    HistoryConfigurationError,
+    HistoryResponseError,
+    read_history_pair,
+    read_history_pairs,
+    read_history_status,
+)
+
+
+def _repository(tmp_path: Path) -> Path:
+    repository = tmp_path / "repository"
+    analysis = repository / ".srcmove"
+    analysis.mkdir(parents=True)
+    (analysis / "analysis.sqlite3").touch()
+    return repository
+
+
+def test_read_status_uses_versioned_json_command(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    captured: list[str] = []
+
+    def fake_run_command(argv: list[str]) -> CommandResult:
+        captured.extend(argv)
+        return CommandResult(
+            stdout=json.dumps({"schema_version": 2, "state": "idle"}),
+            stderr="",
+        )
+
+    monkeypatch.setattr(history_client, "run_command", fake_run_command)
+
+    document = read_history_status(repository)
+
+    assert document["state"] == "idle"
+    assert captured == [
+        "srcmove-history",
+        "-C",
+        str(repository),
+        "status",
+        "--format",
+        "json",
+    ]
+
+
+def test_read_pairs_builds_bounded_filter_and_cursor_command(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    captured: list[str] = []
+
+    def fake_run_command(argv: list[str]) -> CommandResult:
+        captured.extend(argv)
+        return CommandResult(
+            stdout=json.dumps({"schema_version": 1, "pairs": {"items": []}}),
+            stderr="",
+        )
+
+    monkeypatch.setattr(history_client, "run_command", fake_run_command)
+
+    read_history_pairs(
+        repository,
+        selection="moves",
+        limit=25,
+        after=40,
+        oldest_first=True,
+    )
+
+    assert captured[-9:] == [
+        "list",
+        "--moves",
+        "--limit",
+        "25",
+        "--after",
+        "40",
+        "--oldest-first",
+        "--format",
+        "json",
+    ]
+
+
+def test_read_pair_rejects_unexpected_schema(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    monkeypatch.setattr(
+        history_client,
+        "run_command",
+        lambda argv: CommandResult(
+            stdout=json.dumps({"schema_version": 99}),
+            stderr="",
+        ),
+    )
+
+    with pytest.raises(HistoryResponseError, match="Unsupported"):
+        read_history_pair(repository, 1)
+
+
+def test_read_status_requires_analysis_database(tmp_path: Path) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+
+    with pytest.raises(HistoryConfigurationError, match="analysis.sqlite3"):
+        read_history_status(repository)

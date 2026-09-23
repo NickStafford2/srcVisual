@@ -22,6 +22,7 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = get_max_content_length_bytes()
     app.config["COMMAND_TIMEOUT_SECONDS"] = get_command_timeout_seconds()
     app.config["EXAMPLES_DIR"] = get_examples_dir()
+    app.config["HISTORY_REPOSITORY"] = get_history_repository()
     app.register_blueprint(api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 
@@ -119,6 +120,15 @@ def get_examples_dir() -> Path:
         return examples_dir
 
     return Path(__file__).resolve().parents[2] / "examples"
+
+
+def get_history_repository() -> Path | None:
+    raw_repository = os.environ.get("SRCVISUAL_HISTORY_REPOSITORY", "").strip()
+    if not raw_repository:
+        return None
+    if "\0" in raw_repository:
+        raise ValueError("SRCVISUAL_HISTORY_REPOSITORY contains an invalid null byte.")
+    return Path(raw_repository).expanduser().absolute()
 
 
 def get_dev_host() -> str:

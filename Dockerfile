@@ -101,6 +101,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libcurl4t64 \
     libxml2 \
     libxslt1.1 \
+    git \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -116,6 +117,9 @@ COPY --from=native-builder /workspace/srcDiff/build/bin /opt/srcDiff/bin
 COPY --from=native-builder /workspace/srcReader/build/bin /opt/srcReader/bin
 RUN mkdir -p /opt/srcMove/bin
 COPY --from=native-builder /workspace/srcMove/build/srcMove /opt/srcMove/bin/srcMove
+COPY --from=native-builder /workspace/srcMove/bin/srcmove-history /opt/srcMove/bin/srcmove-history
+COPY --from=native-builder /workspace/srcMove/srcmove_history /opt/srcMove/srcmove_history
+COPY --from=native-builder /workspace/srcMove/srcmove_runtime /opt/srcMove/srcmove_runtime
 
 EXPOSE 5000
 

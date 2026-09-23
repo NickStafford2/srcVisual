@@ -12,6 +12,11 @@ const OPTIONS: ReadonlyArray<{
   description: string;
 }> = [
   {
+    mode: "history",
+    label: "History",
+    description: "Browse analyzed commit pairs from the mounted repository.",
+  },
+  {
     mode: "examples",
     label: "Examples",
     description: "Load a known srcDiff example from the repo.",

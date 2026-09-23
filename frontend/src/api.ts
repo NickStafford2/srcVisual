@@ -1,5 +1,11 @@
 import type { VisualizeResponse } from "./types";
 import type { SrcDiffTreeNode } from "./srcdiff/types";
+import type {
+  HistoryPairDocument,
+  HistoryPairPageDocument,
+  HistorySelection,
+  HistoryStatusDocument,
+} from "./history/types";
 
 export type VisualizationProgressEvent = {
   type: "connected" | "progress" | "complete" | "error";
@@ -31,6 +37,53 @@ export async function fetchExampleContent(filename: string): Promise<string> {
   }
 
   return payload.content;
+}
+
+export async function fetchHistoryStatus(): Promise<HistoryStatusDocument> {
+  const payload = await fetchJson("/api/history/status");
+  if (payload.schema_version !== 2 || typeof payload.analysis !== "object") {
+    throw new Error("Backend returned an unsupported history status document.");
+  }
+  return payload as unknown as HistoryStatusDocument;
+}
+
+export async function fetchHistoryPairs(
+  selection: HistorySelection,
+  after?: number,
+): Promise<HistoryPairPageDocument> {
+  const parameters = new URLSearchParams({ selection, limit: "50" });
+  if (after !== undefined) parameters.set("after", String(after));
+  const payload = await fetchJson(`/api/history/pairs?${parameters.toString()}`);
+  if (
+    payload.schema_version !== 1 ||
+    typeof payload.pairs !== "object" ||
+    payload.pairs === null ||
+    !Array.isArray((payload.pairs as { items?: unknown }).items)
+  ) {
+    throw new Error("Backend returned an unsupported history pair page.");
+  }
+  return payload as unknown as HistoryPairPageDocument;
+}
+
+export async function fetchHistoryPair(
+  pairNumber: number,
+): Promise<HistoryPairDocument> {
+  const payload = await fetchJson(`/api/history/pairs/${pairNumber}`);
+  if (payload.schema_version !== 1 || typeof payload.pair !== "object") {
+    throw new Error("Backend returned unsupported history pair evidence.");
+  }
+  return payload as unknown as HistoryPairDocument;
+}
+
+async function fetchJson(url: string): Promise<Record<string, unknown>> {
+  const response = await fetch(url);
+  const payload = (await response.json()) as Record<string, unknown> & {
+    error?: string;
+  };
+  if (!response.ok) {
+    throw new Error(payload.error ?? `Request failed with status ${response.status}.`);
+  }
+  return payload;
 }
 
 export async function visualizeSrcDiff(

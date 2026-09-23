@@ -8,6 +8,8 @@ import { InputPanelSubmitRow } from "./InputPanelSubmitRow";
 import { PasteXmlInput } from "./PasteXmlInput";
 import { ProgressLog } from "./ProgressLog";
 import { UploadFileInput } from "./UploadFileInput";
+import { HistoryInput } from "./HistoryInput";
+import type { ReturnTypeOfUseHistoryData } from "./historyInputTypes";
 
 type InputPanelProps = {
   inputMode: InputMode;
@@ -24,6 +26,7 @@ type InputPanelProps = {
   exampleFilenames: string[];
   examplesError: string | null;
   isLoadingExample: boolean;
+  history: ReturnTypeOfUseHistoryData;
   onInputModeChange: (mode: InputMode) => void;
   onLoadExample: (filename: string) => void;
   onUploadChange: (file: File | null) => void;
@@ -48,6 +51,7 @@ export function InputPanel({
   exampleFilenames,
   examplesError,
   isLoadingExample,
+  history,
   onInputModeChange,
   onLoadExample,
   onUploadChange,
@@ -64,6 +68,8 @@ export function InputPanel({
           disabled={isLoading}
           onChange={onInputModeChange}
         />
+
+        {inputMode === "history" ? <HistoryInput {...history} /> : null}
 
         {inputMode === "examples" ? (
           <ExampleInput
@@ -92,22 +98,26 @@ export function InputPanel({
           />
         ) : null}
 
-        <InputPanelOptions
-          includeSkippedTags={includeSkippedTags}
-          pruningLevel={pruningLevel}
-          disabled={isLoading}
-          onIncludeSkippedTagsChange={onIncludeSkippedTagsChange}
-          onPruningLevelChange={onPruningLevelChange}
-        />
+        {inputMode !== "history" ? (
+          <>
+            <InputPanelOptions
+              includeSkippedTags={includeSkippedTags}
+              pruningLevel={pruningLevel}
+              disabled={isLoading}
+              onIncludeSkippedTagsChange={onIncludeSkippedTagsChange}
+              onPruningLevelChange={onPruningLevelChange}
+            />
 
-        <InputPanelSubmitRow
-          isLoading={isLoading}
-          error={error}
-          progressMessage={progressMessage}
-          data={data}
-        />
+            <InputPanelSubmitRow
+              isLoading={isLoading}
+              error={error}
+              progressMessage={progressMessage}
+              data={data}
+            />
 
-        <ProgressLog entries={progressMessages} />
+            <ProgressLog entries={progressMessages} />
+          </>
+        ) : null}
       </form>
     </section>
   );

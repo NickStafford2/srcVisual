@@ -12,6 +12,7 @@ import { SrcDiffHighlightProvider } from "./srcdiff/highlightContext";
 import type { SourceViewHighlight } from "./srcdiff/srcView";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
+import { useHistoryData } from "./history/useHistoryData";
 
 type MainTabId =
   | "input"
@@ -45,6 +46,7 @@ function getXmlHighlights(
 
 export default function App() {
   const srcDiffData = useSrcDiffData();
+  const historyData = useHistoryData(srcDiffData.inputMode === "history");
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
 
@@ -135,6 +137,7 @@ export default function App() {
                       exampleFilenames={srcDiffData.exampleFilenames}
                       examplesError={srcDiffData.examplesError}
                       isLoadingExample={srcDiffData.isLoadingExample}
+                      history={historyData}
                       onInputModeChange={srcDiffData.setInputMode}
                       onLoadExample={srcDiffData.handleLoadExample}
                       onUploadChange={srcDiffData.setSelectedUpload}

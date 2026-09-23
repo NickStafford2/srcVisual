@@ -1,0 +1,146 @@
+from __future__ import annotations
+
+import json
+import os
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+
+from srcvisual.core.commands import BackendCommandError, run_command
+
+
+DEFAULT_HISTORY_COMMAND = "srcmove-history"
+
+
+class HistoryConfigurationError(ValueError):
+    """The configured history repository is unavailable or invalid."""
+
+
+class HistoryResponseError(RuntimeError):
+    """srcmove-history returned output outside its versioned JSON contract."""
+
+
+def read_history_status(repository: Path) -> dict[str, Any]:
+    return _run_json_command(
+        repository,
+        ("status", "--format", "json"),
+        expected_schema_version=2,
+    )
+
+
+def read_history_pairs(
+    repository: Path,
+    *,
+    selection: str,
+    limit: int,
+    after: int | None,
+    oldest_first: bool,
+) -> dict[str, Any]:
+    if selection not in {"all", "moves", "failed"}:
+        raise ValueError(f"Unsupported history pair selection: {selection!r}")
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+        raise ValueError("History pair limit must be between 1 and 100.")
+    if after is not None and (
+        isinstance(after, bool) or not isinstance(after, int) or after <= 0
+    ):
+        raise ValueError("History pair cursor must be a positive integer.")
+
+    arguments = ["list"]
+    if selection == "moves":
+        arguments.append("--moves")
+    elif selection == "failed":
+        arguments.append("--failed")
+    arguments.extend(("--limit", str(limit)))
+    if after is not None:
+        arguments.extend(("--after", str(after)))
+    if oldest_first:
+        arguments.append("--oldest-first")
+    arguments.extend(("--format", "json"))
+
+    return _run_json_command(
+        repository,
+        arguments,
+        expected_schema_version=1,
+    )
+
+
+def read_history_pair(repository: Path, pair_number: int) -> dict[str, Any]:
+    if (
+        isinstance(pair_number, bool)
+        or not isinstance(pair_number, int)
+        or pair_number <= 0
+    ):
+        raise ValueError("History pair number must be a positive integer.")
+    return _run_json_command(
+        repository,
+        ("show", str(pair_number), "--format", "json"),
+        expected_schema_version=1,
+    )
+
+
+def _run_json_command(
+    repository: Path,
+    arguments: Sequence[str],
+    *,
+    expected_schema_version: int,
+) -> dict[str, Any]:
+    resolved_repository = _validated_repository(repository)
+    command = os.environ.get(
+        "SRCVISUAL_HISTORY_COMMAND",
+        DEFAULT_HISTORY_COMMAND,
+    ).strip()
+    if not command or "\0" in command:
+        raise HistoryConfigurationError(
+            "SRCVISUAL_HISTORY_COMMAND must name one executable."
+        )
+
+    result = run_command(
+        [command, "-C", str(resolved_repository), *arguments]
+    )
+    try:
+        document = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise HistoryResponseError(
+            "srcmove-history returned malformed JSON."
+        ) from error
+    if not isinstance(document, dict):
+        raise HistoryResponseError(
+            "srcmove-history JSON output must contain an object."
+        )
+    if document.get("schema_version") != expected_schema_version:
+        raise HistoryResponseError(
+            "Unsupported srcmove-history JSON schema: "
+            f"expected {expected_schema_version}, "
+            f"received {document.get('schema_version')!r}."
+        )
+    return document
+
+
+def _validated_repository(repository: Path) -> Path:
+    try:
+        resolved = repository.expanduser().resolve(strict=True)
+    except FileNotFoundError as error:
+        raise HistoryConfigurationError(
+            f"Configured history repository does not exist: {repository}"
+        ) from error
+    if not resolved.is_dir():
+        raise HistoryConfigurationError(
+            f"Configured history repository is not a directory: {resolved}"
+        )
+    database = resolved / ".srcmove" / "analysis.sqlite3"
+    if not database.is_file():
+        raise HistoryConfigurationError(
+            "Configured history repository has no .srcmove/analysis.sqlite3: "
+            f"{resolved}"
+        )
+    return resolved
+
+
+def history_error_response(error: Exception) -> tuple[dict[str, str], int]:
+    if isinstance(error, HistoryConfigurationError):
+        return {"error": str(error)}, 503
+    if isinstance(error, BackendCommandError):
+        return {"error": error.user_message()}, 502
+    if isinstance(error, HistoryResponseError):
+        return {"error": str(error)}, 502
+    raise error

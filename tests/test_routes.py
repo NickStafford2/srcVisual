@@ -70,6 +70,96 @@ def test_get_example_rejects_unknown_filename(
     assert response.status_code == 404
 
 
+def test_history_status_requires_configured_repository(monkeypatch) -> None:
+    monkeypatch.delenv("SRCVISUAL_HISTORY_REPOSITORY", raising=False)
+
+    client = create_app().test_client()
+    response = client.get("/api/history/status")
+
+    assert response.status_code == 503
+    assert "not configured" in response.get_json()["error"]
+
+
+def test_history_status_returns_cli_document(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setattr(
+        routes_module,
+        "read_history_status",
+        lambda repository: {
+            "schema_version": 2,
+            "analysis": {"name": "notepadpp"},
+            "state": "target_reached",
+        },
+    )
+
+    client = create_app().test_client()
+    response = client.get("/api/history/status")
+
+    assert response.status_code == 200
+    assert response.get_json()["analysis"]["name"] == "notepadpp"
+
+
+def test_history_pairs_validates_and_forwards_query(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+
+    def fake_read_history_pairs(repository, **kwargs):
+        captured.update(kwargs)
+        return {
+            "schema_version": 1,
+            "pairs": {"items": [], "next_after": None},
+        }
+
+    monkeypatch.setattr(
+        routes_module,
+        "read_history_pairs",
+        fake_read_history_pairs,
+    )
+
+    client = create_app().test_client()
+    response = client.get(
+        "/api/history/pairs?selection=moves&limit=25&after=5&oldest_first=true"
+    )
+
+    assert response.status_code == 200
+    assert captured == {
+        "selection": "moves",
+        "limit": 25,
+        "after": 5,
+        "oldest_first": True,
+    }
+
+    invalid = client.get("/api/history/pairs?limit=1000")
+    assert invalid.status_code == 400
+
+
+def test_history_pair_returns_compact_evidence(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setattr(
+        routes_module,
+        "read_history_pair",
+        lambda repository, pair_number: {
+            "schema_version": 1,
+            "pair": {"number": pair_number, "moves": []},
+        },
+    )
+
+    client = create_app().test_client()
+    response = client.get("/api/history/pairs/42")
+
+    assert response.status_code == 200
+    assert response.get_json()["pair"]["number"] == 42
+
+
 def test_visualize_returns_move_results(monkeypatch) -> None:
     captured_kwargs: dict[str, object] = {}
 

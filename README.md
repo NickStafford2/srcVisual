@@ -9,10 +9,14 @@ source code, and detected moves together in a code-editor-like interface.
 
 srcVisual consists of a Python/Flask backend and a React frontend. It can accept
 uploaded or pasted srcDiff XML, including XML that has already been annotated
-by srcMove.
+by srcMove. In its Docker development configuration, it can also browse the
+existing `srcmove-history` analysis mounted read-only from the configured
+repository.
 
 The backend:
 
+- queries history status, bounded commit-pair pages, and compact pair evidence
+  through srcMove's versioned JSON command interface
 - extracts the original and modified source with `archive_reader`
 - adds position information with `srcdiff --position` when needed
 - adds move annotations with `srcMove` when needed
@@ -55,7 +59,9 @@ The image contains a compiled snapshot of the sibling source checkouts at build
 time; building it does not edit those checkouts. Re-run the build command after
 changing srcVisual or a native dependency such as srcMove. This Compose setup
 is currently a production-style local build, not a hot-reload development
-server.
+server. The checked-in Compose configuration mounts the Notepad++ reference
+repository read-only for history browsing; change both the volume source and
+`SRCVISUAL_HISTORY_REPOSITORY` together to browse another analyzed repository.
 
 ## Hosted application vision
 

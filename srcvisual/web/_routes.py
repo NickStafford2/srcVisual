@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, current_app, request
 from werkzeug.datastructures import FileStorage
 
 from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
 from srcvisual.workflow.payload import build_visualization_payload
+from srcvisual.history.client import (
+    HistoryConfigurationError,
+    history_error_response,
+    read_history_pair,
+    read_history_pairs,
+    read_history_status,
+)
 from srcvisual.web._examples import list_example_filenames, read_example_file
 from srcvisual.web._progress import progress_broker
 
@@ -40,6 +48,47 @@ def get_example(filename: str) -> tuple[dict[str, str], int]:
         return {"error": str(exc)}, 404
 
     return {"filename": filename, "content": content}, 200
+
+
+@api.get("/history/status")
+def history_status() -> tuple[dict[str, object], int]:
+    try:
+        result = read_history_status(_history_repository())
+    except Exception as error:
+        return history_error_response(error)
+    return result, 200
+
+
+@api.get("/history/pairs")
+def history_pairs() -> tuple[dict[str, object], int]:
+    try:
+        selection = request.args.get("selection", "all")
+        limit = _positive_integer_query("limit", default=50, maximum=100)
+        after = _optional_positive_integer_query("after")
+        oldest_first = _boolean_query("oldest_first")
+        result = read_history_pairs(
+            _history_repository(),
+            selection=selection,
+            limit=limit,
+            after=after,
+            oldest_first=oldest_first,
+        )
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    except Exception as error:
+        return history_error_response(error)
+    return result, 200
+
+
+@api.get("/history/pairs/<int:pair_number>")
+def history_pair(pair_number: int) -> tuple[dict[str, object], int]:
+    try:
+        result = read_history_pair(_history_repository(), pair_number)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    except Exception as error:
+        return history_error_response(error)
+    return result, 200
 
 
 @api.get("/visualize/events")
@@ -174,3 +223,46 @@ def get_pruning_level() -> PruningLevel | None:
         return None
 
     return parse_tree_pruning_level(raw_level)
+
+
+def _history_repository() -> Path:
+    repository = current_app.config.get("HISTORY_REPOSITORY")
+    if repository is None:
+        raise HistoryConfigurationError(
+            "History browsing is not configured. Set "
+            "SRCVISUAL_HISTORY_REPOSITORY when starting srcVisual."
+        )
+    return repository
+
+
+def _positive_integer_query(name: str, *, default: int, maximum: int) -> int:
+    raw_value = request.args.get(name)
+    if raw_value is None:
+        return default
+    try:
+        value = int(raw_value)
+    except ValueError as error:
+        raise ValueError(f"{name} must be an integer.") from error
+    if not 1 <= value <= maximum:
+        raise ValueError(f"{name} must be between 1 and {maximum}.")
+    return value
+
+
+def _optional_positive_integer_query(name: str) -> int | None:
+    raw_value = request.args.get(name)
+    if raw_value is None:
+        return None
+    try:
+        value = int(raw_value)
+    except ValueError as error:
+        raise ValueError(f"{name} must be an integer.") from error
+    if value <= 0:
+        raise ValueError(f"{name} must be positive.")
+    return value
+
+
+def _boolean_query(name: str) -> bool:
+    raw_value = request.args.get(name, "false")
+    if raw_value not in {"true", "false"}:
+        raise ValueError(f"{name} must be true or false.")
+    return raw_value == "true"
