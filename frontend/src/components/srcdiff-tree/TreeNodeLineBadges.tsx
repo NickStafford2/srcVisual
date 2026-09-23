@@ -1,6 +1,6 @@
 import type { SrcDiffTreeNode } from "../../srcdiff/types";
 import { LineTargetPill } from "../LineTargetPill";
-import { getNodeLineBadges } from "./treeNodeLineBadges";
+import { getNodeLineBadges } from "./_treeNodeLineBadges";
 
 type TreeNodeLineBadgesProps = {
   node: SrcDiffTreeNode;

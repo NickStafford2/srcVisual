@@ -347,10 +347,12 @@ describe("App highlight all moves flow", () => {
 
     await screen.findByLabelText("srcDiff Tree");
 
-    expect(
-      within(progressLog).getByText("Visualization complete."),
-    ).toBeInTheDocument();
-    expect(progressLog).toHaveTextContent("+4.75s [10.00s]");
+    await waitFor(() => {
+      expect(
+        within(progressLog).getByText("Visualization complete."),
+      ).toBeInTheDocument();
+      expect(progressLog).toHaveTextContent("+4.75s [10.00s]");
+    });
   });
 });
 

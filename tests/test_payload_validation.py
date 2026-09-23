@@ -51,7 +51,16 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
     monkeypatch.setattr(
         payload_module,
         "build_tree_index",
-        lambda *args, **kwargs: ({1: {"path": "/src:unit[1]"}}, False),
+        lambda *args, **kwargs: (
+            {
+                1: {
+                    "path": "/src:unit[1]",
+                    "kind": "plain",
+                    "children": [],
+                }
+            },
+            False,
+        ),
     )
     monkeypatch.setattr(
         payload_module,

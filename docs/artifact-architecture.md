@@ -139,7 +139,7 @@ python scripts/measure_visualization_payload.py <annotated-xml> \
 
 ### Test baseline
 
-The backend suite reported 114 passing and 3 failing tests:
+The initial backend suite reported 114 passing and 3 failing tests:
 
 - one end-to-end test refers to a srcMove fixture directory that no longer
   exists in the current workspace;
@@ -150,17 +150,20 @@ The backend suite reported 114 passing and 3 failing tests:
 
 The obsolete function-content example and its dedicated expectation were
 removed after confirming that current srcMove requires complete statements as
-move candidates. The other two backend failures remain baseline repair work.
+move candidates. The missing external fixture dependency was replaced with
+assertions against the current checked-in `to_new_file` example, and the
+validation-disabled unit-test stub was brought up to the tree contract.
 
-The frontend suite reported 22 passing and 7 failing tests. Six failures share
-one root cause: `TreeNodeLineBadges.tsx` and `treeNodeLineBadges.ts` differ only
-by case, so case-insensitive macOS module resolution imports the non-component
-module into `TreeNodeRow`. The production TypeScript build fails for the same
-reason. The remaining progress-log assertion races the asynchronous terminal
-event.
+The initial frontend suite reported 22 passing and 7 failing tests. Six
+failures shared one root cause: `TreeNodeLineBadges.tsx` and
+`treeNodeLineBadges.ts` differed only by case, so case-insensitive macOS module
+resolution imported the non-component module into `TreeNodeRow`. Renaming the
+private helper removed the collision. The remaining progress-log assertion
+raced the asynchronous terminal event and now waits for that event.
 
-These are pre-existing baseline failures. They must be corrected before the
-artifact migration relies on the full suites as its safety net.
+After these baseline repairs, all 115 backend tests and all 29 frontend tests
+pass, and the production frontend build succeeds. This clean baseline is the
+safety net for the artifact migration.
 
 ## Terminology and Ownership
 

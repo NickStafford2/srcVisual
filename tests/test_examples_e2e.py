@@ -1,23 +1,14 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
-import re
 import xml.etree.ElementTree as ET
 
 import pytest
 
 from srcvisual.core.units import get_srcdiff_file_unit_elements
 from srcvisual.web.app import create_app
-from srcvisual.srcmove.srcmove_results import (
-    build_filename_to_unit_index,
-    parse_srcmove_result_moves,
-)
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
-SRCMOVE_FIXTURES_DIR = (
-    Path(__file__).resolve().parents[2] / "srcMove" / "test" / "e2e_generated"
-)
 EXAMPLE_PATHS = (
     sorted(
         path
@@ -26,9 +17,6 @@ EXAMPLE_PATHS = (
     )
     if EXAMPLES_DIR.is_dir()
     else []
-)
-FILENAME_XPATH_PATTERN = re.compile(
-    r"^/src:unit\[@filename=(?P<quote>['\"])(?P<filename>.*?)(?P=quote)\]"
 )
 
 
@@ -67,8 +55,6 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
 def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> None:
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_to_new_file_diff.xml"
-    expected_results_path = SRCMOVE_FIXTURES_DIR / "to_new_file" / "results.json"
-
     response = client.post(
         "/api/visualize",
         data={
@@ -92,20 +78,20 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     payload = response.get_json()
     assert isinstance(payload, dict)
 
-    filename_to_unit_index = build_filename_to_unit_index(payload["moved_srcdiff_xml"])
-    expected_results = json.loads(expected_results_path.read_text(encoding="utf-8"))
-    actual_moves = parse_srcmove_result_moves(
-        payload["move_results"],
-        filename_to_unit_index=filename_to_unit_index,
-    )
-    expected_moves = parse_srcmove_result_moves(
-        expected_results,
-        filename_to_unit_index=filename_to_unit_index,
-    )
-
-    assert [
-        (move.move_id, move.from_xpaths, move.to_xpaths) for move in actual_moves
-    ] == [(move.move_id, move.from_xpaths, move.to_xpaths) for move in expected_moves]
+    moves = payload["move_results"]["moves"]
+    assert isinstance(moves, list)
+    assert len(moves) == 1
+    move = moves[0]
+    assert isinstance(move, dict)
+    move_id = move["move_id"]
+    assert isinstance(move_id, str)
+    assert move["match_kind"] == "exact"
+    assert move["from_node_ids"] == [
+        "/src:unit[2]/diff:delete[1]/function[1]"
+    ]
+    assert move["to_node_ids"] == [
+        "/src:unit[1]/diff:insert[1]/function[1]"
+    ]
 
     for file_payload in payload["files"]:
         assert isinstance(file_payload, dict)
@@ -130,12 +116,22 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
         "int changed_function() {"
     )
 
-    expected_tree_records = sorted(
-        build_expected_tree_records(expected_results, expected_moves)
-    )
     actual_tree_records = sorted(build_actual_tree_records(payload["files"]))
 
-    assert actual_tree_records == expected_tree_records
+    assert actual_tree_records == [
+        (
+            move_id,
+            "main.cpp",
+            "/src:unit[2]/diff:delete[1]/function[1]",
+            "move",
+        ),
+        (
+            move_id,
+            "|foo.hpp",
+            "/src:unit[1]/diff:insert[1]/function[1]",
+            "move",
+        ),
+    ]
 
 
 def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
@@ -219,57 +215,6 @@ def test_noop_single_file_srcdiff_keeps_file_tree_and_source_when_pruned() -> No
     assert list(get_srcdiff_file_unit_elements(moved_root)) == []
 
 
-def build_expected_tree_records(
-    expected_results: dict[str, object],
-    expected_moves,
-) -> list[tuple[str, str, str, str]]:
-    moves = expected_results["moves"]
-    assert isinstance(moves, list)
-    records: list[tuple[str, str, str, str]] = []
-
-    for raw_move, parsed_move in zip(moves, expected_moves, strict=True):
-        assert isinstance(raw_move, dict)
-        move_id = raw_move["move_id"]
-        assert isinstance(move_id, str)
-
-        raw_from_xpaths = raw_move["from_xpaths"]
-        raw_to_xpaths = raw_move["to_xpaths"]
-        assert isinstance(raw_from_xpaths, list)
-        assert isinstance(raw_to_xpaths, list)
-
-        for raw_xpath, normalized_xpath in zip(
-            raw_from_xpaths,
-            parsed_move.from_xpaths,
-            strict=True,
-        ):
-            assert isinstance(raw_xpath, str)
-            records.append(
-                (
-                    move_id,
-                    extract_filename_from_xpath(raw_xpath),
-                    normalized_xpath,
-                    "move",
-                )
-            )
-
-        for raw_xpath, normalized_xpath in zip(
-            raw_to_xpaths,
-            parsed_move.to_xpaths,
-            strict=True,
-        ):
-            assert isinstance(raw_xpath, str)
-            records.append(
-                (
-                    move_id,
-                    extract_filename_from_xpath(raw_xpath),
-                    normalized_xpath,
-                    "move",
-                )
-            )
-
-    return records
-
-
 def build_actual_tree_records(
     files: list[dict[str, object]],
 ) -> list[tuple[str, str, str, str]]:
@@ -351,9 +296,3 @@ def collect_tree_paths(node: dict[str, object], tree_paths: set[str]) -> None:
     for child in children:
         assert isinstance(child, dict)
         collect_tree_paths(child, tree_paths)
-
-
-def extract_filename_from_xpath(xpath: str) -> str:
-    match = FILENAME_XPATH_PATTERN.match(xpath)
-    assert match is not None, f"Expected filename-based srcMove xpath, got {xpath!r}."
-    return match.group("filename")
