@@ -1,5 +1,11 @@
 # Backend
 
+## Examples
+
+Audit and regenerate the example files against the current srcMove candidate
+rules. Move examples should use complete statements or larger regions that are
+valid move candidates in the current detector.
+
 ## Skip files that have position/move data
 
 auto detect if a script is a srcMove xml file
