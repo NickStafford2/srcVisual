@@ -488,6 +488,8 @@ preserve the user's scroll anchor.
 
 ### Phase 0: contract and baseline
 
+Status: complete.
+
 - Classify the existing full-suite backend and frontend failures.
 - Measure serialized bytes and build time separately for XML, sources, trees,
   move data, validation, and JSON encoding.
@@ -501,6 +503,10 @@ preserve the user's scroll anchor.
 
 ### Phase 1: artifact foundation
 
+Status: complete. The compatibility endpoint now constructs, atomically
+publishes, validates, reloads, and projects an artifact before returning the
+legacy response.
+
 - Separate canonical artifact construction from presentation payload creation.
 - Add the dedicated persistent artifact volume and configuration.
 - Persist normalized XML, extracted sources, manifest, and indexes atomically.
@@ -512,6 +518,14 @@ preserve the user's scroll anchor.
 
 This is the smallest safe implementation slice. It establishes the core
 boundary without changing the user interface.
+
+The pair 13 scale check published 297,770 canonical nodes in 65.51 seconds.
+The artifact occupied 107,815,213 bytes, including a 98,742,272-byte SQLite
+index. Per-node payload compression and integer parent identities reduced the
+first normalized-index draft from 545,665,325 bytes without weakening stable
+external node identities. Its compatibility projection retained all 12 XML
+move annotations and the producer metadata for the five moves described by
+the retained `results.json`.
 
 ### Phase 2: source-first artifact interface
 

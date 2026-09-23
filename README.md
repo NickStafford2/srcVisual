@@ -22,8 +22,11 @@ The backend:
 - extracts the original and modified source with `archive_reader`
 - adds position information with `srcdiff --position` when needed
 - adds move annotations with `srcMove` when needed
-- builds one normalized payload containing annotated XML, move results, file
-  metadata, source code, and tree data
+- atomically publishes an immutable artifact containing normalized annotated
+  XML, extracted revision sources, retained move metadata, checksums, and a
+  structural SQLite index
+- reloads that artifact to build the current monolithic frontend payload while
+  the source-first artifact interface is introduced
 
 The frontend uses that payload to keep its XML, tree, source-code, diff, and
 move views synchronized. This is especially valuable for moves across files,
@@ -67,6 +70,11 @@ read-only; only its `.git` and `.srcmove` directories are writable so the
 `srcmove-history` CLI can manage its own operation state and saved comparison
 artifacts. Change the volume sources and `SRCVISUAL_HISTORY_REPOSITORY`
 together to use another analyzed repository.
+
+Published visualization artifacts are stored in the named
+`srcvisual-artifacts` volume mounted at `/var/lib/srcvisual/artifacts`. They
+survive container replacement and ordinary `docker compose down`; removing the
+named volume removes them.
 
 ## Hosted application vision
 

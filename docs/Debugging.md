@@ -16,6 +16,12 @@ Temp files:
 - change temp root: `SRCVISUAL_TMP_ROOT=/some/path`
 - default temp root is `srcVisual/temp/`
 
+Artifacts:
+
+- change the artifact store: `SRCVISUAL_ARTIFACT_ROOT=/some/path`
+- Compose uses the persistent `srcvisual-artifacts` named volume
+- incomplete staging directories older than 24 hours are removed at startup
+
 Debugger:
 
 - Code launch config is in `.vscode/launch.json`
