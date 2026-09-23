@@ -160,6 +160,48 @@ def test_history_pair_returns_compact_evidence(
     assert response.get_json()["pair"]["number"] == 42
 
 
+def test_history_pair_visualization_materializes_and_builds_payload(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "srcmove.xml"
+    artifact.write_bytes(b"<unit />")
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setattr(
+        routes_module,
+        "materialize_history_pair",
+        lambda repository, pair_number: artifact,
+    )
+
+    def fake_build_visualization_payload(**kwargs) -> VisualizationPayload:
+        captured.update(kwargs)
+        return VisualizationPayload(
+            source_filename="history-pair-13.srcmove.xml",
+            moved_srcdiff_xml="<unit />",
+            move_results={"move_count": 0, "moves": []},
+            has_position_data=False,
+            files=(),
+        )
+
+    monkeypatch.setattr(
+        routes_module,
+        "build_visualization_payload",
+        fake_build_visualization_payload,
+    )
+
+    client = create_app().test_client()
+    response = client.post(
+        "/api/history/pairs/13/visualize",
+        data={"pruning_level": "none"},
+    )
+
+    assert response.status_code == 200
+    assert captured["filename"] == "history-pair-13.srcmove.xml"
+    assert captured["payload"] == b"<unit />"
+    assert captured["pruning_level"] == "none"
+
+
 def test_visualize_returns_move_results(monkeypatch) -> None:
     captured_kwargs: dict[str, object] = {}
 

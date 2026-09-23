@@ -95,3 +95,28 @@ def test_build_move_results_from_moved_srcdiff_accepts_subtree_annotated_source_
             "to_raw_texts": ["int moved_one() {\n    return 1;\n  }"],
         }
     ]
+
+
+def test_build_move_results_from_moved_srcdiff_accepts_plain_move_wrappers() -> None:
+    moved_srcdiff_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff">
+  <unit filename="example.cpp">
+    <diff:delete move="1"><name>before</name></diff:delete>
+    <diff:insert move="1"><name>before</name></diff:insert>
+  </unit>
+</unit>
+"""
+
+    move_results = build_move_results_from_moved_srcdiff(
+        moved_srcdiff_xml=moved_srcdiff_xml,
+        include_skipped_tags=False,
+    )
+
+    assert move_results["move_count"] == 1
+    assert move_results["moves"][0]["move_id"] == "1"
+    assert move_results["moves"][0]["from_xpaths"] == [
+        "/src:unit[1]/diff:delete[1]"
+    ]
+    assert move_results["moves"][0]["to_xpaths"] == [
+        "/src:unit[1]/diff:insert[1]"
+    ]

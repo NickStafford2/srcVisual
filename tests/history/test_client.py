@@ -10,6 +10,7 @@ from srcvisual.core.commands import CommandResult
 from srcvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
+    materialize_history_pair,
     read_history_pair,
     read_history_pairs,
     read_history_status,
@@ -114,3 +115,71 @@ def test_read_status_requires_analysis_database(tmp_path: Path) -> None:
 
     with pytest.raises(HistoryConfigurationError, match="analysis.sqlite3"):
         read_history_status(repository)
+
+
+def test_materialize_pair_returns_confined_srcmove_artifact(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    comparison = repository / ".srcmove" / "comparisons" / "old-to-new"
+    comparison.mkdir(parents=True)
+    artifact = comparison / "srcmove.xml"
+    artifact.write_text("<unit />", encoding="utf-8")
+    captured: list[str] = []
+
+    def fake_run_command(argv: list[str]) -> CommandResult:
+        captured.extend(argv)
+        return CommandResult(
+            stdout=json.dumps(
+                {
+                    "schema_version": 1,
+                    "comparison": {
+                        "status": "completed",
+                        "saved_paths": [str(artifact)],
+                    },
+                }
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(history_client, "run_command", fake_run_command)
+
+    assert materialize_history_pair(repository, 13) == artifact
+    assert captured[-7:] == [
+        "compare",
+        "--pair",
+        "13",
+        "--save",
+        "all",
+        "--format",
+        "json",
+    ]
+
+
+def test_materialize_pair_rejects_artifact_outside_analysis(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path)
+    artifact = tmp_path / "srcmove.xml"
+    artifact.write_text("<unit />", encoding="utf-8")
+    monkeypatch.setattr(
+        history_client,
+        "run_command",
+        lambda argv: CommandResult(
+            stdout=json.dumps(
+                {
+                    "schema_version": 1,
+                    "comparison": {
+                        "status": "completed",
+                        "saved_paths": [str(artifact)],
+                    },
+                }
+            ),
+            stderr="",
+        ),
+    )
+
+    with pytest.raises(HistoryResponseError, match="outside"):
+        materialize_history_pair(repository, 1)

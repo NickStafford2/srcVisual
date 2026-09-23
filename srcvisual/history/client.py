@@ -78,6 +78,63 @@ def read_history_pair(repository: Path, pair_number: int) -> dict[str, Any]:
     )
 
 
+def materialize_history_pair(repository: Path, pair_number: int) -> Path:
+    if (
+        isinstance(pair_number, bool)
+        or not isinstance(pair_number, int)
+        or pair_number <= 0
+    ):
+        raise ValueError("History pair number must be a positive integer.")
+    document = _run_json_command(
+        repository,
+        (
+            "compare",
+            "--pair",
+            str(pair_number),
+            "--save",
+            "all",
+            "--format",
+            "json",
+        ),
+        expected_schema_version=1,
+    )
+    comparison = document.get("comparison")
+    if not isinstance(comparison, dict):
+        raise HistoryResponseError(
+            "srcmove-history comparison response is missing `comparison`."
+        )
+    if comparison.get("status") != "completed":
+        detail = comparison.get("error")
+        suffix = f": {detail}" if isinstance(detail, str) and detail else "."
+        raise HistoryResponseError(
+            "srcmove-history could not materialize this commit pair" + suffix
+        )
+
+    saved_paths = comparison.get("saved_paths")
+    if not isinstance(saved_paths, list) or not all(
+        isinstance(path, str) for path in saved_paths
+    ):
+        raise HistoryResponseError(
+            "srcmove-history comparison response has invalid saved paths."
+        )
+    resolved_repository = _validated_repository(repository)
+    comparison_root = (resolved_repository / ".srcmove" / "comparisons").resolve()
+    candidates = []
+    for raw_path in saved_paths:
+        candidate = Path(raw_path).resolve(strict=True)
+        if not candidate.is_relative_to(comparison_root):
+            raise HistoryResponseError(
+                "srcmove-history returned an artifact outside its comparison directory."
+            )
+        if candidate.name == "srcmove.xml":
+            candidates.append(candidate)
+    if len(candidates) != 1 or not candidates[0].is_file():
+        raise HistoryResponseError(
+            "srcmove-history did not produce exactly one srcmove.xml artifact."
+        )
+    return candidates[0]
+
+
 def _run_json_command(
     repository: Path,
     arguments: Sequence[str],

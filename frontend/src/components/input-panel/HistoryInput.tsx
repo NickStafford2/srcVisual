@@ -18,10 +18,12 @@ export function HistoryInput(props: HistoryInputProps) {
     isLoading,
     isLoadingMore,
     isLoadingPair,
+    isVisualizingPair,
     error,
     setSelection,
     selectPair,
     loadMore,
+    openVisualization,
     refresh,
   } = props;
 
@@ -30,14 +32,14 @@ export function HistoryInput(props: HistoryInputProps) {
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-4">
         <div>
           <p className="text-xs font-medium tracking-[0.18em] text-sky-300 uppercase">
-            Read-only analysis
+            Repository analysis
           </p>
           <h2 className="mt-1 text-xl font-semibold text-slate-100">
             {status?.analysis.name ?? "Repository history"}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            Browse durable srcMove results. Pair visualization arrives in the
-            next phase.
+            Browse durable srcMove results and open a move-focused visualization
+            of any successfully compared pair.
           </p>
         </div>
         <button
@@ -90,6 +92,8 @@ export function HistoryInput(props: HistoryInputProps) {
         <HistoryPairDetails
           pair={selectedPair}
           isLoading={isLoadingPair}
+          isVisualizing={isVisualizingPair}
+          onOpenVisualization={openVisualization}
         />
       </div>
     </div>
@@ -201,9 +205,13 @@ function HistoryPairList({
 function HistoryPairDetails({
   pair,
   isLoading,
+  isVisualizing,
+  onOpenVisualization,
 }: {
   pair: HistoryInputProps["selectedPair"];
   isLoading: boolean;
+  isVisualizing: boolean;
+  onOpenVisualization: HistoryInputProps["openVisualization"];
 }) {
   if (isLoading) {
     return <DetailShell>Loading pair evidence…</DetailShell>;
@@ -225,6 +233,14 @@ function HistoryPairDetails({
         <DetailStat label="Changed paths" value={String(pair.changed_path_count)} />
         <DetailStat label="Analyzable" value={String(pair.analyzable_path_count)} />
       </div>
+      <button
+        type="button"
+        onClick={() => void onOpenVisualization(pair.number)}
+        disabled={isVisualizing || pair.status !== "completed"}
+        className="mt-4 w-full rounded-xl border border-sky-300/30 bg-sky-300/15 px-3 py-2.5 text-sm font-semibold text-sky-100 transition hover:bg-sky-300/25 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isVisualizing ? "Regenerating visualization…" : "Open visualization"}
+      </button>
       {pair.error ? (
         <p className="mt-4 rounded-xl border border-red-300/20 bg-red-300/10 p-3 text-xs text-red-100">
           {pair.error}

@@ -182,6 +182,12 @@ export function useSrcDiffData() {
     }
   }
 
+  function acceptVisualization(payload: VisualizeResponse) {
+    setData(payload);
+    setError(null);
+    setProgressMessage("Visualization complete.");
+  }
+
   return {
     inputMode,
     selectedUpload,
@@ -204,5 +210,6 @@ export function useSrcDiffData() {
     handleXmlInputChange,
     handleLoadExample,
     handleSubmit,
+    acceptVisualization,
   };
 }

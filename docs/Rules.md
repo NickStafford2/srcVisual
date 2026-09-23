@@ -29,5 +29,5 @@ High-level rules:
 8. Package boundaries should stay explicit.
    Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. Files imported from outside the subpackage by non-test code should not use `_`.
 
-9. Repository history is a read-only srcMove product.
-   srcMove's versioned query output owns history status, pair ordering, and compact evidence. srcVisual must not issue its own SQL against `.srcmove`, accept repository paths from browser requests, or write to the configured repository, `.git`, or `.srcmove` while browsing history.
+9. Repository history and comparison execution belong to srcMove.
+   srcMove's versioned CLI owns history status, pair ordering, compact evidence, frozen-tool execution, and repository-local analysis state. srcVisual must not issue its own SQL against `.srcmove`, accept repository paths or commands from browser requests, or modify source files. A local deployment may give the CLI narrowly scoped write access to `.git` and `.srcmove` while keeping the source worktree read-only.

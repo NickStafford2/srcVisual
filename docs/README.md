@@ -33,8 +33,8 @@ diagnostics rather than installing the toolchain directly on macOS.
 ## Planning and non-authoritative notes
 
 - [Repository history browser plan](history-browser-plan.md): evaluated
-  integration options, recommended read-only boundary, delivery phases, and
-  acceptance criteria
+  integration options, scoped-write boundary, delivery phases, and remaining
+  work
 - [Todo](todo.md): candidate backend and frontend work; entries may be stale and
   do not establish current behavior
 - [Notes](notes.md): exploratory interface and srcMove-integration ideas

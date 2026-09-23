@@ -10,10 +10,9 @@ from srcvisual.core.namespaces import (
     prefixed_name,
 )
 from srcvisual.core.units import get_srcdiff_file_unit_elements
-from srcvisual.srcmove.attributes import MV_FROM, MV_ID, MV_TO
+from srcvisual.srcmove.attributes import parse_move_attributes
 from srcvisual.srcmove.srcmove_results import (
     normalize_srcmove_xpath_tuple,
-    parse_xml_move_reference_list,
 )
 
 
@@ -83,11 +82,9 @@ def collect_xml_move_regions_from_element(
     filename_to_unit_index: dict[str, int],
     regions: dict[str, XmlMoveRegion],
 ) -> None:
-    move_id = element.attrib.get(MV_ID)
+    move = parse_move_attributes(element)
 
-    if move_id is not None:
-        assert move_id, f"Empty mv:id at {path}."
-
+    if move is not None:
         assert path not in regions, (
             f"Duplicate XML move region path while collecting srcMove regions: {path}."
         )
@@ -95,14 +92,14 @@ def collect_xml_move_regions_from_element(
         regions[path] = XmlMoveRegion(
             path=path,
             tag=prefixed_name(element.tag),
-            move_id=move_id,
+            move_id=move.id,
             raw_text=extract_raw_text(element),
             from_paths=normalize_srcmove_xpath_tuple(
-                parse_xml_move_reference_list(element.attrib.get(MV_FROM)),
+                move.from_paths,
                 filename_to_unit_index=filename_to_unit_index,
             ),
             to_paths=normalize_srcmove_xpath_tuple(
-                parse_xml_move_reference_list(element.attrib.get(MV_TO)),
+                move.to_paths,
                 filename_to_unit_index=filename_to_unit_index,
             ),
             position_start=element.attrib.get(POS_START),

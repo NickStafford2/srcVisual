@@ -96,6 +96,16 @@ describe("repository history browser", () => {
             },
           });
         }
+        if (url === "/api/history/pairs/1/visualize") {
+          return jsonResponse({
+            source_filename: "history-pair-1.srcmove.xml",
+            moved_srcdiff_xml: "<unit />",
+            move_results: { move_count: 0, moves: [] },
+            has_position_data: false,
+            files: [],
+            unit_count: 0,
+          });
+        }
         throw new Error(`Unexpected fetch URL: ${url}`);
       }),
     );
@@ -126,6 +136,17 @@ describe("repository history browser", () => {
     await waitFor(() => {
       expect(within(details).getByText("Move 1 · exact")).toBeInTheDocument();
       expect(within(details).getByText("Move 2 · type3")).toBeInTheDocument();
+    });
+
+    await user.click(
+      within(details).getByRole("button", { name: "Open visualization" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: "Source" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
     });
   });
 });

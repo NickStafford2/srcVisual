@@ -6,11 +6,14 @@ from pathlib import Path
 from flask import Blueprint, Response, current_app, request
 from werkzeug.datastructures import FileStorage
 
+from srcvisual.core.commands import BackendCommandError
 from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
 from srcvisual.workflow.payload import build_visualization_payload
 from srcvisual.history.client import (
     HistoryConfigurationError,
+    HistoryResponseError,
     history_error_response,
+    materialize_history_pair,
     read_history_pair,
     read_history_pairs,
     read_history_status,
@@ -89,6 +92,49 @@ def history_pair(pair_number: int) -> tuple[dict[str, object], int]:
     except Exception as error:
         return history_error_response(error)
     return result, 200
+
+
+@api.post("/history/pairs/<int:pair_number>/visualize")
+def visualize_history_pair(pair_number: int) -> tuple[dict[str, object], int]:
+    progress_token = get_progress_token()
+    try:
+        if progress_token is not None:
+            progress_broker.publish_progress(
+                progress_token,
+                f"Regenerating commit pair {pair_number} with its frozen tools.",
+            )
+        artifact = materialize_history_pair(_history_repository(), pair_number)
+        if progress_token is not None:
+            progress_broker.publish_progress(
+                progress_token,
+                "Building the synchronized visualization.",
+            )
+        result = build_visualization_payload(
+            filename=f"history-pair-{pair_number}.srcmove.xml",
+            payload=artifact.read_bytes(),
+            include_skipped_tags=request.form.get("include_skipped_tags") == "true",
+            pruning_level=get_pruning_level(),
+            progress=(
+                None
+                if progress_token is None
+                else lambda message: progress_broker.publish_progress(
+                    progress_token,
+                    message,
+                )
+            ),
+        )
+    except (
+        HistoryConfigurationError,
+        BackendCommandError,
+        HistoryResponseError,
+    ) as error:
+        payload, status = history_error_response(error)
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, payload["error"])
+        return payload, status
+    if progress_token is not None:
+        progress_broker.publish_complete(progress_token, "Visualization complete.")
+    return result.to_dict(), 200
 
 
 @api.get("/visualize/events")

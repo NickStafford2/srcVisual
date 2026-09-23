@@ -3,7 +3,9 @@ import {
   fetchHistoryPair,
   fetchHistoryPairs,
   fetchHistoryStatus,
+  visualizeHistoryPair,
 } from "../api";
+import type { VisualizeResponse } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
@@ -11,7 +13,11 @@ import type {
   HistoryStatusDocument,
 } from "./types";
 
-export function useHistoryData(enabled: boolean) {
+export function useHistoryData(
+  enabled: boolean,
+  onVisualization: (payload: VisualizeResponse) => void,
+  includeSkippedTags: boolean,
+) {
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);
   const [pairs, setPairs] = useState<HistoryPairListItem[]>([]);
   const [nextAfter, setNextAfter] = useState<number | null>(null);
@@ -22,6 +28,7 @@ export function useHistoryData(enabled: boolean) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingPair, setIsLoadingPair] = useState(false);
+  const [isVisualizingPair, setIsVisualizingPair] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -84,6 +91,28 @@ export function useHistoryData(enabled: boolean) {
     }
   }
 
+  async function openVisualization(pairNumber: number) {
+    if (isVisualizingPair) return;
+    setIsVisualizingPair(true);
+    setError(null);
+    try {
+      const payload = await visualizeHistoryPair(pairNumber, {
+        includeSkippedTags,
+        pruningLevel: "move-only",
+      });
+      onVisualization(payload);
+    } catch (loadError) {
+      setError(
+        errorMessage(
+          loadError,
+          `Unable to visualize commit pair ${pairNumber}.`,
+        ),
+      );
+    } finally {
+      setIsVisualizingPair(false);
+    }
+  }
+
   return {
     status,
     pairs,
@@ -93,10 +122,12 @@ export function useHistoryData(enabled: boolean) {
     isLoading,
     isLoadingMore,
     isLoadingPair,
+    isVisualizingPair,
     error,
     setSelection,
     selectPair,
     loadMore,
+    openVisualization,
     refresh: () => setRefreshKey((current) => current + 1),
   };
 }

@@ -1,4 +1,4 @@
-import type { VisualizeResponse } from "./types";
+import type { TreePruningLevel, VisualizeResponse } from "./types";
 import type { SrcDiffTreeNode } from "./srcdiff/types";
 import type {
   HistoryPairDocument,
@@ -73,6 +73,36 @@ export async function fetchHistoryPair(
     throw new Error("Backend returned unsupported history pair evidence.");
   }
   return payload as unknown as HistoryPairDocument;
+}
+
+export async function visualizeHistoryPair(
+  pairNumber: number,
+  options: {
+    includeSkippedTags: boolean;
+    pruningLevel: TreePruningLevel;
+  },
+): Promise<VisualizeResponse> {
+  const formData = new FormData();
+  formData.append(
+    "include_skipped_tags",
+    options.includeSkippedTags ? "true" : "false",
+  );
+  formData.append("pruning_level", options.pruningLevel);
+  const response = await fetch(`/api/history/pairs/${pairNumber}/visualize`, {
+    method: "POST",
+    body: formData,
+  });
+  const payload = await parseVisualizeResponse(response);
+  if (!response.ok || "error" in payload) {
+    throw new Error(
+      "error" in payload
+        ? payload.error
+        : `Unable to visualize commit pair ${pairNumber}.`,
+    );
+  }
+  assertVisualizeResponseContract(payload);
+  assertVisualizeResponseHasXmlSpans(payload);
+  return payload;
 }
 
 async function fetchJson(url: string): Promise<Record<string, unknown>> {

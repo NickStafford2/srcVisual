@@ -46,7 +46,11 @@ function getXmlHighlights(
 
 export default function App() {
   const srcDiffData = useSrcDiffData();
-  const historyData = useHistoryData(srcDiffData.inputMode === "history");
+  const historyData = useHistoryData(
+    srcDiffData.inputMode === "history",
+    srcDiffData.acceptVisualization,
+    srcDiffData.includeSkippedTags,
+  );
   const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
 
