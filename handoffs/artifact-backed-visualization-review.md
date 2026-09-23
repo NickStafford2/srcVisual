@@ -1,0 +1,415 @@
+# Artifact-Backed Visualization Architecture
+
+Status: accepted implementation plan; implementation is not yet authorized by
+this document.
+
+Date: 2026-09-23
+
+Repository: `srcVisual`
+
+## Goal
+
+Replace the monolithic visualization response and destructive pruning pipeline
+with an immutable artifact and bounded, lazily requested projections.
+
+The source view should behave like a large, aligned GitHub-style diff:
+
+- ordinary changes and move endpoints are visible by default;
+- moves are visually emphasized;
+- three lines of surrounding context are initially shown;
+- omitted source is represented by explicit expandable gaps;
+- a user can reveal any source range without rerunning srcDiff or srcMove;
+- large comparisons do not require downloading or rendering every source line,
+  tree node, and XML line at once.
+
+srcVisual remains a GUI for srcDiff and srcMove. The final normalized annotated
+XML is the semantic source of truth; source, tree, XML, diff, and move views are
+projections of the same immutable artifact.
+
+## Accepted Product Decisions
+
+1. The source view uses aligned display rows, not two unrelated source panes.
+2. The default focus is ordinary changes plus moves, with moves emphasized and
+   three initial context lines.
+3. A moves-only focus remains useful for srcMove research, but it is a view
+   profile rather than a destructive pruning mode.
+4. Move connectors are drawn only when both endpoints are rendered. Endpoint
+   badges and navigation remain available when an endpoint is collapsed,
+   virtualized, or in another file.
+5. Artifacts survive worker restarts and Docker container replacement through
+   a dedicated, bounded srcVisual storage volume.
+6. Complete normalized XML is the primary XML view and export. Filtered XML is
+   deferred until a concrete user or research workflow requires it.
+7. Move provenance is preserved in the artifact. The first redesigned UI does
+   not need to expose every provenance distinction unless it helps the active
+   research workflow.
+8. Browser and URL state are sufficient for views. There are no server-side
+   view sessions.
+
+## Why the Current Model Must Change
+
+`build_visualization_payload()` currently extracts complete sources, builds a
+complete tree and payload, validates them, and then reconstructs XML, sources,
+trees, spans, and move results after pruning. The frontend receives all of
+those representations in one `VisualizeResponse`.
+
+History visualization forces `move-only` pruning. This makes a large response
+manageable but removes most surrounding source, producing nearly blank source
+files that cannot be expanded without another analysis request.
+
+The measured Notepad++ history pair 13 illustrates the mismatch:
+
+- the retained annotated XML is about 6.6 MB and contains 29 units;
+- a move-focused response is about 166 KiB;
+- the unpruned monolithic response is about 216 MB;
+- regeneration and move-focused visualization took about 48 seconds;
+- an unpruned request took roughly two minutes.
+
+The primary delivery problem is duplicated source, tree, XML, and JSON data,
+not the canonical XML by itself.
+
+Other verified constraints:
+
+- current node IDs are positional XML paths and are not stable if units or
+  siblings are removed or reordered;
+- current SSE progress queues live in one Flask worker while Gunicorn runs
+  multiple workers;
+- every source line is rendered into the DOM;
+- move connector geometry depends on live DOM elements;
+- history materialization currently retains the XML path but discards useful
+  `results.json` classification metadata;
+- retained history XML can contain absolute temporary scratch paths, which
+  must not be exposed by artifact XML or manifests;
+- Compose has no persistent writable location owned by srcVisual.
+
+## Terminology and Ownership
+
+### Run
+
+A run is one potentially long srcDiff/srcMove or history-materialization
+execution. It owns:
+
+- queued, running, completed, failed, and cancelled status;
+- durable, ordered progress events;
+- cancellation state and process-group termination;
+- diagnostics safe to show to the user;
+- the resulting artifact ID after successful publication.
+
+History execution continues to belong to srcMove's versioned CLI. srcVisual
+does not query srcMove's private database or accept repository paths and shell
+commands from the browser.
+
+### Artifact
+
+An artifact is an immutable, backend-owned representation of one completed
+visualization input. It survives web-worker restarts and container replacement.
+
+An artifact contains:
+
+- normalized final annotated XML;
+- extracted source for both revisions;
+- file metadata and line offsets;
+- structural nodes and stable artifact-local identities;
+- diff regions and move endpoints;
+- source and XML spans;
+- available srcMove result metadata;
+- tool, configuration, input, and history provenance;
+- integrity checksums and an artifact schema version.
+
+For history inputs, srcVisual ingests both the final `srcmove.xml` and its
+`results.json` when available. XML-only uploads use explicit unknown values for
+metadata that cannot be reconstructed; they do not fabricate classifications.
+
+### View
+
+A view is the browser's projection of an artifact:
+
+- selected file, move, or node;
+- active source focus profile;
+- expanded source gaps;
+- active tab;
+- tree expansion and navigation state.
+
+The selected artifact, file, tab, focus profile, and primary selection may be
+encoded in the URL. Expanded gaps and transient highlights can remain ordinary
+browser state.
+
+## Artifact Storage
+
+Each published artifact is a directory owned by srcVisual:
+
+```text
+artifacts/<opaque-artifact-id>/
+  artifact.json
+  annotated.xml
+  sources/
+    <file-id>/
+      revision-0.txt
+      revision-1.txt
+  index.sqlite
+```
+
+`artifact.json` records the schema, provenance, checksums, capabilities, and
+safe display metadata. `index.sqlite` is a srcVisual-owned immutable sidecar;
+it does not alter or depend on srcMove's private SQLite schema.
+
+Artifact creation is atomic:
+
+1. write to a staging directory;
+2. normalize transient metadata;
+3. extract sources and build indexes;
+4. validate XML, sources, spans, identities, and checksums;
+5. write the final manifest;
+6. atomically rename the staging directory into the published store.
+
+Failed staging data is cleaned up. Readers never observe a partial artifact.
+
+The external artifact ID is an opaque random identifier. A separate internal
+fingerprint supports reuse and duplicate-work suppression. The fingerprint
+includes relevant input checksums, admitted tool identities, analysis
+configuration, and artifact schema version. An artifact ID is an identifier,
+not an authorization mechanism.
+
+The deliberate source-file copies support bounded line reads without reparsing
+XML. srcVisual does not copy both srcDiff and srcMove documents when the final
+annotated XML is sufficient.
+
+## Stable Identity
+
+Positional paths such as `/src:unit[2]/function[3]` remain useful descriptive
+metadata, but they are not primary identifiers.
+
+Canonical indexing assigns immutable artifact-local IDs:
+
+- `file_id` identifies one logical file pair;
+- `node_id` identifies one canonical XML/tree node;
+- `region_id` identifies one diff or move region;
+- `move_id` preserves the producer's move ID and records its provenance.
+
+IDs are assigned once while indexing the canonical artifact. Projections refer
+to those IDs and never derive new IDs from filtered data. Optional or skipped
+tree tags are projection policy and do not change canonical identities.
+
+## Source Projection Model
+
+Source delivery uses aligned blocks:
+
+```text
+SourceProjection
+  artifact_id
+  file_id
+  focus_profile
+  blocks
+    hunk
+      left source range
+      right source range
+      aligned display rows
+      diff, node, and move anchors
+    gap
+      hidden left range and count
+      hidden right range and count
+```
+
+Focus intervals are computed from the union of selected diff regions and move
+endpoints, expanded by three context lines, then merged when they overlap or
+are close enough to avoid tiny gaps.
+
+The annotated XML determines which regions are semantically interesting. A
+normal line diff over the already extracted revision sources may derive display
+alignment; it does not replace or rerun srcDiff analysis.
+
+A gap is explicit. It must distinguish omitted source from empty source lines
+and must report hidden ranges for both revisions. Expanding a gap is not a
+server mutation: the browser requests a larger immutable source range and
+merges the returned block into its local view.
+
+Supported initial focus profiles are:
+
+- `changes-and-moves` — default;
+- `moves`;
+- `changes`;
+- `complete-file`.
+
+## Filtering and Pruning
+
+Destructive pruning is not part of the new interactive architecture.
+
+The existing `none`, `file-only`, `file-and-tree`, and `move-only` modes were
+primarily workarounds for the monolithic response. Reproducing them would add
+complexity while retaining their main drawbacks: lost context, rewritten XML,
+changed spans and identities, and projections based on a synthetic document.
+
+Useful filtering remains as view behavior:
+
+- show files with moves or with any changes;
+- focus source on changes, moves, or both;
+- filter move lists by classification or provenance;
+- filter or search the tree while retaining required ancestors.
+
+These controls decide which projections are requested or displayed. They do
+not overwrite the artifact or create pruned XML.
+
+The old pruning implementation remains temporarily behind the legacy
+monolithic-response adapter during migration. It is deleted after the artifact
+interface covers existing workflows and compatibility tests. Filtered XML
+export is not implemented without a demonstrated requirement.
+
+## Projection API
+
+The initial API should remain small:
+
+```text
+POST /api/history/pairs/{pair_number}/runs
+GET  /api/runs/{run_id}
+GET  /api/runs/{run_id}/events
+POST /api/runs/{run_id}/cancel
+
+GET  /api/artifacts/{artifact_id}
+GET  /api/artifacts/{artifact_id}/files/{file_id}/source
+GET  /api/artifacts/{artifact_id}/files/{file_id}/tree
+GET  /api/artifacts/{artifact_id}/xml
+```
+
+The artifact manifest is small enough to render the file navigator and choose
+the first request. It includes file summaries, move summaries and lightweight
+endpoint anchors, available focus profiles, capabilities, and safe provenance.
+It does not expose filesystem paths.
+
+Initially, one file's complete tree is fetched when needed and the complete
+normalized XML is fetched when its tab opens. Branch-level tree loading and XML
+neighborhood endpoints are deferred until measurements demonstrate that they
+are necessary.
+
+Projection requests are stateless and independently retryable. Source ranges
+use explicit bounded coordinates. Responses include schema versions and do not
+silently fall back when the frontend and backend contracts disagree.
+
+## Run Execution
+
+Long history comparisons use a small dedicated worker process and a
+srcVisual-owned SQLite run queue. Redis, Celery, WebSockets, and server-side
+view sessions are not required for the local product.
+
+Run records and progress events are durable and shared by all web workers. SSE
+events have sequence numbers and support reconnection. The run status endpoint
+remains the authoritative fallback if an event connection is interrupted.
+
+Cancellation must terminate the native process group, wait for termination,
+and remove unpublished staging data. It must not corrupt srcMove's `.srcmove`
+operation state. Duplicate history work uses a fingerprinted single-flight
+lock; concurrent callers may follow the same run and artifact.
+
+Uploaded XML remains synchronous initially unless measurements show that it
+needs the run worker. The established multi-minute history path receives the
+durable run model first.
+
+## Frontend Rendering
+
+The artifact manifest replaces `VisualizeResponse` as the root frontend
+contract. Source, tree, and XML data have separate explicit types and loading
+states.
+
+The first source view loads the selected file and its focused blocks. File and
+move navigation can request additional files or ranges. Selecting a cross-file
+move loads both endpoint windows before navigating.
+
+Move endpoint badges remain available even when connector lines cannot be
+drawn. Connectors are computed only between currently rendered endpoint DOM
+elements. This allows later source-row virtualization without requiring hidden
+rows to retain fake geometry.
+
+Virtualization is introduced only after the hunk/gap model works correctly and
+measurements show that rendered focused rows remain excessive. Expansion must
+preserve the user's scroll anchor.
+
+## Delivery Plan
+
+### Phase 0: contract and baseline
+
+- Classify the existing full-suite backend and frontend failures.
+- Measure serialized bytes and build time separately for XML, sources, trees,
+  move data, validation, and JSON encoding.
+- Specify examples for aligned hunks and gaps covering additions, deletions,
+  replacements, new/deleted files, reordered units, moves, and cross-file
+  moves.
+- Specify stable identity, artifact integrity, path normalization, and failure
+  invariants.
+- Record the durable design in one canonical architecture document and update
+  `docs/Rules.md` only for application invariants. Retire this handoff once the
+  canonical document exists.
+
+### Phase 1: artifact foundation
+
+- Separate canonical artifact construction from presentation payload creation.
+- Add the dedicated persistent artifact volume and configuration.
+- Persist normalized XML, extracted sources, manifest, and indexes atomically.
+- Ingest history `results.json` when available.
+- Add integrity validation and staging cleanup.
+- Implement the old monolithic payload as a temporary compatibility projection
+  from the artifact.
+- Prove compatibility on archive-style and single-root fixtures.
+
+This is the smallest safe implementation slice. It establishes the core
+boundary without changing the user interface.
+
+### Phase 2: source-first artifact interface
+
+- Add artifact manifest and aligned source projection endpoints.
+- Implement explicit gaps and bounded expansion.
+- Add the four initial focus profiles.
+- Load one selected file initially and both endpoints for move navigation.
+- Load a whole per-file tree and the whole XML only when their tabs are opened.
+- Keep the legacy interface available as a temporary fallback.
+
+This phase delivers the first user-visible payoff and validates the artifact
+model before expanding its scope.
+
+### Phase 3: durable history runs
+
+- Add the dedicated worker and durable run/event store.
+- Return run IDs immediately for history materialization.
+- Add reconnectable SSE, polling fallback, cancellation, process-group cleanup,
+  and duplicate-work suppression.
+- Reuse valid artifacts by fingerprint without transferring ownership of
+  `.srcmove` state to srcVisual.
+
+### Phase 4: complete frontend migration
+
+- Move tree, XML, move summary, selection, and navigation state to artifact
+  contracts.
+- Replace pruning controls with file filters and source focus profiles.
+- Add row virtualization if focused rendering measurements justify it.
+- Remove the monolithic response path and delete destructive pruning code after
+  compatibility coverage passes.
+
+### Phase 5: operational hardening and measured extensions
+
+- Add item and disk quotas, collection policy, integrity diagnostics, and cache
+  metrics.
+- Add background upload runs if upload measurements justify them.
+- Add lazy tree branches or XML neighborhoods only if whole-file/tree retrieval
+  remains a measured problem.
+- Add filtered XML export only for a demonstrated workflow.
+- Perform separate authorization, sandboxing, resource-limit, and threat-model
+  work before any public untrusted deployment.
+
+## Acceptance Criteria
+
+- A completed analysis is published as one immutable artifact or not published
+  at all.
+- Restarting a Flask worker does not lose an artifact, run state, or progress
+  history.
+- The default source view downloads and renders only focused blocks for the
+  selected file.
+- Every omitted source range is an explicit expandable gap.
+- Any source range can be revealed without rerunning native analysis.
+- Cross-file move navigation loads and identifies both endpoints.
+- XML, tree, source, diff, and move projections use the same artifact-local
+  identities.
+- No manifest, XML response, diagnostic, or artifact ID exposes temporary or
+  host filesystem paths.
+- Switching focus profiles does not mutate the artifact, rerun analysis, or
+  generate pruned XML.
+- Existing archive-style and single-root inputs remain supported.
+- srcMove remains the sole owner of history comparison semantics and
+  repository-local `.srcmove` state.
