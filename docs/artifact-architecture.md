@@ -1,7 +1,6 @@
 # Artifact-Backed Visualization Architecture
 
-Status: accepted implementation plan; implementation is not yet authorized by
-this document.
+Status: accepted architecture and implementation plan.
 
 Date: 2026-09-23
 
@@ -81,6 +80,87 @@ Other verified constraints:
 - retained history XML can contain absolute temporary scratch paths, which
   must not be exposed by artifact XML or manifests;
 - Compose has no persistent writable location owned by srcVisual.
+
+## Phase 0 Baseline
+
+The baseline was reproduced before implementation work began.
+
+### Payload composition
+
+The unpruned pair 13 payload was built from the retained annotated XML using
+the normal `include_skipped_tags=false` behavior. Compact JSON encoding
+measured:
+
+| Component | Size |
+| --- | ---: |
+| Complete payload | 215,963,495 bytes |
+| Expanded trees | 206,603,078 bytes |
+| Annotated XML string | 6,691,115 bytes |
+| Revision 0 source | 1,225,679 bytes |
+| Revision 1 source | 1,229,108 bytes |
+| Move results | 7,575 bytes |
+| File metadata | 5,314 bytes |
+
+The payload contained 29 files and 296,000 tree nodes and took 74.9–78.1
+seconds to construct in repeated packaged-Docker measurements. Compact JSON
+encoding took another 2.9 seconds. Expanded tree JSON accounts for about 96%
+of the response. With skipped tags included, the pipeline avoids its
+filtered-document rebuild and produced 183,259,780 bytes in 44.5 seconds. The
+counterintuitive difference confirms that rebuilding the filtered XML, source,
+spans, and trees is itself a major cost.
+
+The largest individual trees were:
+
+| File | Nodes | Encoded tree size |
+| --- | ---: | ---: |
+| `scintilla/src/Editor.cxx` | 74,511 | 53,008,313 bytes |
+| `scintilla/src/EditView.cxx` | 31,326 | 24,020,192 bytes |
+| `scintilla/win32/ScintillaWin.cxx` | 30,179 | 20,209,285 bytes |
+| `scintilla/src/Document.cxx` | 28,591 | 19,754,672 bytes |
+| `lexilla/lexers/LexHTML.cxx` | 20,352 | 14,841,892 bytes |
+
+This confirms that neither a forest-wide response nor an unconditional
+whole-file tree response is safe. The first artifact UI needs bounded tree
+projections with explicit unloaded-child counts. The complete XML may still be
+loaded on demand because its measured size is much smaller.
+
+For comparison, the current `move-only` reconstruction produced 169,552 bytes,
+4 files, and 225 tree nodes, but still took 34.2 seconds. Its small delivery
+size therefore comes from destructively discarding data after most canonical
+processing has already happened; it is not an adequate interactive expansion
+model.
+
+The reproducible measurement command is:
+
+```bash
+python scripts/measure_visualization_payload.py <annotated-xml> \
+  --pruning-level none
+```
+
+### Test baseline
+
+The backend suite reported 114 passing and 3 failing tests:
+
+- one end-to-end test refers to a srcMove fixture directory that no longer
+  exists in the current workspace;
+- one end-to-end example expects a move that the packaged native toolchain no
+  longer reports, so the example and admitted tool behavior must be reconciled;
+- one validation-disabled unit test supplies a partial tree stub without the
+  `children` field now required by payload instrumentation.
+
+The obsolete function-content example and its dedicated expectation were
+removed after confirming that current srcMove requires complete statements as
+move candidates. The other two backend failures remain baseline repair work.
+
+The frontend suite reported 22 passing and 7 failing tests. Six failures share
+one root cause: `TreeNodeLineBadges.tsx` and `treeNodeLineBadges.ts` differ only
+by case, so case-insensitive macOS module resolution imports the non-component
+module into `TreeNodeRow`. The production TypeScript build fails for the same
+reason. The remaining progress-log assertion races the asynchronous terminal
+event.
+
+These are pre-existing baseline failures. They must be corrected before the
+artifact migration relies on the full suites as its safety net.
 
 ## Terminology and Ownership
 
@@ -164,6 +244,27 @@ Artifact creation is atomic:
 
 Failed staging data is cleaned up. Readers never observe a partial artifact.
 
+Normalization is narrow and provenance-aware. It removes or replaces only
+backend-generated temporary root metadata such as scratch-directory `url`
+values. It preserves user-supplied unit filenames, element order, annotations,
+and source content. The manifest records the pre-normalization input checksum
+and the published XML checksum so normalization remains auditable.
+
+Artifact and run failure semantics are explicit:
+
+- a run becomes `completed` only after its artifact is atomically published;
+- a failed or cancelled run has no artifact ID;
+- cancelling a completed run does not delete its artifact;
+- published artifact files never change in place;
+- a missing artifact returns not found rather than recreating it implicitly;
+- a corrupt or schema-incompatible artifact is quarantined and reported as an
+  integrity error rather than partially served;
+- failed reuse validation starts a new run and does not repair an artifact in
+  place;
+- projection failure does not invalidate an otherwise valid artifact;
+- cleanup never removes an artifact with an active reader lease or run
+  reference.
+
 The external artifact ID is an opaque random identifier. A separate internal
 fingerprint supports reuse and duplicate-work suppression. The fingerprint
 includes relevant input checksums, admitted tool identities, analysis
@@ -210,6 +311,29 @@ SourceProjection
       hidden right range and count
 ```
 
+The contract shape is intentionally explicit rather than encoding gaps as
+blank lines:
+
+```text
+HunkBlock
+  block_id
+  left:  { start_line, end_line }
+  right: { start_line, end_line }
+  rows[]
+    kind: context | delete | insert | replace
+    left:  { line_number, text, anchors[] } | null
+    right: { line_number, text, anchors[] } | null
+
+GapBlock
+  block_id
+  left:  { start_line, end_line, line_count }
+  right: { start_line, end_line, line_count }
+```
+
+`block_id` identifies a response block for browser reconciliation; canonical
+navigation uses file, node, region, move, and line identities instead. Expanding
+a gap can replace its block IDs without changing canonical identities.
+
 Focus intervals are computed from the union of selected diff regions and move
 endpoints, expanded by three context lines, then merged when they overlap or
 are close enough to avoid tiny gaps.
@@ -229,6 +353,32 @@ Supported initial focus profiles are:
 - `moves`;
 - `changes`;
 - `complete-file`.
+
+### Required source cases
+
+The source contract must define both revision ranges even when one side is
+empty:
+
+| Case | Left side | Right side | Required behavior |
+| --- | --- | --- | --- |
+| Context | source lines | source lines | align unchanged lines |
+| Deletion | source lines | empty | render deletion rows with right placeholders |
+| Addition | empty | source lines | render addition rows with left placeholders |
+| Replacement | source lines | source lines | align presentation rows and retain distinct semantic regions |
+| New file | empty file | complete or focused source | preserve an explicit empty left revision |
+| Deleted file | complete or focused source | empty file | preserve an explicit empty right revision |
+| Same-file move | source endpoint | destination endpoint | anchor both endpoints to one move identity |
+| Cross-file move | endpoint in file A | endpoint in file B | load both file windows before navigation |
+| Reordered units | stable `file_id` | stable `file_id` | do not use unit order as identity |
+
+Every aligned row carries nullable left and right line records. A present line
+uses its canonical one-based source line number. A placeholder has no line
+number and is not confused with an empty source line. A hunk reports its
+canonical left and right bounds independently.
+
+Gap expansion is also revision-aware. Expanding above, below, or completely
+produces requested canonical ranges on both sides; it does not assume equal
+line numbers or equal hidden counts.
 
 ## Filtering and Pruning
 
@@ -267,6 +417,7 @@ POST /api/runs/{run_id}/cancel
 GET  /api/artifacts/{artifact_id}
 GET  /api/artifacts/{artifact_id}/files/{file_id}/source
 GET  /api/artifacts/{artifact_id}/files/{file_id}/tree
+GET  /api/artifacts/{artifact_id}/tree/nodes/{node_id}/children
 GET  /api/artifacts/{artifact_id}/xml
 ```
 
@@ -275,10 +426,18 @@ the first request. It includes file summaries, move summaries and lightweight
 endpoint anchors, available focus profiles, capabilities, and safe provenance.
 It does not expose filesystem paths.
 
-Initially, one file's complete tree is fetched when needed and the complete
-normalized XML is fetched when its tab opens. Branch-level tree loading and XML
-neighborhood endpoints are deferred until measurements demonstrate that they
-are necessary.
+The initial tree response is a bounded projection containing the file root,
+the ancestor paths needed for the active focus profile, child counts, and a
+limited number of children. Expanding an unloaded branch requests its canonical
+children by stable `node_id`. The complete normalized XML is fetched when its
+tab opens. XML-neighborhood endpoints are deferred until measurements
+demonstrate that they are necessary.
+
+Each projected tree node reports `node_id`, display metadata, canonical spans,
+`child_count`, and either a complete child list or an explicit continuation.
+An absent child list never means that the canonical node is a leaf unless
+`child_count` is zero. Child requests have deterministic canonical ordering and
+bounded page sizes.
 
 Projection requests are stateless and independently retryable. Source ranges
 use explicit bounded coordinates. Responses include schema versions and do not
@@ -334,9 +493,8 @@ preserve the user's scroll anchor.
   moves.
 - Specify stable identity, artifact integrity, path normalization, and failure
   invariants.
-- Record the durable design in one canonical architecture document and update
-  `docs/Rules.md` only for application invariants. Retire this handoff once the
-  canonical document exists.
+- Keep this canonical architecture document and `docs/Rules.md` synchronized
+  without duplicating implementation detail elsewhere.
 
 ### Phase 1: artifact foundation
 
@@ -358,7 +516,8 @@ boundary without changing the user interface.
 - Implement explicit gaps and bounded expansion.
 - Add the four initial focus profiles.
 - Load one selected file initially and both endpoints for move navigation.
-- Load a whole per-file tree and the whole XML only when their tabs are opened.
+- Add bounded tree projections and lazy canonical-child retrieval.
+- Load the whole XML only when its tab is opened.
 - Keep the legacy interface available as a temporary fallback.
 
 This phase delivers the first user-visible payoff and validates the artifact
@@ -387,8 +546,8 @@ model before expanding its scope.
 - Add item and disk quotas, collection policy, integrity diagnostics, and cache
   metrics.
 - Add background upload runs if upload measurements justify them.
-- Add lazy tree branches or XML neighborhoods only if whole-file/tree retrieval
-  remains a measured problem.
+- Add XML neighborhoods only if whole-document retrieval remains a measured
+  problem.
 - Add filtered XML export only for a demonstrated workflow.
 - Perform separate authorization, sandboxing, resource-limit, and threat-model
   work before any public untrusted deployment.

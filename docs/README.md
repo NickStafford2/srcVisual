@@ -7,6 +7,8 @@ application, relationship to srcMove, and hosted-service vision.
 
 - [Application rules](Rules.md): canonical backend/frontend data invariants,
   supported srcDiff shapes, metadata preservation, and package boundaries
+- [Artifact-backed visualization architecture](artifact-architecture.md):
+  accepted artifact, projection, source-hunk, execution, and migration design
 - [Frontend color guide](../frontend/docs/color-guide.md): visual language for
   diffs, revisions, interactions, and move relationships
 
