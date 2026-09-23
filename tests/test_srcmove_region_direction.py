@@ -1,6 +1,9 @@
 from srcvisual.srcmove.existing_annotations import build_move_results_from_moved_srcdiff
 from srcvisual.srcmove.move_regions import XmlMoveRegion, classify_xml_move_region_side
-from srcvisual.srcmove.move_result_enrichment import build_move_region_paths_by_id
+from srcvisual.srcmove.move_result_enrichment import (
+    build_move_region_paths_by_id,
+    merge_producer_move_results,
+)
 
 
 def test_classify_xml_move_region_side_uses_move_attributes_for_subtree_nodes() -> None:
@@ -61,7 +64,9 @@ def test_build_move_region_paths_by_id_accepts_subtree_annotated_regions() -> No
     }
 
 
-def test_build_move_results_from_moved_srcdiff_accepts_subtree_annotated_source_regions() -> None:
+def test_build_move_results_from_moved_srcdiff_accepts_subtree_annotated_source_regions() -> (
+    None
+):
     moved_srcdiff_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" xmlns:mv="http://www.srcML.org/srcMove" revision="1.0.0" url="old|new">
 
@@ -114,9 +119,50 @@ def test_build_move_results_from_moved_srcdiff_accepts_plain_move_wrappers() -> 
 
     assert move_results["move_count"] == 1
     assert move_results["moves"][0]["move_id"] == "1"
-    assert move_results["moves"][0]["from_xpaths"] == [
-        "/src:unit[1]/diff:delete[1]"
-    ]
-    assert move_results["moves"][0]["to_xpaths"] == [
-        "/src:unit[1]/diff:insert[1]"
+    assert move_results["moves"][0]["from_xpaths"] == ["/src:unit[1]/diff:delete[1]"]
+    assert move_results["moves"][0]["to_xpaths"] == ["/src:unit[1]/diff:insert[1]"]
+
+
+def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
+    _reconstructed = {
+        "move_count": 2,
+        "moves": [
+            {"move_id": "legacy", "from_xpaths": ["legacy-from"]},
+            {"move_id": "srcmove", "from_xpaths": ["srcmove-from"]},
+        ],
+    }
+    _producer = {
+        "move_count": 1,
+        "moves": [
+            {
+                "move_id": "srcmove",
+                "match_kind": "type3",
+                "from_xpaths": ["srcmove-from"],
+            }
+        ],
+        "match_kinds": {"type3": 1},
+    }
+
+    _merged = merge_producer_move_results(
+        reconstructed_results=_reconstructed,
+        producer_results=_producer,
+    )
+
+    assert _merged["move_count"] == 2
+    assert _merged["producer_metadata"] == {
+        "move_count": 1,
+        "match_kinds": {"type3": 1},
+    }
+    assert _merged["moves"] == [
+        {
+            "move_id": "legacy",
+            "from_xpaths": ["legacy-from"],
+            "result_provenance": "xml-annotation",
+        },
+        {
+            "move_id": "srcmove",
+            "from_xpaths": ["srcmove-from"],
+            "match_kind": "type3",
+            "result_provenance": "producer-results",
+        },
     ]

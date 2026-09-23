@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import srcvisual.web._routes as routes_module
+from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.web.app import create_app
-from srcvisual.workflow._models import VisualizationPayload
+from srcvisual.workflow.models import VisualizationPayload
 
 
 def test_visualize_events_requires_token() -> None:
@@ -166,12 +167,18 @@ def test_history_pair_visualization_materializes_and_builds_payload(
 ) -> None:
     artifact = tmp_path / "srcmove.xml"
     artifact.write_bytes(b"<unit />")
+    producer_results = {"move_count": 0, "moves": [], "groups_total": 4}
     captured: dict[str, object] = {}
     monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
     monkeypatch.setattr(
         routes_module,
         "materialize_history_pair",
         lambda repository, pair_number: artifact,
+    )
+    monkeypatch.setattr(
+        routes_module,
+        "read_materialized_move_results",
+        lambda artifact_path: producer_results,
     )
 
     def fake_build_visualization_payload(**kwargs) -> VisualizationPayload:
@@ -200,6 +207,12 @@ def test_history_pair_visualization_materializes_and_builds_payload(
     assert captured["filename"] == "history-pair-13.srcmove.xml"
     assert captured["payload"] == b"<unit />"
     assert captured["pruning_level"] == "none"
+    assert captured["producer_move_results"] == producer_results
+    assert captured["provenance"] == ArtifactProvenance(
+        origin="history",
+        history_pair=13,
+        move_results_source="provided",
+    )
 
 
 def test_visualize_returns_move_results(monkeypatch) -> None:

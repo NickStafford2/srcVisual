@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
+from srcvisual.artifacts.normalization import normalize_annotated_xml
+from srcvisual.artifacts.models import ArtifactProvenance, PublishedArtifact
+from srcvisual.artifacts.store import (
+    get_artifact_root,
+    publish_artifact,
+    read_artifact,
+)
 from srcvisual.files.revision_archive import extract_revision_files
 from srcvisual.files.filenames import sanitize_filename
 from srcvisual.annotated_srcdiff.tree_builder import build_tree_index
@@ -19,11 +29,18 @@ from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
 from srcvisual.srcmove.runner import (
     is_strict_srcmove_validation_enabled,
 )
+from srcvisual.srcmove.existing_annotations import (
+    build_move_results_from_moved_srcdiff,
+)
+from srcvisual.srcmove.move_result_enrichment import (
+    augment_move_results_with_node_ids,
+    merge_producer_move_results,
+)
 from srcvisual.srcmove.validate_results import validate_srcmove_results_match_xml
 from srcvisual.workflow._tempfiles import managed_tmpdir
 from srcvisual.workflow.validate_tree import validate_moved_srcdiff_and_tree
 from srcvisual.workflow._visualized_file_builder import build_visualized_files
-from srcvisual.workflow._models import VisualizationPayload
+from srcvisual.workflow.models import VisualizationPayload
 
 
 def build_visualization_payload(
@@ -33,16 +50,82 @@ def build_visualization_payload(
     include_skipped_tags: bool = False,
     pruning_level: PruningLevel | None = None,
     progress: ProgressCallback | None = None,
+    artifact_root: Path | None = None,
+    provenance: ArtifactProvenance | None = None,
+    producer_move_results: dict[str, Any] | None = None,
 ) -> VisualizationPayload:
+    _, _payload = build_artifact_backed_visualization(
+        filename=filename,
+        payload=payload,
+        include_skipped_tags=include_skipped_tags,
+        pruning_level=pruning_level,
+        progress=progress,
+        artifact_root=artifact_root,
+        provenance=provenance,
+        producer_move_results=producer_move_results,
+    )
+    return _payload
+
+
+def build_artifact_backed_visualization(
+    *,
+    filename: str,
+    payload: bytes,
+    include_skipped_tags: bool = False,
+    pruning_level: PruningLevel | None = None,
+    progress: ProgressCallback | None = None,
+    artifact_root: Path | None = None,
+    provenance: ArtifactProvenance | None = None,
+    producer_move_results: dict[str, Any] | None = None,
+) -> tuple[PublishedArtifact, VisualizationPayload]:
+    _artifact_root = artifact_root or get_artifact_root()
+    _provenance = provenance or ArtifactProvenance(origin="upload")
+    _canonical_payload, _effective_provenance = _build_canonical_payload(
+        filename=filename,
+        payload=payload,
+        progress=progress,
+        provenance=_provenance,
+        producer_move_results=producer_move_results,
+    )
+    notify_progress(progress, "Publishing immutable visualization artifact.")
+    _published = publish_artifact(
+        artifact_root=_artifact_root,
+        canonical_payload=_canonical_payload,
+        input_payload=payload,
+        provenance=_effective_provenance,
+    )
+    notify_progress(
+        progress, f"Published visualization artifact {_published.artifact_id}."
+    )
+    _stored = read_artifact(
+        artifact_root=_artifact_root,
+        artifact_id=_published.artifact_id,
+    )
+    _compatibility_payload = _build_compatibility_payload(
+        canonical_payload=_stored.payload,
+        provenance=_effective_provenance,
+        include_skipped_tags=include_skipped_tags,
+        pruning_level=pruning_level,
+        progress=progress,
+    )
+    return _published, _compatibility_payload
+
+
+def _build_canonical_payload(
+    *,
+    filename: str,
+    payload: bytes,
+    progress: ProgressCallback | None,
+    provenance: ArtifactProvenance,
+    producer_move_results: dict[str, Any] | None,
+) -> tuple[VisualizationPayload, ArtifactProvenance]:
     payload_validation_enabled = is_payload_validation_enabled()
     strict_srcmove_validation_enabled = is_strict_srcmove_validation_enabled()
-    _requested_pruning_level = pruning_level or get_tree_pruning_level()
 
     notify_progress(
         progress,
         "Request config: "
-        f"include_skipped_tags={include_skipped_tags}, "
-        f"pruning_level={_requested_pruning_level}, "
+        "canonical_include_skipped_tags=true, "
         f"payload_validation={payload_validation_enabled}, "
         f"strict_srcmove_validation={strict_srcmove_validation_enabled}.",
     )
@@ -75,7 +158,7 @@ def build_visualization_payload(
         if not revision_files:
             raise ValueError("No units were found in the uploaded srcdiff file.")
 
-        moved_srcdiff_xml, move_results, _should_validate_srcmove_results = (
+        moved_srcdiff_xml, move_results, _generated_move_results = (
             build_moved_srcdiff_xml(
                 input_path=input_path,
                 revision_0_dir=revision_0_dir,
@@ -83,10 +166,48 @@ def build_visualization_payload(
                 revision_0_input=extracted_layout.revision_0_input,
                 revision_1_input=extracted_layout.revision_1_input,
                 tmpdir=tmpdir,
-                include_skipped_tags=include_skipped_tags,
+                include_skipped_tags=True,
                 progress=progress,
             )
         )
+        moved_srcdiff_xml = normalize_annotated_xml(
+            moved_srcdiff_xml,
+            provenance=provenance,
+        )
+        if _generated_move_results:
+            validate_srcmove_results_match_xml(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                move_results=move_results,
+                include_skipped_tags=True,
+                allow_additional_xml_moves=True,
+            )
+            _reconstructed_results = build_move_results_from_moved_srcdiff(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                include_skipped_tags=True,
+            )
+            move_results = merge_producer_move_results(
+                reconstructed_results=_reconstructed_results,
+                producer_results=move_results,
+            )
+        if producer_move_results is not None:
+            validate_srcmove_results_match_xml(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                move_results=producer_move_results,
+                include_skipped_tags=True,
+                allow_additional_xml_moves=True,
+            )
+            _reconstructed_results = build_move_results_from_moved_srcdiff(
+                moved_srcdiff_xml=moved_srcdiff_xml,
+                include_skipped_tags=True,
+            )
+            move_results = merge_producer_move_results(
+                reconstructed_results=_reconstructed_results,
+                producer_results=producer_move_results,
+            )
+            notify_progress(
+                progress,
+                "Merged retained producer metadata with all XML move annotations.",
+            )
         notify_progress(
             progress,
             "Prepared moved srcdiff XML: "
@@ -94,7 +215,11 @@ def build_visualization_payload(
             f"xml_bytes={len(moved_srcdiff_xml.encode('utf-8'))}.",
         )
 
-        if strict_srcmove_validation_enabled:
+        if (
+            strict_srcmove_validation_enabled
+            and not _generated_move_results
+            and producer_move_results is None
+        ):
             notify_progress(
                 progress,
                 "Strict srcMove validation is enabled. Validating results.json against moved XML.",
@@ -102,7 +227,7 @@ def build_visualization_payload(
             validate_srcmove_results_match_xml(
                 moved_srcdiff_xml=moved_srcdiff_xml,
                 move_results=move_results,
-                include_skipped_tags=include_skipped_tags,
+                include_skipped_tags=True,
             )
         else:
             notify_progress(
@@ -115,21 +240,20 @@ def build_visualization_payload(
             notify_progress(progress, "Validating moved srcdiff XML.")
             validate_xml_span_index(
                 moved_srcdiff_xml=moved_srcdiff_xml,
-                include_skipped_tags=include_skipped_tags,
+                include_skipped_tags=True,
             )
             notify_progress(progress, "Validated moved srcdiff XML.")
         else:
             notify_progress(
                 progress,
-                "Skipping moved srcdiff validation "
-                "(payload_validation=false).",
+                "Skipping moved srcdiff validation (payload_validation=false).",
             )
 
         notify_progress(progress, "Normalizing move partner node ids.")
         notify_progress(progress, "Building tree view data.")
         tree_by_unit, has_position_data = build_tree_index(
             moved_srcdiff_xml,
-            include_skipped_tags=include_skipped_tags,
+            include_skipped_tags=True,
         )
         _tree_node_count, _tree_move_count = _count_tree_nodes_and_moves(tree_by_unit)
         notify_progress(
@@ -161,11 +285,15 @@ def build_visualization_payload(
                 moved_srcdiff_xml=moved_srcdiff_xml,
                 revision_files=revision_files,
                 visualized_files=visualized_files,
-                include_skipped_tags=include_skipped_tags,
+                include_skipped_tags=True,
             )
             notify_progress(progress, "Validated moved XML against full tree data.")
 
-    full_payload_result = VisualizationPayload(
+    move_results = augment_move_results_with_node_ids(
+        moved_srcdiff_xml=moved_srcdiff_xml,
+        move_results=move_results,
+    )
+    _canonical_payload = VisualizationPayload(
         source_filename=filename,
         moved_srcdiff_xml=moved_srcdiff_xml,
         move_results=move_results,
@@ -174,12 +302,47 @@ def build_visualization_payload(
     )
 
     if payload_validation_enabled:
-        notify_progress(progress, "Validating full visualization payload.")
-        validate_visualization_payload(full_payload_result)
-        notify_progress(progress, "Validated full visualization payload.")
+        notify_progress(progress, "Validating canonical visualization payload.")
+        validate_visualization_payload(_canonical_payload)
+        notify_progress(progress, "Validated canonical visualization payload.")
+
+    _move_results_source = (
+        "provided"
+        if producer_move_results is not None
+        else "generated"
+        if _generated_move_results
+        else "reconstructed"
+    )
+    _effective_provenance = ArtifactProvenance(
+        origin=provenance.origin,
+        history_pair=provenance.history_pair,
+        move_results_source=_move_results_source,
+    )
+    return _canonical_payload, _effective_provenance
+
+
+def _build_compatibility_payload(
+    *,
+    canonical_payload: VisualizationPayload,
+    provenance: ArtifactProvenance,
+    include_skipped_tags: bool,
+    pruning_level: PruningLevel | None,
+    progress: ProgressCallback | None,
+) -> VisualizationPayload:
+    _payload_validation_enabled = is_payload_validation_enabled()
+    _pruning_level = pruning_level or get_tree_pruning_level()
+    moved_srcdiff_xml = canonical_payload.moved_srcdiff_xml
+    move_results = _build_compatibility_move_results(
+        canonical_payload.move_results,
+        provenance=provenance,
+    )
+    has_position_data = canonical_payload.has_position_data
+    visualized_files = canonical_payload.files
+    revision_files = tuple(
+        _visualized_file.revision_file for _visualized_file in visualized_files
+    )
 
     _original_file_count = len(visualized_files)
-    _pruning_level = _requested_pruning_level
 
     notify_progress(
         progress,
@@ -191,7 +354,9 @@ def build_visualization_payload(
     )
 
     _pruned_file_count = _original_file_count - len(_pruned_visualized_files)
-    _kept_tree_nodes, _kept_move_nodes = _count_visualized_tree_nodes(_pruned_visualized_files)
+    _kept_tree_nodes, _kept_move_nodes = _count_visualized_tree_nodes(
+        _pruned_visualized_files
+    )
     notify_progress(
         progress,
         f"Pruned {_pruned_file_count} file(s) using level: {_pruning_level}. "
@@ -222,7 +387,7 @@ def build_visualization_payload(
             "Rebuilt pruned srcdiff XML: "
             f"xml_bytes={len(moved_srcdiff_xml.encode('utf-8'))}.",
         )
-        if payload_validation_enabled:
+        if _payload_validation_enabled:
             notify_progress(progress, "Validating pruned srcdiff XML.")
             validate_xml_span_index(
                 moved_srcdiff_xml=moved_srcdiff_xml,
@@ -246,7 +411,8 @@ def build_visualization_payload(
             f"has_position_data={has_position_data}.",
         )
         _kept_revision_files = tuple(
-            _visualized_file.revision_file for _visualized_file in _pruned_visualized_files
+            _visualized_file.revision_file
+            for _visualized_file in _pruned_visualized_files
         )
         notify_progress(
             progress,
@@ -257,8 +423,8 @@ def build_visualization_payload(
             revision_files=_kept_revision_files,
             include_skipped_tags=include_skipped_tags,
         )
-        _rendered_revision_0_chars, _rendered_revision_1_chars = _count_rendered_source_chars(
-            _rendered_revision_files
+        _rendered_revision_0_chars, _rendered_revision_1_chars = (
+            _count_rendered_source_chars(_rendered_revision_files)
         )
         notify_progress(
             progress,
@@ -313,14 +479,14 @@ def build_visualization_payload(
     )
 
     final_payload = VisualizationPayload(
-        source_filename=filename,
+        source_filename=canonical_payload.source_filename,
         moved_srcdiff_xml=moved_srcdiff_xml,
         move_results=move_results,
         has_position_data=has_position_data,
         files=visualized_files,
     )
 
-    if payload_validation_enabled:
+    if _payload_validation_enabled:
         notify_progress(progress, "Validating pruned visualization payload.")
         validate_moved_srcdiff_and_tree(
             moved_srcdiff_xml=final_payload.moved_srcdiff_xml,
@@ -333,11 +499,37 @@ def build_visualization_payload(
     else:
         notify_progress(
             progress,
-            "Skipping pruned payload validation "
-            "(payload_validation=false).",
+            "Skipping pruned payload validation (payload_validation=false).",
         )
 
     return final_payload
+
+
+def _build_compatibility_move_results(
+    canonical_move_results: dict[str, Any],
+    *,
+    provenance: ArtifactProvenance,
+) -> dict[str, Any]:
+    if provenance.move_results_source != "generated":
+        return canonical_move_results
+
+    _producer_metadata = canonical_move_results.get("producer_metadata")
+    _moves = canonical_move_results.get("moves")
+    assert isinstance(_producer_metadata, dict), (
+        "Generated artifact is missing producer move metadata."
+    )
+    assert isinstance(_moves, list), "Generated artifact is missing its move list."
+    _producer_moves = [
+        _move
+        for _move in _moves
+        if isinstance(_move, dict)
+        and _move.get("result_provenance") == "producer-results"
+    ]
+    return {
+        **_producer_metadata,
+        "move_count": len(_producer_moves),
+        "moves": _producer_moves,
+    }
 
 
 def _count_tree_nodes_and_moves(tree_by_unit) -> tuple[int, int]:

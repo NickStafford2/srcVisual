@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from srcvisual.srcmove.srcmove_results import build_filename_to_unit_index, parse_srcmove_result_moves
+from srcvisual.srcmove.srcmove_results import (
+    build_filename_to_unit_index,
+    parse_srcmove_result_moves,
+)
 from srcvisual.srcmove.move_regions import (
     XmlMoveRegion,
     classify_xml_move_region_side,
@@ -53,6 +56,60 @@ def augment_move_results_with_node_ids(
     return {
         **move_results,
         "moves": normalized_moves,
+    }
+
+
+def merge_producer_move_results(
+    *,
+    reconstructed_results: dict[str, Any],
+    producer_results: dict[str, Any],
+) -> dict[str, Any]:
+    _reconstructed_moves = reconstructed_results.get("moves")
+    _producer_moves = producer_results.get("moves")
+    assert isinstance(_reconstructed_moves, list), (
+        "Reconstructed move results must contain a moves list."
+    )
+    assert isinstance(_producer_moves, list), (
+        "Producer move results must contain a moves list."
+    )
+
+    _producer_by_id = {}
+    for _move in _producer_moves:
+        assert isinstance(_move, dict) and isinstance(_move.get("move_id"), str), (
+            "Producer move results contain an invalid move."
+        )
+        assert _move["move_id"] not in _producer_by_id, (
+            f"Duplicate producer move id: {_move['move_id']!r}."
+        )
+        _producer_by_id[_move["move_id"]] = _move
+
+    _merged_moves = []
+    for _move in _reconstructed_moves:
+        assert isinstance(_move, dict) and isinstance(_move.get("move_id"), str), (
+            "Reconstructed move results contain an invalid move."
+        )
+        _producer_move = _producer_by_id.pop(_move["move_id"], None)
+        _merged_moves.append(
+            {
+                **_move,
+                **(_producer_move or {}),
+                "result_provenance": (
+                    "producer-results" if _producer_move else "xml-annotation"
+                ),
+            }
+        )
+
+    assert not _producer_by_id, (
+        "Producer move results refer to moves missing from reconstructed XML: "
+        f"{sorted(_producer_by_id)}."
+    )
+    _producer_metadata = {
+        _key: _value for _key, _value in producer_results.items() if _key != "moves"
+    }
+    return {
+        **reconstructed_results,
+        "moves": _merged_moves,
+        "producer_metadata": _producer_metadata,
     }
 
 

@@ -9,6 +9,7 @@ from flask import Flask, abort, send_from_directory
 from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import RequestEntityTooLarge
 
+from srcvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
 from srcvisual.core.commands import get_command_timeout_seconds
 from srcvisual.web._routes import api
 
@@ -23,6 +24,8 @@ def create_app() -> Flask:
     app.config["COMMAND_TIMEOUT_SECONDS"] = get_command_timeout_seconds()
     app.config["EXAMPLES_DIR"] = get_examples_dir()
     app.config["HISTORY_REPOSITORY"] = get_history_repository()
+    app.config["ARTIFACT_ROOT"] = get_artifact_root()
+    cleanup_stale_staging(app.config["ARTIFACT_ROOT"])
     app.register_blueprint(api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 

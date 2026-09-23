@@ -82,8 +82,12 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
         raise AssertionError("expensive validation should be skipped")
 
     monkeypatch.setattr(payload_module, "validate_xml_span_index", fail_if_called)
-    monkeypatch.setattr(payload_module, "validate_moved_srcdiff_and_tree", fail_if_called)
-    monkeypatch.setattr(payload_module, "validate_visualization_payload", fail_if_called)
+    monkeypatch.setattr(
+        payload_module, "validate_moved_srcdiff_and_tree", fail_if_called
+    )
+    monkeypatch.setattr(
+        payload_module, "validate_visualization_payload", fail_if_called
+    )
 
     result = payload_module.build_visualization_payload(
         filename="example.move.diff.xml",

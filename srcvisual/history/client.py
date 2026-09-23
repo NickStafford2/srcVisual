@@ -135,6 +135,23 @@ def materialize_history_pair(repository: Path, pair_number: int) -> Path:
     return candidates[0]
 
 
+def read_materialized_move_results(artifact: Path) -> dict[str, Any] | None:
+    _results_path = artifact.with_name("results.json")
+    if not _results_path.is_file():
+        return None
+    try:
+        _document = json.loads(_results_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as _error:
+        raise HistoryResponseError(
+            "Retained srcMove results.json is malformed."
+        ) from _error
+    if not isinstance(_document, dict):
+        raise HistoryResponseError(
+            "Retained srcMove results.json must contain an object."
+        )
+    return _document
+
+
 def _run_json_command(
     repository: Path,
     arguments: Sequence[str],
@@ -151,9 +168,7 @@ def _run_json_command(
             "SRCVISUAL_HISTORY_COMMAND must name one executable."
         )
 
-    result = run_command(
-        [command, "-C", str(resolved_repository), *arguments]
-    )
+    result = run_command([command, "-C", str(resolved_repository), *arguments])
     try:
         document = json.loads(result.stdout)
     except json.JSONDecodeError as error:

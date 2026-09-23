@@ -17,8 +17,10 @@ services:
       SRCVISUAL_GUNICORN_THREADS: "4"
       SRCVISUAL_GUNICORN_TIMEOUT_SECONDS: "360"
       SRCVISUAL_HISTORY_REPOSITORY: "/history/repository"
+      SRCVISUAL_ARTIFACT_ROOT: "/var/lib/srcvisual/artifacts"
       SRCVISUAL_TMP_ROOT: "/tmp/srcvisual"
     volumes:
+      - srcvisual-artifacts:/var/lib/srcvisual/artifacts
       - ../srcMove/reference-repositories/notepadpp:/history/repository:ro
       # srcmove-history owns these two repository-local areas. The source
       # working tree remains read-only while repository analysis and retained
@@ -30,3 +32,6 @@ services:
     tmpfs:
       - /tmp
       - /dev/shm
+
+volumes:
+  srcvisual-artifacts:

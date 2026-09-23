@@ -11,6 +11,7 @@ from srcvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
     materialize_history_pair,
+    read_materialized_move_results,
     read_history_pair,
     read_history_pairs,
     read_history_status,
@@ -183,3 +184,27 @@ def test_materialize_pair_rejects_artifact_outside_analysis(
 
     with pytest.raises(HistoryResponseError, match="outside"):
         materialize_history_pair(repository, 1)
+
+
+def test_read_materialized_move_results_preserves_producer_metadata(
+    tmp_path: Path,
+) -> None:
+    _artifact = tmp_path / "srcmove.xml"
+    _artifact.touch()
+    _results = {
+        "move_count": 1,
+        "moves": [{"move_id": "move-1", "match_kind": "type3"}],
+        "group_kinds": {"move_1_to_1": 1},
+    }
+    (_artifact.with_name("results.json")).write_text(
+        json.dumps(_results),
+        encoding="utf-8",
+    )
+
+    assert read_materialized_move_results(_artifact) == _results
+
+
+def test_read_materialized_move_results_allows_xml_only_history_artifact(
+    tmp_path: Path,
+) -> None:
+    assert read_materialized_move_results(tmp_path / "srcmove.xml") is None

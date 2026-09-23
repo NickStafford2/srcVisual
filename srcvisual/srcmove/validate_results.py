@@ -7,7 +7,11 @@ from srcvisual.srcmove.move_regions import (
     classify_xml_move_region_side,
     collect_xml_move_regions,
 )
-from srcvisual.srcmove.srcmove_results import SrcMoveResultMove, build_filename_to_unit_index, parse_srcmove_result_moves
+from srcvisual.srcmove.srcmove_results import (
+    SrcMoveResultMove,
+    build_filename_to_unit_index,
+    parse_srcmove_result_moves,
+)
 
 
 def validate_srcmove_results_match_xml(
@@ -15,6 +19,7 @@ def validate_srcmove_results_match_xml(
     moved_srcdiff_xml: str,
     move_results: dict[str, Any],
     include_skipped_tags: bool,
+    allow_additional_xml_moves: bool = False,
 ) -> None:
     _filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
     _result_moves = parse_srcmove_result_moves(
@@ -36,17 +41,30 @@ def validate_srcmove_results_match_xml(
     _result_move_ids = {_move.move_id for _move in _result_moves}
     _xml_move_ids = {_region.move_id for _region in _xml_regions.values()}
 
-    assert _result_move_ids == _xml_move_ids, (
+    _unexpected_result_ids = _result_move_ids - _xml_move_ids
+    _unexpected_xml_ids = _xml_move_ids - _result_move_ids
+    assert not _unexpected_result_ids and (
+        allow_additional_xml_moves or not _unexpected_xml_ids
+    ), (
         "Move ids differ between results.json and moved XML. "
-        f"Only in results.json: {sorted(_result_move_ids - _xml_move_ids)}. "
-        f"Only in XML: {sorted(_xml_move_ids - _result_move_ids)}."
+        f"Only in results.json: {sorted(_unexpected_result_ids)}. "
+        f"Only in XML: {sorted(_unexpected_xml_ids)}."
     )
 
     for _move in _result_moves:
-        validate_single_srcmove_result_move(
-            move=_move,
-            xml_regions=_xml_regions,
-        )
+        if allow_additional_xml_moves:
+            _validate_srcmove_result_move_by_id(
+                move=_move,
+                xml_regions=_xml_regions,
+            )
+        else:
+            validate_single_srcmove_result_move(
+                move=_move,
+                xml_regions=_xml_regions,
+            )
+
+    if allow_additional_xml_moves:
+        return
 
     _result_paths: set[str] = set()
 
@@ -56,11 +74,56 @@ def validate_srcmove_results_match_xml(
 
     _xml_paths = set(_xml_regions)
 
-    assert _result_paths == _xml_paths, (
+    _unexpected_result_paths = _result_paths - _xml_paths
+    _unexpected_xml_paths = _xml_paths - _result_paths
+    assert not _unexpected_result_paths and (
+        allow_additional_xml_moves or not _unexpected_xml_paths
+    ), (
         "Move region paths differ between results.json and moved XML. "
-        f"Only in results.json: {sorted(_result_paths - _xml_paths)}. "
-        f"Only in XML: {sorted(_xml_paths - _result_paths)}."
+        f"Only in results.json: {sorted(_unexpected_result_paths)}. "
+        f"Only in XML: {sorted(_unexpected_xml_paths)}."
     )
+
+
+def _validate_srcmove_result_move_by_id(
+    *,
+    move: SrcMoveResultMove,
+    xml_regions: dict[str, XmlMoveRegion],
+) -> None:
+    _regions = [
+        _region for _region in xml_regions.values() if _region.move_id == move.move_id
+    ]
+    _from_regions = [
+        _region
+        for _region in _regions
+        if classify_xml_move_region_side(_region) == "from"
+    ]
+    _to_regions = [
+        _region
+        for _region in _regions
+        if classify_xml_move_region_side(_region) == "to"
+    ]
+
+    assert len(_from_regions) == len(move.from_xpaths), (
+        f"Move {move.move_id!r} source count differs between results.json and XML."
+    )
+    assert len(_to_regions) == len(move.to_xpaths), (
+        f"Move {move.move_id!r} destination count differs between results.json and XML."
+    )
+    assert all(
+        set(_region.to_paths) == set(move.to_xpaths) for _region in _from_regions
+    ), (
+        f"Move {move.move_id!r} destination references differ between results.json and XML."
+    )
+    assert all(
+        set(_region.from_paths) == set(move.from_xpaths) for _region in _to_regions
+    ), f"Move {move.move_id!r} source references differ between results.json and XML."
+    assert sorted(_region.raw_text for _region in _from_regions) == sorted(
+        move.from_raw_texts
+    ), f"Move {move.move_id!r} source text differs between results.json and XML."
+    assert sorted(_region.raw_text for _region in _to_regions) == sorted(
+        move.to_raw_texts
+    ), f"Move {move.move_id!r} destination text differs between results.json and XML."
 
 
 def validate_single_srcmove_result_move(
