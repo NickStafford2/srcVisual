@@ -17,7 +17,7 @@ export function buildArtifactLineSegments(
   });
 
   if (line.text.length === 0) {
-    const _anchor = preferredAnchor(_slices.map((slice) => slice.anchor));
+    const _anchor = preferredAnchor(line.anchors);
     return [segmentForRange(" ", _anchor)];
   }
 
@@ -83,5 +83,9 @@ function anchorPriority(kind: ArtifactSourceLine["anchors"][number]["kind"]) {
 }
 
 function spanSize(span: ArtifactSourceLine["anchors"][number]["span"]) {
-  return (span.end_line - span.start_line) * 1_000_000 + span.end_col - span.start_col;
+  return (
+    (span.end_line - span.start_line) * 1_000_000 +
+    span.end_col -
+    span.start_col
+  );
 }

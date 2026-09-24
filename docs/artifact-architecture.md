@@ -746,7 +746,7 @@ endpoint or relationship so one move cannot be mistaken for several moves.
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts. (Complete.)
 - Extend source projections with revision-local line and column spans, then
-  restore character-precise insert, delete, and move fragments.
+  restore character-precise insert, delete, and move fragments. (Complete.)
 - Port the legacy move highlighting and SVG connector interactions to
   artifact-local identities, including same-file, cross-file, one-to-many, and
   many-to-one moves. Draw connectors only for rendered endpoints. (Complete.)

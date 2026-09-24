@@ -185,6 +185,92 @@ def test_source_projection_returns_character_precise_move_anchors(tmp_path) -> N
         ]
 
 
+def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
+    tmp_path,
+) -> None:
+    _span = {"start_line": 2, "start_col": 7, "end_line": 4, "end_col": 5}
+    _move = {
+        "id": "/unit/move",
+        "path": "/unit/move",
+        "tag": "block",
+        "label": "block",
+        "kind": "move",
+        "move_id": "move-1",
+        "srcdiff_attributes": {},
+        "xml_span": None,
+        "revision_0_span": _span,
+        "revision_1_span": _span,
+        "children": [],
+    }
+    _root = {
+        "id": "/unit",
+        "path": "/unit",
+        "tag": "unit",
+        "label": "unit: example.cpp",
+        "kind": "plain",
+        "move_id": None,
+        "srcdiff_attributes": {},
+        "xml_span": None,
+        "revision_0_span": _span,
+        "revision_1_span": _span,
+        "children": [_move],
+    }
+    _source = "before\nprefix moved\n\nafter tail\nlast\n"
+    _payload = VisualizationPayload(
+        source_filename="multiline.srcmove.xml",
+        moved_srcdiff_xml='<unit filename="example.cpp"/>\n',
+        move_results={"move_count": 0, "moves": []},
+        has_position_data=True,
+        files=(
+            VisualizedFile(
+                revision_file=RevisionFile(
+                    unit_id=1,
+                    filename="example.cpp",
+                    revision_0_filename="before/example.cpp",
+                    revision_1_filename="after/example.cpp",
+                    language="C++",
+                    revision_0_source_code=_source,
+                    revision_1_source_code=_source,
+                ),
+                tree=_root,
+            ),
+        ),
+    )
+    _published = publish_artifact(
+        artifact_root=tmp_path,
+        canonical_payload=_payload,
+        input_payload=b"input",
+        provenance=ArtifactProvenance(origin="upload"),
+    )
+    _file_id = _published.manifest["files"][0]["file_id"]
+
+    _projection = read_source_projection(
+        artifact_root=tmp_path,
+        artifact_id=_published.artifact_id,
+        file_id=_file_id,
+        focus_profile="moves",
+        context_lines=0,
+    )
+
+    _hunk = next(
+        _block for _block in _projection["blocks"] if _block["type"] == "hunk"
+    )
+    assert [
+        (_row["left"]["line_number"], _row["left"]["text"])
+        for _row in _hunk["rows"]
+    ] == [(2, "prefix moved"), (3, ""), (4, "after tail")]
+    for _row in _hunk["rows"]:
+        for _side in ("left", "right"):
+            assert _row[_side]["anchors"] == [
+                {
+                    "node_id": f"{_file_id}:n00000001",
+                    "kind": "move",
+                    "move_id": "move-1",
+                    "span": _span,
+                }
+            ]
+
+
 def test_source_projection_accumulates_expanded_ranges_with_focus(tmp_path) -> None:
     published = _publish_fixture(tmp_path)
     file_id = published.manifest["files"][0]["file_id"]
