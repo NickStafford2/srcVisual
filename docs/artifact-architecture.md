@@ -693,9 +693,10 @@ the Phase 4 frontend migration.
 ### Phase 4: complete frontend migration
 
 Status: in progress. History visualization creation now uses the durable run
-contract, polls authoritative status, and opens the completed artifact through
-the projection interface. The synchronous history endpoint remains only as a
-temporary compatibility path.
+contract, displays reconnectable SSE progress, retains authoritative status
+polling, supports durable cancellation, and opens the completed artifact
+through the projection interface. The synchronous history endpoint remains
+only as a temporary compatibility path.
 
 Move rendering must communicate semantic move groups rather than individual
 rendered lines. One multi-line source endpoint and its destination endpoint

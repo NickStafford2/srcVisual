@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  cancelHistoryRun,
   fetchHistoryPair,
   fetchHistoryPairs,
   fetchHistoryStatus,
@@ -9,6 +10,8 @@ import type { VisualizationResult } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
+  HistoryRun,
+  HistoryRunEvent,
   HistorySelection,
   HistoryStatusDocument,
 } from "./types";
@@ -28,6 +31,9 @@ export function useHistoryData(
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingPair, setIsLoadingPair] = useState(false);
   const [isVisualizingPair, setIsVisualizingPair] = useState(false);
+  const [isCancellingRun, setIsCancellingRun] = useState(false);
+  const [activeRun, setActiveRun] = useState<HistoryRun | null>(null);
+  const [runEvents, setRunEvents] = useState<HistoryRunEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -94,8 +100,19 @@ export function useHistoryData(
     if (isVisualizingPair) return;
     setIsVisualizingPair(true);
     setError(null);
+    setActiveRun(null);
+    setRunEvents([]);
     try {
-      const payload = await visualizeHistoryPair(pairNumber);
+      const payload = await visualizeHistoryPair(pairNumber, {
+        onRun: setActiveRun,
+        onEvent: (event) => {
+          setRunEvents((current) =>
+            current.some((item) => item.sequence === event.sequence)
+              ? current
+              : [...current, event],
+          );
+        },
+      });
       onVisualization(payload);
     } catch (loadError) {
       setError(
@@ -109,6 +126,26 @@ export function useHistoryData(
     }
   }
 
+  async function cancelVisualization() {
+    if (
+      activeRun === null ||
+      !["queued", "running"].includes(activeRun.status) ||
+      activeRun.cancellation_requested ||
+      isCancellingRun
+    ) {
+      return;
+    }
+    setIsCancellingRun(true);
+    setError(null);
+    try {
+      setActiveRun(await cancelHistoryRun(activeRun.run_id));
+    } catch (cancelError) {
+      setError(errorMessage(cancelError, "Unable to cancel history run."));
+    } finally {
+      setIsCancellingRun(false);
+    }
+  }
+
   return {
     status,
     pairs,
@@ -119,11 +156,15 @@ export function useHistoryData(
     isLoadingMore,
     isLoadingPair,
     isVisualizingPair,
+    isCancellingRun,
+    activeRun,
+    runEvents,
     error,
     setSelection,
     selectPair,
     loadMore,
     openVisualization,
+    cancelVisualization,
     refresh: () => setRefreshKey((current) => current + 1),
   };
 }

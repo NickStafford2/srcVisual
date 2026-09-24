@@ -126,3 +126,17 @@ export interface HistoryRunDocument {
   schema_version: 1;
   run: HistoryRun;
 }
+
+export interface HistoryRunEvent {
+  run_id: string;
+  sequence: number;
+  type: "status" | "progress" | "cancellation-requested";
+  status: HistoryRunStatus;
+  message: string;
+  created_at: string;
+}
+
+export interface HistoryRunEventDocument {
+  schema_version: 1;
+  event: HistoryRunEvent;
+}

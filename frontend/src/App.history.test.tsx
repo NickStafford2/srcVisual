@@ -3,6 +3,33 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
+class MockEventSource {
+  static instances: MockEventSource[] = [];
+  private listeners = new Map<string, (event: MessageEvent<string>) => void>();
+  closed = false;
+
+  constructor(public readonly url: string) {
+    MockEventSource.instances.push(this);
+  }
+
+  addEventListener(
+    type: string,
+    listener: (event: MessageEvent<string>) => void,
+  ) {
+    this.listeners.set(type, listener);
+  }
+
+  emit(type: string, payload: unknown) {
+    this.listeners.get(type)?.(
+      new MessageEvent(type, { data: JSON.stringify(payload) }),
+    );
+  }
+
+  close() {
+    this.closed = true;
+  }
+}
+
 const statusDocument = {
   schema_version: 2,
   analysis: {
@@ -51,7 +78,14 @@ const pairItem = {
 };
 
 describe("repository history browser", () => {
+  let runPollCount = 0;
+  let cancellationRequested = false;
+
   beforeEach(() => {
+    MockEventSource.instances = [];
+    runPollCount = 0;
+    cancellationRequested = false;
+    vi.stubGlobal("EventSource", MockEventSource);
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -104,10 +138,23 @@ describe("repository history browser", () => {
           }, 202);
         }
         if (url === `/api/runs/${"r".repeat(32)}`) {
+          runPollCount += 1;
           return jsonResponse({
             schema_version: 1,
-            run: historyRun("completed"),
+            run: cancellationRequested
+              ? historyRun("cancelled", true)
+              : historyRun(runPollCount === 1 ? "running" : "completed"),
           });
+        }
+        if (url === `/api/runs/${"r".repeat(32)}/cancel`) {
+          cancellationRequested = true;
+          return jsonResponse(
+            {
+              schema_version: 1,
+              run: historyRun("running", true),
+            },
+            202,
+          );
         }
         if (url === `/api/artifacts/${"a".repeat(32)}`) {
           return jsonResponse({
@@ -164,6 +211,22 @@ describe("repository history browser", () => {
       within(details).getByRole("button", { name: "Open visualization" }),
     );
 
+    await waitFor(() => expect(MockEventSource.instances).toHaveLength(1));
+    MockEventSource.instances[0].emit("run", {
+      schema_version: 1,
+      event: {
+        run_id: "r".repeat(32),
+        sequence: 2,
+        type: "progress",
+        status: "running",
+        message: "Building the synchronized visualization.",
+        created_at: "2026-09-24T00:00:01.500Z",
+      },
+    });
+    expect(
+      await screen.findByText("Building the synchronized visualization."),
+    ).toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.getByRole("tab", { name: "Source" })).toHaveAttribute(
         "aria-selected",
@@ -177,17 +240,43 @@ describe("repository history browser", () => {
       "/api/history/pairs/1/visualize",
       expect.anything(),
     );
+    expect(MockEventSource.instances[0].closed).toBe(true);
+  });
+
+  it("requests durable cancellation and reports the terminal state", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: /^History/ }));
+    const pairList = await screen.findByLabelText("History commit pairs");
+    await user.click(within(pairList).getByRole("button", { name: /#1/ }));
+    const details = await screen.findByLabelText("Commit pair 1 details");
+    await user.click(
+      within(details).getByRole("button", { name: "Open visualization" }),
+    );
+
+    await user.click(await within(details).findByRole("button", { name: "Cancel" }));
+
+    expect(fetch).toHaveBeenCalledWith(`/api/runs/${"r".repeat(32)}/cancel`, {
+      method: "POST",
+    });
+    expect(
+      await screen.findByText("History visualization was cancelled."),
+    ).toBeInTheDocument();
+    expect(MockEventSource.instances[0].closed).toBe(true);
   });
 });
 
-function historyRun(status: "queued" | "completed") {
+function historyRun(
+  status: "queued" | "running" | "completed" | "cancelled",
+  cancellationRequested = false,
+) {
   return {
     run_id: "r".repeat(32),
     kind: "history-visualization",
     history_pair: 1,
     status,
     artifact_id: status === "completed" ? "a".repeat(32) : null,
-    cancellation_requested: false,
+    cancellation_requested: cancellationRequested,
     diagnostic: null,
     created_at: "2026-09-24T00:00:00.000Z",
     started_at: status === "completed" ? "2026-09-24T00:00:01.000Z" : null,

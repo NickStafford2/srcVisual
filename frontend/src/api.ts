@@ -15,6 +15,8 @@ import type {
   HistoryRun,
   HistoryRunCreationDocument,
   HistoryRunDocument,
+  HistoryRunEvent,
+  HistoryRunEventDocument,
   HistorySelection,
   HistoryStatusDocument,
 } from "./history/types";
@@ -89,6 +91,10 @@ export async function fetchHistoryPair(
 
 export async function visualizeHistoryPair(
   pairNumber: number,
+  observer: {
+    onRun?: (run: HistoryRun) => void;
+    onEvent?: (event: HistoryRunEvent) => void;
+  } = {},
 ): Promise<ArtifactManifest> {
   const response = await fetch(`/api/history/pairs/${pairNumber}/runs`, {
     method: "POST",
@@ -103,7 +109,14 @@ export async function visualizeHistoryPair(
     throw new Error("Backend returned an unsupported run-creation document.");
   }
 
-  const run = await awaitCompletedHistoryRun(payload.run);
+  observer.onRun?.(payload.run);
+  const eventStream = openHistoryRunEventStream(payload.run.run_id, observer.onEvent);
+  let run: HistoryRun;
+  try {
+    run = await awaitCompletedHistoryRun(payload.run, observer.onRun);
+  } finally {
+    eventStream.close();
+  }
   if (run.status === "failed") {
     throw new Error(run.diagnostic?.message ?? "History visualization failed.");
   }
@@ -116,7 +129,22 @@ export async function visualizeHistoryPair(
   return fetchArtifactManifest(run.artifact_id);
 }
 
-async function awaitCompletedHistoryRun(initialRun: HistoryRun): Promise<HistoryRun> {
+export async function cancelHistoryRun(runId: string): Promise<HistoryRun> {
+  const response = await fetch(`/api/runs/${runId}/cancel`, { method: "POST" });
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    throw new Error(responseError(payload) ?? "Unable to cancel history run.");
+  }
+  if (!isHistoryRunDocument(payload)) {
+    throw new Error("Backend returned an unsupported run-status document.");
+  }
+  return payload.run;
+}
+
+async function awaitCompletedHistoryRun(
+  initialRun: HistoryRun,
+  onRun: ((run: HistoryRun) => void) | undefined,
+): Promise<HistoryRun> {
   let run = initialRun;
   while (run.status === "queued" || run.status === "running") {
     const payload = await fetchJson(`/api/runs/${run.run_id}`);
@@ -124,11 +152,34 @@ async function awaitCompletedHistoryRun(initialRun: HistoryRun): Promise<History
       throw new Error("Backend returned an unsupported run-status document.");
     }
     run = payload.run;
+    onRun?.(run);
     if (run.status === "queued" || run.status === "running") {
       await new Promise((resolve) => window.setTimeout(resolve, 500));
     }
   }
   return run;
+}
+
+function openHistoryRunEventStream(
+  runId: string,
+  onEvent: ((event: HistoryRunEvent) => void) | undefined,
+): { close: () => void } {
+  if (!onEvent) return { close: () => undefined };
+  const eventSource = new EventSource(`/api/runs/${runId}/events`);
+  eventSource.addEventListener("run", (message) => {
+    let payload: unknown;
+    try {
+      payload = JSON.parse((message as MessageEvent<string>).data) as unknown;
+    } catch {
+      return;
+    }
+    if (!isHistoryRunEventDocument(payload)) return;
+    onEvent(payload.event);
+    if (["completed", "failed", "cancelled"].includes(payload.event.status)) {
+      eventSource.close();
+    }
+  });
+  return { close: () => eventSource.close() };
 }
 
 async function fetchArtifactManifest(
@@ -248,6 +299,26 @@ function isHistoryRun(value: unknown): value is HistoryRun {
     ["queued", "running", "completed", "failed", "cancelled"].includes(
       run.status ?? "",
     )
+  );
+}
+
+function isHistoryRunEventDocument(
+  payload: unknown,
+): payload is HistoryRunEventDocument {
+  if (typeof payload !== "object" || payload === null) return false;
+  const document = payload as Partial<HistoryRunEventDocument>;
+  const event = document.event;
+  return (
+    document.schema_version === 1 &&
+    typeof event === "object" &&
+    event !== null &&
+    typeof event.run_id === "string" &&
+    typeof event.sequence === "number" &&
+    ["status", "progress", "cancellation-requested"].includes(event.type) &&
+    ["queued", "running", "completed", "failed", "cancelled"].includes(
+      event.status,
+    ) &&
+    typeof event.message === "string"
   );
 }
 

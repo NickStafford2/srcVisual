@@ -19,11 +19,15 @@ export function HistoryInput(props: HistoryInputProps) {
     isLoadingMore,
     isLoadingPair,
     isVisualizingPair,
+    isCancellingRun,
+    activeRun,
+    runEvents,
     error,
     setSelection,
     selectPair,
     loadMore,
     openVisualization,
+    cancelVisualization,
     refresh,
   } = props;
 
@@ -93,7 +97,13 @@ export function HistoryInput(props: HistoryInputProps) {
           pair={selectedPair}
           isLoading={isLoadingPair}
           isVisualizing={isVisualizingPair}
+          isCancelling={isCancellingRun}
+          run={
+            activeRun?.history_pair === selectedPair?.number ? activeRun : null
+          }
+          runEvents={runEvents}
           onOpenVisualization={openVisualization}
+          onCancelVisualization={cancelVisualization}
         />
       </div>
     </div>
@@ -206,12 +216,20 @@ function HistoryPairDetails({
   pair,
   isLoading,
   isVisualizing,
+  isCancelling,
+  run,
+  runEvents,
   onOpenVisualization,
+  onCancelVisualization,
 }: {
   pair: HistoryInputProps["selectedPair"];
   isLoading: boolean;
   isVisualizing: boolean;
+  isCancelling: boolean;
+  run: HistoryInputProps["activeRun"];
+  runEvents: HistoryInputProps["runEvents"];
   onOpenVisualization: HistoryInputProps["openVisualization"];
+  onCancelVisualization: HistoryInputProps["cancelVisualization"];
 }) {
   if (isLoading) {
     return <DetailShell>Loading pair evidence…</DetailShell>;
@@ -241,6 +259,31 @@ function HistoryPairDetails({
       >
         {isVisualizing ? "Preparing visualization…" : "Open visualization"}
       </button>
+      {run ? (
+        <div className="mt-3 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.06] p-3 text-xs text-emerald-100">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-semibold capitalize">
+              {displayStatus(run.status)}
+              {run.cancellation_requested ? " · cancellation requested" : ""}
+            </span>
+            {["queued", "running"].includes(run.status) ? (
+              <button
+                type="button"
+                onClick={() => void onCancelVisualization()}
+                disabled={run.cancellation_requested || isCancelling}
+                className="rounded-lg border border-red-300/25 bg-red-300/10 px-2.5 py-1 text-red-100 disabled:opacity-50"
+              >
+                {isCancelling ? "Requesting…" : "Cancel"}
+              </button>
+            ) : null}
+          </div>
+          <ol className="mt-2 space-y-1 text-emerald-100/80" aria-label="History run progress">
+            {runEvents.map((event) => (
+              <li key={event.sequence}>{event.message}</li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
       {pair.error ? (
         <p className="mt-4 rounded-xl border border-red-300/20 bg-red-300/10 p-3 text-xs text-red-100">
           {pair.error}

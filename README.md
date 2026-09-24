@@ -84,9 +84,10 @@ History visualization runs are queued with
 `history-worker` Compose service. The status polling endpoint is
 `GET /api/runs/{run_id}`; durable progress streams from
 `GET /api/runs/{run_id}/events`, and `POST /api/runs/{run_id}/cancel` requests
-cancellation. The history frontend now creates durable runs, polls their
-authoritative status, and opens the resulting artifact. The synchronous
-history endpoint remains temporarily available as a compatibility path.
+cancellation. The history frontend now creates durable runs, shows their
+reconnectable progress stream, retains authoritative status polling, supports
+cancellation, and opens the resulting artifact. The synchronous history
+endpoint remains temporarily available as a compatibility path.
 
 Run creation derives an internal fingerprint from srcMove's versioned pair
 identity plus srcVisual's artifact schema and analysis configuration. A
