@@ -11,6 +11,8 @@ application, relationship to srcMove, and hosted-service vision.
   accepted artifact, projection, source-hunk, execution, and migration design
 - [Frontend color guide](../frontend/docs/color-guide.md): visual language for
   diffs, revisions, interactions, and move relationships
+- [BigMoveBench Type-3 review](bigmovebench-review.md): portable review bundle,
+  import workflow, and preserved per-case evidence
 
 The application rules and implementation are authoritative when planning notes
 disagree with current behavior.

@@ -11,6 +11,8 @@ import { ArtifactNodeInfo } from "./components/artifact/ArtifactNodeInfo";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
 import { fetchArtifactNode } from "./api";
+import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
+import { BigMoveBenchCaseBar } from "./components/BigMoveBenchCaseBar";
 import {
   type ArtifactFocusProfile,
   type ArtifactMoveSummary,
@@ -37,6 +39,7 @@ export default function App() {
     srcDiffData.inputMode === "history",
     srcDiffData.acceptVisualization,
   );
+  const benchmarkData = useBigMoveBenchReview(srcDiffData.acceptVisualization);
   const artifact = srcDiffData.data;
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
   const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
@@ -223,6 +226,7 @@ export default function App() {
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
             <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <BigMoveBenchCaseBar {...benchmarkData} />
               <Tabs
                 tabs={mainTabs}
                 activeTabId={activeMainTab}
@@ -246,6 +250,7 @@ export default function App() {
                     examplesError={srcDiffData.examplesError}
                     isLoadingExample={srcDiffData.isLoadingExample}
                     history={historyData}
+                    benchmark={benchmarkData}
                     onInputModeChange={srcDiffData.setInputMode}
                     onLoadExample={srcDiffData.handleLoadExample}
                     onUploadChange={srcDiffData.setSelectedUpload}

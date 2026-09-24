@@ -9,6 +9,8 @@ import { ProgressLog } from "./ProgressLog";
 import { UploadFileInput } from "./UploadFileInput";
 import { HistoryInput } from "./HistoryInput";
 import type { ReturnTypeOfUseHistoryData } from "./historyInputTypes";
+import { BigMoveBenchInput } from "./BigMoveBenchInput";
+import type { ReturnTypeOfUseBigMoveBenchReview } from "./bigMoveBenchInputTypes";
 
 type InputPanelProps = {
   inputMode: InputMode;
@@ -24,6 +26,7 @@ type InputPanelProps = {
   examplesError: string | null;
   isLoadingExample: boolean;
   history: ReturnTypeOfUseHistoryData;
+  benchmark: ReturnTypeOfUseBigMoveBenchReview;
   onInputModeChange: (mode: InputMode) => void;
   onLoadExample: (filename: string) => void;
   onUploadChange: (file: File | null) => void;
@@ -45,6 +48,7 @@ export function InputPanel({
   examplesError,
   isLoadingExample,
   history,
+  benchmark,
   onInputModeChange,
   onLoadExample,
   onUploadChange,
@@ -61,6 +65,10 @@ export function InputPanel({
         />
 
         {inputMode === "history" ? <HistoryInput {...history} /> : null}
+
+        {inputMode === "benchmark" ? (
+          <BigMoveBenchInput {...benchmark} />
+        ) : null}
 
         {inputMode === "examples" ? (
           <ExampleInput
@@ -89,7 +97,7 @@ export function InputPanel({
           />
         ) : null}
 
-        {inputMode !== "history" ? (
+        {inputMode !== "history" && inputMode !== "benchmark" ? (
           <>
             <InputPanelSubmitRow
               isLoading={isLoading}

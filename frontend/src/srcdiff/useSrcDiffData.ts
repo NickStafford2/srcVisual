@@ -9,7 +9,12 @@ import {
 import type { VisualizationProgressEvent } from "../api";
 import type { ArtifactManifest } from "../types";
 
-export type InputMode = "history" | "examples" | "paste" | "upload";
+export type InputMode =
+  | "history"
+  | "benchmark"
+  | "examples"
+  | "paste"
+  | "upload";
 export type ProgressLogEntry = {
   message: string;
   elapsedMs: number;
@@ -115,7 +120,7 @@ export function useSrcDiffData() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (inputMode === "history") {
+    if (inputMode === "history" || inputMode === "benchmark") {
       return;
     }
 

@@ -17,6 +17,11 @@ const OPTIONS: ReadonlyArray<{
     description: "Browse analyzed commit pairs from the mounted repository.",
   },
   {
+    mode: "benchmark",
+    label: "BigMoveBench",
+    description: "Review passed and missed Type-3 benchmark cases.",
+  },
+  {
     mode: "examples",
     label: "Examples",
     description: "Load a known srcDiff example from the repo.",

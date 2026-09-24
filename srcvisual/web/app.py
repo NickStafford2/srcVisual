@@ -10,6 +10,7 @@ from flask.typing import ResponseReturnValue
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from srcvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
+from srcvisual.bigmovebench.routes import bigmovebench_api
 from srcvisual.core.commands import get_command_timeout_seconds
 from srcvisual.history.client import get_history_repository
 from srcvisual.runs.store import RunStore, get_run_database_path
@@ -33,6 +34,7 @@ def create_app() -> Flask:
     )
     app.config["RUN_STORE"].initialize()
     app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(bigmovebench_api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 
     @app.errorhandler(RequestEntityTooLarge)
