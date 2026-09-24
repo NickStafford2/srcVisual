@@ -11,6 +11,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from srcvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
 from srcvisual.core.commands import get_command_timeout_seconds
+from srcvisual.runs.store import RunStore, get_run_database_path
 from srcvisual.web._routes import api
 
 DEFAULT_MAX_CONTENT_LENGTH_MB = 64
@@ -26,6 +27,10 @@ def create_app() -> Flask:
     app.config["HISTORY_REPOSITORY"] = get_history_repository()
     app.config["ARTIFACT_ROOT"] = get_artifact_root()
     cleanup_stale_staging(app.config["ARTIFACT_ROOT"])
+    app.config["RUN_STORE"] = RunStore(
+        get_run_database_path(app.config["ARTIFACT_ROOT"])
+    )
+    app.config["RUN_STORE"].initialize()
     app.register_blueprint(api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 

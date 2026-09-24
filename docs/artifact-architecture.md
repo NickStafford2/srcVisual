@@ -479,6 +479,41 @@ Uploaded XML remains synchronous initially unless measurements show that it
 needs the run worker. The established multi-minute history path receives the
 durable run model first.
 
+### Durable run contract
+
+The first Phase 3 slice stores runs in `runs.sqlite3` at the root of the
+existing persistent artifact volume. The database belongs to srcVisual and is
+independent of srcMove's repository-local history database. Each history
+visualization run has one opaque `run_id`, one positive srcMove pair number,
+and exactly one of these states:
+
+```text
+queued -> running -> completed
+                  -> failed
+                  -> cancelled
+queued ----------> failed
+       ----------> cancelled
+```
+
+`completed` requires an immutable published `artifact_id`. `failed` and
+`cancelled` never have one. A cancellation request is durable but does not
+change the run to `cancelled`; the worker must first terminate and reap the
+native process group. Terminal runs cannot transition again.
+
+`GET /api/runs/{run_id}` is the polling fallback and returns run contract
+schema version 1. Its run object contains the kind `history-visualization`,
+pair number, state, nullable artifact ID, cancellation flag, safe nullable
+diagnostic, UTC lifecycle timestamps, and latest event sequence. Diagnostics
+contain a stable code and display-safe message, never an exception traceback
+or filesystem path.
+
+Every lifecycle transition and progress update appends an event in the same
+SQLite transaction as its run-state change. Event sequence numbers are
+positive, contiguous, and local to one run. Events record their type, the
+resulting run status, display-safe message, and UTC timestamp. Ordered reads
+accept an exclusive `after` cursor and a bounded limit; the later SSE endpoint
+will use the same durable sequence as its event ID.
+
 ## Frontend Rendering
 
 The artifact manifest replaces `VisualizeResponse` as the root frontend
@@ -608,7 +643,11 @@ state, and removal of the compatibility interface.
 
 ### Phase 3: durable history runs
 
-- Add the dedicated worker and durable run/event store.
+Status: in progress. The durable SQLite run/event store and polling status
+contract are implemented. The synchronous history endpoint remains the active
+compatibility path until the worker-backed creation API is complete.
+
+- Add the dedicated worker; the durable run/event store is complete.
 - Return run IDs immediately for history materialization.
 - Add reconnectable SSE, polling fallback, cancellation, process-group cleanup,
   and duplicate-work suppression.

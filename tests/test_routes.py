@@ -4,6 +4,7 @@ from pathlib import Path
 
 import srcvisual.web._routes as routes_module
 from srcvisual.artifacts.models import ArtifactProvenance, PublishedArtifact
+from srcvisual.runs.store import RunStore, get_run_database_path
 from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.web.app import create_app
 from srcvisual.workflow.models import VisualizationPayload
@@ -219,6 +220,36 @@ def test_history_pair_returns_compact_evidence(
 
     assert response.status_code == 200
     assert response.get_json()["pair"]["number"] == 42
+
+
+def test_run_status_returns_durable_history_contract(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    _store = RunStore(get_run_database_path(tmp_path))
+    _store.initialize()
+    _run = _store.create_history_run(42)
+
+    response = create_app().test_client().get(f"/api/runs/{_run.run_id}")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "schema_version": 1,
+        "run": _run.to_dict(),
+    }
+
+
+def test_run_status_hides_invalid_and_unknown_ids(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    client = create_app().test_client()
+
+    invalid = client.get("/api/runs/not-a-run-id")
+    unknown = client.get("/api/runs/" + "f" * 32)
+
+    assert invalid.status_code == 404
+    assert unknown.status_code == 404
+    assert invalid.get_json() == {"error": "Run not found."}
 
 
 def test_history_pair_visualization_materializes_and_builds_payload(

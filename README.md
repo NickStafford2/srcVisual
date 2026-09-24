@@ -76,7 +76,8 @@ together to use another analyzed repository.
 Published visualization artifacts are stored in the named
 `srcvisual-artifacts` volume mounted at `/var/lib/srcvisual/artifacts`. They
 survive container replacement and ordinary `docker compose down`; removing the
-named volume removes them.
+named volume removes them. Durable history run state and ordered progress
+events use `runs.sqlite3` in that same volume.
 
 ## Hosted application vision
 

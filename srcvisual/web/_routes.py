@@ -33,6 +33,8 @@ from srcvisual.history.client import (
     read_history_pairs,
     read_history_status,
 )
+from srcvisual.runs.models import RUN_CONTRACT_SCHEMA_VERSION
+from srcvisual.runs.store import RunNotFoundError
 from srcvisual.web._examples import list_example_filenames, read_example_file
 from srcvisual.web._progress import progress_broker
 
@@ -187,6 +189,18 @@ def history_pair(pair_number: int) -> tuple[dict[str, object], int]:
     except Exception as error:
         return history_error_response(error)
     return result, 200
+
+
+@api.get("/runs/<run_id>")
+def run_status(run_id: str) -> tuple[dict[str, object], int]:
+    try:
+        run = current_app.config["RUN_STORE"].read_run(run_id)
+    except RunNotFoundError:
+        return {"error": "Run not found."}, 404
+    return {
+        "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
+        "run": run.to_dict(),
+    }, 200
 
 
 @api.post("/history/pairs/<int:pair_number>/visualize")

@@ -42,6 +42,7 @@ Artifacts:
 
 - change the artifact store: `SRCVISUAL_ARTIFACT_ROOT=/some/path`
 - Compose uses the persistent `srcvisual-artifacts` named volume
+- durable history runs use `runs.sqlite3` at the artifact-store root
 - incomplete staging directories older than 24 hours are removed at startup
 
 Debugger:
