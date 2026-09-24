@@ -71,6 +71,9 @@ export default function App() {
   const [selectedArtifactMoveId, setSelectedArtifactMoveId] = useState<
     string | null
   >(null);
+  const [visibleArtifactMoveIds, setVisibleArtifactMoveIds] = useState<
+    Set<string>
+  >(() => new Set());
   const [selectedArtifactNodeId, setSelectedArtifactNodeId] = useState<
     string | null
   >(null);
@@ -127,6 +130,7 @@ export default function App() {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
       setSelectedArtifactMoveId(null);
+      setVisibleArtifactMoveIds(new Set());
       setSelectedArtifactNodeId(null);
       setSelectedArtifactNode(null);
       setArtifactNodeError(null);
@@ -176,24 +180,47 @@ export default function App() {
     setSelectedArtifactNodeId(null);
   }
 
-  function selectArtifactMove(move: ArtifactMoveSummary) {
+  function showArtifactMove(move: ArtifactMoveSummary) {
     const fileId = moveFileIds(move)[0];
     if (fileId) setSelectedArtifactFileId(fileId);
     setSelectedArtifactMoveId(move.move_id);
     setSelectedArtifactNodeId(null);
+    setVisibleArtifactMoveIds((current) => new Set(current).add(move.move_id));
+  }
+
+  function toggleArtifactMove(move: ArtifactMoveSummary) {
+    setVisibleArtifactMoveIds((current) => {
+      const next = new Set(current);
+      if (next.has(move.move_id)) next.delete(move.move_id);
+      else next.add(move.move_id);
+      return next;
+    });
   }
 
   function selectArtifactNode(node: ArtifactTreeNode) {
     setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
     setSelectedArtifactMoveId(node.move_id);
     setSelectedArtifactNodeId(node.node_id);
+    if (node.move_id) {
+      const moveId = node.move_id;
+      setVisibleArtifactMoveIds((current) => new Set(current).add(moveId));
+    }
   }
 
   function selectArtifactEndpoint(move: ArtifactMoveSummary, nodeId: string) {
     setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
     setSelectedArtifactMoveId(move.move_id);
     setSelectedArtifactNodeId(nodeId);
+    setVisibleArtifactMoveIds((current) => new Set(current).add(move.move_id));
     setActiveMainTab("source-code");
+  }
+
+  function selectArtifactMoveById(moveId: string) {
+    const move = artifact?.moves.items.find((item) => item.move_id === moveId);
+    if (!move) return;
+    setSelectedArtifactMoveId(moveId);
+    setSelectedArtifactNodeId(null);
+    setVisibleArtifactMoveIds((current) => new Set(current).add(moveId));
   }
 
   return (
@@ -211,10 +238,11 @@ export default function App() {
                   manifest={artifact}
                   selectedFileId={selectedArtifactFileId}
                   selectedMoveId={selectedArtifactMoveId}
+                  visibleMoveIds={visibleArtifactMoveIds}
                   selectedNodeId={selectedArtifactNodeId}
                   focus={selectedArtifactMove ? "moves" : artifactFocus}
                   onSelectFile={selectArtifactFile}
-                  onSelectMove={selectArtifactMove}
+                  onToggleMove={toggleArtifactMove}
                   onSelectNode={selectArtifactNode}
                 />
               ) : (
@@ -317,6 +345,10 @@ export default function App() {
                           active={activeMainTab === "source-code"}
                           focus={selectedArtifactMove ? "moves" : artifactFocus}
                           activeMove={selectedArtifactMove ?? null}
+                          moves={artifact.moves.items}
+                          visibleMoveIds={visibleArtifactMoveIds}
+                          onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
+                          onSelectMove={selectArtifactMoveById}
                           onFocusChange={setArtifactFocus}
                         />
                       </TabPanel>
@@ -346,7 +378,7 @@ export default function App() {
                           moves={artifact.moves.items}
                           selectedMoveId={selectedArtifactMoveId}
                           selectedNodeId={selectedArtifactNodeId}
-                          onSelectMove={selectArtifactMove}
+                          onSelectMove={showArtifactMove}
                           onSelectEndpoint={selectArtifactEndpoint}
                         />
                       </TabPanel>

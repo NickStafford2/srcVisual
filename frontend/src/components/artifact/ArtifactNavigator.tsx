@@ -11,10 +11,11 @@ type Props = {
   manifest: ArtifactManifest;
   selectedFileId: string;
   selectedMoveId: string | null;
+  visibleMoveIds: ReadonlySet<string>;
   selectedNodeId: string | null;
   focus: ArtifactFocusProfile;
   onSelectFile: (fileId: string) => void;
-  onSelectMove: (move: ArtifactMoveSummary) => void;
+  onToggleMove: (move: ArtifactMoveSummary) => void;
   onSelectNode: (node: ArtifactTreeNode) => void;
 };
 
@@ -22,10 +23,11 @@ export function ArtifactNavigator({
   manifest,
   selectedFileId,
   selectedMoveId,
+  visibleMoveIds,
   selectedNodeId,
   focus,
   onSelectFile,
-  onSelectMove,
+  onToggleMove,
   onSelectNode,
 }: Props) {
   const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
@@ -88,14 +90,23 @@ export function ArtifactNavigator({
               <button
                 key={move.move_id}
                 type="button"
-                aria-pressed={selectedMoveId === move.move_id}
-                onClick={() => onSelectMove(move)}
+                aria-pressed={visibleMoveIds.has(move.move_id)}
+                data-selected-move={selectedMoveId === move.move_id}
+                title={`${visibleMoveIds.has(move.move_id) ? "Hide" : "Show"} ${move.move_id} connector`}
+                onClick={() => onToggleMove(move)}
                 className={`rounded border px-2 py-1 text-xs ${
                   selectedMoveId === move.move_id
+                    ? "ring-1 ring-sky-300/70"
+                    : ""
+                } ${
+                  visibleMoveIds.has(move.move_id)
                     ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
-                    : "border-diff-move-1/25 bg-diff-move-1/10 text-amber-200 hover:bg-diff-move-1/20"
+                    : "border-white/15 bg-slate-950 text-slate-400 hover:border-diff-move-1/40"
                 }`}
               >
+                <span aria-hidden="true" className="mr-1">
+                  {visibleMoveIds.has(move.move_id) ? "●" : "○"}
+                </span>
                 {move.move_id}
               </button>
             ))}

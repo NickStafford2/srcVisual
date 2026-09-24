@@ -16,6 +16,10 @@ type Props = {
   active: boolean;
   focus: ArtifactFocusProfile;
   activeMove: ArtifactMoveSummary | null;
+  moves: ArtifactMoveSummary[];
+  visibleMoveIds: ReadonlySet<string>;
+  onVisibleMoveIdsChange: (moveIds: Set<string>) => void;
+  onSelectMove: (moveId: string) => void;
   onFocusChange: (focus: ArtifactFocusProfile) => void;
 };
 
@@ -27,6 +31,10 @@ export function ArtifactSourcePane({
   active,
   focus,
   activeMove,
+  moves,
+  visibleMoveIds,
+  onVisibleMoveIdsChange,
+  onSelectMove,
   onFocusChange,
 }: Props) {
   const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
@@ -40,6 +48,10 @@ export function ArtifactSourcePane({
   const _moveFileIds = useMemo(
     () => new Set(activeMove ? moveFileIds(activeMove) : []),
     [activeMove],
+  );
+  const _visibleMoves = useMemo(
+    () => moves.filter((move) => visibleMoveIds.has(move.move_id)),
+    [moves, visibleMoveIds],
   );
   const _visibleFiles =
     showMoveFilesOnly && activeMove
@@ -75,7 +87,7 @@ export function ArtifactSourcePane({
           </p>
           <p className="text-xs text-slate-400">
             {_moveFocused
-              ? "Expanded code regions and collapsed-file endpoint proxies"
+              ? `${visibleMoveIds.size} visible connector${visibleMoveIds.size === 1 ? "" : "s"}; collapsed files remain endpoint proxies`
               : "Expand files to load their source projections"}
           </p>
         </div>
@@ -95,6 +107,50 @@ export function ArtifactSourcePane({
             <option value="complete-file">Complete file</option>
           </select>
         </label>
+        {moves.length > 0 ? (
+          <div
+            role="group"
+            aria-label="Move connector visibility"
+            className="flex overflow-hidden rounded border border-white/15 bg-neutral-900 text-xs"
+          >
+            <button
+              type="button"
+              disabled={!activeMove}
+              aria-pressed={
+                activeMove !== null &&
+                visibleMoveIds.size === 1 &&
+                visibleMoveIds.has(activeMove.move_id)
+              }
+              onClick={() => {
+                if (!activeMove) return;
+                onVisibleMoveIdsChange(new Set([activeMove.move_id]));
+                setShowMoveFilesOnly(true);
+              }}
+              className="border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:bg-diff-move-1/20 aria-pressed:text-amber-200 disabled:opacity-40"
+            >
+              Selected
+            </button>
+            <button
+              type="button"
+              aria-pressed={visibleMoveIds.size === moves.length}
+              onClick={() => {
+                onVisibleMoveIdsChange(new Set(moves.map((move) => move.move_id)));
+                setShowMoveFilesOnly(false);
+              }}
+              className="border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:bg-diff-move-1/20 aria-pressed:text-amber-200"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              aria-pressed={visibleMoveIds.size === 0}
+              onClick={() => onVisibleMoveIdsChange(new Set())}
+              className="px-2 py-1 text-slate-300 aria-pressed:bg-white/10 aria-pressed:text-white"
+            >
+              None
+            </button>
+          </div>
+        ) : null}
         {_moveFocused ? (
           <>
             <button
@@ -131,7 +187,10 @@ export function ArtifactSourcePane({
           onMoveLeave={(moveId) =>
             setHoveredMoveId((current) => (current === moveId ? null : current))
           }
-          onMoveClick={(moveId) => setHoveredMoveId(moveId)}
+          onMoveClick={(moveId) => {
+            setHoveredMoveId(moveId);
+            onSelectMove(moveId);
+          }}
         />
 
         <div className="relative z-10 space-y-4">
@@ -142,9 +201,10 @@ export function ArtifactSourcePane({
               file={file}
               focus={focus}
               expanded={expandedFileIds.has(file.file_id)}
-              activeMove={activeMove}
+              visibleMoves={_visibleMoves}
               selectedNodeId={selectedNodeId}
               active={active}
+              onSelectMove={onSelectMove}
               onToggle={() => toggleFile(file.file_id)}
               registerMoveSegment={registerMoveSegment}
               unregisterMoveSegment={unregisterMoveSegment}

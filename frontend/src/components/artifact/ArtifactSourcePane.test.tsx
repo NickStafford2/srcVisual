@@ -87,6 +87,10 @@ describe("ArtifactSourcePane", () => {
         active
         focus="changes-and-moves"
         activeMove={null}
+        moves={[activeMove]}
+        visibleMoveIds={new Set()}
+        onVisibleMoveIdsChange={vi.fn()}
+        onSelectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
     );
@@ -121,6 +125,8 @@ describe("ArtifactSourcePane", () => {
   });
 
   it("renders exact move fragments with the established move color", async () => {
+    const user = userEvent.setup();
+    const onSelectMove = vi.fn();
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
@@ -209,6 +215,10 @@ describe("ArtifactSourcePane", () => {
         active
         focus="moves"
         activeMove={activeMove}
+        moves={[activeMove]}
+        visibleMoveIds={new Set(["move-1"])}
+        onVisibleMoveIdsChange={vi.fn()}
+        onSelectMove={onSelectMove}
         onFocusChange={vi.fn()}
       />,
     );
@@ -221,6 +231,8 @@ describe("ArtifactSourcePane", () => {
     expect(moveSegments[0]).toHaveTextContent("moved");
     expect(moveSegments[0]).toHaveClass("bg-diff-move-1/25");
     expect(moveSegments[0]).toHaveClass("decoration-sky-300");
+    await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
+    expect(onSelectMove).toHaveBeenCalledWith("move-1");
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
     expect(screen.getByLabelText("Artifact source file example.cpp")).toHaveClass(
       "bg-black",
@@ -229,6 +241,10 @@ describe("ArtifactSourcePane", () => {
 
   it("uses a collapsed file header as a lazy cross-file move endpoint", async () => {
     const user = userEvent.setup();
+    const crossFileMove = {
+      ...activeMove,
+      to_node_ids: ["f-2:n00000002"],
+    };
     render(
       <ArtifactSourcePane
         artifactId="artifact-1"
@@ -237,15 +253,18 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={null}
         active
         focus="moves"
-        activeMove={{
-          ...activeMove,
-          to_node_ids: ["f-2:n00000002"],
-        }}
+        activeMove={crossFileMove}
+        moves={[crossFileMove]}
+        visibleMoveIds={new Set(["move-1"])}
+        onVisibleMoveIdsChange={vi.fn()}
+        onSelectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
     );
 
-    expect(await screen.findByText("1 hidden to endpoint")).toBeInTheDocument();
+    expect(
+      await screen.findByText("move-1: 1 hidden to endpoint"),
+    ).toBeInTheDocument();
     expect(fetchArtifactSource).not.toHaveBeenCalledWith(
       "artifact-1",
       "f-2",
@@ -260,6 +279,47 @@ describe("ArtifactSourcePane", () => {
         "moves",
       ),
     );
-    expect(screen.queryByText("1 hidden to endpoint")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("move-1: 1 hidden to endpoint"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches connector visibility without eagerly loading collapsed files", async () => {
+    const user = userEvent.setup();
+    const onVisibleMoveIdsChange = vi.fn();
+    render(
+      <ArtifactSourcePane
+        artifactId="artifact-1"
+        files={[file, secondFile]}
+        selectedFileId="f-1"
+        selectedNodeId={null}
+        active
+        focus="moves"
+        activeMove={activeMove}
+        moves={[activeMove]}
+        visibleMoveIds={new Set()}
+        onVisibleMoveIdsChange={onVisibleMoveIdsChange}
+        onSelectMove={vi.fn()}
+        onFocusChange={vi.fn()}
+      />,
+    );
+
+    await screen.findByText("old();");
+    await user.click(screen.getByRole("button", { name: "All" }));
+    const allCall = onVisibleMoveIdsChange.mock.calls[
+      onVisibleMoveIdsChange.mock.calls.length - 1
+    ];
+    expect([...allCall[0]]).toEqual(["move-1"]);
+    expect(fetchArtifactSource).not.toHaveBeenCalledWith(
+      "artifact-1",
+      "f-2",
+      "moves",
+    );
+
+    await user.click(screen.getByRole("button", { name: "None" }));
+    const noneCall = onVisibleMoveIdsChange.mock.calls[
+      onVisibleMoveIdsChange.mock.calls.length - 1
+    ];
+    expect(noneCall[0].size).toBe(0);
   });
 });

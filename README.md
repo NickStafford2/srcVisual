@@ -33,11 +33,14 @@ through stable artifact-local identities. Its GitHub-style Source view lists
 every changed file as a collapsible card but loads source projections only for
 expanded files. Selecting a move can narrow the list to participating files;
 SVG connectors use rendered semantic endpoints when available and collapsed
-file-header proxies otherwise. Omitted ranges remain expandable gaps, tree
-children are paged, and stable tag selection is shared by the structure tree,
-Move Summary, Node Info, and Source navigation. Complete XML is fetched only
-when its tab is opened. The old monolithic response and pruning controls remain
-only as a temporary compatibility interface.
+file-header proxies otherwise. Move tags select and reveal their relationship;
+sidebar move chips independently toggle individual connectors, while Source
+controls show the selected connector, every rendered/proxied connector, or
+none. Omitted ranges remain expandable gaps, tree children are paged, and
+stable tag selection is shared by the structure tree, Move Summary, Node Info,
+and Source navigation. Complete XML is fetched only when its tab is opened. The
+old monolithic response and pruning controls remain only as a temporary
+compatibility interface.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

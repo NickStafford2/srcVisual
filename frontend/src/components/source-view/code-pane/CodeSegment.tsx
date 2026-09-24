@@ -13,7 +13,8 @@ type CodeSegmentProps = {
   segment: ViewerLineSegment;
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
-  moveIdFilter?: string | null;
+  visibleMoveIds?: ReadonlySet<string>;
+  onMoveSelect?: (moveId: string) => void;
   selected?: boolean;
 };
 
@@ -22,7 +23,8 @@ export function CodeSegment({
   segment,
   registerMoveSegment,
   unregisterMoveSegment,
-  moveIdFilter,
+  visibleMoveIds,
+  onMoveSelect,
   selected = false,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
@@ -31,7 +33,7 @@ export function CodeSegment({
     segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
   const registersMove =
     isMoveHighlight &&
-    (moveIdFilter === undefined || segment.moveId === moveIdFilter);
+    (visibleMoveIds === undefined || visibleMoveIds.has(segment.moveId!));
 
   const text = segment.highlighted
     ? renderVisibleWhitespace(segment.text)
@@ -92,13 +94,25 @@ export function CodeSegment({
   return (
     <span
       ref={ref}
+      role={onMoveSelect ? "button" : undefined}
+      tabIndex={onMoveSelect ? 0 : undefined}
+      onClick={() => {
+        if (segment.moveId) onMoveSelect?.(segment.moveId);
+      }}
+      onKeyDown={(event) => {
+        if (!segment.moveId || !onMoveSelect) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onMoveSelect(segment.moveId);
+        }
+      }}
       data-highlighted-segment="true"
       data-highlight-kind={segment.kind}
       data-node-id={segment.nodeId ?? undefined}
       data-move-id={segment.moveId}
       data-source-revision={revision}
       className={[
-        "group relative inline rounded-md",
+        `group relative inline rounded-md ${onMoveSelect ? "cursor-pointer" : ""}`,
         getSourceSegmentClasses(segment.kind, segment.highlighted),
         selected
           ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"

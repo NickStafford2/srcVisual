@@ -100,17 +100,18 @@ beforeEach(() => {
 it("pages tree children explicitly and selects cross-file moves", async () => {
   const user = userEvent.setup();
   const onSelectFile = vi.fn();
-  const onSelectMove = vi.fn();
+  const onToggleMove = vi.fn();
   const onSelectNode = vi.fn();
   render(
     <ArtifactNavigator
       manifest={manifest}
       selectedFileId="f-one"
       selectedMoveId={null}
+      visibleMoveIds={new Set(["move-1"])}
       selectedNodeId={null}
       focus="changes-and-moves"
       onSelectFile={onSelectFile}
-      onSelectMove={onSelectMove}
+      onToggleMove={onToggleMove}
       onSelectNode={onSelectNode}
     />,
   );
@@ -128,7 +129,11 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
   );
 
   await user.click(screen.getByRole("button", { name: "move-1" }));
-  expect(onSelectMove).toHaveBeenCalledWith(manifest.moves.items[0]);
+  expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(onToggleMove).toHaveBeenCalledWith(manifest.moves.items[0]);
 
   await user.type(screen.getByRole("searchbox", { name: "Filter artifact files" }), "two");
   expect(screen.queryByRole("button", { name: "one.cpp" })).not.toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchArtifactSource } from "../../api";
 import type { SourceRevision } from "../../srcdiff/lineLinks";
 import type {
@@ -20,9 +20,10 @@ type Props = {
   file: ArtifactFileSummary;
   focus: ArtifactFocusProfile;
   expanded: boolean;
-  activeMove: ArtifactMoveSummary | null;
+  visibleMoves: ArtifactMoveSummary[];
   selectedNodeId: string | null;
   active: boolean;
+  onSelectMove: (moveId: string) => void;
   onToggle: () => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
@@ -33,9 +34,10 @@ export function ArtifactSourceFile({
   file,
   focus,
   expanded,
-  activeMove,
+  visibleMoves,
   selectedNodeId,
   active,
+  onSelectMove,
   onToggle,
   registerMoveSegment,
   unregisterMoveSegment,
@@ -78,12 +80,15 @@ export function ArtifactSourceFile({
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }, [active, expanded, projection, selectedNodeId]);
 
-  const _fromEndpointCount = activeMove
-    ? endpointCount(activeMove.from_node_ids, file.file_id)
-    : 0;
-  const _toEndpointCount = activeMove
-    ? endpointCount(activeMove.to_node_ids, file.file_id)
-    : 0;
+  const _hasCollapsedEndpoints = visibleMoves.some(
+    (move) =>
+      endpointCount(move.from_node_ids, file.file_id) > 0 ||
+      endpointCount(move.to_node_ids, file.file_id) > 0,
+  );
+  const _visibleMoveIds = useMemo(
+    () => new Set(visibleMoves.map((move) => move.move_id)),
+    [visibleMoves],
+  );
 
   async function showGap(
     block: Extract<
@@ -165,26 +170,36 @@ export function ArtifactSourceFile({
             </button>
           ) : null}
         </div>
-        {!expanded && activeMove && (_fromEndpointCount || _toEndpointCount) ? (
+        {!expanded && _hasCollapsedEndpoints ? (
           <div className="grid grid-cols-2 border-t border-white/5">
-            <CollapsedMoveAnchor
-              fileId={file.file_id}
-              moveId={activeMove.move_id}
-              revision="revision-0"
-              count={_fromEndpointCount}
-              label="from"
-              registerMoveSegment={registerMoveSegment}
-              unregisterMoveSegment={unregisterMoveSegment}
-            />
-            <CollapsedMoveAnchor
-              fileId={file.file_id}
-              moveId={activeMove.move_id}
-              revision="revision-1"
-              count={_toEndpointCount}
-              label="to"
-              registerMoveSegment={registerMoveSegment}
-              unregisterMoveSegment={unregisterMoveSegment}
-            />
+            <div className="space-y-1 px-3 py-1.5 text-xs text-slate-500">
+              {visibleMoves.map((move) => (
+                <CollapsedMoveAnchor
+                  key={`${move.move_id}-from`}
+                  fileId={file.file_id}
+                  moveId={move.move_id}
+                  revision="revision-0"
+                  count={endpointCount(move.from_node_ids, file.file_id)}
+                  label="from"
+                  registerMoveSegment={registerMoveSegment}
+                  unregisterMoveSegment={unregisterMoveSegment}
+                />
+              ))}
+            </div>
+            <div className="space-y-1 px-3 py-1.5 text-xs text-slate-500">
+              {visibleMoves.map((move) => (
+                <CollapsedMoveAnchor
+                  key={`${move.move_id}-to`}
+                  fileId={file.file_id}
+                  moveId={move.move_id}
+                  revision="revision-1"
+                  count={endpointCount(move.to_node_ids, file.file_id)}
+                  label="to"
+                  registerMoveSegment={registerMoveSegment}
+                  unregisterMoveSegment={unregisterMoveSegment}
+                />
+              ))}
+            </div>
           </div>
         ) : null}
       </header>
@@ -213,16 +228,18 @@ export function ArtifactSourceFile({
                     <SourceCell
                       line={row.left}
                       revision="revision-0"
-                      moveIdFilter={activeMove?.move_id}
+                      visibleMoveIds={_visibleMoveIds}
                       selectedNodeId={selectedNodeId}
+                      onSelectMove={onSelectMove}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
                     <SourceCell
                       line={row.right}
                       revision="revision-1"
-                      moveIdFilter={activeMove?.move_id}
+                      visibleMoveIds={_visibleMoveIds}
                       selectedNodeId={selectedNodeId}
+                      onSelectMove={onSelectMove}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -245,15 +262,17 @@ export function ArtifactSourceFile({
 function SourceCell({
   line,
   revision,
-  moveIdFilter,
+  visibleMoveIds,
   selectedNodeId,
+  onSelectMove,
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
   line: ArtifactSourceLine | null;
   revision: SourceRevision;
-  moveIdFilter?: string;
+  visibleMoveIds: ReadonlySet<string>;
   selectedNodeId: string | null;
+  onSelectMove: (moveId: string) => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -270,8 +289,9 @@ function SourceCell({
             key={`${segment.nodeId ?? "plain"}-${index}`}
             revision={revision}
             segment={segment}
-            moveIdFilter={moveIdFilter}
+            visibleMoveIds={visibleMoveIds}
             selected={segment.nodeId === selectedNodeId}
+            onMoveSelect={onSelectMove}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
           />
@@ -317,16 +337,14 @@ function CollapsedMoveAnchor({
   ]);
 
   return (
-    <div className="px-3 py-1.5 text-xs text-slate-500">
-      {count > 0 ? (
-        <span
-          ref={ref}
-          className="inline-block rounded border border-dashed border-diff-move-1/50 bg-diff-move-1/10 px-2 py-0.5 text-amber-200"
-        >
-          {count} hidden {label} endpoint{count === 1 ? "" : "s"}
-        </span>
-      ) : null}
-    </div>
+    count > 0 ? (
+      <span
+        ref={ref}
+        className="block rounded border border-dashed border-diff-move-1/50 bg-diff-move-1/10 px-2 py-0.5 text-amber-200"
+      >
+        {moveId}: {count} hidden {label} endpoint{count === 1 ? "" : "s"}
+      </span>
+    ) : null
   );
 }
 

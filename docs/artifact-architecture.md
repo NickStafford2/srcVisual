@@ -719,6 +719,13 @@ Move Summary exposes each semantic from/to endpoint directly; choosing one
 selects its file, expands its lazy Source card, and scrolls to the rendered tag
 without converting the selection into a line-based diff concept.
 
+Connector visibility is independent of semantic selection. Clicking a moved
+tag selects the move and reveals its connector; navigator move chips toggle
+individual connectors without changing the current selection. Source provides
+`Selected`, `All`, and `None` visibility controls. `All` still respects lazy
+rendering: connectors terminate at rendered semantic endpoints or collapsed
+file-header proxies and never force every source projection to load.
+
 Move rendering must communicate semantic move groups rather than individual
 rendered lines. One multi-line source endpoint and its destination endpoint
 should each have one bounding outline around the complete contiguous moved
@@ -735,7 +742,7 @@ endpoint or relationship so one move cannot be mistaken for several moves.
   restore character-precise insert, delete, and move fragments.
 - Port the legacy move highlighting and SVG connector interactions to
   artifact-local identities, including same-file, cross-file, one-to-many, and
-  many-to-one moves. Draw connectors only for rendered endpoints.
+  many-to-one moves. Draw connectors only for rendered endpoints. (Complete.)
 - Restore the established yellow/amber move language and use a neutral
   near-black background for unchanged source.
 - Add file-list filters when the manifest navigator needs them. (Complete.)
