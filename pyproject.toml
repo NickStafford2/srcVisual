@@ -17,6 +17,7 @@ dependencies = [
 [project.scripts]
 web = "srcvisual.web.app:main"
 history-worker = "srcvisual.runs.worker:main"
+artifact-inventory = "srcvisual.artifacts._lifecycle_cli:main"
 test = "srcvisual.test_runner:main"
 
 

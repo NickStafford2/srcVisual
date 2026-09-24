@@ -426,6 +426,19 @@ class RunStore:
             reject_cancellation=True,
         )
 
+    def referenced_artifact_ids(self) -> frozenset[str]:
+        """Return every artifact retained by a completed run."""
+        with closing(self._connect()) as _database:
+            _rows = _database.execute(
+                """
+                SELECT DISTINCT artifact_id
+                FROM runs
+                WHERE artifact_id IS NOT NULL
+                ORDER BY artifact_id
+                """
+            ).fetchall()
+        return frozenset(str(_row["artifact_id"]) for _row in _rows)
+
     def fail(self, run_id: str, *, code: str, message: str) -> RunRecord:
         _code = _validated_diagnostic_code(code)
         _message = _validated_message(message)

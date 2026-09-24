@@ -812,8 +812,18 @@ not request controls.
 
 ### Phase 5: operational hardening and measured extensions
 
+Status: in progress. The first lifecycle slice provides a read-only artifact
+inventory and deterministic dry-run collection plan. It reports artifact
+count, bytes, creation time, integrity, and completed-run references. Only
+valid, unreferenced artifacts can become candidates; corrupt and protected
+artifacts are reported but never selected. Artifact integrity inspection does
+not quarantine or otherwise mutate the store. No deletion path exists yet.
+
 - Add item and disk quotas, collection policy, integrity diagnostics, and cache
-  metrics.
+  metrics. (Inventory, policy planning, and integrity diagnostics are
+  complete; enforcement and metrics remain.)
+- Add tested deletion with locking and run-reference revalidation only after
+  dry-run behavior is established.
 - Add background upload runs if upload measurements justify them.
 - Add XML neighborhoods only if whole-document retrieval remains a measured
   problem.

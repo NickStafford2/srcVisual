@@ -139,14 +139,25 @@ def validate_artifact(*, artifact_root: Path, artifact_id: str) -> None:
     """Validate a published artifact without materializing its full payload."""
     _artifact_path = _resolve_artifact_path(artifact_root, artifact_id)
     try:
+        check_artifact_integrity(
+            artifact_root=artifact_root,
+            artifact_id=artifact_id,
+        )
+    except ArtifactIntegrityError:
+        _quarantine_artifact(artifact_root, _artifact_path)
+        raise
+
+
+def check_artifact_integrity(*, artifact_root: Path, artifact_id: str) -> None:
+    """Validate a published artifact without mutating the artifact store."""
+    _artifact_path = _resolve_artifact_path(artifact_root, artifact_id)
+    try:
         _manifest = _read_manifest(_artifact_path)
         _validate_artifact_path(_artifact_path, _manifest)
         _validate_index(_artifact_path / "index.sqlite", _manifest)
     except ArtifactIntegrityError:
-        _quarantine_artifact(artifact_root, _artifact_path)
         raise
     except (OSError, KeyError, json.JSONDecodeError, sqlite3.DatabaseError) as _error:
-        _quarantine_artifact(artifact_root, _artifact_path)
         raise ArtifactIntegrityError("Artifact index is unreadable.") from _error
 
 

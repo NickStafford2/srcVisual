@@ -8,6 +8,7 @@ import pytest
 from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.artifacts.store import (
     ArtifactIntegrityError,
+    check_artifact_integrity,
     cleanup_stale_staging,
     publish_artifact,
     read_artifact,
@@ -96,6 +97,25 @@ def test_validate_artifact_checks_integrity_without_loading_payload(tmp_path) ->
             artifact_id=_published.artifact_id,
         )
     assert not _published.path.exists()
+
+
+def test_integrity_check_reports_corruption_without_quarantining(tmp_path) -> None:
+    _published = publish_artifact(
+        artifact_root=tmp_path,
+        canonical_payload=build_payload(),
+        input_payload=b"input",
+        provenance=ArtifactProvenance(origin="upload"),
+    )
+    (_published.path / "annotated.xml").write_text("tampered", encoding="utf-8")
+
+    with pytest.raises(ArtifactIntegrityError, match="checksum mismatch"):
+        check_artifact_integrity(
+            artifact_root=tmp_path,
+            artifact_id=_published.artifact_id,
+        )
+
+    assert _published.path.is_dir()
+    assert not (tmp_path / ".quarantine").exists()
 
 
 def test_failed_publication_removes_staging_data(tmp_path) -> None:

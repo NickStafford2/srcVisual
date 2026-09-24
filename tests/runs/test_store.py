@@ -46,6 +46,20 @@ def test_history_run_and_ordered_events_survive_new_store_instance(
     assert _events[-1].status == "completed"
 
 
+def test_completed_runs_report_referenced_artifacts(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    assert _store_instance.referenced_artifact_ids() == frozenset()
+
+    for _pair, _artifact_id in ((1, "a" * 32), (2, "b" * 32), (3, "a" * 32)):
+        _run = _store_instance.create_history_run(_pair)
+        _store_instance.mark_running(_run.run_id)
+        _store_instance.complete(_run.run_id, _artifact_id)
+
+    assert _store_instance.referenced_artifact_ids() == frozenset(
+        {"a" * 32, "b" * 32}
+    )
+
+
 def test_failed_run_has_safe_diagnostic_and_cannot_complete(tmp_path: Path) -> None:
     _store_instance = _store(tmp_path)
     _run = _store_instance.create_history_run(7)

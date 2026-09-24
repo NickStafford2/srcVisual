@@ -86,6 +86,17 @@ survive container replacement and ordinary `docker compose down`; removing the
 named volume removes them. Durable history run state and ordered progress
 events use `runs.sqlite3` in that same volume.
 
+Inspect artifact count, disk use, integrity, history-run protection, and a
+dry-run retention plan without deleting data:
+
+```bash
+docker compose -f srcVisual/compose.yaml run --rm srcvisual artifact-inventory \
+  --max-artifacts 100 --max-bytes 10737418240 --max-age-days 90
+```
+
+All retention limits are optional. The command is deliberately read-only;
+automatic collection is not enabled.
+
 History visualization runs are queued with
 `POST /api/history/pairs/{pair_number}/runs` and processed by the dedicated
 `history-worker` Compose service. The status polling endpoint is
