@@ -44,7 +44,7 @@ export function ArtifactNavigator({
       fileIds.map((fileId) =>
         fetchArtifactSource(manifest.artifact_id, fileId, "moves"),
       ),
-    );
+    ).catch((reason: unknown) => setError(errorMessage(reason)));
     if (fileIds[0]) onSelectFile(fileIds[0]);
   }
 
@@ -110,15 +110,12 @@ function ArtifactTreeBranch({
   const [expanded, setExpanded] = useState(true);
   const [loading, setLoading] = useState(false);
   const [nextOffset, setNextOffset] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  async function toggle() {
-    if (expanded) {
-      setExpanded(false);
-      return;
-    }
-    setExpanded(true);
+  async function loadMore() {
     if (node.children_complete || loading) return;
     setLoading(true);
+    setError(null);
     try {
       const page = await fetchArtifactNodeChildren(
         artifactId,
@@ -131,16 +128,22 @@ function ArtifactTreeBranch({
         children_complete: page.next_offset === null,
       }));
       setNextOffset(page.next_offset ?? node.child_count);
+    } catch (reason) {
+      setError(errorMessage(reason));
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggle() {
+    setExpanded((current) => !current);
   }
 
   return (
     <div>
       <button
         type="button"
-        onClick={() => void toggle()}
+        onClick={toggle}
         className="flex w-full items-center gap-1 py-0.5 text-left text-slate-300 hover:text-white"
       >
         <span className="w-3 text-slate-600">
@@ -164,13 +167,36 @@ function ArtifactTreeBranch({
           ))}
         </div>
       ) : null}
+      {expanded && !node.children_complete ? (
+        <button
+          type="button"
+          onClick={() => void loadMore()}
+          disabled={loading}
+          className="ml-5 my-1 rounded border border-white/10 px-2 py-1 text-[11px] text-sky-300 disabled:opacity-50"
+        >
+          {loading ? "Loading…" : "Load more children"}
+        </button>
+      ) : null}
+      {error ? <p className="ml-5 text-[11px] text-rose-300">{error}</p> : null}
     </div>
   );
 }
 
 function mergeNodes(current: ArtifactTreeNode[], loaded: ArtifactTreeNode[]) {
   const byId = new Map(current.map((node) => [node.node_id, node]));
-  for (const node of loaded) byId.set(node.node_id, node);
+  for (const node of loaded) {
+    const existing = byId.get(node.node_id);
+    byId.set(
+      node.node_id,
+      existing
+        ? {
+            ...node,
+            children: existing.children,
+            children_complete: existing.children_complete,
+          }
+        : node,
+    );
+  }
   return [...byId.values()];
 }
 

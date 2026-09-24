@@ -4,7 +4,6 @@ import type {
   ArtifactSourceProjection,
   ArtifactTreeNode,
   ArtifactTreeProjection,
-  TreePruningLevel,
   VisualizationResult,
   VisualizeResponse,
 } from "./types";
@@ -87,17 +86,8 @@ export async function fetchHistoryPair(
 
 export async function visualizeHistoryPair(
   pairNumber: number,
-  options: {
-    includeSkippedTags: boolean;
-    pruningLevel: TreePruningLevel;
-  },
 ): Promise<VisualizationResult> {
   const formData = new FormData();
-  formData.append(
-    "include_skipped_tags",
-    options.includeSkippedTags ? "true" : "false",
-  );
-  formData.append("pruning_level", options.pruningLevel);
   formData.append("response_format", "artifact");
   const response = await fetch(`/api/history/pairs/${pairNumber}/visualize`, {
     method: "POST",

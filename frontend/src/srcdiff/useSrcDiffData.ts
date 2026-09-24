@@ -7,7 +7,7 @@ import {
   visualizeSrcDiff,
 } from "../api";
 import type { VisualizationProgressEvent } from "../api";
-import type { TreePruningLevel, VisualizationResult } from "../types";
+import type { VisualizationResult } from "../types";
 
 export type InputMode = "history" | "examples" | "paste" | "upload";
 export type ProgressLogEntry = {
@@ -26,9 +26,6 @@ export function useSrcDiffData() {
   const [data, setData] = useState<VisualizationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
-  const [pruningLevel, setPruningLevel] =
-    useState<TreePruningLevel>("none");
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [progressMessages, setProgressMessages] = useState<ProgressLogEntry[]>(
     [],
@@ -143,12 +140,6 @@ export function useSrcDiffData() {
       formData.append("srcdiff_xml", xmlInput);
     }
 
-    formData.append(
-      "include_skipped_tags",
-      includeSkippedTags ? "true" : "false",
-    );
-    formData.append("pruning_level", pruningLevel);
-
     const progressToken = crypto.randomUUID();
     formData.append("progress_token", progressToken);
 
@@ -198,14 +189,10 @@ export function useSrcDiffData() {
     error,
     progressMessage,
     progressMessages,
-    includeSkippedTags,
-    pruningLevel,
     exampleFilenames,
     examplesError,
     isLoadingExample,
     setInputMode: handleInputModeChange,
-    setIncludeSkippedTags,
-    setPruningLevel,
     setSelectedUpload: handleUploadChange,
     handleXmlInputChange,
     handleLoadExample,

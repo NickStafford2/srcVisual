@@ -1,9 +1,8 @@
 import type { FormEvent } from "react";
 import type { InputMode, ProgressLogEntry } from "../../srcdiff/useSrcDiffData";
-import type { TreePruningLevel, VisualizationResult } from "../../types";
+import type { VisualizationResult } from "../../types";
 import { ExampleInput } from "./ExampleInput";
 import { InputModeToggle } from "./InputModeToggle";
-import { InputPanelOptions } from "./InputPanelOptions";
 import { InputPanelSubmitRow } from "./InputPanelSubmitRow";
 import { PasteXmlInput } from "./PasteXmlInput";
 import { ProgressLog } from "./ProgressLog";
@@ -21,8 +20,6 @@ type InputPanelProps = {
   progressMessage: string | null;
   progressMessages: ProgressLogEntry[];
   data: VisualizationResult | null;
-  includeSkippedTags: boolean;
-  pruningLevel: TreePruningLevel;
   exampleFilenames: string[];
   examplesError: string | null;
   isLoadingExample: boolean;
@@ -31,8 +28,6 @@ type InputPanelProps = {
   onLoadExample: (filename: string) => void;
   onUploadChange: (file: File | null) => void;
   onXmlInputChange: (value: string) => void;
-  onIncludeSkippedTagsChange: (value: boolean) => void;
-  onPruningLevelChange: (value: TreePruningLevel) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -46,8 +41,6 @@ export function InputPanel({
   progressMessage,
   progressMessages,
   data,
-  includeSkippedTags,
-  pruningLevel,
   exampleFilenames,
   examplesError,
   isLoadingExample,
@@ -56,8 +49,6 @@ export function InputPanel({
   onLoadExample,
   onUploadChange,
   onXmlInputChange,
-  onIncludeSkippedTagsChange,
-  onPruningLevelChange,
   onSubmit,
 }: InputPanelProps) {
   return (
@@ -100,14 +91,6 @@ export function InputPanel({
 
         {inputMode !== "history" ? (
           <>
-            <InputPanelOptions
-              includeSkippedTags={includeSkippedTags}
-              pruningLevel={pruningLevel}
-              disabled={isLoading}
-              onIncludeSkippedTagsChange={onIncludeSkippedTagsChange}
-              onPruningLevelChange={onPruningLevelChange}
-            />
-
             <InputPanelSubmitRow
               isLoading={isLoading}
               error={error}

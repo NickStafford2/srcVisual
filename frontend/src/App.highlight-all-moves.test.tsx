@@ -44,6 +44,7 @@ describe("App highlight all moves flow", () => {
   let visualizeRequest: {
     includeSkippedTags: string | null;
     pruningLevel: string | null;
+    responseFormat: string | null;
     progressToken: string | null;
     srcdiffXml: string | null;
   } | null;
@@ -81,6 +82,7 @@ describe("App highlight all moves flow", () => {
             includeSkippedTags:
               formData.get("include_skipped_tags")?.toString() ?? null,
             pruningLevel: formData.get("pruning_level")?.toString() ?? null,
+            responseFormat: formData.get("response_format")?.toString() ?? null,
             progressToken: formData.get("progress_token")?.toString() ?? null,
             srcdiffXml: formData.get("srcdiff_xml")?.toString() ?? null,
           };
@@ -105,8 +107,9 @@ describe("App highlight all moves flow", () => {
     await renderHighlightedMovesApp(user);
 
     expect(visualizeRequest).toEqual({
-      includeSkippedTags: "false",
-      pruningLevel: "none",
+      includeSkippedTags: null,
+      pruningLevel: null,
+      responseFormat: "artifact",
       progressToken: "00000000-0000-4000-8000-000000000000",
       srcdiffXml: exampleXml,
     });
@@ -246,14 +249,13 @@ describe("App highlight all moves flow", () => {
     });
   });
 
-  it("submits the pruning mode selected in the input panel", async () => {
+  it("uses the artifact interface without legacy pruning controls", async () => {
     const user = userEvent.setup();
 
     render(<App />);
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Pruning mode" }),
-      "none",
-    );
+    expect(
+      screen.queryByRole("combobox", { name: "Pruning mode" }),
+    ).not.toBeInTheDocument();
 
     await user.click(await screen.findByRole("button", { name: exampleLabel }));
 
@@ -262,7 +264,11 @@ describe("App highlight all moves flow", () => {
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => {
-      expect(visualizeRequest?.pruningLevel).toBe("none");
+      expect(visualizeRequest).toMatchObject({
+        includeSkippedTags: null,
+        pruningLevel: null,
+        responseFormat: "artifact",
+      });
     });
   });
 
@@ -294,6 +300,7 @@ describe("App highlight all moves flow", () => {
             includeSkippedTags:
               formData.get("include_skipped_tags")?.toString() ?? null,
             pruningLevel: formData.get("pruning_level")?.toString() ?? null,
+            responseFormat: formData.get("response_format")?.toString() ?? null,
             progressToken: formData.get("progress_token")?.toString() ?? null,
             srcdiffXml: formData.get("srcdiff_xml")?.toString() ?? null,
           };

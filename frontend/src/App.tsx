@@ -53,7 +53,6 @@ export default function App() {
   const historyData = useHistoryData(
     srcDiffData.inputMode === "history",
     srcDiffData.acceptVisualization,
-    srcDiffData.includeSkippedTags,
   );
   const data = srcDiffData.data;
   const artifact = data && isArtifactManifest(data) ? data : null;
@@ -165,8 +164,6 @@ export default function App() {
                       progressMessage={srcDiffData.progressMessage}
                       progressMessages={srcDiffData.progressMessages}
                       data={srcDiffData.data}
-                      includeSkippedTags={srcDiffData.includeSkippedTags}
-                      pruningLevel={srcDiffData.pruningLevel}
                       exampleFilenames={srcDiffData.exampleFilenames}
                       examplesError={srcDiffData.examplesError}
                       isLoadingExample={srcDiffData.isLoadingExample}
@@ -175,10 +172,6 @@ export default function App() {
                       onLoadExample={srcDiffData.handleLoadExample}
                       onUploadChange={srcDiffData.setSelectedUpload}
                       onXmlInputChange={srcDiffData.handleXmlInputChange}
-                      onIncludeSkippedTagsChange={
-                        srcDiffData.setIncludeSkippedTags
-                      }
-                      onPruningLevelChange={srcDiffData.setPruningLevel}
                       onSubmit={srcDiffData.handleSubmit}
                     />
                   </TabPanel>

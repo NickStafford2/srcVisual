@@ -537,6 +537,7 @@ Status: complete.
 - Load one selected file initially and both endpoints for move navigation.
 - Add bounded tree projections and lazy canonical-child retrieval.
 - Load the whole XML only when its tab is opened.
+- Remove destructive pruning controls from the artifact UI.
 - Keep the legacy interface available as a temporary fallback.
 
 The implemented projection contract uses schema version 1 over artifact schema
@@ -546,7 +547,9 @@ frontend always opts in. Source responses are capped at 2,000 aligned rows,
 tree responses at 500 nodes, and child pages at 100 nodes. Expanded source
 ranges remain browser state and are sent as explicit repeated revision-aware
 ranges; the server returns their union with the active focus profile. The
-complete XML is a separate lazy request.
+complete XML is a separate lazy request. The artifact UI exposes focus profiles
+instead of the old pruning and skipped-tag controls; those request parameters
+remain accepted only by the legacy response adapter.
 
 The artifact-only creation path publishes the canonical artifact without
 constructing or reloading the legacy monolithic projection. The compatibility
@@ -569,7 +572,7 @@ model before expanding its scope.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts.
-- Replace pruning controls with file filters and source focus profiles.
+- Add file-list filters when the manifest navigator needs them.
 - Add row virtualization if focused rendering measurements justify it.
 - Remove the monolithic response path and delete destructive pruning code after
   compatibility coverage passes.

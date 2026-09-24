@@ -16,7 +16,6 @@ import type {
 export function useHistoryData(
   enabled: boolean,
   onVisualization: (payload: VisualizationResult) => void,
-  includeSkippedTags: boolean,
 ) {
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);
   const [pairs, setPairs] = useState<HistoryPairListItem[]>([]);
@@ -96,10 +95,7 @@ export function useHistoryData(
     setIsVisualizingPair(true);
     setError(null);
     try {
-      const payload = await visualizeHistoryPair(pairNumber, {
-        includeSkippedTags,
-        pruningLevel: "move-only",
-      });
+      const payload = await visualizeHistoryPair(pairNumber);
       onVisualization(payload);
     } catch (loadError) {
       setError(

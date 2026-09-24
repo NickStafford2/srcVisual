@@ -134,6 +134,65 @@ def test_to_new_file_example_matches_srcmove_results_and_tree_ownership() -> Non
     ]
 
 
+def test_artifact_interface_serves_real_bounded_projections(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    client = create_app().test_client()
+    example_path = EXAMPLES_DIR / "e2e_generated_to_new_file_diff.xml"
+
+    response = client.post(
+        "/api/visualize",
+        data={
+            "srcdiff_xml": example_path.read_text(encoding="utf-8"),
+            "response_format": "artifact",
+            "pruning_level": "move-only",
+        },
+    )
+
+    assert response.status_code == 200
+    manifest = response.get_json()
+    assert manifest["schema_version"] == 2
+    assert manifest["projection_schema_version"] == 1
+    assert manifest["focus_profiles"] == [
+        "changes-and-moves",
+        "moves",
+        "changes",
+        "complete-file",
+    ]
+    assert "moved_srcdiff_xml" not in manifest
+    assert "revision_0_source_code" not in manifest["files"][0]
+
+    artifact_id = manifest["artifact_id"]
+    move_node_id = manifest["moves"]["items"][0]["from_node_ids"][0]
+    file_id = move_node_id.split(":n", 1)[0]
+    file_manifest = next(
+        file for file in manifest["files"] if file["file_id"] == file_id
+    )
+    source = client.get(
+        f"/api/artifacts/{artifact_id}/files/{file_id}/source?focus=moves"
+    )
+    assert source.status_code == 200
+    source_payload = source.get_json()
+    assert source_payload["file_id"] == file_id
+    assert any(block["type"] == "hunk" for block in source_payload["blocks"])
+    assert sum(
+        len(block.get("rows", [])) for block in source_payload["blocks"]
+    ) <= 2_000
+
+    tree = client.get(
+        f"/api/artifacts/{artifact_id}/files/{file_id}/tree?focus=moves&limit=5"
+    )
+    assert tree.status_code == 200
+    tree_payload = tree.get_json()
+    assert tree_payload["node_count"] <= 5
+    assert tree_payload["root"]["node_id"] == file_manifest["root_node_id"]
+
+    xml = client.get(f"/api/artifacts/{artifact_id}/xml")
+    assert xml.status_code == 200
+    assert "mv:id" in xml.get_json()["xml"]
+
+
 def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
