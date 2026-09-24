@@ -24,7 +24,7 @@ image:
 	$(DOCKER) compose build srcvisual
 
 lint:
-	$(BACKEND_RUN) /opt/venv/bin/ruff check srcvisual tests
+	$(BACKEND_RUN) /opt/venv/bin/ruff check srcvisual tests scripts
 
 test: lint test-backend test-frontend
 

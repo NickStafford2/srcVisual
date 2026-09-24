@@ -137,12 +137,19 @@ size therefore comes from destructively discarding data after most canonical
 processing has already happened; it is not an adequate interactive expansion
 model.
 
-The reproducible measurement command is:
+These historical baseline values were produced by the earlier monolithic
+measurement implementation and are retained here rather than keeping an
+executable dependency on the compatibility payload. The current command
+measures artifact construction, persisted component sizes, and the manifest,
+XML, focused-source, and bounded-tree projections:
 
 ```bash
 python scripts/measure_visualization_payload.py <annotated-xml> \
-  --pruning-level none
+  --focus changes-and-moves --tree-node-limit 500
 ```
+
+It uses a temporary artifact store by default. Pass `--artifact-root` to retain
+the measured artifact for inspection.
 
 ### Test baseline
 
@@ -770,13 +777,16 @@ The audit also found these remaining compatibility callers:
   monolithic response unless `response_format=artifact` is explicit. The
   current frontend requests artifacts, and durable history runs have replaced
   the synchronous history route in the normal UI.
-- `scripts/measure_visualization_payload.py` intentionally invokes the
-  monolithic builder for baseline and regression measurements.
 - The frontend still accepts `VisualizeResponse` and retains the legacy render
   branch, selection hook, components, fixtures, and contract validation for
   non-artifact callers.
 - Compatibility route and workflow tests call the monolithic builder directly
   to preserve the old contract while migration remains reversible.
+
+The measurement script is no longer a compatibility caller. Historical
+monolithic numbers remain recorded in the Phase 0 baseline, while new runs
+measure immutable artifact storage and the bounded projections used by the
+current frontend.
 
 Destructive pruning remains confined to the compatibility projection in
 `workflow/payload.py`: it prunes files and trees, conditionally rebuilds
