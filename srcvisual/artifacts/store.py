@@ -22,7 +22,7 @@ from srcvisual.artifacts.models import (
 from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.workflow.models import VisualizationPayload
 
-ARTIFACT_SCHEMA_VERSION = 1
+ARTIFACT_SCHEMA_VERSION = 2
 DEFAULT_ARTIFACT_ROOT = Path("/tmp/srcvisual-artifacts")
 
 
@@ -300,6 +300,12 @@ def _append_node_records(
             parent_ordinal,
             sibling_index,
             len(_children),
+            node["kind"],
+            node.get("move_id"),
+            _span_line(node.get("revision_0_span"), "start_line"),
+            _span_line(node.get("revision_0_span"), "end_line"),
+            _span_line(node.get("revision_1_span"), "start_line"),
+            _span_line(node.get("revision_1_span"), "end_line"),
             zlib.compress(json.dumps(_payload, separators=(",", ":")).encode("utf-8")),
         )
     )
@@ -313,6 +319,13 @@ def _append_node_records(
             path_to_node_id=path_to_node_id,
             next_ordinal=next_ordinal,
         )
+
+
+def _span_line(span: object, key: str) -> int | None:
+    if not isinstance(span, dict):
+        return None
+    value = span.get(key)
+    return value if isinstance(value, int) else None
 
 
 def _write_index(
@@ -348,11 +361,19 @@ def _write_index(
                 parent_ordinal INTEGER,
                 sibling_index INTEGER NOT NULL,
                 child_count INTEGER NOT NULL,
+                kind TEXT NOT NULL,
+                move_id TEXT,
+                revision_0_start_line INTEGER,
+                revision_0_end_line INTEGER,
+                revision_1_start_line INTEGER,
+                revision_1_end_line INTEGER,
                 payload BLOB NOT NULL,
                 PRIMARY KEY (file_id, node_ordinal)
             ) WITHOUT ROWID;
             CREATE INDEX nodes_by_parent
                 ON nodes(file_id, parent_ordinal, sibling_index);
+            CREATE INDEX nodes_by_focus
+                ON nodes(file_id, kind, node_ordinal);
             """
         )
         _database.executemany(
@@ -376,7 +397,7 @@ def _write_index(
             file_records,
         )
         _database.executemany(
-            "INSERT INTO nodes VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO nodes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             node_records,
         )
         _database.commit()

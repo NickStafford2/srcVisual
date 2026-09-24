@@ -7,7 +7,7 @@ import {
   visualizeSrcDiff,
 } from "../api";
 import type { VisualizationProgressEvent } from "../api";
-import type { TreePruningLevel, VisualizeResponse } from "../types";
+import type { TreePruningLevel, VisualizationResult } from "../types";
 
 export type InputMode = "history" | "examples" | "paste" | "upload";
 export type ProgressLogEntry = {
@@ -23,7 +23,7 @@ export function useSrcDiffData() {
   const [loadedExampleFilename, setLoadedExampleFilename] = useState<
     string | null
   >(null);
-  const [data, setData] = useState<VisualizeResponse | null>(null);
+  const [data, setData] = useState<VisualizationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeSkippedTags, setIncludeSkippedTags] = useState(false);
@@ -182,7 +182,7 @@ export function useSrcDiffData() {
     }
   }
 
-  function acceptVisualization(payload: VisualizeResponse) {
+  function acceptVisualization(payload: VisualizationResult) {
     setData(payload);
     setError(null);
     setProgressMessage("Visualization complete.");

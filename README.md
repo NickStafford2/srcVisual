@@ -25,13 +25,15 @@ The backend:
 - atomically publishes an immutable artifact containing normalized annotated
   XML, extracted revision sources, retained move metadata, checksums, and a
   structural SQLite index
-- reloads that artifact to build the current monolithic frontend payload while
-  the source-first artifact interface is introduced
+- returns a small artifact manifest and loads bounded source and tree
+  projections on demand
 
-The frontend uses that payload to keep its XML, tree, source-code, diff, and
-move views synchronized. This is especially valuable for moves across files,
-where the matching deletion and insertion cannot be understood in one local
-source view.
+The frontend keeps its XML, tree, source-code, diff, and move views synchronized
+through stable artifact-local identities. It initially loads one file with
+three lines of context around changes and moves, represents omitted ranges as
+expandable gaps, pages tree children, and fetches complete XML only when its
+tab is opened. The old monolithic response and pruning controls remain only as
+a temporary compatibility interface.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

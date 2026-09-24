@@ -529,6 +529,8 @@ the retained `results.json`.
 
 ### Phase 2: source-first artifact interface
 
+Status: complete.
+
 - Add artifact manifest and aligned source projection endpoints.
 - Implement explicit gaps and bounded expansion.
 - Add the four initial focus profiles.
@@ -536,6 +538,20 @@ the retained `results.json`.
 - Add bounded tree projections and lazy canonical-child retrieval.
 - Load the whole XML only when its tab is opened.
 - Keep the legacy interface available as a temporary fallback.
+
+The implemented projection contract uses schema version 1 over artifact schema
+version 2. Artifact creation requests opt into the manifest response explicitly,
+so existing API consumers retain the legacy response during migration. The new
+frontend always opts in. Source responses are capped at 2,000 aligned rows,
+tree responses at 500 nodes, and child pages at 100 nodes. Expanded source
+ranges remain browser state and are sent as explicit repeated revision-aware
+ranges; the server returns their union with the active focus profile. The
+complete XML is a separate lazy request.
+
+The artifact-only creation path publishes the canonical artifact without
+constructing or reloading the legacy monolithic projection. The compatibility
+adapter remains available, but its destructive pruning and expanded-tree cost
+are no longer paid by the new interface.
 
 This phase delivers the first user-visible payoff and validates the artifact
 model before expanding its scope.

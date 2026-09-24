@@ -1,11 +1,11 @@
-import type { VisualizeResponse } from "../../types";
+import type { VisualizationResult } from "../../types";
 import { StatusPill } from "./StatusPill";
 
 type InputPanelSubmitRowProps = {
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
-  data: VisualizeResponse | null;
+  data: VisualizationResult | null;
 };
 
 export function InputPanelSubmitRow({

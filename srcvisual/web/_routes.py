@@ -2,14 +2,27 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import sqlite3
+from typing import Any, Callable
 
 from flask import Blueprint, Response, current_app, request
 from werkzeug.datastructures import FileStorage
 
 from srcvisual.artifacts.models import ArtifactProvenance
+from srcvisual.artifacts.projections import (
+    read_artifact_manifest,
+    read_artifact_xml,
+    read_node_children,
+    read_source_projection,
+    read_tree_projection,
+)
+from srcvisual.artifacts.store import ArtifactIntegrityError
 from srcvisual.core.commands import BackendCommandError
 from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
-from srcvisual.workflow.payload import build_visualization_payload
+from srcvisual.workflow.payload import (
+    build_visualization_payload,
+    build_visualization_artifact,
+)
 from srcvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
@@ -53,6 +66,86 @@ def get_example(filename: str) -> tuple[dict[str, str], int]:
         return {"error": str(exc)}, 404
 
     return {"filename": filename, "content": content}, 200
+
+
+@api.get("/artifacts/<artifact_id>")
+def artifact_manifest(artifact_id: str) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_artifact_manifest(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/xml")
+def artifact_xml(artifact_id: str) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_artifact_xml(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/files/<file_id>/source")
+def artifact_source(artifact_id: str, file_id: str) -> tuple[dict[str, object], int]:
+    try:
+        context = _nonnegative_integer_query("context", default=3, maximum=100)
+        left_range = _optional_line_range("left_start", "left_end")
+        right_range = _optional_line_range("right_start", "right_end")
+        expanded_ranges = _repeated_line_ranges()
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    return _artifact_response(
+        lambda: read_source_projection(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            file_id=file_id,
+            focus_profile=request.args.get("focus", "changes-and-moves"),  # type: ignore[arg-type]
+            context_lines=context,
+            left_range=left_range,
+            right_range=right_range,
+            expanded_ranges=expanded_ranges,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/files/<file_id>/tree")
+def artifact_tree(artifact_id: str, file_id: str) -> tuple[dict[str, object], int]:
+    try:
+        limit = _positive_integer_query("limit", default=500, maximum=500)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    return _artifact_response(
+        lambda: read_tree_projection(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            file_id=file_id,
+            focus_profile=request.args.get("focus", "changes-and-moves"),  # type: ignore[arg-type]
+            node_limit=limit,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/tree/nodes/<path:node_id>/children")
+def artifact_node_children(
+    artifact_id: str, node_id: str
+) -> tuple[dict[str, object], int]:
+    try:
+        offset = _nonnegative_integer_query("offset", default=0, maximum=1_000_000_000)
+        limit = _positive_integer_query("limit", default=50, maximum=100)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    return _artifact_response(
+        lambda: read_node_children(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            node_id=node_id,
+            offset=offset,
+            limit=limit,
+        )
+    )
 
 
 @api.get("/history/status")
@@ -112,7 +205,7 @@ def visualize_history_pair(pair_number: int) -> tuple[dict[str, object], int]:
                 progress_token,
                 "Building the synchronized visualization.",
             )
-        result = build_visualization_payload(
+        build_arguments = dict(
             filename=f"history-pair-{pair_number}.srcmove.xml",
             payload=artifact.read_bytes(),
             include_skipped_tags=request.form.get("include_skipped_tags") == "true",
@@ -135,6 +228,16 @@ def visualize_history_pair(pair_number: int) -> tuple[dict[str, object], int]:
                 )
             ),
         )
+        if _artifact_response_requested():
+            published = build_visualization_artifact(
+                **_artifact_build_arguments(build_arguments)
+            )
+            response_payload = read_artifact_manifest(
+                artifact_root=current_app.config["ARTIFACT_ROOT"],
+                artifact_id=published.artifact_id,
+            )
+        else:
+            response_payload = build_visualization_payload(**build_arguments).to_dict()
     except (
         HistoryConfigurationError,
         BackendCommandError,
@@ -146,7 +249,7 @@ def visualize_history_pair(pair_number: int) -> tuple[dict[str, object], int]:
         return payload, status
     if progress_token is not None:
         progress_broker.publish_complete(progress_token, "Visualization complete.")
-    return result.to_dict(), 200
+    return response_payload, 200
 
 
 @api.get("/visualize/events")
@@ -187,7 +290,7 @@ def visualize() -> tuple[dict[str, object], int]:
     )
 
     try:
-        result = build_visualization_payload(
+        build_arguments = dict(
             filename=visualization_request.filename,
             payload=visualization_request.payload,
             include_skipped_tags=visualization_request.include_skipped_tags,
@@ -203,6 +306,16 @@ def visualize() -> tuple[dict[str, object], int]:
                 )
             ),
         )
+        if _artifact_response_requested():
+            published = build_visualization_artifact(
+                **_artifact_build_arguments(build_arguments)
+            )
+            response_payload = read_artifact_manifest(
+                artifact_root=current_app.config["ARTIFACT_ROOT"],
+                artifact_id=published.artifact_id,
+            )
+        else:
+            response_payload = build_visualization_payload(**build_arguments).to_dict()
     except Exception as exc:
         if progress_token is not None:
             progress_broker.publish_error(
@@ -215,7 +328,7 @@ def visualize() -> tuple[dict[str, object], int]:
     if progress_token is not None:
         progress_broker.publish_complete(progress_token, "Visualization complete.")
 
-    return result.to_dict(), 200
+    return response_payload, 200
 
 
 def parse_visualization_request() -> VisualizationRequest:
@@ -326,3 +439,92 @@ def _boolean_query(name: str) -> bool:
     if raw_value not in {"true", "false"}:
         raise ValueError(f"{name} must be true or false.")
     return raw_value == "true"
+
+
+def _nonnegative_integer_query(name: str, *, default: int, maximum: int) -> int:
+    raw_value = request.args.get(name)
+    if raw_value is None:
+        return default
+    try:
+        value = int(raw_value)
+    except ValueError as error:
+        raise ValueError(f"{name} must be an integer.") from error
+    if not 0 <= value <= maximum:
+        raise ValueError(f"{name} must be between 0 and {maximum}.")
+    return value
+
+
+def _optional_line_range(start_name: str, end_name: str) -> tuple[int, int] | None:
+    raw_start = request.args.get(start_name)
+    raw_end = request.args.get(end_name)
+    if raw_start is None and raw_end is None:
+        return None
+    if raw_start is None or raw_end is None:
+        raise ValueError(f"{start_name} and {end_name} must be provided together.")
+    try:
+        start = int(raw_start)
+        end = int(raw_end)
+    except ValueError as error:
+        raise ValueError(f"{start_name} and {end_name} must be integers.") from error
+    if start < 1 or end < start:
+        raise ValueError(f"{start_name} and {end_name} must define a positive range.")
+    if end - start + 1 > 2_000:
+        raise ValueError("Requested source ranges may contain at most 2000 lines.")
+    return start, end
+
+
+def _repeated_line_ranges() -> tuple[
+    tuple[tuple[int, int] | None, tuple[int, int] | None], ...
+]:
+    left_values = request.args.getlist("left_range")
+    right_values = request.args.getlist("right_range")
+    if len(left_values) != len(right_values):
+        raise ValueError("left_range and right_range must have matching counts.")
+    if len(left_values) > 50:
+        raise ValueError("At most 50 expanded source ranges are supported.")
+    return tuple(
+        (_parse_compact_range(left), _parse_compact_range(right))
+        for left, right in zip(left_values, right_values, strict=True)
+    )
+
+
+def _parse_compact_range(value: str) -> tuple[int, int] | None:
+    if value == "":
+        return None
+    try:
+        raw_start, raw_end = value.split(":", 1)
+        start = int(raw_start)
+        end = int(raw_end)
+    except ValueError as error:
+        raise ValueError("Expanded source ranges must use start:end syntax.") from error
+    if start < 1 or end < start or end - start + 1 > 2_000:
+        raise ValueError("Each expanded source range must contain 1 to 2000 lines.")
+    return start, end
+
+
+def _artifact_response_requested() -> bool:
+    response_format = request.form.get("response_format", "legacy")
+    if response_format not in {"legacy", "artifact"}:
+        raise ValueError("response_format must be legacy or artifact.")
+    return response_format == "artifact"
+
+
+def _artifact_build_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in arguments.items()
+        if key not in {"include_skipped_tags", "pruning_level"}
+    }
+
+
+def _artifact_response(
+    operation: Callable[[], dict[str, Any]],
+) -> tuple[dict[str, object], int]:
+    try:
+        return operation(), 200
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    except FileNotFoundError as error:
+        return {"error": str(error)}, 404
+    except (ArtifactIntegrityError, sqlite3.DatabaseError, OSError) as error:
+        return {"error": f"Artifact is unreadable: {error}"}, 409

@@ -1,4 +1,14 @@
-import type { TreePruningLevel, VisualizeResponse } from "./types";
+import type {
+  ArtifactFocusProfile,
+  ArtifactManifest,
+  ArtifactSourceProjection,
+  ArtifactTreeNode,
+  ArtifactTreeProjection,
+  TreePruningLevel,
+  VisualizationResult,
+  VisualizeResponse,
+} from "./types";
+import { isArtifactManifest } from "./types";
 import type { SrcDiffTreeNode } from "./srcdiff/types";
 import type {
   HistoryPairDocument,
@@ -81,13 +91,14 @@ export async function visualizeHistoryPair(
     includeSkippedTags: boolean;
     pruningLevel: TreePruningLevel;
   },
-): Promise<VisualizeResponse> {
+): Promise<VisualizationResult> {
   const formData = new FormData();
   formData.append(
     "include_skipped_tags",
     options.includeSkippedTags ? "true" : "false",
   );
   formData.append("pruning_level", options.pruningLevel);
+  formData.append("response_format", "artifact");
   const response = await fetch(`/api/history/pairs/${pairNumber}/visualize`, {
     method: "POST",
     body: formData,
@@ -100,8 +111,7 @@ export async function visualizeHistoryPair(
         : `Unable to visualize commit pair ${pairNumber}.`,
     );
   }
-  assertVisualizeResponseContract(payload);
-  assertVisualizeResponseHasXmlSpans(payload);
+  assertVisualizationResult(payload);
   return payload;
 }
 
@@ -118,7 +128,8 @@ async function fetchJson(url: string): Promise<Record<string, unknown>> {
 
 export async function visualizeSrcDiff(
   formData: FormData,
-): Promise<VisualizeResponse> {
+): Promise<VisualizationResult> {
+  formData.set("response_format", "artifact");
   const response = await fetch("/api/visualize", {
     method: "POST",
     body: formData,
@@ -130,25 +141,98 @@ export async function visualizeSrcDiff(
     throw new Error("error" in payload ? payload.error : "Upload failed.");
   }
 
-  assertVisualizeResponseContract(payload);
-  assertVisualizeResponseHasXmlSpans(payload);
+  assertVisualizationResult(payload);
 
   return payload;
 }
 
 async function parseVisualizeResponse(
   response: Response,
-): Promise<VisualizeResponse | { error: string }> {
+): Promise<VisualizeResponse | ArtifactManifest | { error: string }> {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    return (await response.json()) as VisualizeResponse | { error: string };
+    return (await response.json()) as
+      | VisualizeResponse
+      | ArtifactManifest
+      | { error: string };
   }
 
   const text = await response.text();
   return {
     error: text.trim() || `Upload failed with status ${response.status}.`,
   };
+}
+
+function assertVisualizationResult(
+  payload: VisualizationResult,
+): asserts payload is VisualizationResult {
+  if (isArtifactManifest(payload)) {
+    if (
+      payload.projection_schema_version !== 1 ||
+      !Array.isArray(payload.files) ||
+      !Array.isArray(payload.focus_profiles)
+    ) {
+      throw new Error("Backend returned an unsupported artifact manifest.");
+    }
+    return;
+  }
+  assertVisualizeResponseContract(payload);
+  assertVisualizeResponseHasXmlSpans(payload);
+}
+
+export async function fetchArtifactSource(
+  artifactId: string,
+  fileId: string,
+  focus: ArtifactFocusProfile,
+  ranges?: {
+    left?: ArtifactSourceRangeRequest;
+    right?: ArtifactSourceRangeRequest;
+  }[],
+): Promise<ArtifactSourceProjection> {
+  const parameters = new URLSearchParams({ focus, context: "3" });
+  for (const range of ranges ?? []) {
+    parameters.append("left_range", encodeSourceRange(range.left));
+    parameters.append("right_range", encodeSourceRange(range.right));
+  }
+  return (await fetchJson(
+    `/api/artifacts/${artifactId}/files/${fileId}/source?${parameters.toString()}`,
+  )) as unknown as ArtifactSourceProjection;
+}
+
+type ArtifactSourceRangeRequest = { start: number; end: number };
+
+function encodeSourceRange(range: ArtifactSourceRangeRequest | undefined) {
+  return range ? `${range.start}:${range.end}` : "";
+}
+
+export async function fetchArtifactTree(
+  artifactId: string,
+  fileId: string,
+  focus: ArtifactFocusProfile,
+): Promise<ArtifactTreeProjection> {
+  const parameters = new URLSearchParams({ focus, limit: "500" });
+  return (await fetchJson(
+    `/api/artifacts/${artifactId}/files/${fileId}/tree?${parameters.toString()}`,
+  )) as unknown as ArtifactTreeProjection;
+}
+
+export async function fetchArtifactNodeChildren(
+  artifactId: string,
+  nodeId: string,
+  offset = 0,
+): Promise<{ children: ArtifactTreeNode[]; next_offset: number | null }> {
+  return (await fetchJson(
+    `/api/artifacts/${artifactId}/tree/nodes/${encodeURIComponent(nodeId)}/children?offset=${offset}&limit=100`,
+  )) as unknown as { children: ArtifactTreeNode[]; next_offset: number | null };
+}
+
+export async function fetchArtifactXml(artifactId: string): Promise<string> {
+  const payload = await fetchJson(`/api/artifacts/${artifactId}/xml`);
+  if (typeof payload.xml !== "string") {
+    throw new Error("Backend returned an unsupported artifact XML projection.");
+  }
+  return payload.xml;
 }
 
 function assertVisualizeResponseHasXmlSpans(

@@ -5,7 +5,7 @@ import {
   fetchHistoryStatus,
   visualizeHistoryPair,
 } from "../api";
-import type { VisualizeResponse } from "../types";
+import type { VisualizationResult } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
@@ -15,7 +15,7 @@ import type {
 
 export function useHistoryData(
   enabled: boolean,
-  onVisualization: (payload: VisualizeResponse) => void,
+  onVisualization: (payload: VisualizationResult) => void,
   includeSkippedTags: boolean,
 ) {
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);

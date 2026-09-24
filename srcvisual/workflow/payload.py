@@ -79,23 +79,13 @@ def build_artifact_backed_visualization(
     producer_move_results: dict[str, Any] | None = None,
 ) -> tuple[PublishedArtifact, VisualizationPayload]:
     _artifact_root = artifact_root or get_artifact_root()
-    _provenance = provenance or ArtifactProvenance(origin="upload")
-    _canonical_payload, _effective_provenance = _build_canonical_payload(
+    _published, _effective_provenance = _publish_canonical_visualization(
         filename=filename,
         payload=payload,
         progress=progress,
-        provenance=_provenance,
-        producer_move_results=producer_move_results,
-    )
-    notify_progress(progress, "Publishing immutable visualization artifact.")
-    _published = publish_artifact(
         artifact_root=_artifact_root,
-        canonical_payload=_canonical_payload,
-        input_payload=payload,
-        provenance=_effective_provenance,
-    )
-    notify_progress(
-        progress, f"Published visualization artifact {_published.artifact_id}."
+        provenance=provenance,
+        producer_move_results=producer_move_results,
     )
     _stored = read_artifact(
         artifact_root=_artifact_root,
@@ -109,6 +99,58 @@ def build_artifact_backed_visualization(
         progress=progress,
     )
     return _published, _compatibility_payload
+
+
+def build_visualization_artifact(
+    *,
+    filename: str,
+    payload: bytes,
+    progress: ProgressCallback | None = None,
+    artifact_root: Path | None = None,
+    provenance: ArtifactProvenance | None = None,
+    producer_move_results: dict[str, Any] | None = None,
+) -> PublishedArtifact:
+    """Build and publish the canonical artifact without a legacy projection."""
+    _artifact_root = artifact_root or get_artifact_root()
+    _published, _ = _publish_canonical_visualization(
+        filename=filename,
+        payload=payload,
+        progress=progress,
+        artifact_root=_artifact_root,
+        provenance=provenance,
+        producer_move_results=producer_move_results,
+    )
+    return _published
+
+
+def _publish_canonical_visualization(
+    *,
+    filename: str,
+    payload: bytes,
+    progress: ProgressCallback | None,
+    artifact_root: Path,
+    provenance: ArtifactProvenance | None,
+    producer_move_results: dict[str, Any] | None,
+) -> tuple[PublishedArtifact, ArtifactProvenance]:
+    _provenance = provenance or ArtifactProvenance(origin="upload")
+    _canonical_payload, _effective_provenance = _build_canonical_payload(
+        filename=filename,
+        payload=payload,
+        progress=progress,
+        provenance=_provenance,
+        producer_move_results=producer_move_results,
+    )
+    notify_progress(progress, "Publishing immutable visualization artifact.")
+    _published = publish_artifact(
+        artifact_root=artifact_root,
+        canonical_payload=_canonical_payload,
+        input_payload=payload,
+        provenance=_effective_provenance,
+    )
+    notify_progress(
+        progress, f"Published visualization artifact {_published.artifact_id}."
+    )
+    return _published, _effective_provenance
 
 
 def _build_canonical_payload(

@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import type { InputMode, ProgressLogEntry } from "../../srcdiff/useSrcDiffData";
-import type { TreePruningLevel, VisualizeResponse } from "../../types";
+import type { TreePruningLevel, VisualizationResult } from "../../types";
 import { ExampleInput } from "./ExampleInput";
 import { InputModeToggle } from "./InputModeToggle";
 import { InputPanelOptions } from "./InputPanelOptions";
@@ -20,7 +20,7 @@ type InputPanelProps = {
   error: string | null;
   progressMessage: string | null;
   progressMessages: ProgressLogEntry[];
-  data: VisualizeResponse | null;
+  data: VisualizationResult | null;
   includeSkippedTags: boolean;
   pruningLevel: TreePruningLevel;
   exampleFilenames: string[];

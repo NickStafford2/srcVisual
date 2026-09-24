@@ -13,6 +13,10 @@ import type { SourceViewHighlight } from "./srcdiff/srcView";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 import { useHistoryData } from "./history/useHistoryData";
+import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
+import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
+import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
+import { isArtifactManifest, type ArtifactFocusProfile } from "./types";
 
 type MainTabId =
   | "input"
@@ -51,12 +55,17 @@ export default function App() {
     srcDiffData.acceptVisualization,
     srcDiffData.includeSkippedTags,
   );
-  const srcDiffSelection = useSrcDiffSelection(srcDiffData.data);
-  const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
-
   const data = srcDiffData.data;
+  const artifact = data && isArtifactManifest(data) ? data : null;
+  const legacyData = data && !isArtifactManifest(data) ? data : null;
+  const srcDiffSelection = useSrcDiffSelection(legacyData);
+  const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
+  const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
+  const [artifactFocus, setArtifactFocus] =
+    useState<ArtifactFocusProfile>("changes-and-moves");
+
   const hasData = Boolean(data);
-  const files = data?.files ?? [];
+  const files = legacyData?.files ?? [];
   const sidebarWidthClass = hasData ? "lg:w-[360px]" : "lg:w-[108px]";
 
   const mainTabs: TabDefinition<MainTabId>[] = [
@@ -97,6 +106,17 @@ export default function App() {
     setActiveMainTab("source-code");
   }, [data]);
 
+  useEffect(() => {
+    if (artifact) {
+      setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
+      setArtifactFocus("changes-and-moves");
+    }
+  }, [artifact]);
+
+  const selectedArtifactFile = artifact?.files.find(
+    (file) => file.file_id === selectedArtifactFileId,
+  );
+
   return (
     <SrcDiffHighlightProvider value={highlightContextValue}>
       <main className="bg-site-bg flex h-screen flex-col text-slate-100">
@@ -107,12 +127,21 @@ export default function App() {
             <aside
               className={`shrink-0 space-y-3 self-stretch transition-[width] duration-300 ${sidebarWidthClass}`}
             >
-              <SrcDiffTree
-                files={files}
-                hasData={hasData}
-                onHighlightNode={srcDiffSelection.highlightNode}
-                onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
-              />
+              {artifact && selectedArtifactFileId ? (
+                <ArtifactNavigator
+                  manifest={artifact}
+                  selectedFileId={selectedArtifactFileId}
+                  focus={artifactFocus}
+                  onSelectFile={setSelectedArtifactFileId}
+                />
+              ) : (
+                <SrcDiffTree
+                  files={files}
+                  hasData={hasData}
+                  onHighlightNode={srcDiffSelection.highlightNode}
+                  onHighlightMoveGroup={srcDiffSelection.highlightMoveGroup}
+                />
+              )}
             </aside>
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
@@ -154,7 +183,7 @@ export default function App() {
                     />
                   </TabPanel>
 
-                  {data ? (
+                  {legacyData ? (
                     <>
                       <TabPanel tabId="source-code" activeTabId={activeMainTab}>
                         <SourceCodeSection
@@ -162,7 +191,7 @@ export default function App() {
                           highlightedSpansByUnitId={
                             srcDiffSelection.sourceHighlightedSpansByUnitId
                           }
-                          moveResults={data.move_results}
+                          moveResults={legacyData.move_results}
                           moveNodesById={srcDiffSelection.moveNodesById}
                           onHighlightMoveGroup={
                             srcDiffSelection.highlightMoveGroup
@@ -172,7 +201,7 @@ export default function App() {
 
                       <TabPanel tabId="xml-pane" activeTabId={activeMainTab}>
                         <XmlPane
-                          source={data.moved_srcdiff_xml}
+                          source={legacyData.moved_srcdiff_xml}
                           highlights={xmlHighlights}
                         />
                       </TabPanel>
@@ -182,7 +211,7 @@ export default function App() {
                         activeTabId={activeMainTab}
                       >
                         <HighlightedNodeInfo
-                          moveResults={data.move_results}
+                          moveResults={legacyData.move_results}
                           moveNodesById={srcDiffSelection.moveNodesById}
                         />
                       </TabPanel>
@@ -192,12 +221,62 @@ export default function App() {
                         activeTabId={activeMainTab}
                       >
                         <MoveSummary
-                          moveResults={data.move_results}
+                          moveResults={legacyData.move_results}
                           moveNodesById={srcDiffSelection.moveNodesById}
                           onHighlightMoveGroup={
                             srcDiffSelection.highlightMoveGroup
                           }
                         />
+                      </TabPanel>
+                    </>
+                  ) : artifact && selectedArtifactFile ? (
+                    <>
+                      <TabPanel tabId="source-code" activeTabId={activeMainTab}>
+                        <ArtifactSourcePane
+                          artifactId={artifact.artifact_id}
+                          file={selectedArtifactFile}
+                          focus={artifactFocus}
+                          onFocusChange={setArtifactFocus}
+                        />
+                      </TabPanel>
+
+                      <TabPanel tabId="xml-pane" activeTabId={activeMainTab}>
+                        <ArtifactXmlPane
+                          artifactId={artifact.artifact_id}
+                          active={activeMainTab === "xml-pane"}
+                        />
+                      </TabPanel>
+
+                      <TabPanel
+                        tabId="highlighted-node-info"
+                        activeTabId={activeMainTab}
+                      >
+                        <p className="text-sm text-slate-400">
+                          Select a projected tree node to inspect it. Detailed node selection is retained in the legacy view during Phase 2.
+                        </p>
+                      </TabPanel>
+
+                      <TabPanel tabId="move-summary" activeTabId={activeMainTab}>
+                        <div className="space-y-2">
+                          <p className="text-sm text-slate-300">
+                            {artifact.moves.move_count} detected moves
+                          </p>
+                          {artifact.moves.items.map((move) => (
+                            <div
+                              key={move.move_id}
+                              className="rounded border border-white/10 bg-slate-950/60 p-3 text-sm"
+                            >
+                              <span className="font-mono text-violet-200">
+                                {move.move_id}
+                              </span>
+                              {move.match_kind ? (
+                                <span className="ml-2 text-slate-400">
+                                  {move.match_kind}
+                                </span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </TabPanel>
                     </>
                   ) : null}

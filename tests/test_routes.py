@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import srcvisual.web._routes as routes_module
-from srcvisual.artifacts.models import ArtifactProvenance
+from srcvisual.artifacts.models import ArtifactProvenance, PublishedArtifact
 from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.web.app import create_app
 from srcvisual.workflow.models import VisualizationPayload
@@ -18,6 +18,66 @@ def test_visualize_events_requires_token() -> None:
     assert response.get_json() == {
         "error": "Expected progress stream token in 'token' query parameter."
     }
+
+
+def test_artifact_source_endpoint_forwards_focus_and_expanded_ranges(
+    monkeypatch, tmp_path: Path
+) -> None:
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+
+    def fake_read_source_projection(**kwargs):
+        captured.update(kwargs)
+        return {"schema_version": 1, "blocks": []}
+
+    monkeypatch.setattr(
+        routes_module, "read_source_projection", fake_read_source_projection
+    )
+    client = create_app().test_client()
+
+    response = client.get(
+        "/api/artifacts/" + "a" * 32 + "/files/f-one/source"
+        "?focus=moves&left_range=2:4&right_range=3:5"
+    )
+
+    assert response.status_code == 200
+    assert captured["focus_profile"] == "moves"
+    assert captured["expanded_ranges"] == (((2, 4), (3, 5)),)
+
+
+def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    artifact_id = "a" * 32
+    published = PublishedArtifact(
+        artifact_id=artifact_id,
+        path=tmp_path / artifact_id,
+        manifest={"artifact_id": artifact_id},
+    )
+    monkeypatch.setattr(
+        routes_module,
+        "build_visualization_artifact",
+        lambda **kwargs: published,
+    )
+    monkeypatch.setattr(
+        routes_module,
+        "read_artifact_manifest",
+        lambda **kwargs: {
+            "artifact_id": artifact_id,
+            "projection_schema_version": 1,
+        },
+    )
+
+    response = (
+        create_app()
+        .test_client()
+        .post(
+            "/api/visualize",
+            data={"srcdiff_xml": "<unit />", "response_format": "artifact"},
+        )
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["artifact_id"] == artifact_id
 
 
 def test_list_examples_returns_filenames(

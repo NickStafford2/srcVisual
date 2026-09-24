@@ -1,0 +1,179 @@
+import { useEffect, useState } from "react";
+import { fetchArtifactNodeChildren, fetchArtifactSource, fetchArtifactTree } from "../../api";
+import type {
+  ArtifactFocusProfile,
+  ArtifactManifest,
+  ArtifactTreeNode,
+} from "../../types";
+
+type Props = {
+  manifest: ArtifactManifest;
+  selectedFileId: string;
+  focus: ArtifactFocusProfile;
+  onSelectFile: (fileId: string) => void;
+};
+
+export function ArtifactNavigator({
+  manifest,
+  selectedFileId,
+  focus,
+  onSelectFile,
+}: Props) {
+  const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setRoot(null);
+    setError(null);
+    void fetchArtifactTree(manifest.artifact_id, selectedFileId, focus)
+      .then((projection) => {
+        if (active) setRoot(projection.root);
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(errorMessage(reason));
+      });
+    return () => {
+      active = false;
+    };
+  }, [focus, manifest.artifact_id, selectedFileId]);
+
+  function openMove(nodeIds: string[]) {
+    const fileIds = [...new Set(nodeIds.map((nodeId) => nodeId.split(":n", 1)[0]))];
+    void Promise.all(
+      fileIds.map((fileId) =>
+        fetchArtifactSource(manifest.artifact_id, fileId, "moves"),
+      ),
+    );
+    if (fileIds[0]) onSelectFile(fileIds[0]);
+  }
+
+  return (
+    <section className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75" aria-label="Artifact navigator">
+      <div className="border-b border-white/10 p-4">
+        <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Files</p>
+        <div className="mt-3 max-h-48 space-y-1 overflow-auto">
+          {manifest.files.map((file) => (
+            <button
+              key={file.file_id}
+              type="button"
+              onClick={() => onSelectFile(file.file_id)}
+              className={`block w-full truncate rounded px-2 py-1 text-left text-xs ${file.file_id === selectedFileId ? "bg-sky-500/20 text-sky-200" : "text-slate-300 hover:bg-white/5"}`}
+            >
+              {file.filename}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {manifest.moves.items.length > 0 ? (
+        <div className="border-b border-white/10 p-4">
+          <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Moves</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {manifest.moves.items.map((move) => (
+              <button
+                key={move.move_id}
+                type="button"
+                onClick={() => openMove([...move.from_node_ids, ...move.to_node_ids])}
+                className="rounded bg-violet-500/15 px-2 py-1 text-xs text-violet-200"
+              >
+                {move.move_id}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs">
+        {error ? <p className="text-rose-300">{error}</p> : null}
+        {!root && !error ? <p className="text-slate-500">Loading tree…</p> : null}
+        {root ? (
+          <ArtifactTreeBranch
+            key={`${root.node_id}-${focus}`}
+            artifactId={manifest.artifact_id}
+            initialNode={root}
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ArtifactTreeBranch({
+  artifactId,
+  initialNode,
+}: {
+  artifactId: string;
+  initialNode: ArtifactTreeNode;
+}) {
+  const [node, setNode] = useState(initialNode);
+  const [expanded, setExpanded] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [nextOffset, setNextOffset] = useState(0);
+
+  async function toggle() {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    if (node.children_complete || loading) return;
+    setLoading(true);
+    try {
+      const page = await fetchArtifactNodeChildren(
+        artifactId,
+        node.node_id,
+        nextOffset,
+      );
+      setNode((current) => ({
+        ...current,
+        children: mergeNodes(current.children, page.children),
+        children_complete: page.next_offset === null,
+      }));
+      setNextOffset(page.next_offset ?? node.child_count);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => void toggle()}
+        className="flex w-full items-center gap-1 py-0.5 text-left text-slate-300 hover:text-white"
+      >
+        <span className="w-3 text-slate-600">
+          {node.child_count > 0 ? (expanded ? "▾" : "▸") : "·"}
+        </span>
+        <span className={node.kind === "move" ? "text-violet-300" : ""}>
+          {node.label}
+        </span>
+        {!node.children_complete ? (
+          <span className="text-slate-600">({node.child_count})</span>
+        ) : null}
+      </button>
+      {expanded && node.children.length > 0 ? (
+        <div className="ml-3 border-l border-white/10 pl-2">
+          {node.children.map((child) => (
+            <ArtifactTreeBranch
+              key={child.node_id}
+              artifactId={artifactId}
+              initialNode={child}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function mergeNodes(current: ArtifactTreeNode[], loaded: ArtifactTreeNode[]) {
+  const byId = new Map(current.map((node) => [node.node_id, node]));
+  for (const node of loaded) byId.set(node.node_id, node);
+  return [...byId.values()];
+}
+
+function errorMessage(reason: unknown) {
+  return reason instanceof Error ? reason.message : "Unable to load tree projection.";
+}
