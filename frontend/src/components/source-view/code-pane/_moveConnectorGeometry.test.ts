@@ -58,6 +58,28 @@ describe("move connector geometry", () => {
     expect(_blocks[1]).toEqual(buildRect(110, 130, 260, 150));
   });
 
+  it("wraps every rendered fragment of one semantic endpoint in one box", () => {
+    const _group = buildMoveConnectorGroup({
+      moveId: "move-semantic",
+      containerRect: buildRect(0, 0, 800, 500),
+      fromEndpointRectGroups: [[
+        buildRect(100, 20, 220, 40),
+        buildRect(110, 180, 250, 200),
+      ]],
+      toEndpointRectGroups: [[buildRect(520, 60, 680, 100)]],
+    });
+
+    expect(_group?.boxes).toHaveLength(2);
+    expect(_group?.boxes[0]).toMatchObject({
+      x: 94,
+      y: 16,
+      width: 162,
+      height: 188,
+    });
+    expect(_group?.hub).toBeNull();
+    expect(_group?.paths).toHaveLength(1);
+  });
+
   it("builds a hub with one spoke per block for nxm moves", () => {
     const _group = buildMoveConnectorGroup({
       moveId: "move-2",

@@ -126,13 +126,6 @@ export default function App() {
   const selectedArtifactMove = artifact?.moves.items.find(
     (move) => move.move_id === selectedArtifactMoveId,
   );
-  const visibleArtifactFiles = artifact
-    ? artifact.files.filter((file) =>
-        selectedArtifactMove
-          ? moveFileIds(selectedArtifactMove).includes(file.file_id)
-          : file.file_id === selectedArtifactFileId,
-      )
-    : [];
 
   function selectArtifactFile(fileId: string) {
     setSelectedArtifactFileId(fileId);
@@ -258,9 +251,10 @@ export default function App() {
                       <TabPanel tabId="source-code" activeTabId={activeMainTab}>
                         <ArtifactSourcePane
                           artifactId={artifact.artifact_id}
-                          files={visibleArtifactFiles}
+                          files={artifact.files}
+                          selectedFileId={selectedArtifactFileId}
                           focus={selectedArtifactMove ? "moves" : artifactFocus}
-                          activeMoveId={selectedArtifactMoveId}
+                          activeMove={selectedArtifactMove ?? null}
                           onFocusChange={setArtifactFocus}
                         />
                       </TabPanel>

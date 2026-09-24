@@ -118,4 +118,8 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
 
   await user.click(screen.getByRole("button", { name: "move-1" }));
   expect(onSelectMove).toHaveBeenCalledWith(manifest.moves.items[0]);
+
+  await user.type(screen.getByRole("searchbox", { name: "Filter artifact files" }), "two");
+  expect(screen.queryByRole("button", { name: "one.cpp" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "two.cpp" })).toBeInTheDocument();
 });

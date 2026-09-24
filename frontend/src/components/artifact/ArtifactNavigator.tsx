@@ -26,6 +26,10 @@ export function ArtifactNavigator({
 }: Props) {
   const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fileQuery, setFileQuery] = useState("");
+  const visibleFiles = manifest.files.filter((file) =>
+    file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
+  );
 
   useEffect(() => {
     let active = true;
@@ -47,8 +51,16 @@ export function ArtifactNavigator({
     <section className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75" aria-label="Artifact navigator">
       <div className="border-b border-white/10 p-4">
         <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Files</p>
+        <input
+          type="search"
+          value={fileQuery}
+          onChange={(event) => setFileQuery(event.target.value)}
+          placeholder="Filter files…"
+          aria-label="Filter artifact files"
+          className="mt-3 w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 placeholder:text-slate-600"
+        />
         <div className="mt-3 max-h-48 space-y-1 overflow-auto">
-          {manifest.files.map((file) => (
+          {visibleFiles.map((file) => (
             <button
               key={file.file_id}
               type="button"
@@ -58,6 +70,9 @@ export function ArtifactNavigator({
               {file.filename}
             </button>
           ))}
+          {visibleFiles.length === 0 ? (
+            <p className="px-2 py-2 text-xs text-slate-500">No matching files.</p>
+          ) : null}
         </div>
       </div>
 

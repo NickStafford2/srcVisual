@@ -13,6 +13,7 @@ type CodeSegmentProps = {
   segment: ViewerLineSegment;
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
+  moveIdFilter?: string | null;
 };
 
 export function CodeSegment({
@@ -20,26 +21,32 @@ export function CodeSegment({
   segment,
   registerMoveSegment,
   unregisterMoveSegment,
+  moveIdFilter,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
 
   const isMoveHighlight =
     segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
+  const registersMove =
+    isMoveHighlight &&
+    (moveIdFilter === undefined || segment.moveId === moveIdFilter);
 
   const text = segment.highlighted
     ? renderVisibleWhitespace(segment.text)
     : segment.text;
 
   useEffect(() => {
-    if (!isMoveHighlight || !segment.moveId || !ref.current) {
+    if (!registersMove || !segment.moveId || !ref.current) {
       return;
     }
 
     const element = ref.current;
     const moveId = segment.moveId;
+    const endpointId = segment.nodeId ?? moveId;
 
     registerMoveSegment?.({
       moveId,
+      endpointId,
       revision,
       element,
     });
@@ -47,16 +54,18 @@ export function CodeSegment({
     return () => {
       unregisterMoveSegment?.({
         moveId,
+        endpointId,
         revision,
         element,
       });
     };
   }, [
-    isMoveHighlight,
+    registersMove,
     registerMoveSegment,
     unregisterMoveSegment,
     revision,
     segment.moveId,
+    segment.nodeId,
     segment.text,
   ]);
 

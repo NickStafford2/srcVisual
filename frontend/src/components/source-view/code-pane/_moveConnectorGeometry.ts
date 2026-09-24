@@ -47,8 +47,10 @@ type Point = {
 type BuildMoveConnectorGroupOptions = {
   moveId: string;
   containerRect: RectLike;
-  fromRects: RectLike[];
-  toRects: RectLike[];
+  fromRects?: RectLike[];
+  toRects?: RectLike[];
+  fromEndpointRectGroups?: RectLike[][];
+  toEndpointRectGroups?: RectLike[][];
 };
 
 const OVERLAY_BOX_PADDING_X = 6;
@@ -77,11 +79,13 @@ export function getCombinedRect(rects: RectLike[]): RectLike | null {
 export function buildMoveConnectorGroup({
   moveId,
   containerRect,
-  fromRects,
-  toRects,
+  fromRects = [],
+  toRects = [],
+  fromEndpointRectGroups,
+  toEndpointRectGroups,
 }: BuildMoveConnectorGroupOptions): MoveConnectorGroup | null {
-  const _fromBlocks = clusterMoveRects(fromRects);
-  const _toBlocks = clusterMoveRects(toRects);
+  const _fromBlocks = endpointBlocks(fromEndpointRectGroups, fromRects);
+  const _toBlocks = endpointBlocks(toEndpointRectGroups, toRects);
   const _boxes = [
     ..._fromBlocks.map((_block, _index) =>
       buildOverlayBox(moveId, "revision-0", _index, _block, containerRect),
@@ -138,6 +142,17 @@ export function buildMoveConnectorGroup({
       })),
     ],
   };
+}
+
+function endpointBlocks(
+  endpointRectGroups: RectLike[][] | undefined,
+  fallbackRects: RectLike[],
+): RectLike[] {
+  if (endpointRectGroups === undefined) return clusterMoveRects(fallbackRects);
+  return endpointRectGroups.flatMap((rects) => {
+    const combined = getCombinedRect(rects);
+    return combined ? [combined] : [];
+  });
 }
 
 export function clusterMoveRects(rects: RectLike[]): RectLike[] {

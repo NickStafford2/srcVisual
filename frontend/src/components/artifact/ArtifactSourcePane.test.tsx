@@ -53,6 +53,22 @@ const file = {
   revision_1_lines: 20,
 };
 
+const secondFile = {
+  ...file,
+  file_id: "f-2",
+  root_node_id: "f-2:n00000000",
+  filename: "other.cpp",
+  revision_0_filename: "before/other.cpp",
+  revision_1_filename: "after/other.cpp",
+};
+
+const activeMove = {
+  move_id: "move-1",
+  match_kind: "exact",
+  from_node_ids: ["f-1:n00000001"],
+  to_node_ids: ["f-1:n00000002"],
+};
+
 describe("ArtifactSourcePane", () => {
   beforeEach(() => {
     vi.mocked(fetchArtifactSource).mockReset().mockResolvedValue(projection);
@@ -65,9 +81,10 @@ describe("ArtifactSourcePane", () => {
     render(
       <ArtifactSourcePane
         artifactId="artifact-1"
-        files={[file]}
+        files={[file, secondFile]}
+        selectedFileId="f-1"
         focus="changes-and-moves"
-        activeMoveId={null}
+        activeMove={null}
         onFocusChange={vi.fn()}
       />,
     );
@@ -76,6 +93,12 @@ describe("ArtifactSourcePane", () => {
     expect(fetchArtifactSource).toHaveBeenCalledWith(
       "artifact-1",
       "f-1",
+      "changes-and-moves",
+    );
+    expect(screen.getByText("other.cpp")).toBeInTheDocument();
+    expect(fetchArtifactSource).not.toHaveBeenCalledWith(
+      "artifact-1",
+      "f-2",
       "changes-and-moves",
     );
 
@@ -174,8 +197,9 @@ describe("ArtifactSourcePane", () => {
       <ArtifactSourcePane
         artifactId="artifact-1"
         files={[file]}
+        selectedFileId="f-1"
         focus="moves"
-        activeMoveId="move-1"
+        activeMove={activeMove}
         onFocusChange={vi.fn()}
       />,
     );
@@ -190,5 +214,39 @@ describe("ArtifactSourcePane", () => {
     expect(screen.getByLabelText("Artifact source file example.cpp")).toHaveClass(
       "bg-black",
     );
+  });
+
+  it("uses a collapsed file header as a lazy cross-file move endpoint", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArtifactSourcePane
+        artifactId="artifact-1"
+        files={[file, secondFile]}
+        selectedFileId="f-1"
+        focus="moves"
+        activeMove={{
+          ...activeMove,
+          to_node_ids: ["f-2:n00000002"],
+        }}
+        onFocusChange={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("1 hidden to endpoint")).toBeInTheDocument();
+    expect(fetchArtifactSource).not.toHaveBeenCalledWith(
+      "artifact-1",
+      "f-2",
+      "moves",
+    );
+
+    await user.click(screen.getByRole("button", { name: /other\.cpp/ }));
+    await waitFor(() =>
+      expect(fetchArtifactSource).toHaveBeenCalledWith(
+        "artifact-1",
+        "f-2",
+        "moves",
+      ),
+    );
+    expect(screen.queryByText("1 hidden to endpoint")).not.toBeInTheDocument();
   });
 });

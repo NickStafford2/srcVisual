@@ -29,11 +29,14 @@ The backend:
   projections on demand
 
 The frontend keeps its XML, tree, source-code, diff, and move views synchronized
-through stable artifact-local identities. It initially loads one file with
-three lines of context around changes and moves, represents omitted ranges as
-expandable gaps, pages tree children, and fetches complete XML only when its
-tab is opened. The old monolithic response and pruning controls remain only as
-a temporary compatibility interface.
+through stable artifact-local identities. Its GitHub-style Source view lists
+every changed file as a collapsible card but loads source projections only for
+expanded files. Selecting a move can narrow the list to participating files;
+SVG connectors use rendered semantic endpoints when available and collapsed
+file-header proxies otherwise. Omitted ranges remain expandable gaps, tree
+children are paged, and complete XML is fetched only when its tab is opened.
+The old monolithic response and pruning controls remain only as a temporary
+compatibility interface.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

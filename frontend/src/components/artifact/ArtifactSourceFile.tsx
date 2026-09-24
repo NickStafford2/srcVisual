@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchArtifactSource } from "../../api";
 import type { SourceRevision } from "../../srcdiff/lineLinks";
 import type {
   ArtifactFileSummary,
   ArtifactFocusProfile,
+  ArtifactMoveSummary,
   ArtifactSourceLine,
   ArtifactSourceProjection,
 } from "../../types";
@@ -18,6 +19,9 @@ type Props = {
   artifactId: string;
   file: ArtifactFileSummary;
   focus: ArtifactFocusProfile;
+  expanded: boolean;
+  activeMove: ArtifactMoveSummary | null;
+  onToggle: () => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 };
@@ -26,6 +30,9 @@ export function ArtifactSourceFile({
   artifactId,
   file,
   focus,
+  expanded,
+  activeMove,
+  onToggle,
   registerMoveSegment,
   unregisterMoveSegment,
 }: Props) {
@@ -38,6 +45,7 @@ export function ArtifactSourceFile({
   >([]);
 
   useEffect(() => {
+    if (!expanded) return;
     let active = true;
     setLoading(true);
     setError(null);
@@ -55,7 +63,14 @@ export function ArtifactSourceFile({
     return () => {
       active = false;
     };
-  }, [artifactId, file.file_id, focus]);
+  }, [artifactId, expanded, file.file_id, focus]);
+
+  const _fromEndpointCount = activeMove
+    ? endpointCount(activeMove.from_node_ids, file.file_id)
+    : 0;
+  const _toEndpointCount = activeMove
+    ? endpointCount(activeMove.to_node_ids, file.file_id)
+    : 0;
 
   async function showGap(
     block: Extract<
@@ -105,29 +120,64 @@ export function ArtifactSourceFile({
       aria-label={`Artifact source file ${file.filename}`}
       className="overflow-hidden rounded-xl border border-white/10 bg-black"
     >
-      <header className="flex items-center gap-3 border-b border-white/10 bg-neutral-950 px-3 py-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-slate-200">
-            {file.filename}
-          </p>
-          <p className="text-[11px] text-slate-500">
-            {file.revision_0_filename} → {file.revision_1_filename}
-          </p>
-        </div>
-        {expandedRanges.length > 0 ? (
+      <header className="border-b border-white/10 bg-neutral-950">
+        <div className="flex items-center gap-3 px-3 py-2">
           <button
             type="button"
-            onClick={() => void returnToFocus()}
-            className="rounded border border-sky-300/30 px-3 py-1 text-xs text-sky-200"
+            aria-expanded={expanded}
+            onClick={onToggle}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
           >
-            Collapse expanded gaps
+            <span className="w-3 text-slate-500">{expanded ? "▾" : "▸"}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-semibold text-slate-200">
+                {file.filename}
+              </span>
+              <span className="block truncate text-[11px] text-slate-500">
+                {file.revision_0_filename} → {file.revision_1_filename}
+              </span>
+            </span>
           </button>
+          <span className="text-[11px] text-slate-500">
+            {file.revision_0_lines} → {file.revision_1_lines} lines
+          </span>
+          {expandedRanges.length > 0 && expanded ? (
+            <button
+              type="button"
+              onClick={() => void returnToFocus()}
+              className="rounded border border-sky-300/30 px-3 py-1 text-xs text-sky-200"
+            >
+              Collapse expanded gaps
+            </button>
+          ) : null}
+        </div>
+        {!expanded && activeMove && (_fromEndpointCount || _toEndpointCount) ? (
+          <div className="grid grid-cols-2 border-t border-white/5">
+            <CollapsedMoveAnchor
+              fileId={file.file_id}
+              moveId={activeMove.move_id}
+              revision="revision-0"
+              count={_fromEndpointCount}
+              label="from"
+              registerMoveSegment={registerMoveSegment}
+              unregisterMoveSegment={unregisterMoveSegment}
+            />
+            <CollapsedMoveAnchor
+              fileId={file.file_id}
+              moveId={activeMove.move_id}
+              revision="revision-1"
+              count={_toEndpointCount}
+              label="to"
+              registerMoveSegment={registerMoveSegment}
+              unregisterMoveSegment={unregisterMoveSegment}
+            />
+          </div>
         ) : null}
       </header>
 
-      {loading ? <p className="p-3 text-sm text-slate-400">Loading source…</p> : null}
-      {error ? <p className="p-3 text-sm text-rose-300">{error}</p> : null}
-      {projection ? (
+      {expanded && loading ? <p className="p-3 text-sm text-slate-400">Loading source…</p> : null}
+      {expanded && error ? <p className="p-3 text-sm text-rose-300">{error}</p> : null}
+      {expanded && projection ? (
         <div className="overflow-auto bg-black font-mono text-xs">
           {projection.blocks.map((block) =>
             block.type === "gap" ? (
@@ -149,12 +199,14 @@ export function ArtifactSourceFile({
                     <SourceCell
                       line={row.left}
                       revision="revision-0"
+                      moveIdFilter={activeMove?.move_id}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
                     <SourceCell
                       line={row.right}
                       revision="revision-1"
+                      moveIdFilter={activeMove?.move_id}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -177,11 +229,13 @@ export function ArtifactSourceFile({
 function SourceCell({
   line,
   revision,
+  moveIdFilter,
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
   line: ArtifactSourceLine | null;
   revision: SourceRevision;
+  moveIdFilter?: string;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -198,6 +252,7 @@ function SourceCell({
             key={`${segment.nodeId ?? "plain"}-${index}`}
             revision={revision}
             segment={segment}
+            moveIdFilter={moveIdFilter}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
           />
@@ -205,6 +260,59 @@ function SourceCell({
       </code>
     </div>
   );
+}
+
+function CollapsedMoveAnchor({
+  fileId,
+  moveId,
+  revision,
+  count,
+  label,
+  registerMoveSegment,
+  unregisterMoveSegment,
+}: {
+  fileId: string;
+  moveId: string;
+  revision: SourceRevision;
+  count: number;
+  label: string;
+  registerMoveSegment: RegisterMoveSegment;
+  unregisterMoveSegment: UnregisterMoveSegment;
+}) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  useEffect(() => {
+    if (count === 0 || !ref.current) return;
+    const element = ref.current;
+    const endpointId = `collapsed:${fileId}:${revision}`;
+    registerMoveSegment({ moveId, endpointId, revision, element });
+    return () => {
+      unregisterMoveSegment({ moveId, endpointId, revision, element });
+    };
+  }, [
+    count,
+    fileId,
+    moveId,
+    registerMoveSegment,
+    revision,
+    unregisterMoveSegment,
+  ]);
+
+  return (
+    <div className="px-3 py-1.5 text-xs text-slate-500">
+      {count > 0 ? (
+        <span
+          ref={ref}
+          className="inline-block rounded border border-dashed border-diff-move-1/50 bg-diff-move-1/10 px-2 py-0.5 text-amber-200"
+        >
+          {count} hidden {label} endpoint{count === 1 ? "" : "s"}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function endpointCount(nodeIds: string[], fileId: string) {
+  return nodeIds.filter((nodeId) => nodeId.startsWith(`${fileId}:n`)).length;
 }
 
 function boundedRange(start: number | null, end: number | null) {

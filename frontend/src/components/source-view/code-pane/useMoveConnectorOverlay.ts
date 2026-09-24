@@ -12,19 +12,23 @@ import {
 } from "./_moveConnectorGeometry";
 
 type MoveSegmentElements = {
-  "revision-0": Set<HTMLElement>;
-  "revision-1": Set<HTMLElement>;
+  "revision-0": Map<string, Set<HTMLElement>>;
+  "revision-1": Map<string, Set<HTMLElement>>;
 };
 
 function createMoveSegmentElements(): MoveSegmentElements {
   return {
-    "revision-0": new Set<HTMLElement>(),
-    "revision-1": new Set<HTMLElement>(),
+    "revision-0": new Map<string, Set<HTMLElement>>(),
+    "revision-1": new Map<string, Set<HTMLElement>>(),
   };
 }
 
-function getElementRects(elements: HTMLElement[]): RectLike[] {
-  return elements.map((element) => element.getBoundingClientRect());
+function getEndpointRectGroups(
+  endpoints: Map<string, Set<HTMLElement>>,
+): RectLike[][] {
+  return Array.from(endpoints.values(), (elements) =>
+    Array.from(elements, (element) => element.getBoundingClientRect()),
+  );
 }
 
 export function useMoveConnectorOverlay() {
@@ -49,8 +53,8 @@ export function useMoveConnectorOverlay() {
       const group = buildMoveConnectorGroup({
         moveId,
         containerRect,
-        fromRects: getElementRects(Array.from(elements["revision-0"])),
-        toRects: getElementRects(Array.from(elements["revision-1"])),
+        fromEndpointRectGroups: getEndpointRectGroups(elements["revision-0"]),
+        toEndpointRectGroups: getEndpointRectGroups(elements["revision-1"]),
       });
 
       if (group) {
@@ -62,12 +66,14 @@ export function useMoveConnectorOverlay() {
   }, []);
 
   const registerMoveSegment = useCallback(
-    ({ moveId, revision, element }: MoveSegmentRegistration) => {
+    ({ moveId, endpointId, revision, element }: MoveSegmentRegistration) => {
       const current =
         segmentElementsByMoveIdRef.current.get(moveId) ??
         createMoveSegmentElements();
 
-      current[revision].add(element);
+      const endpointElements = current[revision].get(endpointId) ?? new Set();
+      endpointElements.add(element);
+      current[revision].set(endpointId, endpointElements);
       segmentElementsByMoveIdRef.current.set(moveId, current);
 
       requestAnimationFrame(updatePaths);
@@ -76,18 +82,19 @@ export function useMoveConnectorOverlay() {
   );
 
   const unregisterMoveSegment = useCallback(
-    ({ moveId, revision, element }: MoveSegmentUnregistration) => {
+    ({ moveId, endpointId, revision, element }: MoveSegmentUnregistration) => {
       const current = segmentElementsByMoveIdRef.current.get(moveId);
 
       if (!current) {
         return;
       }
 
-      current[revision].delete(element);
+      const endpointElements = current[revision].get(endpointId);
+      endpointElements?.delete(element);
+      if (endpointElements?.size === 0) current[revision].delete(endpointId);
 
       if (
-        current["revision-0"].size === 0 &&
-        current["revision-1"].size === 0
+        current["revision-0"].size === 0 && current["revision-1"].size === 0
       ) {
         segmentElementsByMoveIdRef.current.delete(moveId);
       } else {

@@ -549,14 +549,18 @@ The artifact manifest replaces `VisualizeResponse` as the root frontend
 contract. Source, tree, and XML data have separate explicit types and loading
 states.
 
-The first source view loads the selected file and its focused blocks. File and
-move navigation can request additional files or ranges. Selecting a cross-file
-move loads both endpoint windows before navigating.
+The source view lists every manifest file as a collapsible card. Only expanded
+cards request focused source projections, so the list can represent a large
+change without eagerly downloading every file. File and move navigation can
+request additional files or ranges. Selecting a move narrows the list to its
+participating files by default and offers one action to reveal every endpoint.
 
-Move endpoint badges remain available even when connector lines cannot be
-drawn. Connectors are computed only between currently rendered endpoint DOM
-elements. This allows later source-row virtualization without requiring hidden
-rows to retain fake geometry.
+Move endpoint badges remain available when code is collapsed. A collapsed
+participating file registers revision-specific header proxies with the same SVG
+overlay used by rendered code; expanding it replaces those proxies with exact
+source endpoints. This preserves cross-file provenance without eagerly loading
+code or inventing off-screen coordinates, and it remains compatible with later
+source-row virtualization.
 
 The artifact renderer should adapt the proven legacy highlighting and SVG
 connector behavior to artifact-local identities instead of replacing it with a
@@ -662,9 +666,10 @@ Status: complete.
 - The established yellow/amber move treatment and neutral unchanged-source
   surface are restored.
 - The legacy SVG connector geometry is reused for rendered artifact endpoints.
-- Selecting a cross-file move renders every participating file under one
-  connector overlay; same-file, cross-file, one-to-many, and many-to-one
-  geometry use the same registration model.
+- Selecting a cross-file move represents every participating file under one
+  connector overlay; expanded files register rendered source endpoints and
+  collapsed files register header proxies. Same-file, cross-file,
+  one-to-many, and many-to-one geometry use the same registration model.
 
 This slice restores the essential source-level move inspection behavior. The
 remaining Phase 4 work concerns the other panes, richer selection/navigation
@@ -698,6 +703,14 @@ polling, supports durable cancellation, and opens the completed artifact
 through the projection interface. The synchronous history endpoint remains
 only as a temporary compatibility path.
 
+The Source view now renders the complete manifest as a searchable,
+GitHub-inspired list of collapsible file cards. Source remains lazy per file.
+For a selected move, expanded cards expose exact semantic endpoints and
+collapsed cards expose file-header endpoint proxies, allowing one SVG overlay
+to communicate same-file and cross-file provenance. Rendered fragments that
+belong to one semantic endpoint are combined into one outline, so line wrapping
+does not imply multiple moves.
+
 Move rendering must communicate semantic move groups rather than individual
 rendered lines. One multi-line source endpoint and its destination endpoint
 should each have one bounding outline around the complete contiguous moved
@@ -716,7 +729,7 @@ endpoint or relationship so one move cannot be mistaken for several moves.
   many-to-one moves. Draw connectors only for rendered endpoints.
 - Restore the established yellow/amber move language and use a neutral
   near-black background for unchanged source.
-- Add file-list filters when the manifest navigator needs them.
+- Add file-list filters when the manifest navigator needs them. (Complete.)
 - Add row virtualization if focused rendering measurements justify it.
 - Remove the monolithic response path and delete destructive pruning code only
   after the artifact renderer has move-inspection feature parity and
@@ -739,8 +752,8 @@ endpoint or relationship so one move cannot be mistaken for several moves.
   at all.
 - Restarting a Flask worker does not lose an artifact, run state, or progress
   history.
-- The default source view downloads and renders only focused blocks for the
-  selected file.
+- The default source view lists every changed file but downloads and renders
+  focused blocks only for expanded files.
 - Every omitted source range is an explicit expandable gap.
 - Any source range can be revealed without rerunning native analysis.
 - Cross-file move navigation loads and identifies both endpoints.
