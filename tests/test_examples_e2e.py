@@ -199,9 +199,13 @@ def test_artifact_interface_serves_real_bounded_projections(
     xml = client.get(f"/api/artifacts/{artifact_id}/xml")
     assert xml.status_code == 200
     assert "mv:id" in xml.get_json()["xml"]
+    assert_artifact_projection_identities(client, manifest)
 
 
-def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
+def test_blocks_swapped_example_accepts_single_root_artifact_inputs(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
     original_root = ET.fromstring(example_path.read_text(encoding="utf-8"))
@@ -212,7 +216,7 @@ def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
         "/api/visualize",
         data={
             "srcdiff_xml": example_path.read_text(encoding="utf-8"),
-            "include_skipped_tags": "false",
+            "response_format": "artifact",
         },
     )
 
@@ -228,14 +232,18 @@ def test_blocks_swapped_example_accepts_single_file_srcdiff_inputs() -> None:
             f"{response.status_code}: {error_message}"
         )
 
-    payload = response.get_json()
-    assert isinstance(payload, dict)
-    assert [file_payload["filename"] for file_payload in payload["files"]] == [
+    manifest = response.get_json()
+    assert isinstance(manifest, dict)
+    assert [_file["filename"] for _file in manifest["files"]] == [
         original_filename
     ]
 
-    moved_root = ET.fromstring(payload["moved_srcdiff_xml"])
+    _artifact_id = manifest["artifact_id"]
+    _xml_response = client.get(f"/api/artifacts/{_artifact_id}/xml")
+    assert _xml_response.status_code == 200
+    moved_root = ET.fromstring(_xml_response.get_json()["xml"])
     assert moved_root.attrib.get("filename") == original_filename
+    assert_artifact_projection_identities(client, manifest)
 
 
 def test_noop_single_file_srcdiff_keeps_file_tree_and_source_when_pruned() -> None:
@@ -326,6 +334,96 @@ def assert_move_node_ids_exist_in_tree(payload: dict[str, object]) -> None:
                 assert node_id in tree_paths, (
                     f"Move node id from {key} is missing from tree paths: {node_id}"
                 )
+
+
+def assert_artifact_projection_identities(client, manifest: dict[str, object]) -> None:
+    artifact_id = manifest["artifact_id"]
+    moves = manifest["moves"]
+    files = manifest["files"]
+    assert isinstance(artifact_id, str)
+    assert isinstance(moves, dict)
+    assert isinstance(files, list)
+    move_items = moves["items"]
+    assert isinstance(move_items, list)
+    assert move_items
+
+    summary_node_ids = {
+        node_id
+        for move in move_items
+        for key in ("from_node_ids", "to_node_ids")
+        for node_id in move[key]
+    }
+    source_node_ids: set[str] = set()
+    tree_node_ids: set[str] = set()
+    for file_payload in files:
+        assert isinstance(file_payload, dict)
+        file_id = file_payload["file_id"]
+        source_response = client.get(
+            f"/api/artifacts/{artifact_id}/files/{file_id}/source"
+            "?focus=moves&context=0"
+        )
+        tree_response = client.get(
+            f"/api/artifacts/{artifact_id}/files/{file_id}/tree?focus=moves"
+        )
+        assert source_response.status_code == 200
+        assert tree_response.status_code == 200
+        collect_artifact_source_move_ids(source_response.get_json(), source_node_ids)
+        collect_artifact_tree_move_ids(tree_response.get_json()["root"], tree_node_ids)
+
+    xml_response = client.get(f"/api/artifacts/{artifact_id}/xml")
+    assert xml_response.status_code == 200
+    xml_node_ids = {
+        anchor["node_id"]
+        for anchor in xml_response.get_json()["anchors"]
+        if anchor["kind"] == "move"
+    }
+    node_info_ids = set()
+    for node_id in summary_node_ids:
+        node_response = client.get(
+            f"/api/artifacts/{artifact_id}/tree/nodes/{node_id}"
+        )
+        assert node_response.status_code == 200
+        node_info_ids.add(node_response.get_json()["node"]["node_id"])
+
+    assert source_node_ids == summary_node_ids
+    assert tree_node_ids == summary_node_ids
+    assert xml_node_ids == summary_node_ids
+    assert node_info_ids == summary_node_ids
+
+
+def collect_artifact_source_move_ids(
+    projection: dict[str, object],
+    node_ids: set[str],
+) -> None:
+    blocks = projection["blocks"]
+    assert isinstance(blocks, list)
+    for block in blocks:
+        assert isinstance(block, dict)
+        for row in block.get("rows", []):
+            for line in (row["left"], row["right"]):
+                if line is None:
+                    continue
+                node_ids.update(
+                    anchor["node_id"]
+                    for anchor in line["anchors"]
+                    if anchor["kind"] == "move"
+                )
+
+
+def collect_artifact_tree_move_ids(
+    node: dict[str, object] | None,
+    node_ids: set[str],
+) -> None:
+    assert node is not None
+    if node["kind"] == "move":
+        node_id = node["node_id"]
+        assert isinstance(node_id, str)
+        node_ids.add(node_id)
+    children = node["children"]
+    assert isinstance(children, list)
+    for child in children:
+        assert isinstance(child, dict)
+        collect_artifact_tree_move_ids(child, node_ids)
 
 
 def collect_tree_records(

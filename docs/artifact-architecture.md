@@ -743,6 +743,50 @@ Discontinuous, one-to-many, and many-to-one moves may have multiple endpoint
 regions, but each box and connector must correspond to an actual semantic
 endpoint or relationship so one move cannot be mistaken for several moves.
 
+#### Parity audit: projection identity and file ownership
+
+The first compatibility-retirement audit slice completed on 2026-09-24. It
+does not remove or authorize removal of either compatibility path.
+
+Packaged-tool endpoint tests now exercise an archive input with a move into a
+new file and a single-root input with a same-file move. Both build artifacts
+through the normal upload route, then verify that the manifest, source, XML,
+tree, and single-node projections use the same endpoint IDs. A focused
+projection matrix additionally covers same-file, cross-file, new-file, and
+deleted-file moves. It checks explicit empty revision sources for new and
+deleted files and confirms that source anchors remain owned by the manifest
+file identified by each endpoint ID.
+
+The reordered-unit case publishes equivalent archive artifacts in opposite
+unit orders. Manifest order follows the canonical XML order, while the logical
+files and their move endpoint IDs remain stable. This demonstrates that the
+artifact identity used by Source, XML, the structure tree, Node Info, and Move
+Summary does not derive from archive unit position.
+
+The audit also found these remaining compatibility callers:
+
+- `POST /api/visualize` and the synchronous
+  `POST /api/history/pairs/{pair_number}/visualize` route still default to the
+  monolithic response unless `response_format=artifact` is explicit. The
+  current frontend requests artifacts, and durable history runs have replaced
+  the synchronous history route in the normal UI.
+- `scripts/measure_visualization_payload.py` intentionally invokes the
+  monolithic builder for baseline and regression measurements.
+- The frontend still accepts `VisualizeResponse` and retains the legacy render
+  branch, selection hook, components, fixtures, and contract validation for
+  non-artifact callers.
+- Compatibility route and workflow tests call the monolithic builder directly
+  to preserve the old contract while migration remains reversible.
+
+Destructive pruning remains confined to the compatibility projection in
+`workflow/payload.py`: it prunes files and trees, conditionally rebuilds
+filtered XML and revision sources, and then prunes move results. Request parsing
+still accepts `include_skipped_tags` and `pruning_level` for those callers. The
+canonical artifact builder also reuses `build_pruned_revision_files()` with
+the complete, unpruned XML solely to calculate revision-local source spans.
+That non-destructive responsibility must be renamed or separated before the
+old pruning module can be deleted.
+
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts. (Complete.)
 - Extend source projections with revision-local line and column spans, then
