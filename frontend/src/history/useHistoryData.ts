@@ -6,7 +6,7 @@ import {
   fetchHistoryStatus,
   visualizeHistoryPair,
 } from "../api";
-import type { VisualizationResult } from "../types";
+import type { ArtifactManifest } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
@@ -18,7 +18,7 @@ import type {
 
 export function useHistoryData(
   enabled: boolean,
-  onVisualization: (payload: VisualizationResult) => void,
+  onVisualization: (payload: ArtifactManifest) => void,
 ) {
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);
   const [pairs, setPairs] = useState<HistoryPairListItem[]>([]);
@@ -45,10 +45,7 @@ export function useHistoryData(
     setError(null);
     setSelectedPair(null);
 
-    void Promise.all([
-      fetchHistoryStatus(),
-      fetchHistoryPairs(selection),
-    ])
+    void Promise.all([fetchHistoryStatus(), fetchHistoryPairs(selection)])
       .then(([statusDocument, pairDocument]) => {
         if (!isActive) return;
         setStatus(statusDocument);
@@ -75,7 +72,9 @@ export function useHistoryData(
       const document = await fetchHistoryPair(pairNumber);
       setSelectedPair(document.pair);
     } catch (loadError) {
-      setError(errorMessage(loadError, `Unable to load commit pair ${pairNumber}.`));
+      setError(
+        errorMessage(loadError, `Unable to load commit pair ${pairNumber}.`),
+      );
     } finally {
       setIsLoadingPair(false);
     }

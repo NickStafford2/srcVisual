@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import type { InputMode, ProgressLogEntry } from "../../srcdiff/useSrcDiffData";
-import type { VisualizationResult } from "../../types";
+import type { ArtifactManifest } from "../../types";
 import { ExampleInput } from "./ExampleInput";
 import { InputModeToggle } from "./InputModeToggle";
 import { InputPanelSubmitRow } from "./InputPanelSubmitRow";
@@ -19,7 +19,7 @@ type InputPanelProps = {
   error: string | null;
   progressMessage: string | null;
   progressMessages: ProgressLogEntry[];
-  data: VisualizationResult | null;
+  data: ArtifactManifest | null;
   exampleFilenames: string[];
   examplesError: string | null;
   isLoadingExample: boolean;

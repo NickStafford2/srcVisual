@@ -681,9 +681,10 @@ Status: complete.
   collapsed files register header proxies. Same-file, cross-file,
   one-to-many, and many-to-one geometry use the same registration model.
 
-This slice restores the essential source-level move inspection behavior. The
-remaining Phase 4 work concerns the other panes, richer selection/navigation
-state, and removal of the compatibility interface.
+This slice restored the essential source-level move inspection behavior. The
+remaining pane, selection, and navigation work is now complete, and the
+frontend compatibility renderer has been removed. Backend compatibility
+retirement remains separate and evidence-gated.
 
 ### Phase 3: durable history runs
 
@@ -752,8 +753,9 @@ endpoint or relationship so one move cannot be mistaken for several moves.
 
 #### Parity audit: projection identity and file ownership
 
-The first compatibility-retirement audit slice completed on 2026-09-24. It
-does not remove or authorize removal of either compatibility path.
+The first compatibility-retirement audit slice completed on 2026-09-24. Its
+parity evidence authorized removal of the frontend compatibility renderer,
+but not the backend compatibility routes or payload builder.
 
 Packaged-tool endpoint tests now exercise an archive input with a move into a
 new file and a single-root input with a same-file move. Both build artifacts
@@ -777,9 +779,11 @@ The audit also found these remaining compatibility callers:
   monolithic response unless `response_format=artifact` is explicit. The
   current frontend requests artifacts, and durable history runs have replaced
   the synchronous history route in the normal UI.
-- The frontend still accepts `VisualizeResponse` and retains the legacy render
-  branch, selection hook, components, fixtures, and contract validation for
-  non-artifact callers.
+- The frontend now accepts only `ArtifactManifest` and renders only artifact
+  projections. The legacy render branch, selection state, tree and source
+  containers, fixtures, and monolithic contract validation have been removed.
+  Uploads explicitly request `response_format=artifact`; they do not send the
+  destructive-pruning controls.
 - Compatibility route and workflow tests call the monolithic builder directly
   to preserve the old contract while migration remains reversible.
 
@@ -809,6 +813,8 @@ removal cannot accidentally remove canonical source-span generation.
   near-black background for unchanged source. (Complete.)
 - Add file-list filters when the manifest navigator needs them. (Complete.)
 - Add row virtualization if focused rendering measurements justify it.
+- Remove the frontend monolithic-response renderer and its legacy state,
+  components, fixtures, and validation. (Complete.)
 - Remove the monolithic response path and delete destructive pruning code only
   after the artifact renderer has move-inspection feature parity and
   compatibility coverage passes.

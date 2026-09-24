@@ -132,13 +132,14 @@ afterEach(() => {
 it("loads artifact projections and defers XML until its tab opens", async () => {
   const user = userEvent.setup();
   let xmlRequests = 0;
+  let visualizeFormData: FormData | null = null;
   vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
     "00000000-0000-4000-8000-000000000000",
   );
   vi.stubGlobal("EventSource", MockEventSource);
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url === "/api/examples") {
         return jsonResponse({ examples: ["e2e_generated_example.xml"] });
@@ -146,14 +147,22 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
       if (url === "/api/examples/e2e_generated_example.xml") {
         return jsonResponse({ content: "<unit />" });
       }
-      if (url === "/api/visualize") return jsonResponse(manifest);
+      if (url === "/api/visualize") {
+        if (!(init?.body instanceof FormData)) {
+          throw new Error("Expected visualization FormData.");
+        }
+        visualizeFormData = init.body;
+        return jsonResponse(manifest);
+      }
       if (url.includes(`/files/${file.file_id}/source?`)) {
         return jsonResponse(source);
       }
       if (url.includes(`/files/${file.file_id}/tree?`)) {
         return jsonResponse(tree);
       }
-      if (url.includes(`/tree/nodes/${encodeURIComponent(file.root_node_id)}`)) {
+      if (
+        url.includes(`/tree/nodes/${encodeURIComponent(file.root_node_id)}`)
+      ) {
         return jsonResponse({ schema_version: 1, node: tree.root });
       }
       if (url.endsWith("/xml")) {
@@ -180,6 +189,11 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   await user.click(await screen.findByRole("button", { name: "example.xml" }));
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
+  await waitFor(() => {
+    expect(visualizeFormData?.get("response_format")).toBe("artifact");
+    expect(visualizeFormData?.has("pruning_level")).toBe(false);
+    expect(visualizeFormData?.has("include_skipped_tags")).toBe(false);
+  });
   expect(await screen.findByText("old();")).toBeInTheDocument();
   expect(await screen.findByText("unit: example.cpp")).toBeInTheDocument();
   expect(xmlRequests).toBe(0);

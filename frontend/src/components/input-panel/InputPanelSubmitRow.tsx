@@ -1,11 +1,11 @@
-import type { VisualizationResult } from "../../types";
+import type { ArtifactManifest } from "../../types";
 import { StatusPill } from "./StatusPill";
 
 type InputPanelSubmitRowProps = {
   isLoading: boolean;
   error: string | null;
   progressMessage: string | null;
-  data: VisualizationResult | null;
+  data: ArtifactManifest | null;
 };
 
 export function InputPanelSubmitRow({

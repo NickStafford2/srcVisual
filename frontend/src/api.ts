@@ -5,11 +5,7 @@ import type {
   ArtifactTreeNode,
   ArtifactTreeProjection,
   ArtifactXmlProjection,
-  VisualizationResult,
-  VisualizeResponse,
 } from "./types";
-import { isArtifactManifest } from "./types";
-import type { SrcDiffTreeNode } from "./srcdiff/types";
 import type {
   HistoryPairDocument,
   HistoryPairPageDocument,
@@ -31,7 +27,10 @@ export type VisualizationProgressEvent = {
 
 export async function fetchExampleList(): Promise<string[]> {
   const response = await fetch("/api/examples");
-  const payload = (await response.json()) as { examples?: string[]; error?: string };
+  const payload = (await response.json()) as {
+    examples?: string[];
+    error?: string;
+  };
 
   if (!response.ok) {
     throw new Error(payload.error ?? "Unable to load examples.");
@@ -68,7 +67,9 @@ export async function fetchHistoryPairs(
 ): Promise<HistoryPairPageDocument> {
   const parameters = new URLSearchParams({ selection, limit: "50" });
   if (after !== undefined) parameters.set("after", String(after));
-  const payload = await fetchJson(`/api/history/pairs?${parameters.toString()}`);
+  const payload = await fetchJson(
+    `/api/history/pairs?${parameters.toString()}`,
+  );
   if (
     payload.schema_version !== 1 ||
     typeof payload.pairs !== "object" ||
@@ -103,7 +104,8 @@ export async function visualizeHistoryPair(
   const payload: unknown = await response.json();
   if (!response.ok) {
     throw new Error(
-      responseError(payload) ?? `Unable to visualize commit pair ${pairNumber}.`,
+      responseError(payload) ??
+        `Unable to visualize commit pair ${pairNumber}.`,
     );
   }
   if (!isHistoryRunCreationDocument(payload)) {
@@ -111,7 +113,10 @@ export async function visualizeHistoryPair(
   }
 
   observer.onRun?.(payload.run);
-  const eventStream = openHistoryRunEventStream(payload.run.run_id, observer.onEvent);
+  const eventStream = openHistoryRunEventStream(
+    payload.run.run_id,
+    observer.onEvent,
+  );
   let run: HistoryRun;
   try {
     run = await awaitCompletedHistoryRun(payload.run, observer.onRun);
@@ -197,58 +202,44 @@ async function fetchJson(url: string): Promise<Record<string, unknown>> {
     error?: string;
   };
   if (!response.ok) {
-    throw new Error(payload.error ?? `Request failed with status ${response.status}.`);
+    throw new Error(
+      payload.error ?? `Request failed with status ${response.status}.`,
+    );
   }
   return payload;
 }
 
 export async function visualizeSrcDiff(
   formData: FormData,
-): Promise<VisualizationResult> {
+): Promise<ArtifactManifest> {
   formData.set("response_format", "artifact");
   const response = await fetch("/api/visualize", {
     method: "POST",
     body: formData,
   });
 
-  const payload = await parseVisualizeResponse(response);
+  const payload = await parseArtifactResponse(response);
 
-  if (!response.ok || "error" in payload) {
-    throw new Error("error" in payload ? payload.error : "Upload failed.");
+  if (!response.ok) {
+    throw new Error(responseError(payload) ?? "Upload failed.");
   }
 
-  assertVisualizationResult(payload);
+  assertArtifactManifest(payload);
 
   return payload;
 }
 
-async function parseVisualizeResponse(
-  response: Response,
-): Promise<VisualizeResponse | ArtifactManifest | { error: string }> {
+async function parseArtifactResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    return (await response.json()) as
-      | VisualizeResponse
-      | ArtifactManifest
-      | { error: string };
+    return await response.json();
   }
 
   const text = await response.text();
   return {
     error: text.trim() || `Upload failed with status ${response.status}.`,
   };
-}
-
-function assertVisualizationResult(
-  payload: VisualizationResult,
-): asserts payload is VisualizationResult {
-  if (isArtifactManifest(payload)) {
-    assertArtifactManifest(payload);
-    return;
-  }
-  assertVisualizeResponseContract(payload);
-  assertVisualizeResponseHasXmlSpans(payload);
 }
 
 function assertArtifactManifest(
@@ -280,9 +271,7 @@ function isHistoryRunCreationDocument(
   );
 }
 
-function isHistoryRunDocument(
-  payload: unknown,
-): payload is HistoryRunDocument {
+function isHistoryRunDocument(payload: unknown): payload is HistoryRunDocument {
   if (typeof payload !== "object" || payload === null) return false;
   const document = payload as Partial<HistoryRunDocument>;
   return document.schema_version === 1 && isHistoryRun(document.run);
@@ -294,7 +283,8 @@ function isHistoryRun(value: unknown): value is HistoryRun {
   return (
     typeof run.run_id === "string" &&
     run.kind === "history-visualization" &&
-    typeof run.history_pair === "number" && run.history_pair > 0 &&
+    typeof run.history_pair === "number" &&
+    run.history_pair > 0 &&
     (run.artifact_id === null || typeof run.artifact_id === "string") &&
     typeof run.cancellation_requested === "boolean" &&
     ["queued", "running", "completed", "failed", "cancelled"].includes(
@@ -383,7 +373,9 @@ export async function fetchArtifactNode(
     `/api/artifacts/${artifactId}/tree/nodes/${encodeURIComponent(nodeId)}`,
   );
   if (payload.schema_version !== 1 || typeof payload.node !== "object") {
-    throw new Error("Backend returned an unsupported artifact node projection.");
+    throw new Error(
+      "Backend returned an unsupported artifact node projection.",
+    );
   }
   return payload.node as unknown as ArtifactTreeNode;
 }
@@ -402,42 +394,6 @@ export async function fetchArtifactXml(
   return payload as unknown as ArtifactXmlProjection;
 }
 
-function assertVisualizeResponseHasXmlSpans(
-  payload: VisualizeResponse,
-): asserts payload is VisualizeResponse {
-  for (const file of payload.files) {
-    if (!file.tree) continue;
-
-    assertTreeHasXmlSpans(file.tree, file.filename);
-  }
-}
-
-function assertVisualizeResponseContract(
-  payload: VisualizeResponse,
-): asserts payload is VisualizeResponse {
-  if (typeof payload.moved_srcdiff_xml !== "string") {
-    throw new Error("Backend response is missing `moved_srcdiff_xml`.");
-  }
-
-  if (typeof payload.source_filename !== "string") {
-    throw new Error("Backend response is missing `source_filename`.");
-  }
-
-  if (!Array.isArray(payload.files)) {
-    throw new Error("Backend response is missing `files`.");
-  }
-
-  if (typeof payload.unit_count !== "number") {
-    throw new Error("Backend response is missing `unit_count`.");
-  }
-
-  if (payload.unit_count !== payload.files.length) {
-    throw new Error(
-      `Backend response has mismatched unit count: unit_count=${payload.unit_count}, files=${payload.files.length}.`,
-    );
-  }
-}
-
 export function openVisualizationProgressStream(
   token: string,
   onEvent: (event: VisualizationProgressEvent) => void,
@@ -454,32 +410,4 @@ export function openVisualizationProgressStream(
   return {
     close: () => eventSource.close(),
   };
-}
-
-function assertTreeHasXmlSpans(
-  root: SrcDiffTreeNode,
-  filename: string,
-): asserts root is SrcDiffTreeNode {
-  const stack: SrcDiffTreeNode[] = [root];
-
-  while (stack.length > 0) {
-    const node = stack.pop()!;
-
-    if (!node.xml_span) {
-      throw new Error(
-        [
-          "Backend returned SrcDiffTreeNode without xml_span.",
-          `filename=${filename}`,
-          `id=${node.id}`,
-          `path=${node.path}`,
-          `tag=${node.tag}`,
-          `label=${node.label}`,
-        ].join(" "),
-      );
-    }
-
-    for (const child of node.children) {
-      stack.push(child);
-    }
-  }
 }
