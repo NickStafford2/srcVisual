@@ -34,9 +34,10 @@ every changed file as a collapsible card but loads source projections only for
 expanded files. Selecting a move can narrow the list to participating files;
 SVG connectors use rendered semantic endpoints when available and collapsed
 file-header proxies otherwise. Omitted ranges remain expandable gaps, tree
-children are paged, and complete XML is fetched only when its tab is opened.
-The old monolithic response and pruning controls remain only as a temporary
-compatibility interface.
+children are paged, and stable tag selection is shared by the structure tree,
+Move Summary, Node Info, and Source navigation. Complete XML is fetched only
+when its tab is opened. The old monolithic response and pruning controls remain
+only as a temporary compatibility interface.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

@@ -11,18 +11,22 @@ type Props = {
   manifest: ArtifactManifest;
   selectedFileId: string;
   selectedMoveId: string | null;
+  selectedNodeId: string | null;
   focus: ArtifactFocusProfile;
   onSelectFile: (fileId: string) => void;
   onSelectMove: (move: ArtifactMoveSummary) => void;
+  onSelectNode: (node: ArtifactTreeNode) => void;
 };
 
 export function ArtifactNavigator({
   manifest,
   selectedFileId,
   selectedMoveId,
+  selectedNodeId,
   focus,
   onSelectFile,
   onSelectMove,
+  onSelectNode,
 }: Props) {
   const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +111,8 @@ export function ArtifactNavigator({
             key={`${root.node_id}-${focus}`}
             artifactId={manifest.artifact_id}
             initialNode={root}
+            selectedNodeId={selectedNodeId}
+            onSelectNode={onSelectNode}
           />
         ) : null}
       </div>
@@ -117,9 +123,13 @@ export function ArtifactNavigator({
 function ArtifactTreeBranch({
   artifactId,
   initialNode,
+  selectedNodeId,
+  onSelectNode,
 }: {
   artifactId: string;
   initialNode: ArtifactTreeNode;
+  selectedNodeId: string | null;
+  onSelectNode: (node: ArtifactTreeNode) => void;
 }) {
   const [node, setNode] = useState(initialNode);
   const [expanded, setExpanded] = useState(true);
@@ -156,21 +166,39 @@ function ArtifactTreeBranch({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={toggle}
-        className="flex w-full items-center gap-1 py-0.5 text-left text-slate-300 hover:text-white"
+      <div
+        className={`flex items-center rounded ${
+          selectedNodeId === node.node_id ? "bg-sky-400/10" : ""
+        }`}
       >
-        <span className="w-3 text-slate-600">
-          {node.child_count > 0 ? (expanded ? "▾" : "▸") : "·"}
-        </span>
-        <span className={node.kind === "move" ? "text-diff-move-1" : ""}>
-          {node.label}
-        </span>
-        {!node.children_complete ? (
-          <span className="text-slate-600">({node.child_count})</span>
-        ) : null}
-      </button>
+        {node.child_count > 0 ? (
+          <button
+            type="button"
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${node.label}`}
+            onClick={toggle}
+            className="w-5 shrink-0 py-0.5 text-slate-600 hover:text-white"
+          >
+            {expanded ? "▾" : "▸"}
+          </button>
+        ) : (
+          <span className="w-5 shrink-0 text-center text-slate-600">·</span>
+        )}
+        <button
+          type="button"
+          onClick={() => onSelectNode(node)}
+          aria-pressed={selectedNodeId === node.node_id}
+          className={`min-w-0 flex-1 py-0.5 text-left hover:text-white ${
+            selectedNodeId === node.node_id ? "text-sky-200" : "text-slate-300"
+          }`}
+        >
+          <span className={node.kind === "move" ? "text-diff-move-1" : ""}>
+            {node.label}
+          </span>
+          {!node.children_complete ? (
+            <span className="ml-1 text-slate-600">({node.child_count})</span>
+          ) : null}
+        </button>
+      </div>
       {expanded && node.children.length > 0 ? (
         <div className="ml-3 border-l border-white/10 pl-2">
           {node.children.map((child) => (
@@ -178,6 +206,8 @@ function ArtifactTreeBranch({
               key={child.node_id}
               artifactId={artifactId}
               initialNode={child}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={onSelectNode}
             />
           ))}
         </div>

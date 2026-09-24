@@ -199,6 +199,30 @@ def read_node_children(
     }
 
 
+def read_artifact_node(
+    *, artifact_root: Path, artifact_id: str, node_id: str
+) -> dict[str, Any]:
+    artifact_path, _ = _open_artifact(artifact_root, artifact_id)
+    file_id, ordinal = _parse_node_id(node_id)
+    _read_file_row(artifact_path, file_id)
+    with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:
+        row = database.execute(
+            """
+            SELECT child_count, payload
+              FROM nodes
+             WHERE file_id = ? AND node_ordinal = ?
+            """,
+            (file_id, ordinal),
+        ).fetchone()
+    if row is None:
+        raise FileNotFoundError("Artifact node does not exist.")
+    return {
+        "schema_version": 1,
+        "artifact_id": artifact_id,
+        "node": _project_flat_node(file_id, ordinal, row[0], row[1]),
+    }
+
+
 def _open_artifact(
     artifact_root: Path, artifact_id: str
 ) -> tuple[Path, dict[str, Any]]:

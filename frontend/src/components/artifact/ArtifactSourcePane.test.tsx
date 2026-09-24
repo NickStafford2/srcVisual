@@ -83,6 +83,8 @@ describe("ArtifactSourcePane", () => {
         artifactId="artifact-1"
         files={[file, secondFile]}
         selectedFileId="f-1"
+        selectedNodeId={null}
+        active
         focus="changes-and-moves"
         activeMove={null}
         onFocusChange={vi.fn()}
@@ -119,6 +121,11 @@ describe("ArtifactSourcePane", () => {
   });
 
   it("renders exact move fragments with the established move color", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
     vi.mocked(fetchArtifactSource).mockResolvedValue({
       ...projection,
       focus_profile: "moves",
@@ -198,6 +205,8 @@ describe("ArtifactSourcePane", () => {
         artifactId="artifact-1"
         files={[file]}
         selectedFileId="f-1"
+        selectedNodeId={activeMove.from_node_ids[0]}
+        active
         focus="moves"
         activeMove={activeMove}
         onFocusChange={vi.fn()}
@@ -211,6 +220,8 @@ describe("ArtifactSourcePane", () => {
     expect(moveSegments).toHaveLength(2);
     expect(moveSegments[0]).toHaveTextContent("moved");
     expect(moveSegments[0]).toHaveClass("bg-diff-move-1/25");
+    expect(moveSegments[0]).toHaveClass("decoration-sky-300");
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
     expect(screen.getByLabelText("Artifact source file example.cpp")).toHaveClass(
       "bg-black",
     );
@@ -223,6 +234,8 @@ describe("ArtifactSourcePane", () => {
         artifactId="artifact-1"
         files={[file, secondFile]}
         selectedFileId="f-1"
+        selectedNodeId={null}
+        active
         focus="moves"
         activeMove={{
           ...activeMove,

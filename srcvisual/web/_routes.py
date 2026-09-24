@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 
 from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.artifacts.projections import (
+    read_artifact_node,
     read_artifact_manifest,
     read_artifact_xml,
     read_node_children,
@@ -152,6 +153,17 @@ def artifact_node_children(
             node_id=node_id,
             offset=offset,
             limit=limit,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/tree/nodes/<path:node_id>")
+def artifact_node(artifact_id: str, node_id: str) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_artifact_node(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            node_id=node_id,
         )
     )
 

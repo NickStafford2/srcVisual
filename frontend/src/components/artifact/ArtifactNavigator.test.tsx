@@ -20,6 +20,10 @@ const root: ArtifactTreeNode = {
   label: "unit: one.cpp",
   kind: "plain",
   move_id: null,
+  srcdiff_attributes: {},
+  xml_span: null,
+  revision_0_span: null,
+  revision_1_span: null,
   child_count: 101,
   children_complete: false,
   children: [],
@@ -97,14 +101,17 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
   const user = userEvent.setup();
   const onSelectFile = vi.fn();
   const onSelectMove = vi.fn();
+  const onSelectNode = vi.fn();
   render(
     <ArtifactNavigator
       manifest={manifest}
       selectedFileId="f-one"
       selectedMoveId={null}
+      selectedNodeId={null}
       focus="changes-and-moves"
       onSelectFile={onSelectFile}
       onSelectMove={onSelectMove}
+      onSelectNode={onSelectNode}
     />,
   );
 
@@ -115,6 +122,10 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
     0,
   );
   expect(await screen.findByText("function: moved")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /function: moved/ }));
+  expect(onSelectNode).toHaveBeenCalledWith(
+    expect.objectContaining({ node_id: "f-one:n00000001" }),
+  );
 
   await user.click(screen.getByRole("button", { name: "move-1" }));
   expect(onSelectMove).toHaveBeenCalledWith(manifest.moves.items[0]);

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.artifacts.projections import (
+    read_artifact_node,
     read_artifact_manifest,
     read_artifact_xml,
     read_node_children,
@@ -191,6 +192,15 @@ def test_tree_projection_is_bounded_and_children_are_pageable(tmp_path) -> None:
     )
     assert children["children"][0]["kind"] == "insert"
     assert children["next_offset"] == 2
+
+    node = read_artifact_node(
+        artifact_root=tmp_path,
+        artifact_id=published.artifact_id,
+        node_id=children["children"][0]["node_id"],
+    )
+    assert node["schema_version"] == 1
+    assert node["node"]["kind"] == "insert"
+    assert node["node"]["revision_1_span"]["start_line"] == 2
 
 
 def _publish_fixture(tmp_path):

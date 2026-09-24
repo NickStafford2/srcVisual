@@ -143,6 +143,10 @@ export interface ArtifactTreeNode {
   label: string;
   kind: "plain" | "delete" | "insert" | "move";
   move_id: string | null;
+  srcdiff_attributes: Record<string, unknown>;
+  xml_span: SourceCodeSpan | null;
+  revision_0_span: SourceCodeSpan | null;
+  revision_1_span: SourceCodeSpan | null;
   child_count: number;
   children_complete: boolean;
   children: ArtifactTreeNode[];

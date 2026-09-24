@@ -374,6 +374,19 @@ export async function fetchArtifactNodeChildren(
   )) as unknown as { children: ArtifactTreeNode[]; next_offset: number | null };
 }
 
+export async function fetchArtifactNode(
+  artifactId: string,
+  nodeId: string,
+): Promise<ArtifactTreeNode> {
+  const payload = await fetchJson(
+    `/api/artifacts/${artifactId}/tree/nodes/${encodeURIComponent(nodeId)}`,
+  );
+  if (payload.schema_version !== 1 || typeof payload.node !== "object") {
+    throw new Error("Backend returned an unsupported artifact node projection.");
+  }
+  return payload.node as unknown as ArtifactTreeNode;
+}
+
 export async function fetchArtifactXml(artifactId: string): Promise<string> {
   const payload = await fetchJson(`/api/artifacts/${artifactId}/xml`);
   if (typeof payload.xml !== "string") {

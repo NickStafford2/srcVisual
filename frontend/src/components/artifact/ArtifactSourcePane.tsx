@@ -12,6 +12,8 @@ type Props = {
   artifactId: string;
   files: ArtifactFileSummary[];
   selectedFileId: string;
+  selectedNodeId: string | null;
+  active: boolean;
   focus: ArtifactFocusProfile;
   activeMove: ArtifactMoveSummary | null;
   onFocusChange: (focus: ArtifactFocusProfile) => void;
@@ -21,6 +23,8 @@ export function ArtifactSourcePane({
   artifactId,
   files,
   selectedFileId,
+  selectedNodeId,
+  active,
   focus,
   activeMove,
   onFocusChange,
@@ -139,6 +143,8 @@ export function ArtifactSourcePane({
               focus={focus}
               expanded={expandedFileIds.has(file.file_id)}
               activeMove={activeMove}
+              selectedNodeId={selectedNodeId}
+              active={active}
               onToggle={() => toggleFile(file.file_id)}
               registerMoveSegment={registerMoveSegment}
               unregisterMoveSegment={unregisterMoveSegment}

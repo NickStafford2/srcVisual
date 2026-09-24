@@ -47,6 +47,29 @@ def test_artifact_source_endpoint_forwards_focus_and_expanded_ranges(
     assert captured["expanded_ranges"] == (((2, 4), (3, 5)),)
 
 
+def test_artifact_node_endpoint_forwards_stable_identity(
+    monkeypatch, tmp_path: Path
+) -> None:
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+
+    def fake_read_artifact_node(**kwargs):
+        captured.update(kwargs)
+        return {"schema_version": 1, "node": {"node_id": kwargs["node_id"]}}
+
+    monkeypatch.setattr(routes_module, "read_artifact_node", fake_read_artifact_node)
+    client = create_app().test_client()
+    artifact_id = "a" * 32
+
+    response = client.get(
+        f"/api/artifacts/{artifact_id}/tree/nodes/f-one:n00000001"
+    )
+
+    assert response.status_code == 200
+    assert captured["artifact_id"] == artifact_id
+    assert captured["node_id"] == "f-one:n00000001"
+
+
 def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
     artifact_id = "a" * 32

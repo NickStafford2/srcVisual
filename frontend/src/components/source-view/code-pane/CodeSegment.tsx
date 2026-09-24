@@ -14,6 +14,7 @@ type CodeSegmentProps = {
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
   moveIdFilter?: string | null;
+  selected?: boolean;
 };
 
 export function CodeSegment({
@@ -22,6 +23,7 @@ export function CodeSegment({
   registerMoveSegment,
   unregisterMoveSegment,
   moveIdFilter,
+  selected = false,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
 
@@ -75,7 +77,12 @@ export function CodeSegment({
         data-highlighted-segment={segment.highlighted ? "true" : "false"}
         data-highlight-kind={segment.kind}
         data-node-id={segment.nodeId ?? undefined}
-        className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
+        className={[
+          getSourceSegmentClasses(segment.kind, segment.highlighted),
+          selected
+            ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"
+            : "",
+        ].join(" ")}
       >
         {text}
       </span>
@@ -93,6 +100,9 @@ export function CodeSegment({
       className={[
         "group relative inline rounded-md",
         getSourceSegmentClasses(segment.kind, segment.highlighted),
+        selected
+          ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"
+          : "",
       ].join(" ")}
     >
       {text}

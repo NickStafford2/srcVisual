@@ -14,12 +14,16 @@ import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useSrcDiffSelection } from "./srcdiff/useSrcDiffSelection";
 import { useHistoryData } from "./history/useHistoryData";
 import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
+import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
+import { ArtifactNodeInfo } from "./components/artifact/ArtifactNodeInfo";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
+import { fetchArtifactNode } from "./api";
 import {
   isArtifactManifest,
   type ArtifactFocusProfile,
   type ArtifactMoveSummary,
+  type ArtifactTreeNode,
 } from "./types";
 
 type MainTabId =
@@ -67,6 +71,13 @@ export default function App() {
   const [selectedArtifactMoveId, setSelectedArtifactMoveId] = useState<
     string | null
   >(null);
+  const [selectedArtifactNodeId, setSelectedArtifactNodeId] = useState<
+    string | null
+  >(null);
+  const [selectedArtifactNode, setSelectedArtifactNode] =
+    useState<ArtifactTreeNode | null>(null);
+  const [artifactNodeLoading, setArtifactNodeLoading] = useState(false);
+  const [artifactNodeError, setArtifactNodeError] = useState<string | null>(null);
   const [artifactFocus, setArtifactFocus] =
     useState<ArtifactFocusProfile>("changes-and-moves");
 
@@ -116,9 +127,41 @@ export default function App() {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
       setSelectedArtifactMoveId(null);
+      setSelectedArtifactNodeId(null);
+      setSelectedArtifactNode(null);
+      setArtifactNodeError(null);
       setArtifactFocus("changes-and-moves");
     }
   }, [artifact]);
+
+  useEffect(() => {
+    if (!artifact || !selectedArtifactNodeId) {
+      setSelectedArtifactNode(null);
+      setArtifactNodeLoading(false);
+      return;
+    }
+    let current = true;
+    setArtifactNodeLoading(true);
+    setArtifactNodeError(null);
+    void fetchArtifactNode(artifact.artifact_id, selectedArtifactNodeId)
+      .then((node) => {
+        if (current) setSelectedArtifactNode(node);
+      })
+      .catch((reason: unknown) => {
+        if (current) {
+          setSelectedArtifactNode(null);
+          setArtifactNodeError(
+            reason instanceof Error ? reason.message : "Unable to load the selected tag.",
+          );
+        }
+      })
+      .finally(() => {
+        if (current) setArtifactNodeLoading(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [artifact, selectedArtifactNodeId]);
 
   const selectedArtifactFile = artifact?.files.find(
     (file) => file.file_id === selectedArtifactFileId,
@@ -130,12 +173,27 @@ export default function App() {
   function selectArtifactFile(fileId: string) {
     setSelectedArtifactFileId(fileId);
     setSelectedArtifactMoveId(null);
+    setSelectedArtifactNodeId(null);
   }
 
   function selectArtifactMove(move: ArtifactMoveSummary) {
     const fileId = moveFileIds(move)[0];
     if (fileId) setSelectedArtifactFileId(fileId);
     setSelectedArtifactMoveId(move.move_id);
+    setSelectedArtifactNodeId(null);
+  }
+
+  function selectArtifactNode(node: ArtifactTreeNode) {
+    setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
+    setSelectedArtifactMoveId(node.move_id);
+    setSelectedArtifactNodeId(node.node_id);
+  }
+
+  function selectArtifactEndpoint(move: ArtifactMoveSummary, nodeId: string) {
+    setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
+    setSelectedArtifactMoveId(move.move_id);
+    setSelectedArtifactNodeId(nodeId);
+    setActiveMainTab("source-code");
   }
 
   return (
@@ -153,9 +211,11 @@ export default function App() {
                   manifest={artifact}
                   selectedFileId={selectedArtifactFileId}
                   selectedMoveId={selectedArtifactMoveId}
-                  focus={artifactFocus}
+                  selectedNodeId={selectedArtifactNodeId}
+                  focus={selectedArtifactMove ? "moves" : artifactFocus}
                   onSelectFile={selectArtifactFile}
                   onSelectMove={selectArtifactMove}
+                  onSelectNode={selectArtifactNode}
                 />
               ) : (
                 <SrcDiffTree
@@ -253,6 +313,8 @@ export default function App() {
                           artifactId={artifact.artifact_id}
                           files={artifact.files}
                           selectedFileId={selectedArtifactFileId}
+                          selectedNodeId={selectedArtifactNodeId}
+                          active={activeMainTab === "source-code"}
                           focus={selectedArtifactMove ? "moves" : artifactFocus}
                           activeMove={selectedArtifactMove ?? null}
                           onFocusChange={setArtifactFocus}
@@ -270,32 +332,23 @@ export default function App() {
                         tabId="highlighted-node-info"
                         activeTabId={activeMainTab}
                       >
-                        <p className="text-sm text-slate-400">
-                          Select a projected tree node to inspect it. Detailed node selection is retained in the legacy view during Phase 2.
-                        </p>
+                        <ArtifactNodeInfo
+                          node={selectedArtifactNode}
+                          loading={artifactNodeLoading}
+                          error={artifactNodeError}
+                          onRevealSource={() => setActiveMainTab("source-code")}
+                        />
                       </TabPanel>
 
                       <TabPanel tabId="move-summary" activeTabId={activeMainTab}>
-                        <div className="space-y-2">
-                          <p className="text-sm text-slate-300">
-                            {artifact.moves.move_count} detected moves
-                          </p>
-                          {artifact.moves.items.map((move) => (
-                            <div
-                              key={move.move_id}
-                              className="rounded border border-white/10 bg-slate-950/60 p-3 text-sm"
-                            >
-                              <span className="font-mono text-diff-move-1">
-                                {move.move_id}
-                              </span>
-                              {move.match_kind ? (
-                                <span className="ml-2 text-slate-400">
-                                  {move.match_kind}
-                                </span>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
+                        <ArtifactMoveSummaryPane
+                          files={artifact.files}
+                          moves={artifact.moves.items}
+                          selectedMoveId={selectedArtifactMoveId}
+                          selectedNodeId={selectedArtifactNodeId}
+                          onSelectMove={selectArtifactMove}
+                          onSelectEndpoint={selectArtifactEndpoint}
+                        />
                       </TabPanel>
                     </>
                   ) : null}
@@ -317,4 +370,8 @@ function moveFileIds(move: ArtifactMoveSummary): string[] {
       ),
     ),
   ];
+}
+
+function fileIdFromNodeId(nodeId: string): string {
+  return nodeId.split(":n", 1)[0];
 }

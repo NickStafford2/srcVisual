@@ -21,6 +21,8 @@ type Props = {
   focus: ArtifactFocusProfile;
   expanded: boolean;
   activeMove: ArtifactMoveSummary | null;
+  selectedNodeId: string | null;
+  active: boolean;
   onToggle: () => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
@@ -32,6 +34,8 @@ export function ArtifactSourceFile({
   focus,
   expanded,
   activeMove,
+  selectedNodeId,
+  active,
   onToggle,
   registerMoveSegment,
   unregisterMoveSegment,
@@ -43,6 +47,7 @@ export function ArtifactSourceFile({
   const [expandedRanges, setExpandedRanges] = useState<
     { left?: { start: number; end: number }; right?: { start: number; end: number } }[]
   >([]);
+  const articleRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!expanded) return;
@@ -64,6 +69,14 @@ export function ArtifactSourceFile({
       active = false;
     };
   }, [artifactId, expanded, file.file_id, focus]);
+
+  useEffect(() => {
+    if (!active || !expanded || !projection || !selectedNodeId) return;
+    const target = Array.from(
+      articleRef.current?.querySelectorAll<HTMLElement>("[data-node-id]") ?? [],
+    ).find((element) => element.dataset.nodeId === selectedNodeId);
+    target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [active, expanded, projection, selectedNodeId]);
 
   const _fromEndpointCount = activeMove
     ? endpointCount(activeMove.from_node_ids, file.file_id)
@@ -117,6 +130,7 @@ export function ArtifactSourceFile({
 
   return (
     <article
+      ref={articleRef}
       aria-label={`Artifact source file ${file.filename}`}
       className="overflow-hidden rounded-xl border border-white/10 bg-black"
     >
@@ -200,6 +214,7 @@ export function ArtifactSourceFile({
                       line={row.left}
                       revision="revision-0"
                       moveIdFilter={activeMove?.move_id}
+                      selectedNodeId={selectedNodeId}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -207,6 +222,7 @@ export function ArtifactSourceFile({
                       line={row.right}
                       revision="revision-1"
                       moveIdFilter={activeMove?.move_id}
+                      selectedNodeId={selectedNodeId}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -230,12 +246,14 @@ function SourceCell({
   line,
   revision,
   moveIdFilter,
+  selectedNodeId,
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
   line: ArtifactSourceLine | null;
   revision: SourceRevision;
   moveIdFilter?: string;
+  selectedNodeId: string | null;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -253,6 +271,7 @@ function SourceCell({
             revision={revision}
             segment={segment}
             moveIdFilter={moveIdFilter}
+            selected={segment.nodeId === selectedNodeId}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
           />

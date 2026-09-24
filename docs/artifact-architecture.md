@@ -434,6 +434,7 @@ POST /api/runs/{run_id}/cancel
 GET  /api/artifacts/{artifact_id}
 GET  /api/artifacts/{artifact_id}/files/{file_id}/source
 GET  /api/artifacts/{artifact_id}/files/{file_id}/tree
+GET  /api/artifacts/{artifact_id}/tree/nodes/{node_id}
 GET  /api/artifacts/{artifact_id}/tree/nodes/{node_id}/children
 GET  /api/artifacts/{artifact_id}/xml
 ```
@@ -711,6 +712,13 @@ to communicate same-file and cross-file provenance. Rendered fragments that
 belong to one semantic endpoint are combined into one outline, so line wrapping
 does not imply multiple moves.
 
+Artifact selection now uses stable node and move identities across the
+structure tree, Move Summary, Node Info, and Source. A bounded single-node
+projection supplies canonical tag metadata and revision spans for Node Info.
+Move Summary exposes each semantic from/to endpoint directly; choosing one
+selects its file, expands its lazy Source card, and scrolls to the rendered tag
+without converting the selection into a line-based diff concept.
+
 Move rendering must communicate semantic move groups rather than individual
 rendered lines. One multi-line source endpoint and its destination endpoint
 should each have one bounding outline around the complete contiguous moved
@@ -721,7 +729,8 @@ regions, but each box and connector must correspond to an actual semantic
 endpoint or relationship so one move cannot be mistaken for several moves.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
-  contracts.
+  contracts. Tree, Move Summary, Node Info, and Source selection are complete;
+  XML selection synchronization remains.
 - Extend source projections with revision-local line and column spans, then
   restore character-precise insert, delete, and move fragments.
 - Port the legacy move highlighting and SVG connector interactions to
