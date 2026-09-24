@@ -16,7 +16,11 @@ import { useHistoryData } from "./history/useHistoryData";
 import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
-import { isArtifactManifest, type ArtifactFocusProfile } from "./types";
+import {
+  isArtifactManifest,
+  type ArtifactFocusProfile,
+  type ArtifactMoveSummary,
+} from "./types";
 
 type MainTabId =
   | "input"
@@ -60,6 +64,9 @@ export default function App() {
   const srcDiffSelection = useSrcDiffSelection(legacyData);
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
   const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
+  const [selectedArtifactMoveId, setSelectedArtifactMoveId] = useState<
+    string | null
+  >(null);
   const [artifactFocus, setArtifactFocus] =
     useState<ArtifactFocusProfile>("changes-and-moves");
 
@@ -108,6 +115,7 @@ export default function App() {
   useEffect(() => {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
+      setSelectedArtifactMoveId(null);
       setArtifactFocus("changes-and-moves");
     }
   }, [artifact]);
@@ -115,6 +123,27 @@ export default function App() {
   const selectedArtifactFile = artifact?.files.find(
     (file) => file.file_id === selectedArtifactFileId,
   );
+  const selectedArtifactMove = artifact?.moves.items.find(
+    (move) => move.move_id === selectedArtifactMoveId,
+  );
+  const visibleArtifactFiles = artifact
+    ? artifact.files.filter((file) =>
+        selectedArtifactMove
+          ? moveFileIds(selectedArtifactMove).includes(file.file_id)
+          : file.file_id === selectedArtifactFileId,
+      )
+    : [];
+
+  function selectArtifactFile(fileId: string) {
+    setSelectedArtifactFileId(fileId);
+    setSelectedArtifactMoveId(null);
+  }
+
+  function selectArtifactMove(move: ArtifactMoveSummary) {
+    const fileId = moveFileIds(move)[0];
+    if (fileId) setSelectedArtifactFileId(fileId);
+    setSelectedArtifactMoveId(move.move_id);
+  }
 
   return (
     <SrcDiffHighlightProvider value={highlightContextValue}>
@@ -130,8 +159,10 @@ export default function App() {
                 <ArtifactNavigator
                   manifest={artifact}
                   selectedFileId={selectedArtifactFileId}
+                  selectedMoveId={selectedArtifactMoveId}
                   focus={artifactFocus}
-                  onSelectFile={setSelectedArtifactFileId}
+                  onSelectFile={selectArtifactFile}
+                  onSelectMove={selectArtifactMove}
                 />
               ) : (
                 <SrcDiffTree
@@ -227,8 +258,9 @@ export default function App() {
                       <TabPanel tabId="source-code" activeTabId={activeMainTab}>
                         <ArtifactSourcePane
                           artifactId={artifact.artifact_id}
-                          file={selectedArtifactFile}
-                          focus={artifactFocus}
+                          files={visibleArtifactFiles}
+                          focus={selectedArtifactMove ? "moves" : artifactFocus}
+                          activeMoveId={selectedArtifactMoveId}
                           onFocusChange={setArtifactFocus}
                         />
                       </TabPanel>
@@ -259,7 +291,7 @@ export default function App() {
                               key={move.move_id}
                               className="rounded border border-white/10 bg-slate-950/60 p-3 text-sm"
                             >
-                              <span className="font-mono text-violet-200">
+                              <span className="font-mono text-diff-move-1">
                                 {move.move_id}
                               </span>
                               {move.match_kind ? (
@@ -281,4 +313,14 @@ export default function App() {
       </main>
     </SrcDiffHighlightProvider>
   );
+}
+
+function moveFileIds(move: ArtifactMoveSummary): string[] {
+  return [
+    ...new Set(
+      [...move.from_node_ids, ...move.to_node_ids].map((nodeId) =>
+        nodeId.split(":n", 1)[0],
+      ),
+    ),
+  ];
 }

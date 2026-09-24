@@ -61,6 +61,12 @@ def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None
                         "node_id": f"{file_id}:n00000001",
                         "kind": "delete",
                         "move_id": None,
+                        "span": {
+                            "start_line": 2,
+                            "start_col": 1,
+                            "end_line": 2,
+                            "end_col": 6,
+                        },
                     }
                 ],
             },
@@ -72,6 +78,12 @@ def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None
                         "node_id": f"{file_id}:n00000002",
                         "kind": "insert",
                         "move_id": None,
+                        "span": {
+                            "start_line": 2,
+                            "start_col": 1,
+                            "end_line": 2,
+                            "end_col": 6,
+                        },
                     }
                 ],
             },
@@ -100,6 +112,35 @@ def test_source_projection_supports_bounded_revision_ranges(tmp_path) -> None:
     assert len(hunks) == 1
     assert hunks[0]["rows"][0]["left"]["text"] == "moved();"
     assert hunks[0]["rows"][0]["right"]["text"] == "moved();"
+
+
+def test_source_projection_returns_character_precise_move_anchors(tmp_path) -> None:
+    published = _publish_fixture(tmp_path)
+    file_id = published.manifest["files"][0]["file_id"]
+
+    projection = read_source_projection(
+        artifact_root=tmp_path,
+        artifact_id=published.artifact_id,
+        file_id=file_id,
+        focus_profile="moves",
+        context_lines=0,
+    )
+
+    hunk = next(block for block in projection["blocks"] if block["type"] == "hunk")
+    for side in ("left", "right"):
+        assert hunk["rows"][0][side]["anchors"] == [
+            {
+                "node_id": f"{file_id}:n00000003",
+                "kind": "move",
+                "move_id": "move-1",
+                "span": {
+                    "start_line": 4,
+                    "start_col": 1,
+                    "end_line": 4,
+                    "end_col": 8,
+                },
+            }
+        ]
 
 
 def test_source_projection_accumulates_expanded_ranges_with_focus(tmp_path) -> None:

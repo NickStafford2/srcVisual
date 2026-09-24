@@ -586,6 +586,26 @@ are no longer paid by the new interface.
 This phase delivers the first user-visible payoff and validates the artifact
 model before expanding its scope.
 
+### Phase 2.5: move visualization parity
+
+Status: complete.
+
+- Source projections return revision-local line and column spans for semantic
+  anchors.
+- The artifact source renderer splits lines at exact semantic boundaries and
+  gives move spans precedence when they overlap enclosing insert/delete
+  regions.
+- The established yellow/amber move treatment and neutral unchanged-source
+  surface are restored.
+- The legacy SVG connector geometry is reused for rendered artifact endpoints.
+- Selecting a cross-file move renders every participating file under one
+  connector overlay; same-file, cross-file, one-to-many, and many-to-one
+  geometry use the same registration model.
+
+This slice restores the essential source-level move inspection behavior. The
+remaining Phase 4 work concerns the other panes, richer selection/navigation
+state, and removal of the compatibility interface.
+
 ### Phase 3: durable history runs
 
 - Add the dedicated worker and durable run/event store.

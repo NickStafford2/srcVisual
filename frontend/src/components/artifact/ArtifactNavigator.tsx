@@ -1,23 +1,28 @@
 import { useEffect, useState } from "react";
-import { fetchArtifactNodeChildren, fetchArtifactSource, fetchArtifactTree } from "../../api";
+import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
 import type {
   ArtifactFocusProfile,
   ArtifactManifest,
+  ArtifactMoveSummary,
   ArtifactTreeNode,
 } from "../../types";
 
 type Props = {
   manifest: ArtifactManifest;
   selectedFileId: string;
+  selectedMoveId: string | null;
   focus: ArtifactFocusProfile;
   onSelectFile: (fileId: string) => void;
+  onSelectMove: (move: ArtifactMoveSummary) => void;
 };
 
 export function ArtifactNavigator({
   manifest,
   selectedFileId,
+  selectedMoveId,
   focus,
   onSelectFile,
+  onSelectMove,
 }: Props) {
   const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,16 +42,6 @@ export function ArtifactNavigator({
       active = false;
     };
   }, [focus, manifest.artifact_id, selectedFileId]);
-
-  function openMove(nodeIds: string[]) {
-    const fileIds = [...new Set(nodeIds.map((nodeId) => nodeId.split(":n", 1)[0]))];
-    void Promise.all(
-      fileIds.map((fileId) =>
-        fetchArtifactSource(manifest.artifact_id, fileId, "moves"),
-      ),
-    ).catch((reason: unknown) => setError(errorMessage(reason)));
-    if (fileIds[0]) onSelectFile(fileIds[0]);
-  }
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75" aria-label="Artifact navigator">
@@ -74,8 +69,13 @@ export function ArtifactNavigator({
               <button
                 key={move.move_id}
                 type="button"
-                onClick={() => openMove([...move.from_node_ids, ...move.to_node_ids])}
-                className="rounded bg-violet-500/15 px-2 py-1 text-xs text-violet-200"
+                aria-pressed={selectedMoveId === move.move_id}
+                onClick={() => onSelectMove(move)}
+                className={`rounded border px-2 py-1 text-xs ${
+                  selectedMoveId === move.move_id
+                    ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
+                    : "border-diff-move-1/25 bg-diff-move-1/10 text-amber-200 hover:bg-diff-move-1/20"
+                }`}
               >
                 {move.move_id}
               </button>
@@ -149,7 +149,7 @@ function ArtifactTreeBranch({
         <span className="w-3 text-slate-600">
           {node.child_count > 0 ? (expanded ? "▾" : "▸") : "·"}
         </span>
-        <span className={node.kind === "move" ? "text-violet-300" : ""}>
+        <span className={node.kind === "move" ? "text-diff-move-1" : ""}>
           {node.label}
         </span>
         {!node.children_complete ? (

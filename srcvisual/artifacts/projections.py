@@ -272,25 +272,26 @@ def _read_focus_anchors(artifact_path: Path, file_id: str) -> list[dict[str, Any
     with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:
         rows = database.execute(
             """
-            SELECT node_ordinal, kind, move_id,
-                   revision_0_start_line, revision_0_end_line,
-                   revision_1_start_line, revision_1_end_line
+            SELECT node_ordinal, kind, move_id, payload
               FROM nodes
              WHERE file_id = ? AND kind != 'plain'
              ORDER BY node_ordinal
             """,
             (file_id,),
         ).fetchall()
-    return [
-        {
-            "node_id": _node_id(file_id, row[0]),
-            "kind": row[1],
-            "move_id": row[2],
-            "left": (row[3], row[4]),
-            "right": (row[5], row[6]),
-        }
-        for row in rows
-    ]
+    _anchors = []
+    for _row in rows:
+        _payload = json.loads(zlib.decompress(_row[3]))
+        _anchors.append(
+            {
+                "node_id": _node_id(file_id, _row[0]),
+                "kind": _row[1],
+                "move_id": _row[2],
+                "left": _payload.get("revision_0_span"),
+                "right": _payload.get("revision_1_span"),
+            }
+        )
+    return _anchors
 
 
 def _attach_anchors(rows: list[dict[str, Any]], anchors: list[dict[str, Any]]) -> None:
@@ -299,17 +300,20 @@ def _attach_anchors(rows: list[dict[str, Any]], anchors: list[dict[str, Any]]) -
         row["right"]["line_number"]: row["right"] for row in rows if row["right"]
     }
     for anchor in anchors:
-        public = {
+        _public = {
             "node_id": anchor["node_id"],
             "kind": anchor["kind"],
             "move_id": anchor["move_id"],
         }
-        for side, line_rows in (("left", left_rows), ("right", right_rows)):
-            start, end = anchor[side]
-            if start is None or end is None:
+        for _side, _line_rows in (("left", left_rows), ("right", right_rows)):
+            _span = anchor[_side]
+            if _span is None:
                 continue
-            if start in line_rows:
-                line_rows[start]["anchors"].append(public)
+            for _line_number in range(_span["start_line"], _span["end_line"] + 1):
+                if _line_number in _line_rows:
+                    _line_rows[_line_number]["anchors"].append(
+                        {**_public, "span": _span}
+                    )
 
 
 def _focus_row_indexes(
@@ -325,9 +329,11 @@ def _focus_row_indexes(
         if anchor["kind"] != "move":
             continue
         for side in ("left", "right"):
-            start, end = anchor[side]
-            if start is not None and end is not None:
-                move_lines[side].update(range(start, end + 1))
+            span = anchor[side]
+            if span is not None:
+                move_lines[side].update(
+                    range(span["start_line"], span["end_line"] + 1)
+                )
 
     interesting: set[int] = set()
     for index, row in enumerate(rows):

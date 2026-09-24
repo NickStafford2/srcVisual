@@ -1,9 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import {
   fetchArtifactNodeChildren,
-  fetchArtifactSource,
   fetchArtifactTree,
 } from "../../api";
 import type { ArtifactManifest, ArtifactTreeNode } from "../../types";
@@ -11,7 +10,6 @@ import { ArtifactNavigator } from "./ArtifactNavigator";
 
 vi.mock("../../api", () => ({
   fetchArtifactNodeChildren: vi.fn(),
-  fetchArtifactSource: vi.fn(),
   fetchArtifactTree: vi.fn(),
 }));
 
@@ -93,18 +91,20 @@ beforeEach(() => {
     ],
     next_offset: 100,
   });
-  vi.mocked(fetchArtifactSource).mockResolvedValue({} as never);
 });
 
-it("pages tree children explicitly and preloads both move endpoint files", async () => {
+it("pages tree children explicitly and selects cross-file moves", async () => {
   const user = userEvent.setup();
   const onSelectFile = vi.fn();
+  const onSelectMove = vi.fn();
   render(
     <ArtifactNavigator
       manifest={manifest}
       selectedFileId="f-one"
+      selectedMoveId={null}
       focus="changes-and-moves"
       onSelectFile={onSelectFile}
+      onSelectMove={onSelectMove}
     />,
   );
 
@@ -117,8 +117,5 @@ it("pages tree children explicitly and preloads both move endpoint files", async
   expect(await screen.findByText("function: moved")).toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "move-1" }));
-  await waitFor(() => expect(fetchArtifactSource).toHaveBeenCalledTimes(2));
-  expect(fetchArtifactSource).toHaveBeenCalledWith("artifact-1", "f-one", "moves");
-  expect(fetchArtifactSource).toHaveBeenCalledWith("artifact-1", "f-two", "moves");
-  expect(onSelectFile).toHaveBeenCalledWith("f-one");
+  expect(onSelectMove).toHaveBeenCalledWith(manifest.moves.items[0]);
 });

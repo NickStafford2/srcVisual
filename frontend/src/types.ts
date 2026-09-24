@@ -1,4 +1,4 @@
-import type { SrcDiffTreeNode } from "./srcdiff/types";
+import type { SourceCodeSpan, SrcDiffTreeNode } from "./srcdiff/types";
 
 export interface VisualizedFile {
   unit_id: number;
@@ -91,6 +91,7 @@ export interface ArtifactSourceLine {
     node_id: string;
     kind: "plain" | "delete" | "insert" | "move";
     move_id: string | null;
+    span: SourceCodeSpan;
   }[];
 }
 
