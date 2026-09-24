@@ -96,14 +96,36 @@ describe("repository history browser", () => {
             },
           });
         }
-        if (url === "/api/history/pairs/1/visualize") {
+        if (url === "/api/history/pairs/1/runs") {
           return jsonResponse({
+            schema_version: 1,
+            reuse: "new",
+            run: historyRun("queued"),
+          }, 202);
+        }
+        if (url === `/api/runs/${"r".repeat(32)}`) {
+          return jsonResponse({
+            schema_version: 1,
+            run: historyRun("completed"),
+          });
+        }
+        if (url === `/api/artifacts/${"a".repeat(32)}`) {
+          return jsonResponse({
+            schema_version: 2,
+            projection_schema_version: 1,
+            artifact_id: "a".repeat(32),
             source_filename: "history-pair-1.srcmove.xml",
-            moved_srcdiff_xml: "<unit />",
-            move_results: { move_count: 0, moves: [] },
             has_position_data: false,
+            file_count: 0,
+            node_count: 0,
             files: [],
-            unit_count: 0,
+            moves: { move_count: 0, items: [] },
+            focus_profiles: [
+              "changes-and-moves",
+              "moves",
+              "changes",
+              "complete-file",
+            ],
           });
         }
         throw new Error(`Unexpected fetch URL: ${url}`);
@@ -148,12 +170,35 @@ describe("repository history browser", () => {
         "true",
       );
     });
+    expect(fetch).toHaveBeenCalledWith("/api/history/pairs/1/runs", {
+      method: "POST",
+    });
+    expect(fetch).not.toHaveBeenCalledWith(
+      "/api/history/pairs/1/visualize",
+      expect.anything(),
+    );
   });
 });
 
-function jsonResponse(payload: unknown): Response {
+function historyRun(status: "queued" | "completed") {
+  return {
+    run_id: "r".repeat(32),
+    kind: "history-visualization",
+    history_pair: 1,
+    status,
+    artifact_id: status === "completed" ? "a".repeat(32) : null,
+    cancellation_requested: false,
+    diagnostic: null,
+    created_at: "2026-09-24T00:00:00.000Z",
+    started_at: status === "completed" ? "2026-09-24T00:00:01.000Z" : null,
+    finished_at: status === "completed" ? "2026-09-24T00:00:02.000Z" : null,
+    latest_event_sequence: status === "completed" ? 3 : 1,
+  };
+}
+
+function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }

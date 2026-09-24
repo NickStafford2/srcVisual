@@ -94,3 +94,35 @@ export interface HistoryPairDocument {
   };
   pair: HistoryPairDetail;
 }
+
+export type HistoryRunStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface HistoryRun {
+  run_id: string;
+  kind: "history-visualization";
+  history_pair: number;
+  status: HistoryRunStatus;
+  artifact_id: string | null;
+  cancellation_requested: boolean;
+  diagnostic: { code: string; message: string } | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  latest_event_sequence: number;
+}
+
+export interface HistoryRunCreationDocument {
+  schema_version: 1;
+  run: HistoryRun;
+  reuse: "new" | "active-run" | "artifact";
+}
+
+export interface HistoryRunDocument {
+  schema_version: 1;
+  run: HistoryRun;
+}

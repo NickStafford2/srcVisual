@@ -239,7 +239,7 @@ function HistoryPairDetails({
         disabled={isVisualizing || pair.status !== "completed"}
         className="mt-4 w-full rounded-xl border border-sky-300/30 bg-sky-300/15 px-3 py-2.5 text-sm font-semibold text-sky-100 transition hover:bg-sky-300/25 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isVisualizing ? "Regenerating visualization…" : "Open visualization"}
+        {isVisualizing ? "Preparing visualization…" : "Open visualization"}
       </button>
       {pair.error ? (
         <p className="mt-4 rounded-xl border border-red-300/20 bg-red-300/10 p-3 text-xs text-red-100">

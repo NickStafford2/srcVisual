@@ -692,6 +692,11 @@ the Phase 4 frontend migration.
 
 ### Phase 4: complete frontend migration
 
+Status: in progress. History visualization creation now uses the durable run
+contract, polls authoritative status, and opens the completed artifact through
+the projection interface. The synchronous history endpoint remains only as a
+temporary compatibility path.
+
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts.
 - Extend source projections with revision-local line and column spans, then

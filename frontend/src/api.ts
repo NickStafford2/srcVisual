@@ -12,6 +12,9 @@ import type { SrcDiffTreeNode } from "./srcdiff/types";
 import type {
   HistoryPairDocument,
   HistoryPairPageDocument,
+  HistoryRun,
+  HistoryRunCreationDocument,
+  HistoryRunDocument,
   HistorySelection,
   HistoryStatusDocument,
 } from "./history/types";
@@ -86,22 +89,53 @@ export async function fetchHistoryPair(
 
 export async function visualizeHistoryPair(
   pairNumber: number,
-): Promise<VisualizationResult> {
-  const formData = new FormData();
-  formData.append("response_format", "artifact");
-  const response = await fetch(`/api/history/pairs/${pairNumber}/visualize`, {
+): Promise<ArtifactManifest> {
+  const response = await fetch(`/api/history/pairs/${pairNumber}/runs`, {
     method: "POST",
-    body: formData,
   });
-  const payload = await parseVisualizeResponse(response);
-  if (!response.ok || "error" in payload) {
+  const payload: unknown = await response.json();
+  if (!response.ok) {
     throw new Error(
-      "error" in payload
-        ? payload.error
-        : `Unable to visualize commit pair ${pairNumber}.`,
+      responseError(payload) ?? `Unable to visualize commit pair ${pairNumber}.`,
     );
   }
-  assertVisualizationResult(payload);
+  if (!isHistoryRunCreationDocument(payload)) {
+    throw new Error("Backend returned an unsupported run-creation document.");
+  }
+
+  const run = await awaitCompletedHistoryRun(payload.run);
+  if (run.status === "failed") {
+    throw new Error(run.diagnostic?.message ?? "History visualization failed.");
+  }
+  if (run.status === "cancelled") {
+    throw new Error("History visualization was cancelled.");
+  }
+  if (run.status !== "completed" || run.artifact_id === null) {
+    throw new Error("Backend returned an invalid terminal history run.");
+  }
+  return fetchArtifactManifest(run.artifact_id);
+}
+
+async function awaitCompletedHistoryRun(initialRun: HistoryRun): Promise<HistoryRun> {
+  let run = initialRun;
+  while (run.status === "queued" || run.status === "running") {
+    const payload = await fetchJson(`/api/runs/${run.run_id}`);
+    if (!isHistoryRunDocument(payload)) {
+      throw new Error("Backend returned an unsupported run-status document.");
+    }
+    run = payload.run;
+    if (run.status === "queued" || run.status === "running") {
+      await new Promise((resolve) => window.setTimeout(resolve, 500));
+    }
+  }
+  return run;
+}
+
+async function fetchArtifactManifest(
+  artifactId: string,
+): Promise<ArtifactManifest> {
+  const payload = await fetchJson(`/api/artifacts/${artifactId}`);
+  assertArtifactManifest(payload);
   return payload;
 }
 
@@ -158,17 +192,69 @@ function assertVisualizationResult(
   payload: VisualizationResult,
 ): asserts payload is VisualizationResult {
   if (isArtifactManifest(payload)) {
-    if (
-      payload.projection_schema_version !== 1 ||
-      !Array.isArray(payload.files) ||
-      !Array.isArray(payload.focus_profiles)
-    ) {
-      throw new Error("Backend returned an unsupported artifact manifest.");
-    }
+    assertArtifactManifest(payload);
     return;
   }
   assertVisualizeResponseContract(payload);
   assertVisualizeResponseHasXmlSpans(payload);
+}
+
+function assertArtifactManifest(
+  payload: unknown,
+): asserts payload is ArtifactManifest {
+  if (typeof payload !== "object" || payload === null) {
+    throw new Error("Backend returned an unsupported artifact manifest.");
+  }
+  const manifest = payload as Partial<ArtifactManifest>;
+  if (
+    manifest.projection_schema_version !== 1 ||
+    typeof manifest.artifact_id !== "string" ||
+    !Array.isArray(manifest.files) ||
+    !Array.isArray(manifest.focus_profiles)
+  ) {
+    throw new Error("Backend returned an unsupported artifact manifest.");
+  }
+}
+
+function isHistoryRunCreationDocument(
+  payload: unknown,
+): payload is HistoryRunCreationDocument {
+  if (typeof payload !== "object" || payload === null) return false;
+  const document = payload as Partial<HistoryRunCreationDocument>;
+  return (
+    document.schema_version === 1 &&
+    isHistoryRun(document.run) &&
+    ["new", "active-run", "artifact"].includes(document.reuse ?? "")
+  );
+}
+
+function isHistoryRunDocument(
+  payload: unknown,
+): payload is HistoryRunDocument {
+  if (typeof payload !== "object" || payload === null) return false;
+  const document = payload as Partial<HistoryRunDocument>;
+  return document.schema_version === 1 && isHistoryRun(document.run);
+}
+
+function isHistoryRun(value: unknown): value is HistoryRun {
+  if (typeof value !== "object" || value === null) return false;
+  const run = value as Partial<HistoryRun>;
+  return (
+    typeof run.run_id === "string" &&
+    run.kind === "history-visualization" &&
+    typeof run.history_pair === "number" && run.history_pair > 0 &&
+    (run.artifact_id === null || typeof run.artifact_id === "string") &&
+    typeof run.cancellation_requested === "boolean" &&
+    ["queued", "running", "completed", "failed", "cancelled"].includes(
+      run.status ?? "",
+    )
+  );
+}
+
+function responseError(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null) return null;
+  const error = (payload as { error?: unknown }).error;
+  return typeof error === "string" && error ? error : null;
 }
 
 export async function fetchArtifactSource(
