@@ -697,6 +697,15 @@ contract, polls authoritative status, and opens the completed artifact through
 the projection interface. The synchronous history endpoint remains only as a
 temporary compatibility path.
 
+Move rendering must communicate semantic move groups rather than individual
+rendered lines. One multi-line source endpoint and its destination endpoint
+should each have one bounding outline around the complete contiguous moved
+region, with one connector representing their move relationship. Line wrapping
+or line-by-line source rendering must not create extra boxes or connectors.
+Discontinuous, one-to-many, and many-to-one moves may have multiple endpoint
+regions, but each box and connector must correspond to an actual semantic
+endpoint or relationship so one move cannot be mistaken for several moves.
+
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts.
 - Extend source projections with revision-local line and column spans, then
