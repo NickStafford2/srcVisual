@@ -28,10 +28,16 @@ Reserve color hue for the four base diff kinds:
 - `insert`: green or cyan
 - `delete`: red
 - `move`: amber or orange
-- `plain`: neutral gray
+- `plain`: neutral near-black or gray
 
 This should be the primary color system for nodes, highlights, and source
 fragments.
+
+The established srcVisual move color is yellow/amber and should remain
+consistent across exact source fragments, tree nodes, badges, and SVG
+connectors. Unchanged source rows use a neutral near-black background. Do not
+give ordinary source a blue wash: blue is an interaction/navigation accent,
+not a diff kind.
 
 ## Revision Identity
 
@@ -44,9 +50,9 @@ Instead:
 - `Revision 1`: fixed right placement, fixed label, fixed badge
 - `Revision 0` source pane: left-aligned header text
 - `Revision 1` source pane: right-aligned header text
-- source panes may use stronger opposing horizontal gradients to reinforce
-  revision directionality, using the site background color as the tinted side
-  and fading into the existing pane background
+- source panes may use subtle opposing structural treatments to reinforce
+  revision directionality, but their unchanged-code background remains neutral
+  near-black
 - revision-linked hyperlink pills may reuse those same opposing gradients for
   quick directional recognition in the tree and navigation UI
 
@@ -90,6 +96,7 @@ background treatment.
 
 - Do not use one color to mean both diff type and revision.
 - Do not let revision gradients overpower diff colors inside highlighted text.
+- Do not tint unchanged source blue or another semantic diff color.
 - Do not use bold for multiple overlapping states.
 - Do not rely only on background color; pair it with shape or typography.
 - Do not make normal nodes visually loud.

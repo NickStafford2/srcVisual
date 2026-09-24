@@ -44,6 +44,13 @@ projections of the same immutable artifact.
    research workflow.
 8. Browser and URL state are sufficient for views. There are no server-side
    view sessions.
+9. Character-precise move highlighting and the existing SVG move relationship
+   visualization are essential srcMove inspection behavior. The artifact UI
+   must restore them before the legacy renderer is removed; a line badge alone
+   is not sufficient.
+10. Moves retain the established yellow/amber semantic color. Unchanged source
+    uses a neutral near-black background; blue is reserved for interaction or
+    navigation and must not imply that unchanged source is modified.
 
 ## Why the Current Model Must Change
 
@@ -333,6 +340,13 @@ GapBlock
   right: { start_line, end_line, line_count }
 ```
 
+Source anchors include revision-local start and end line/column coordinates,
+clipped to the returned source range when necessary. The frontend uses those
+coordinates to split lines into semantic inline fragments. Move highlighting
+therefore marks the exact moved characters rather than tinting only the whole
+line or appending a generic badge. Line-level styling may supplement the exact
+span, but it may not replace it.
+
 `block_id` identifies a response block for browser reconciliation; canonical
 navigation uses file, node, region, move, and line identities instead. Expanding
 a gap can replace its block IDs without changing canonical identities.
@@ -480,6 +494,19 @@ drawn. Connectors are computed only between currently rendered endpoint DOM
 elements. This allows later source-row virtualization without requiring hidden
 rows to retain fake geometry.
 
+The artifact renderer should adapt the proven legacy highlighting and SVG
+connector behavior to artifact-local identities instead of replacing it with a
+less expressive interaction. Selecting or hovering a move highlights every
+rendered endpoint at character precision and draws the relationship between
+visible endpoints. Same-file, cross-file, one-to-many, and many-to-one moves
+retain clear endpoint and group identity. When an endpoint is not rendered,
+navigation and badges remain available without drawing misleading geometry.
+
+Move fragments, badges, tree nodes, and connectors use the established
+yellow/amber move hue. Ordinary unchanged source is neutral near-black. Insert
+and delete styling remains green and red; selection may add a border or glow
+without changing the underlying semantic hue.
+
 Virtualization is introduced only after the hunk/gap model works correctly and
 measurements show that rendered focused rows remain excessive. Expansion must
 preserve the user's scroll anchor.
@@ -572,9 +599,17 @@ model before expanding its scope.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts.
+- Extend source projections with revision-local line and column spans, then
+  restore character-precise insert, delete, and move fragments.
+- Port the legacy move highlighting and SVG connector interactions to
+  artifact-local identities, including same-file, cross-file, one-to-many, and
+  many-to-one moves. Draw connectors only for rendered endpoints.
+- Restore the established yellow/amber move language and use a neutral
+  near-black background for unchanged source.
 - Add file-list filters when the manifest navigator needs them.
 - Add row virtualization if focused rendering measurements justify it.
-- Remove the monolithic response path and delete destructive pruning code after
+- Remove the monolithic response path and delete destructive pruning code only
+  after the artifact renderer has move-inspection feature parity and
   compatibility coverage passes.
 
 ### Phase 5: operational hardening and measured extensions
@@ -599,6 +634,10 @@ model before expanding its scope.
 - Every omitted source range is an explicit expandable gap.
 - Any source range can be revealed without rerunning native analysis.
 - Cross-file move navigation loads and identifies both endpoints.
+- Moved source is highlighted to exact character boundaries, not merely by
+  line, and visible endpoints use the established SVG relationship rendering.
+- Moves are yellow/amber across source, tree, badges, and connectors; unchanged
+  source uses a neutral near-black background.
 - XML, tree, source, diff, and move projections use the same artifact-local
   identities.
 - No manifest, XML response, diagnostic, or artifact ID exposes temporary or
