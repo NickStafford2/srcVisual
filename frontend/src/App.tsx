@@ -149,7 +149,17 @@ export default function App() {
     setArtifactNodeError(null);
     void fetchArtifactNode(artifact.artifact_id, selectedArtifactNodeId)
       .then((node) => {
-        if (current) setSelectedArtifactNode(node);
+        if (current) {
+          setSelectedArtifactNode(node);
+          setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
+          setSelectedArtifactMoveId(node.move_id);
+          if (node.move_id) {
+            const moveId = node.move_id;
+            setVisibleArtifactMoveIds((visible) =>
+              new Set(visible).add(moveId),
+            );
+          }
+        }
       })
       .catch((reason: unknown) => {
         if (current) {
@@ -205,6 +215,12 @@ export default function App() {
       const moveId = node.move_id;
       setVisibleArtifactMoveIds((current) => new Set(current).add(moveId));
     }
+  }
+
+  function selectArtifactNodeById(nodeId: string) {
+    setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
+    setSelectedArtifactNodeId(nodeId);
+    setSelectedArtifactNode(null);
   }
 
   function selectArtifactEndpoint(move: ArtifactMoveSummary, nodeId: string) {
@@ -357,6 +373,8 @@ export default function App() {
                         <ArtifactXmlPane
                           artifactId={artifact.artifact_id}
                           active={activeMainTab === "xml-pane"}
+                          selectedNode={selectedArtifactNode}
+                          onSelectNodeId={selectArtifactNodeById}
                         />
                       </TabPanel>
 

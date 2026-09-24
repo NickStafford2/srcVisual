@@ -38,9 +38,9 @@ sidebar move chips independently toggle individual connectors, while Source
 controls show the selected connector, every rendered/proxied connector, or
 none. Omitted ranges remain expandable gaps, tree children are paged, and
 stable tag selection is shared by the structure tree, Move Summary, Node Info,
-and Source navigation. Complete XML is fetched only when its tab is opened. The
-old monolithic response and pruning controls remain only as a temporary
-compatibility interface.
+Source, and XML navigation. Complete XML and its indexed change/move anchors
+are fetched only when the XML tab is opened. The old monolithic response and
+pruning controls remain only as a temporary compatibility interface.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

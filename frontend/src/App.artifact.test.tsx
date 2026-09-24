@@ -34,7 +34,17 @@ const manifest: ArtifactManifest = {
   file_count: 1,
   node_count: 1,
   files: [file],
-  moves: { move_count: 0, items: [] },
+  moves: {
+    move_count: 1,
+    items: [
+      {
+        move_id: "move-1",
+        match_kind: "exact",
+        from_node_ids: [file.root_node_id],
+        to_node_ids: [file.root_node_id],
+      },
+    ],
+  },
   focus_profiles: ["changes-and-moves", "moves", "changes", "complete-file"],
 };
 
@@ -59,8 +69,30 @@ const source: ArtifactSourceProjection = {
       rows: [
         {
           kind: "replace",
-          left: { line_number: 1, text: "old();", anchors: [] },
-          right: { line_number: 1, text: "new();", anchors: [] },
+          left: {
+            line_number: 1,
+            text: "old();",
+            anchors: [
+              {
+                node_id: file.root_node_id,
+                kind: "move",
+                move_id: "move-1",
+                span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
+              },
+            ],
+          },
+          right: {
+            line_number: 1,
+            text: "new();",
+            anchors: [
+              {
+                node_id: file.root_node_id,
+                kind: "move",
+                move_id: "move-1",
+                span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
+              },
+            ],
+          },
         },
       ],
     },
@@ -79,12 +111,12 @@ const tree: ArtifactTreeProjection = {
     path: "/src:unit[1]",
     tag: "unit",
     label: "unit: example.cpp",
-    kind: "plain",
-    move_id: null,
+    kind: "move",
+    move_id: "move-1",
     srcdiff_attributes: {},
-    xml_span: null,
-    revision_0_span: null,
-    revision_1_span: null,
+    xml_span: { start_line: 1, start_col: 1, end_line: 1, end_col: 8 },
+    revision_0_span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
+    revision_1_span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
     child_count: 0,
     children_complete: true,
     children: [],
@@ -121,9 +153,24 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
       if (url.includes(`/files/${file.file_id}/tree?`)) {
         return jsonResponse(tree);
       }
+      if (url.includes(`/tree/nodes/${encodeURIComponent(file.root_node_id)}`)) {
+        return jsonResponse({ schema_version: 1, node: tree.root });
+      }
       if (url.endsWith("/xml")) {
         xmlRequests += 1;
-        return jsonResponse({ schema_version: 1, xml: "<unit />" });
+        return jsonResponse({
+          schema_version: 1,
+          artifact_id: manifest.artifact_id,
+          xml: "<unit />",
+          anchors: [
+            {
+              node_id: file.root_node_id,
+              kind: "move",
+              move_id: "move-1",
+              span: tree.root!.xml_span,
+            },
+          ],
+        });
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
     }),
@@ -139,7 +186,20 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
 
   await user.click(screen.getByRole("tab", { name: "XML" }));
   await waitFor(() => expect(xmlRequests).toBe(1));
-  expect(await screen.findByText("<unit />")).toBeInTheDocument();
+  await user.click(await screen.findByRole("button", { name: "<unit />" }));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+      "data-selected-move",
+      "true",
+    ),
+  );
+  expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  await user.click(screen.getByRole("tab", { name: "Source" }));
+  expect(await screen.findByText("Move move-1 · 1 file")).toBeInTheDocument();
 });
 
 function jsonResponse(payload: unknown): Response {

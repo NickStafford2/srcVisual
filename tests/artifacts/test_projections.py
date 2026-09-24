@@ -30,7 +30,48 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
         "complete-file",
     ]
     assert "xml" not in manifest
-    assert xml["xml"] == '<unit filename="example.cpp" />\n'
+    assert xml["xml"] == (
+        '<unit filename="example.cpp">\n'
+        "  <delete>old();</delete>\n"
+        "  <insert>new();</insert>\n"
+        '  <move id="move-1">moved();</move>\n'
+        "</unit>\n"
+    )
+    assert xml["anchors"] == [
+        {
+            "node_id": f'{manifest["files"][0]["file_id"]}:n00000001',
+            "kind": "delete",
+            "move_id": None,
+            "span": {
+                "start_line": 2,
+                "start_col": 3,
+                "end_line": 2,
+                "end_col": 25,
+            },
+        },
+        {
+            "node_id": f'{manifest["files"][0]["file_id"]}:n00000002',
+            "kind": "insert",
+            "move_id": None,
+            "span": {
+                "start_line": 3,
+                "start_col": 3,
+                "end_line": 3,
+                "end_col": 25,
+            },
+        },
+        {
+            "node_id": f'{manifest["files"][0]["file_id"]}:n00000003',
+            "kind": "move",
+            "move_id": "move-1",
+            "span": {
+                "start_line": 4,
+                "start_col": 3,
+                "end_line": 4,
+                "end_col": 36,
+            },
+        },
+    ]
 
 
 def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None:
@@ -209,6 +250,7 @@ def _publish_fixture(tmp_path):
         kind: str,
         *,
         move_id: str | None = None,
+        xml_span=None,
         revision_0_span=None,
         revision_1_span=None,
         children=(),
@@ -221,7 +263,7 @@ def _publish_fixture(tmp_path):
             "kind": kind,
             "move_id": move_id,
             "srcdiff_attributes": {},
-            "xml_span": None,
+            "xml_span": xml_span,
             "revision_0_span": revision_0_span,
             "revision_1_span": revision_1_span,
             "children": list(children),
@@ -230,24 +272,33 @@ def _publish_fixture(tmp_path):
     deleted = node(
         "/unit/delete",
         "delete",
+        xml_span={"start_line": 2, "start_col": 3, "end_line": 2, "end_col": 25},
         revision_0_span={"start_line": 2, "start_col": 1, "end_line": 2, "end_col": 6},
     )
     inserted = node(
         "/unit/insert",
         "insert",
+        xml_span={"start_line": 3, "start_col": 3, "end_line": 3, "end_col": 25},
         revision_1_span={"start_line": 2, "start_col": 1, "end_line": 2, "end_col": 6},
     )
     moved = node(
         "/unit/move",
         "move",
         move_id="move-1",
+        xml_span={"start_line": 4, "start_col": 3, "end_line": 4, "end_col": 36},
         revision_0_span={"start_line": 4, "start_col": 1, "end_line": 4, "end_col": 8},
         revision_1_span={"start_line": 4, "start_col": 1, "end_line": 4, "end_col": 8},
     )
     root = node("/unit", "plain", children=(deleted, inserted, moved))
     payload = VisualizationPayload(
         source_filename="example.srcmove.xml",
-        moved_srcdiff_xml='<unit filename="example.cpp" />\n',
+        moved_srcdiff_xml=(
+            '<unit filename="example.cpp">\n'
+            "  <delete>old();</delete>\n"
+            "  <insert>new();</insert>\n"
+            '  <move id="move-1">moved();</move>\n'
+            "</unit>\n"
+        ),
         move_results={"move_count": 0, "moves": []},
         has_position_data=True,
         files=(

@@ -76,6 +76,20 @@ export interface ArtifactManifest {
   focus_profiles: ArtifactFocusProfile[];
 }
 
+export interface ArtifactXmlAnchor {
+  node_id: string;
+  kind: "delete" | "insert" | "move";
+  move_id: string | null;
+  span: SourceCodeSpan;
+}
+
+export interface ArtifactXmlProjection {
+  schema_version: 1;
+  artifact_id: string;
+  xml: string;
+  anchors: ArtifactXmlAnchor[];
+}
+
 export type VisualizationResult = VisualizeResponse | ArtifactManifest;
 
 export function isArtifactManifest(

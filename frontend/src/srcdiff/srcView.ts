@@ -24,6 +24,8 @@ type LineHighlight = {
   span: SourceCodeSpan;
 };
 
+type HighlightSlice = Omit<LineHighlight, "span"> & LineSlice;
+
 export function buildSourceView(
   sourceCode: string = "",
   highlights: SourceViewHighlight[],
@@ -92,52 +94,73 @@ function buildHighlightedSegments(
         startIndex,
         endIndex,
       };
-    })
-    .sort((a, b) => a.startIndex - b.startIndex || b.endIndex - a.endIndex);
-
-  const segments: ViewerLineSegment[] = [];
-  let cursor = 0;
-
-  for (const slice of slices) {
-    if (slice.endIndex < cursor) {
-      continue;
-    }
-
-    if (slice.startIndex > cursor) {
-      segments.push({
-        text: lineText.slice(cursor, slice.startIndex),
-        kind: "plain",
-        highlighted: false,
-        nodeId: null,
-        moveId: null,
-      });
-    }
-
-    const highlightStart = Math.max(slice.startIndex, cursor);
-    const highlightEnd = Math.max(slice.endIndex, highlightStart);
-
-    segments.push({
-      text: lineText.slice(highlightStart, highlightEnd) || " ",
-      kind: slice.kind,
-      highlighted: true,
-      nodeId: slice.nodeId,
-      moveId: slice.moveId,
     });
 
-    cursor = highlightEnd;
+  if (lineText.length === 0) {
+    const highlight = preferredHighlight(slices);
+    return [segmentForSlice(" ", highlight)];
   }
 
-  if (cursor < lineText.length) {
-    segments.push({
-      text: lineText.slice(cursor),
-      kind: "plain",
-      highlighted: false,
-      nodeId: null,
-      moveId: null,
-    });
+  const boundaries = [
+    ...new Set([
+      0,
+      lineText.length,
+      ...slices.flatMap((slice) => [slice.startIndex, slice.endIndex]),
+    ]),
+  ].sort((left, right) => left - right);
+
+  const segments: ViewerLineSegment[] = [];
+
+  for (let index = 0; index < boundaries.length - 1; index += 1) {
+    const start = boundaries[index];
+    const end = boundaries[index + 1];
+    const highlight = preferredHighlight(
+      slices.filter(
+        (slice) => slice.startIndex <= start && slice.endIndex >= end,
+      ),
+    );
+    const segment = segmentForSlice(lineText.slice(start, end), highlight);
+    const previous = segments[segments.length - 1];
+    if (
+      previous &&
+      previous.kind === segment.kind &&
+      previous.nodeId === segment.nodeId &&
+      previous.moveId === segment.moveId
+    ) {
+      previous.text += segment.text;
+    } else {
+      segments.push(segment);
+    }
   }
 
   return segments;
+}
+
+function preferredHighlight<T extends HighlightSlice>(highlights: T[]) {
+  return [...highlights].sort(
+    (left, right) =>
+      highlightPriority(right.kind) - highlightPriority(left.kind) ||
+      left.endIndex - left.startIndex - (right.endIndex - right.startIndex),
+  )[0];
+}
+
+function segmentForSlice(
+  text: string,
+  highlight: HighlightSlice | undefined,
+): ViewerLineSegment {
+  return {
+    text,
+    kind: highlight?.kind ?? "plain",
+    highlighted: highlight !== undefined,
+    nodeId: highlight?.nodeId ?? null,
+    moveId: highlight?.moveId ?? null,
+  };
+}
+
+function highlightPriority(kind: HighlightKind) {
+  if (kind === "move") return 2;
+  if (kind === "insert" || kind === "delete") return 1;
+  return 0;
 }
 
 function getHighlightsForLine(

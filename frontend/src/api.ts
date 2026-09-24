@@ -4,6 +4,7 @@ import type {
   ArtifactSourceProjection,
   ArtifactTreeNode,
   ArtifactTreeProjection,
+  ArtifactXmlProjection,
   VisualizationResult,
   VisualizeResponse,
 } from "./types";
@@ -387,12 +388,18 @@ export async function fetchArtifactNode(
   return payload.node as unknown as ArtifactTreeNode;
 }
 
-export async function fetchArtifactXml(artifactId: string): Promise<string> {
+export async function fetchArtifactXml(
+  artifactId: string,
+): Promise<ArtifactXmlProjection> {
   const payload = await fetchJson(`/api/artifacts/${artifactId}/xml`);
-  if (typeof payload.xml !== "string") {
+  if (
+    payload.schema_version !== 1 ||
+    typeof payload.xml !== "string" ||
+    !Array.isArray(payload.anchors)
+  ) {
     throw new Error("Backend returned an unsupported artifact XML projection.");
   }
-  return payload.xml;
+  return payload as unknown as ArtifactXmlProjection;
 }
 
 function assertVisualizeResponseHasXmlSpans(

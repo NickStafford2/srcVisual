@@ -39,10 +39,34 @@ def read_artifact_manifest(*, artifact_root: Path, artifact_id: str) -> dict[str
 
 def read_artifact_xml(*, artifact_root: Path, artifact_id: str) -> dict[str, Any]:
     artifact_path, _ = _open_artifact(artifact_root, artifact_id)
+    with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:
+        rows = database.execute(
+            """
+            SELECT file_id, node_ordinal, kind, move_id, payload
+              FROM nodes
+             WHERE kind != 'plain'
+             ORDER BY file_id, node_ordinal
+            """
+        ).fetchall()
+    anchors = []
+    for file_id, ordinal, kind, move_id, compressed_payload in rows:
+        payload = json.loads(zlib.decompress(compressed_payload))
+        span = payload.get("xml_span")
+        if span is None:
+            continue
+        anchors.append(
+            {
+                "node_id": _node_id(file_id, ordinal),
+                "kind": kind,
+                "move_id": move_id,
+                "span": span,
+            }
+        )
     return {
         "schema_version": 1,
         "artifact_id": artifact_id,
         "xml": (artifact_path / "annotated.xml").read_text(encoding="utf-8"),
+        "anchors": anchors,
     }
 
 

@@ -448,8 +448,10 @@ The initial tree response is a bounded projection containing the file root,
 the ancestor paths needed for the active focus profile, child counts, and a
 limited number of children. Expanding an unloaded branch requests its canonical
 children by stable `node_id`. The complete normalized XML is fetched when its
-tab opens. XML-neighborhood endpoints are deferred until measurements
-demonstrate that they are necessary.
+tab opens together with indexed change/move anchors. Those anchors preserve
+stable selection without transferring the complete structural tree. XML-
+neighborhood endpoints are deferred until measurements demonstrate that they
+are necessary.
 
 Each projected tree node reports `node_id`, display metadata, canonical spans,
 `child_count`, and either a complete child list or an explicit continuation.
@@ -719,6 +721,12 @@ Move Summary exposes each semantic from/to endpoint directly; choosing one
 selects its file, expands its lazy Source card, and scrolls to the rendered tag
 without converting the selection into a line-based diff concept.
 
+The lazy XML projection exposes indexed change/move spans with the same stable
+node IDs. Selecting one synchronizes the file, tree, Node Info, Move Summary,
+and Source state; a selected move also becomes visible when Source is reopened.
+Nested move spans take visual precedence over enclosing insert/delete wrappers,
+so the XML view retains tag semantics rather than flattening them into lines.
+
 Connector visibility is independent of semantic selection. Clicking a moved
 tag selects the move and reveals its connector; navigator move chips toggle
 individual connectors without changing the current selection. Source provides
@@ -736,8 +744,7 @@ regions, but each box and connector must correspond to an actual semantic
 endpoint or relationship so one move cannot be mistaken for several moves.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
-  contracts. Tree, Move Summary, Node Info, and Source selection are complete;
-  XML selection synchronization remains.
+  contracts. (Complete.)
 - Extend source projections with revision-local line and column spans, then
   restore character-precise insert, delete, and move fragments.
 - Port the legacy move highlighting and SVG connector interactions to

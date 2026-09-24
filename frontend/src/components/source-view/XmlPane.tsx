@@ -14,9 +14,16 @@ import { getSourceSegmentClasses } from "./segmentStyles";
 type XmlPaneProps = {
   source: string;
   highlights: SourceViewHighlight[];
+  selectedNodeId?: string | null;
+  onSelectNodeId?: (nodeId: string) => void;
 };
 
-export function XmlPane({ source, highlights }: XmlPaneProps) {
+export function XmlPane({
+  source,
+  highlights,
+  selectedNodeId = null,
+  onSelectNodeId,
+}: XmlPaneProps) {
   const [showPositions, setShowPositions] = useState(false);
 
   const displayModel = useMemo(
@@ -80,6 +87,8 @@ export function XmlPane({ source, highlights }: XmlPaneProps) {
                   <XmlSegment
                     key={`${segment.nodeId ?? "plain"}-${segmentIndex}`}
                     segment={segment}
+                    selected={segment.nodeId === selectedNodeId}
+                    onSelectNodeId={onSelectNodeId}
                   />
                 ))}
               </span>
@@ -91,13 +100,42 @@ export function XmlPane({ source, highlights }: XmlPaneProps) {
   );
 }
 
-function XmlSegment({ segment }: { segment: ViewerLineSegment }) {
+function XmlSegment({
+  segment,
+  selected,
+  onSelectNodeId,
+}: {
+  segment: ViewerLineSegment;
+  selected: boolean;
+  onSelectNodeId?: (nodeId: string) => void;
+}) {
+  const selectable = Boolean(
+    segment.highlighted && segment.nodeId && onSelectNodeId,
+  );
   return (
     <span
+      role={selectable ? "button" : undefined}
+      tabIndex={selectable ? 0 : undefined}
+      onClick={() => {
+        if (segment.nodeId) onSelectNodeId?.(segment.nodeId);
+      }}
+      onKeyDown={(event) => {
+        if (!segment.nodeId || !onSelectNodeId) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelectNodeId(segment.nodeId);
+        }
+      }}
       data-highlighted-segment={segment.highlighted ? "true" : "false"}
       data-highlight-kind={segment.kind}
       data-node-id={segment.nodeId ?? undefined}
-      className={getSourceSegmentClasses(segment.kind, segment.highlighted)}
+      className={[
+        getSourceSegmentClasses(segment.kind, segment.highlighted),
+        selectable ? "cursor-pointer" : "",
+        selected
+          ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"
+          : "",
+      ].join(" ")}
     >
       {segment.text}
     </span>
