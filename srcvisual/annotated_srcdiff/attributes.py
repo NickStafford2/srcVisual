@@ -4,6 +4,14 @@ from dataclasses import dataclass
 from typing import TypedDict
 import xml.etree.ElementTree as ET
 
+from srcvisual.core.namespaces import (
+    DIFF_NS,
+    POS_END,
+    POS_START,
+    POS_TABS,
+    SRC_NS,
+    prefixed_name,
+)
 from srcvisual.srcmove.attributes import (
     MV_FROM,
     MV_ID,
@@ -17,15 +25,6 @@ from srcvisual.srcmove.attributes import (
 )
 
 PLAIN_REF = "ref"
-
-from srcvisual.core.namespaces import (
-    DIFF_NS,
-    POS_END,
-    POS_START,
-    POS_TABS,
-    SRC_NS,
-    prefixed_name,
-)
 
 
 class PositionAttributesDict(TypedDict):

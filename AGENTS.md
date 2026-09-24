@@ -34,16 +34,21 @@ application image.
 
 ## Build and test entry points
 
-Use the existing project commands inside a configured environment:
+Use the repository Make targets:
 
 ```bash
-poetry run pytest
-cd frontend && npm test
+make test
+make lint
+make test-backend
+make test-backend-unit
+make test-frontend
 ```
 
-The installed `test` entry point runs both suites and supports `--backend-only`
-and `--frontend-only`. See [docs/Debugging.md](docs/Debugging.md) for focused
-commands and temporary-file controls.
+`make test` is the authoritative full check. Backend targets use the packaged
+Linux image containing `archive_reader`, `srcdiff`, and `srcMove`; do not use a
+Python-only image for the integration suite. Pass `PYTEST_ARGS='...'` to focus
+the backend suite. See [docs/Debugging.md](docs/Debugging.md) for details and
+temporary-file controls.
 
 Prefer existing fixtures and test helpers. Changes to XML processing, move
 metadata, pruning, or source spans should cover both archive-style and

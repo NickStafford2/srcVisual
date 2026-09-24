@@ -2,17 +2,15 @@ from __future__ import annotations
 
 from bisect import bisect_right
 from dataclasses import dataclass
+import xml.etree.ElementTree as ET
 from xml.parsers import expat
 
 from srcvisual.core.source_span import SourceSpan
 from srcvisual.core.namespaces import (
-    POS_END,
-    POS_START,
     prefixed_name_from_expat,
     skipped_tree_tag_names,
 )
 from srcvisual.core.units import is_single_file_srcdiff_root
-import xml.etree.ElementTree as ET
 
 
 def build_xml_span_index(

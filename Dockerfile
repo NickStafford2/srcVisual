@@ -7,6 +7,11 @@ COPY srcVisual/frontend/ ./
 RUN npm run build
 
 
+FROM frontend-builder AS frontend-test
+
+RUN npm test
+
+
 FROM ubuntu:24.04 AS native-builder
 
 ARG UBUNTU_CODENAME=noble

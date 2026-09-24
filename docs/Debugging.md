@@ -1,14 +1,36 @@
-Use these when debugging `srcVisual`.
+Use the repository Make targets when developing or debugging `srcVisual`.
+They keep the native backend checks and frontend build in reproducible Linux
+containers and provide one stable command surface for humans and agents.
+
+All required checks:
+
+```bash
+make test
+```
 
 Backend:
 
-- run all backend tests: `poetry run pytest`
-- run one backend example: `poetry run pytest tests/test_examples_e2e.py -k blocks_swapped -vv`
+- run backend lint: `make lint`
+- run all backend tests: `make test-backend`
+- run tests that do not invoke native tools: `make test-backend-unit`
+- run one backend example:
+  `make test-backend PYTEST_ARGS='tests/test_examples_e2e.py -k blocks_swapped -vv'`
+
+Backend tests run in the packaged `srcvisual:local` image because the complete
+suite invokes `archive_reader`, `srcdiff`, and `srcMove`. Rebuild that image
+with `make image` after dependency, native-tool, or Dockerfile changes. Source
+changes do not require a rebuild because the checkout is bind-mounted into the
+test container.
 
 Frontend:
 
-- run all frontend tests: `cd frontend && npm test`
-- run focused frontend tests: `cd frontend && npm test -- --run <test-file>`
+- run tests and the production build: `make test-frontend`
+- run only the production build: `make build-frontend`
+
+The frontend targets use the Dockerfile's cached dependency layer. For quick
+interactive work, the equivalent host commands remain `npm test` and
+`npm run build` from `frontend/`, but `make test` is the authoritative
+cross-platform check.
 
 Temp files:
 
