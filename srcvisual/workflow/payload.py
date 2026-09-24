@@ -312,6 +312,21 @@ def _build_canonical_payload(
             revision_files=revision_files,
             tree_by_unit=tree_by_unit,
         )
+        notify_progress(progress, "Rendering canonical source spans.")
+        _rendered_revision_files = build_pruned_revision_files(
+            moved_srcdiff_xml=moved_srcdiff_xml,
+            revision_files=revision_files,
+            include_skipped_tags=True,
+        )
+        visualized_files = _apply_rendered_source_spans(
+            visualized_files=visualized_files,
+            rendered_revision_files=_rendered_revision_files,
+        )
+        has_position_data = any(
+            _rendered_file.revision_0_spans_by_path
+            or _rendered_file.revision_1_spans_by_path
+            for _rendered_file in _rendered_revision_files
+        )
         _revision_0_chars, _revision_1_chars = _count_source_chars(visualized_files)
         notify_progress(
             progress,

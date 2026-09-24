@@ -176,6 +176,14 @@ def test_artifact_interface_serves_real_bounded_projections(
     source_payload = source.get_json()
     assert source_payload["file_id"] == file_id
     assert any(block["type"] == "hunk" for block in source_payload["blocks"])
+    assert any(
+        anchor["node_id"] == move_node_id and anchor["kind"] == "move"
+        for block in source_payload["blocks"]
+        for row in block.get("rows", [])
+        for line in (row["left"], row["right"])
+        if line is not None
+        for anchor in line["anchors"]
+    )
     assert sum(
         len(block.get("rows", [])) for block in source_payload["blocks"]
     ) <= 2_000
