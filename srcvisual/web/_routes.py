@@ -194,13 +194,34 @@ def history_pair(pair_number: int) -> tuple[dict[str, object], int]:
 @api.get("/runs/<run_id>")
 def run_status(run_id: str) -> tuple[dict[str, object], int]:
     try:
-        run = current_app.config["RUN_STORE"].read_run(run_id)
+        _run = current_app.config["RUN_STORE"].read_run(run_id)
     except RunNotFoundError:
         return {"error": "Run not found."}, 404
     return {
         "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
-        "run": run.to_dict(),
+        "run": _run.to_dict(),
     }, 200
+
+
+@api.post("/history/pairs/<int:pair_number>/runs")
+def create_history_run(
+    pair_number: int,
+) -> tuple[dict[str, object], int, dict[str, str]] | tuple[dict[str, str], int]:
+    try:
+        _history_repository()
+        _run = current_app.config["RUN_STORE"].create_history_run(pair_number)
+    except HistoryConfigurationError as error:
+        return history_error_response(error)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    return (
+        {
+            "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
+            "run": _run.to_dict(),
+        },
+        202,
+        {"Location": f"/api/runs/{_run.run_id}"},
+    )
 
 
 @api.post("/history/pairs/<int:pair_number>/visualize")

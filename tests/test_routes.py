@@ -252,6 +252,37 @@ def test_run_status_hides_invalid_and_unknown_ids(monkeypatch, tmp_path: Path) -
     assert invalid.get_json() == {"error": "Run not found."}
 
 
+def test_create_history_run_returns_queued_run_and_location(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+
+    response = create_app().test_client().post("/api/history/pairs/13/runs")
+
+    assert response.status_code == 202
+    assert response.get_json()["schema_version"] == 1
+    assert response.get_json()["run"]["history_pair"] == 13
+    assert response.get_json()["run"]["status"] == "queued"
+    assert response.headers["Location"] == (
+        f"/api/runs/{response.get_json()['run']['run_id']}"
+    )
+
+
+def test_create_history_run_requires_configured_repository(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.delenv("SRCVISUAL_HISTORY_REPOSITORY", raising=False)
+
+    response = create_app().test_client().post("/api/history/pairs/13/runs")
+
+    assert response.status_code == 503
+    assert "not configured" in response.get_json()["error"]
+
+
 def test_history_pair_visualization_materializes_and_builds_payload(
     monkeypatch,
     tmp_path: Path,

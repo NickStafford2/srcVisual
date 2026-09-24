@@ -644,11 +644,15 @@ state, and removal of the compatibility interface.
 ### Phase 3: durable history runs
 
 Status: in progress. The durable SQLite run/event store and polling status
-contract are implemented. The synchronous history endpoint remains the active
-compatibility path until the worker-backed creation API is complete.
+contract are implemented. A dedicated worker now claims queued history runs,
+materializes them through srcMove, and publishes their artifacts. The
+synchronous history endpoint remains available as a compatibility path.
 
-- Add the dedicated worker; the durable run/event store is complete.
-- Return run IDs immediately for history materialization.
+- The dedicated worker and durable run/event store are complete. Worker
+  startup marks interrupted running jobs failed without automatically
+  repeating repository-local work; queued jobs remain eligible.
+- Run creation returns a queued run ID immediately from
+  `POST /api/history/pairs/{pair_number}/runs`.
 - Add reconnectable SSE, polling fallback, cancellation, process-group cleanup,
   and duplicate-work suppression.
 - Reuse valid artifacts by fingerprint without transferring ownership of

@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 web = "srcvisual.web.app:main"
+history-worker = "srcvisual.runs.worker:main"
 test = "srcvisual.test_runner:main"
 
 

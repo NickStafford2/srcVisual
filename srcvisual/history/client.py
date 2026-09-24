@@ -20,6 +20,15 @@ class HistoryResponseError(RuntimeError):
     """srcmove-history returned output outside its versioned JSON contract."""
 
 
+def get_history_repository() -> Path | None:
+    _raw_repository = os.environ.get("SRCVISUAL_HISTORY_REPOSITORY", "").strip()
+    if not _raw_repository:
+        return None
+    if "\0" in _raw_repository:
+        raise ValueError("SRCVISUAL_HISTORY_REPOSITORY contains an invalid null byte.")
+    return Path(_raw_repository).expanduser().absolute()
+
+
 def read_history_status(repository: Path) -> dict[str, Any]:
     return _run_json_command(
         repository,

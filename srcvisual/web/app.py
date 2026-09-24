@@ -11,6 +11,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from srcvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
 from srcvisual.core.commands import get_command_timeout_seconds
+from srcvisual.history.client import get_history_repository
 from srcvisual.runs.store import RunStore, get_run_database_path
 from srcvisual.web._routes import api
 
@@ -128,15 +129,6 @@ def get_examples_dir() -> Path:
         return examples_dir
 
     return Path(__file__).resolve().parents[2] / "examples"
-
-
-def get_history_repository() -> Path | None:
-    raw_repository = os.environ.get("SRCVISUAL_HISTORY_REPOSITORY", "").strip()
-    if not raw_repository:
-        return None
-    if "\0" in raw_repository:
-        raise ValueError("SRCVISUAL_HISTORY_REPOSITORY contains an invalid null byte.")
-    return Path(raw_repository).expanduser().absolute()
 
 
 def get_dev_host() -> str:

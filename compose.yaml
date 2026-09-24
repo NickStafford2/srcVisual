@@ -33,5 +33,28 @@ services:
       - /tmp
       - /dev/shm
 
+  history-worker:
+    image: srcvisual:local
+    command: ["/opt/venv/bin/history-worker"]
+    init: true
+    read_only: true
+    environment:
+      SRCVISUAL_COMMAND_TIMEOUT_SECONDS: "300"
+      SRCVISUAL_HISTORY_REPOSITORY: "/history/repository"
+      SRCVISUAL_ARTIFACT_ROOT: "/var/lib/srcvisual/artifacts"
+      SRCVISUAL_TMP_ROOT: "/tmp/srcvisual"
+    volumes:
+      - srcvisual-artifacts:/var/lib/srcvisual/artifacts
+      - ../srcMove/reference-repositories/notepadpp:/history/repository:ro
+      - ../srcMove/reference-repositories/notepadpp/.git:/history/repository/.git:rw
+      - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/repository/.srcmove:rw
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /dev/shm
+    healthcheck:
+      disable: true
+
 volumes:
   srcvisual-artifacts:

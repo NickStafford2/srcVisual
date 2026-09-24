@@ -94,3 +94,45 @@ def test_event_cursor_returns_only_later_events(tmp_path: Path) -> None:
 
     assert len(_events) == 1
     assert _events[0].sequence == 2
+
+
+def test_only_one_store_can_atomically_claim_a_queued_run(tmp_path: Path) -> None:
+    _first = _store(tmp_path)
+    _second = RunStore(tmp_path / "runs.sqlite3")
+    _second.initialize()
+    _queued = _first.create_history_run(8)
+
+    _claimed = _first.claim_next()
+
+    assert _claimed is not None
+    assert _claimed.run_id == _queued.run_id
+    assert _claimed.status == "running"
+    assert _second.claim_next() is None
+
+
+def test_abandoned_running_runs_fail_while_queued_runs_remain(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    _running = _store_instance.create_history_run(1)
+    _queued = _store_instance.create_history_run(2)
+    _store_instance.mark_running(_running.run_id)
+
+    assert _store_instance.fail_abandoned_runs() == 1
+
+    _failed = _store_instance.read_run(_running.run_id)
+    assert _failed.status == "failed"
+    assert _failed.diagnostic is not None
+    assert _failed.diagnostic.code == "worker-restarted"
+    assert _store_instance.read_run(_queued.run_id).status == "queued"
+
+
+def test_claim_cancels_queued_request_before_starting_next_run(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    _cancelled = _store_instance.create_history_run(1)
+    _next = _store_instance.create_history_run(2)
+    _store_instance.request_cancellation(_cancelled.run_id)
+
+    _claimed = _store_instance.claim_next()
+
+    assert _claimed is not None
+    assert _claimed.run_id == _next.run_id
+    assert _store_instance.read_run(_cancelled.run_id).status == "cancelled"

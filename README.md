@@ -79,6 +79,12 @@ survive container replacement and ordinary `docker compose down`; removing the
 named volume removes them. Durable history run state and ordered progress
 events use `runs.sqlite3` in that same volume.
 
+History visualization runs are queued with
+`POST /api/history/pairs/{pair_number}/runs` and processed by the dedicated
+`history-worker` Compose service. The status polling endpoint is
+`GET /api/runs/{run_id}`. The current frontend continues to use the synchronous
+compatibility endpoint until progress streaming and cancellation are complete.
+
 ## Hosted application vision
 
 The long-term goal is a secure hosted service where users can:

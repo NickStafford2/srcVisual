@@ -144,6 +144,103 @@ class RunStore:
             set_started=True,
         )
 
+    def claim_next(self) -> RunRecord | None:
+        with closing(self._connect()) as _database:
+            _database.execute("BEGIN IMMEDIATE")
+            try:
+                while True:
+                    _row = _database.execute(
+                        """
+                        SELECT *
+                        FROM runs
+                        WHERE status = 'queued'
+                        ORDER BY created_at, run_id
+                        LIMIT 1
+                        """
+                    ).fetchone()
+                    if _row is None:
+                        _database.commit()
+                        return None
+                    _run_id = str(_row["run_id"])
+                    _now = _timestamp()
+                    if bool(_row["cancellation_requested"]):
+                        _database.execute(
+                            """
+                            UPDATE runs
+                            SET status = 'cancelled', finished_at = ?
+                            WHERE run_id = ?
+                            """,
+                            (_now, _run_id),
+                        )
+                        self._insert_event(
+                            _database,
+                            run_id=_run_id,
+                            event_type="status",
+                            status="cancelled",
+                            message="History visualization cancelled.",
+                            created_at=_now,
+                        )
+                        continue
+                    _database.execute(
+                        """
+                        UPDATE runs
+                        SET status = 'running', started_at = ?
+                        WHERE run_id = ?
+                        """,
+                        (_now, _run_id),
+                    )
+                    self._insert_event(
+                        _database,
+                        run_id=_run_id,
+                        event_type="status",
+                        status="running",
+                        message="History visualization started.",
+                        created_at=_now,
+                    )
+                    _database.commit()
+                    break
+            except Exception:
+                _database.rollback()
+                raise
+        return self.read_run(_run_id)
+
+    def fail_abandoned_runs(self) -> int:
+        _now = _timestamp()
+        _code = "worker-restarted"
+        _message = "The history worker stopped before this run completed."
+        with closing(self._connect()) as _database:
+            _database.execute("BEGIN IMMEDIATE")
+            try:
+                _run_ids = [
+                    str(_row["run_id"])
+                    for _row in _database.execute(
+                        "SELECT run_id FROM runs WHERE status = 'running'"
+                    ).fetchall()
+                ]
+                for _run_id in _run_ids:
+                    _database.execute(
+                        """
+                        UPDATE runs
+                        SET status = 'failed', diagnostic_code = ?,
+                            diagnostic_message = ?, finished_at = ?
+                        WHERE run_id = ?
+                        """,
+                        (_code, _message, _now, _run_id),
+                    )
+                    self._insert_event(
+                        _database,
+                        run_id=_run_id,
+                        event_type="status",
+                        status="failed",
+                        message=_message,
+                        created_at=_now,
+                    )
+                _database.commit()
+            except Exception:
+                _database.rollback()
+                raise
+        return len(_run_ids)
+
     def append_progress(self, run_id: str, message: str) -> RunEvent:
         _message = _validated_message(message)
         with closing(self._connect()) as _database:
