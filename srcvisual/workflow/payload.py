@@ -25,6 +25,7 @@ from srcvisual.workflow._tree_pruning import (
 from srcvisual.workflow._pruned_srcdiff import build_pruned_srcdiff_xml
 from srcvisual.workflow._pruned_move_results import prune_move_results
 from srcvisual.workflow._pruned_source_builder import build_pruned_revision_files
+from srcvisual.workflow._source_renderer import render_revision_files
 from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
 from srcvisual.srcmove.runner import (
     is_strict_srcmove_validation_enabled,
@@ -317,7 +318,7 @@ def _build_canonical_payload(
             tree_by_unit=tree_by_unit,
         )
         notify_progress(progress, "Rendering canonical source spans.")
-        _rendered_revision_files = build_pruned_revision_files(
+        _rendered_revision_files = render_revision_files(
             moved_srcdiff_xml=moved_srcdiff_xml,
             revision_files=revision_files,
             include_skipped_tags=True,

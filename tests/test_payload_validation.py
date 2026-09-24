@@ -67,16 +67,24 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
         "build_visualized_files",
         lambda **kwargs: visualized_files,
     )
-    monkeypatch.setattr(
-        payload_module,
-        "build_pruned_revision_files",
-        lambda **kwargs: (
+    def _render_revision_files(**kwargs):
+        return (
             SimpleNamespace(
                 revision_file=revision_file,
                 revision_0_spans_by_path={},
                 revision_1_spans_by_path={},
             ),
-        ),
+        )
+
+    monkeypatch.setattr(
+        payload_module,
+        "render_revision_files",
+        _render_revision_files,
+    )
+    monkeypatch.setattr(
+        payload_module,
+        "build_pruned_revision_files",
+        _render_revision_files,
     )
     monkeypatch.setattr(
         payload_module,

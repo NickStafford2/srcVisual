@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from srcvisual.core.source_span import SourceSpan
 from srcvisual.files.models import RevisionFile
-from srcvisual.workflow._pruned_source_builder import (
-    build_pruned_revision_files,
+import srcvisual.workflow._pruned_source_builder as pruned_source_builder
+from srcvisual.workflow._source_renderer import (
     _compute_line_starts,
     _offset_to_line_col,
+    render_revision_files,
 )
 
 
-def test_build_pruned_revision_files_renders_revision_specific_source() -> None:
+def test_render_revision_files_renders_revision_specific_source() -> None:
     moved_srcdiff_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"
       xmlns:diff="http://www.srcML.org/srcDiff"><unit filename="example.cpp"><expr_stmt><name>keep</name>;</expr_stmt><diff:delete><expr_stmt><name>old</name>;</expr_stmt></diff:delete><diff:insert><expr_stmt><name>new</name>;</expr_stmt></diff:insert></unit></unit>
@@ -26,7 +27,7 @@ def test_build_pruned_revision_files_renders_revision_specific_source() -> None:
         ),
     )
 
-    rendered_files = build_pruned_revision_files(
+    rendered_files = render_revision_files(
         moved_srcdiff_xml=moved_srcdiff_xml,
         revision_files=revision_files,
         include_skipped_tags=False,
@@ -48,6 +49,32 @@ def test_build_pruned_revision_files_renders_revision_specific_source() -> None:
         end_line=1,
         end_col=9,
     )
+
+
+def test_pruned_source_builder_is_a_compatibility_wrapper(monkeypatch) -> None:
+    _captured = {}
+    _rendered_files = ()
+
+    def _render_revision_files(**kwargs):
+        _captured.update(kwargs)
+        return _rendered_files
+
+    monkeypatch.setattr(
+        pruned_source_builder,
+        "render_revision_files",
+        _render_revision_files,
+    )
+
+    assert pruned_source_builder.build_pruned_revision_files(
+        moved_srcdiff_xml="<unit />",
+        revision_files=(),
+        include_skipped_tags=False,
+    ) is _rendered_files
+    assert _captured == {
+        "moved_srcdiff_xml": "<unit />",
+        "revision_files": (),
+        "include_skipped_tags": False,
+    }
 
 
 def test_offset_to_line_col_uses_line_starts_correctly() -> None:

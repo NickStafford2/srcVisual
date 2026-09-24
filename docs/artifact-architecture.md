@@ -782,10 +782,11 @@ Destructive pruning remains confined to the compatibility projection in
 `workflow/payload.py`: it prunes files and trees, conditionally rebuilds
 filtered XML and revision sources, and then prunes move results. Request parsing
 still accepts `include_skipped_tags` and `pruning_level` for those callers. The
-canonical artifact builder also reuses `build_pruned_revision_files()` with
-the complete, unpruned XML solely to calculate revision-local source spans.
-That non-destructive responsibility must be renamed or separated before the
-old pruning module can be deleted.
+canonical artifact builder now calls the neutral `render_revision_files()`
+implementation in `_source_renderer.py` to calculate revision-local source
+spans from the complete XML. The legacy `build_pruned_revision_files()` name is
+only a thin compatibility wrapper around that renderer, so later pruning-code
+removal cannot accidentally remove canonical source-span generation.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts. (Complete.)
