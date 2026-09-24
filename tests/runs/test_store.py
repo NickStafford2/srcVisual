@@ -1,4 +1,6 @@
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+import sqlite3
 
 import pytest
 
@@ -108,6 +110,64 @@ def test_only_one_store_can_atomically_claim_a_queued_run(tmp_path: Path) -> Non
     assert _claimed.run_id == _queued.run_id
     assert _claimed.status == "running"
     assert _second.claim_next() is None
+
+
+def test_concurrent_matching_requests_share_one_active_run(tmp_path: Path) -> None:
+    _first = _store(tmp_path)
+    _second = RunStore(tmp_path / "runs.sqlite3")
+    _second.initialize()
+    _fingerprint = "d" * 64
+
+    with ThreadPoolExecutor(max_workers=2) as _executor:
+        _results = list(
+            _executor.map(
+                lambda store: store.acquire_history_run(8, _fingerprint),
+                (_first, _second),
+            )
+        )
+
+    assert len({_run.run_id for _run, _reuse in _results}) == 1
+    assert {_reuse for _run, _reuse in _results} == {"new", "active-run"}
+
+
+def test_completed_matching_run_is_offered_for_validation(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    _fingerprint = "e" * 64
+    _run, _reuse = _store_instance.acquire_history_run(4, _fingerprint)
+    assert _reuse == "new"
+    _store_instance.mark_running(_run.run_id)
+    _store_instance.complete(_run.run_id, "a" * 32)
+
+    _reused, _reuse = _store_instance.acquire_history_run(4, _fingerprint)
+    _fresh, _fresh_reuse = _store_instance.acquire_history_run(
+        4,
+        _fingerprint,
+        excluded_completed_run_ids=frozenset({_run.run_id}),
+    )
+
+    assert _reused.run_id == _run.run_id
+    assert _reuse == "artifact"
+    assert _fresh.run_id != _run.run_id
+    assert _fresh_reuse == "new"
+
+
+def test_version_one_store_migrates_without_losing_runs(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    _existing = _store_instance.create_history_run(2)
+    with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
+        _database.execute("DROP INDEX active_run_fingerprint")
+        _database.execute("ALTER TABLE runs DROP COLUMN fingerprint")
+        _database.execute("PRAGMA user_version = 1")
+
+    _reopened = RunStore(tmp_path / "runs.sqlite3")
+    _reopened.initialize()
+    _new, _reuse = _reopened.acquire_history_run(3, "f" * 64)
+
+    assert _reopened.read_run(_existing.run_id).history_pair == 2
+    assert _new.history_pair == 3
+    assert _reuse == "new"
+    with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
+        assert _database.execute("PRAGMA user_version").fetchone() == (2,)
 
 
 def test_abandoned_running_runs_fail_while_queued_runs_remain(tmp_path: Path) -> None:

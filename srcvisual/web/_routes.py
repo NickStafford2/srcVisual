@@ -16,7 +16,11 @@ from srcvisual.artifacts.projections import (
     read_source_projection,
     read_tree_projection,
 )
-from srcvisual.artifacts.store import ArtifactIntegrityError
+from srcvisual.artifacts.store import (
+    ARTIFACT_SCHEMA_VERSION,
+    ArtifactIntegrityError,
+    validate_artifact,
+)
 from srcvisual.core.commands import BackendCommandError
 from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
 from srcvisual.workflow.payload import (
@@ -26,6 +30,7 @@ from srcvisual.workflow.payload import (
 from srcvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
+    build_history_artifact_fingerprint,
     history_error_response,
     materialize_history_pair,
     read_materialized_move_results,
@@ -243,9 +248,34 @@ def create_history_run(
     pair_number: int,
 ) -> tuple[dict[str, object], int, dict[str, str]] | tuple[dict[str, str], int]:
     try:
-        _history_repository()
-        _run = current_app.config["RUN_STORE"].create_history_run(pair_number)
-    except HistoryConfigurationError as error:
+        _repository = _history_repository()
+        _fingerprint = build_history_artifact_fingerprint(
+            _repository,
+            pair_number,
+            artifact_schema_version=ARTIFACT_SCHEMA_VERSION,
+        )
+        _excluded_completed_run_ids: set[str] = set()
+        while True:
+            _run, _reuse = current_app.config["RUN_STORE"].acquire_history_run(
+                pair_number,
+                _fingerprint,
+                excluded_completed_run_ids=frozenset(
+                    _excluded_completed_run_ids
+                ),
+            )
+            if _reuse != "artifact":
+                break
+            try:
+                assert _run.artifact_id is not None
+                validate_artifact(
+                    artifact_root=current_app.config["ARTIFACT_ROOT"],
+                    artifact_id=_run.artifact_id,
+                )
+            except (ArtifactIntegrityError, FileNotFoundError):
+                _excluded_completed_run_ids.add(_run.run_id)
+                continue
+            break
+    except (HistoryConfigurationError, HistoryResponseError) as error:
         return history_error_response(error)
     except ValueError as error:
         return {"error": str(error)}, 400
@@ -253,8 +283,9 @@ def create_history_run(
         {
             "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
             "run": _run.to_dict(),
+            "reuse": _reuse,
         },
-        202,
+        200 if _reuse == "artifact" else 202,
         {"Location": f"/api/runs/{_run.run_id}"},
     )
 

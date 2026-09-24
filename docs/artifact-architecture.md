@@ -514,6 +514,17 @@ queued ----------> failed
 change the run to `cancelled`; the worker must first terminate and reap the
 native process group. Terminal runs cannot transition again.
 
+Run creation is a fingerprinted single-flight operation. srcVisual hashes
+srcMove's versioned `pair_fingerprint` together with the srcVisual artifact
+schema version and artifact-building configuration. It does not inspect
+srcMove's database or recreate srcMove's history identity rules. Matching
+queued or running work returns the existing run with `202` and
+`reuse: active-run`. A matching completed run is returned with `200` and
+`reuse: artifact` only after full manifest, checksum, and index validation.
+Otherwise the endpoint queues a new run with `202` and `reuse: new`; invalid
+completed candidates are quarantined when present and excluded from that
+request's reuse search.
+
 `GET /api/runs/{run_id}` is the polling fallback and returns run contract
 schema version 1. Its run object contains the kind `history-visualization`,
 pair number, state, nullable artifact ID, cancellation flag, safe nullable
@@ -657,10 +668,11 @@ state, and removal of the compatibility interface.
 
 ### Phase 3: durable history runs
 
-Status: in progress. The durable SQLite run/event store and polling status
-contract are implemented. A dedicated worker now claims queued history runs,
+Status: complete. The durable SQLite run/event store and polling status
+contract are implemented. A dedicated worker claims queued history runs,
 materializes them through srcMove, and publishes their artifacts. The
-synchronous history endpoint remains available as a compatibility path.
+synchronous history endpoint remains available as a compatibility path for
+the Phase 4 frontend migration.
 
 - The dedicated worker and durable run/event store are complete. Worker
   startup marks interrupted running jobs failed without automatically
@@ -669,9 +681,10 @@ synchronous history endpoint remains available as a compatibility path.
   `POST /api/history/pairs/{pair_number}/runs`.
 - Reconnectable SSE, polling fallback, cancellation, and process-group cleanup
   are complete.
-- Add duplicate-work suppression.
-- Reuse valid artifacts by fingerprint without transferring ownership of
-  `.srcmove` state to srcVisual.
+- Fingerprinted single-flight creation suppresses duplicate active work.
+- Valid completed artifacts are reused by fingerprint without transferring
+  ownership of `.srcmove` state to srcVisual; failed validation queues a new
+  run.
 
 ### Phase 4: complete frontend migration
 

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from srcvisual.runs.models import RunDiagnostic, RunEvent, RunRecord, RunStatus
 
-RUN_STORE_SCHEMA_VERSION = 1
+RUN_STORE_SCHEMA_VERSION = 2
 RUN_DATABASE_FILENAME = "runs.sqlite3"
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
 
@@ -34,7 +34,7 @@ class RunStore:
         with closing(self._connect()) as _database:
             _database.execute("PRAGMA journal_mode = WAL")
             _version = int(_database.execute("PRAGMA user_version").fetchone()[0])
-            if _version not in {0, RUN_STORE_SCHEMA_VERSION}:
+            if _version not in {0, 1, RUN_STORE_SCHEMA_VERSION}:
                 raise RunStoreSchemaError(
                     "Unsupported run store schema: "
                     f"expected {RUN_STORE_SCHEMA_VERSION}, received {_version}."
@@ -45,6 +45,10 @@ class RunStore:
                     run_id TEXT PRIMARY KEY,
                     kind TEXT NOT NULL CHECK (kind = 'history-visualization'),
                     history_pair INTEGER NOT NULL CHECK (history_pair > 0),
+                    fingerprint TEXT CHECK (
+                        fingerprint IS NULL
+                        OR (length(fingerprint) = 64 AND fingerprint NOT GLOB '*[^0-9a-f]*')
+                    ),
                     status TEXT NOT NULL CHECK (
                         status IN ('queued', 'running', 'completed', 'failed', 'cancelled')
                     ),
@@ -99,15 +103,36 @@ class RunStore:
                     ON run_events(run_id, created_at);
                 """
             )
+            if _version == 1:
+                _columns = {
+                    str(_row[1])
+                    for _row in _database.execute("PRAGMA table_info(runs)")
+                }
+                if "fingerprint" not in _columns:
+                    _database.execute(
+                        """
+                        ALTER TABLE runs ADD COLUMN fingerprint TEXT CHECK (
+                            fingerprint IS NULL
+                            OR (
+                                length(fingerprint) = 64
+                                AND fingerprint NOT GLOB '*[^0-9a-f]*'
+                            )
+                        )
+                        """
+                    )
+            _database.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS active_run_fingerprint
+                ON runs(fingerprint)
+                WHERE fingerprint IS NOT NULL
+                  AND status IN ('queued', 'running')
+                """
+            )
             _database.execute(f"PRAGMA user_version = {RUN_STORE_SCHEMA_VERSION}")
+            _database.commit()
 
     def create_history_run(self, history_pair: int) -> RunRecord:
-        if (
-            isinstance(history_pair, bool)
-            or not isinstance(history_pair, int)
-            or history_pair <= 0
-        ):
-            raise ValueError("History pair number must be a positive integer.")
+        _validate_history_pair(history_pair)
         _run_id = uuid4().hex
         _created_at = _timestamp()
         with closing(self._connect()) as _database:
@@ -134,6 +159,88 @@ class RunStore:
                 _database.rollback()
                 raise
         return self.read_run(_run_id)
+
+    def acquire_history_run(
+        self,
+        history_pair: int,
+        fingerprint: str,
+        *,
+        excluded_completed_run_ids: frozenset[str] = frozenset(),
+    ) -> tuple[RunRecord, str]:
+        """Atomically follow active work, offer completed work, or queue new work."""
+        _validate_history_pair(history_pair)
+        _validate_fingerprint(fingerprint)
+        for _run_id in excluded_completed_run_ids:
+            _validate_run_id(_run_id)
+        _created_run_id: str | None = None
+        with closing(self._connect()) as _database:
+            _database.execute("BEGIN IMMEDIATE")
+            try:
+                _row = _database.execute(
+                    """
+                    SELECT run_id
+                    FROM runs
+                    WHERE fingerprint = ? AND status IN ('queued', 'running')
+                    ORDER BY created_at, run_id
+                    LIMIT 1
+                    """,
+                    (fingerprint,),
+                ).fetchone()
+                _disposition = "active-run"
+                if _row is None:
+                    _parameters: list[object] = [fingerprint]
+                    _exclusion = ""
+                    if excluded_completed_run_ids:
+                        _placeholders = ", ".join(
+                            "?" for _ in excluded_completed_run_ids
+                        )
+                        _exclusion = f"AND run_id NOT IN ({_placeholders})"
+                        _parameters.extend(sorted(excluded_completed_run_ids))
+                    _row = _database.execute(
+                        f"""
+                        SELECT run_id
+                        FROM runs
+                        WHERE fingerprint = ? AND status = 'completed'
+                          {_exclusion}
+                        ORDER BY finished_at DESC, run_id
+                        LIMIT 1
+                        """,
+                        _parameters,
+                    ).fetchone()
+                    _disposition = "artifact"
+                if _row is None:
+                    _created_run_id = uuid4().hex
+                    _created_at = _timestamp()
+                    _database.execute(
+                        """
+                        INSERT INTO runs (
+                            run_id, kind, history_pair, fingerprint, status, created_at
+                        ) VALUES (?, 'history-visualization', ?, ?, 'queued', ?)
+                        """,
+                        (
+                            _created_run_id,
+                            history_pair,
+                            fingerprint,
+                            _created_at,
+                        ),
+                    )
+                    self._insert_event(
+                        _database,
+                        run_id=_created_run_id,
+                        event_type="status",
+                        status="queued",
+                        message="History visualization queued.",
+                        created_at=_created_at,
+                    )
+                    _disposition = "new"
+                _database.commit()
+            except Exception:
+                _database.rollback()
+                raise
+        _run_id = (
+            _created_run_id if _created_run_id is not None else str(_row["run_id"])
+        )
+        return self.read_run(_run_id), _disposition
 
     def mark_running(self, run_id: str) -> RunRecord:
         return self._transition(
@@ -541,6 +648,22 @@ def _validate_artifact_id(artifact_id: str) -> None:
         _character not in "0123456789abcdef" for _character in artifact_id
     ):
         raise ValueError("Artifact ID must be a 32-character lowercase hex string.")
+
+
+def _validate_history_pair(history_pair: int) -> None:
+    if (
+        isinstance(history_pair, bool)
+        or not isinstance(history_pair, int)
+        or history_pair <= 0
+    ):
+        raise ValueError("History pair number must be a positive integer.")
+
+
+def _validate_fingerprint(fingerprint: str) -> None:
+    if len(fingerprint) != 64 or any(
+        _character not in "0123456789abcdef" for _character in fingerprint
+    ):
+        raise ValueError("Run fingerprint must be a 64-character lowercase hex string.")
 
 
 def _validated_message(message: str) -> str:

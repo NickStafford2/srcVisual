@@ -321,6 +321,11 @@ def test_create_history_run_returns_queued_run_and_location(
 ) -> None:
     monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
     monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setattr(
+        routes_module,
+        "build_history_artifact_fingerprint",
+        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+    )
 
     response = create_app().test_client().post("/api/history/pairs/13/runs")
 
@@ -328,9 +333,88 @@ def test_create_history_run_returns_queued_run_and_location(
     assert response.get_json()["schema_version"] == 1
     assert response.get_json()["run"]["history_pair"] == 13
     assert response.get_json()["run"]["status"] == "queued"
+    assert response.get_json()["reuse"] == "new"
     assert response.headers["Location"] == (
         f"/api/runs/{response.get_json()['run']['run_id']}"
     )
+
+
+def test_create_history_run_follows_active_matching_run(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setattr(
+        routes_module,
+        "build_history_artifact_fingerprint",
+        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+    )
+    _app = create_app()
+
+    _first = _app.test_client().post("/api/history/pairs/13/runs")
+    _second = _app.test_client().post("/api/history/pairs/13/runs")
+
+    assert _first.status_code == 202
+    assert _second.status_code == 202
+    assert _second.get_json()["reuse"] == "active-run"
+    assert _second.get_json()["run"]["run_id"] == _first.get_json()["run"]["run_id"]
+
+
+def test_create_history_run_reuses_only_valid_completed_artifact(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setattr(
+        routes_module,
+        "build_history_artifact_fingerprint",
+        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+    )
+    _app = create_app()
+    _store = _app.config["RUN_STORE"]
+    _run, _reuse = _store.acquire_history_run(13, "f" * 64)
+    assert _reuse == "new"
+    _store.mark_running(_run.run_id)
+    _store.complete(_run.run_id, "a" * 32)
+    monkeypatch.setattr(routes_module, "validate_artifact", lambda **kwargs: None)
+
+    _response = _app.test_client().post("/api/history/pairs/13/runs")
+
+    assert _response.status_code == 200
+    assert _response.get_json()["reuse"] == "artifact"
+    assert _response.get_json()["run"]["run_id"] == _run.run_id
+
+
+def test_create_history_run_queues_fresh_work_after_invalid_reuse(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setattr(
+        routes_module,
+        "build_history_artifact_fingerprint",
+        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+    )
+    _app = create_app()
+    _store = _app.config["RUN_STORE"]
+    _run, _reuse = _store.acquire_history_run(13, "f" * 64)
+    assert _reuse == "new"
+    _store.mark_running(_run.run_id)
+    _store.complete(_run.run_id, "a" * 32)
+    monkeypatch.setattr(
+        routes_module,
+        "validate_artifact",
+        lambda **kwargs: (_ for _ in ()).throw(FileNotFoundError()),
+    )
+
+    _response = _app.test_client().post("/api/history/pairs/13/runs")
+
+    assert _response.status_code == 202
+    assert _response.get_json()["reuse"] == "new"
+    assert _response.get_json()["run"]["run_id"] != _run.run_id
 
 
 def test_create_history_run_requires_configured_repository(

@@ -85,7 +85,14 @@ History visualization runs are queued with
 `GET /api/runs/{run_id}`; durable progress streams from
 `GET /api/runs/{run_id}/events`, and `POST /api/runs/{run_id}/cancel` requests
 cancellation. The current frontend continues to use the synchronous
-compatibility endpoint until the remaining reuse policy is complete.
+compatibility endpoint until its Phase 4 artifact-contract migration.
+
+Run creation derives an internal fingerprint from srcMove's versioned pair
+identity plus srcVisual's artifact schema and analysis configuration. A
+matching queued or running request follows the existing run (`202`); a valid
+completed artifact is returned immediately (`200`). The response field
+`reuse` distinguishes `new`, `active-run`, and `artifact`. Missing or corrupt
+completed artifacts are never reused and fresh work is queued instead.
 
 ## Hosted application vision
 

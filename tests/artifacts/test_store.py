@@ -11,6 +11,7 @@ from srcvisual.artifacts.store import (
     cleanup_stale_staging,
     publish_artifact,
     read_artifact,
+    validate_artifact,
 )
 from srcvisual.files.models import RevisionFile, VisualizedFile
 from srcvisual.workflow.models import VisualizationPayload
@@ -73,6 +74,28 @@ def test_read_artifact_rejects_modified_published_content(tmp_path) -> None:
         )
     assert not _published.path.exists()
     assert len(list((tmp_path / ".quarantine").iterdir())) == 1
+
+
+def test_validate_artifact_checks_integrity_without_loading_payload(tmp_path) -> None:
+    _published = publish_artifact(
+        artifact_root=tmp_path,
+        canonical_payload=build_payload(),
+        input_payload=b"input",
+        provenance=ArtifactProvenance(origin="upload"),
+    )
+
+    assert validate_artifact(
+        artifact_root=tmp_path,
+        artifact_id=_published.artifact_id,
+    ) is None
+
+    (_published.path / "annotated.xml").write_text("tampered", encoding="utf-8")
+    with pytest.raises(ArtifactIntegrityError, match="checksum mismatch"):
+        validate_artifact(
+            artifact_root=tmp_path,
+            artifact_id=_published.artifact_id,
+        )
+    assert not _published.path.exists()
 
 
 def test_failed_publication_removes_staging_data(tmp_path) -> None:

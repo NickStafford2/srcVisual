@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Sequence
@@ -85,6 +86,47 @@ def read_history_pair(repository: Path, pair_number: int) -> dict[str, Any]:
         ("show", str(pair_number), "--format", "json"),
         expected_schema_version=1,
     )
+
+
+def build_history_artifact_fingerprint(
+    repository: Path,
+    pair_number: int,
+    *,
+    artifact_schema_version: int,
+) -> str:
+    """Bind srcMove's canonical pair identity to srcVisual's artifact contract."""
+    _document = read_history_pair(repository, pair_number)
+    _pair = _document.get("pair")
+    if not isinstance(_pair, dict):
+        raise HistoryResponseError(
+            "srcmove-history pair response is missing `pair`."
+        )
+    _pair_fingerprint = _pair.get("pair_fingerprint")
+    if not isinstance(_pair_fingerprint, str) or len(_pair_fingerprint) != 64 or any(
+        _character not in "0123456789abcdef"
+        for _character in _pair_fingerprint
+    ):
+        raise HistoryResponseError(
+            "srcmove-history pair response has an invalid `pair_fingerprint`."
+        )
+    if (
+        isinstance(artifact_schema_version, bool)
+        or not isinstance(artifact_schema_version, int)
+        or artifact_schema_version <= 0
+    ):
+        raise ValueError("Artifact schema version must be a positive integer.")
+    _identity = {
+        "schema_version": 1,
+        "srcmove_pair_fingerprint": _pair_fingerprint,
+        "artifact_schema_version": artifact_schema_version,
+        "analysis_configuration": {"include_skipped_tags": True},
+    }
+    _canonical = json.dumps(
+        _identity,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(_canonical).hexdigest()
 
 
 def materialize_history_pair(repository: Path, pair_number: int) -> Path:
