@@ -126,29 +126,30 @@ def test_concurrent_matching_requests_share_one_active_run(tmp_path: Path) -> No
             )
         )
 
-    assert len({_run.run_id for _run, _reuse in _results}) == 1
-    assert {_reuse for _run, _reuse in _results} == {"new", "active-run"}
+    assert len({_result.run.run_id for _result in _results}) == 1
+    assert {_result.disposition for _result in _results} == {"new", "active-run"}
 
 
 def test_completed_matching_run_is_offered_for_validation(tmp_path: Path) -> None:
     _store_instance = _store(tmp_path)
     _fingerprint = "e" * 64
-    _run, _reuse = _store_instance.acquire_history_run(4, _fingerprint)
-    assert _reuse == "new"
+    _acquired = _store_instance.acquire_history_run(4, _fingerprint)
+    _run = _acquired.run
+    assert _acquired.disposition == "new"
     _store_instance.mark_running(_run.run_id)
     _store_instance.complete(_run.run_id, "a" * 32)
 
-    _reused, _reuse = _store_instance.acquire_history_run(4, _fingerprint)
-    _fresh, _fresh_reuse = _store_instance.acquire_history_run(
+    _reused = _store_instance.acquire_history_run(4, _fingerprint)
+    _fresh = _store_instance.acquire_history_run(
         4,
         _fingerprint,
         excluded_completed_run_ids=frozenset({_run.run_id}),
     )
 
-    assert _reused.run_id == _run.run_id
-    assert _reuse == "artifact"
-    assert _fresh.run_id != _run.run_id
-    assert _fresh_reuse == "new"
+    assert _reused.run.run_id == _run.run_id
+    assert _reused.disposition == "artifact"
+    assert _fresh.run.run_id != _run.run_id
+    assert _fresh.disposition == "new"
 
 
 def test_version_one_store_migrates_without_losing_runs(tmp_path: Path) -> None:
@@ -161,11 +162,11 @@ def test_version_one_store_migrates_without_losing_runs(tmp_path: Path) -> None:
 
     _reopened = RunStore(tmp_path / "runs.sqlite3")
     _reopened.initialize()
-    _new, _reuse = _reopened.acquire_history_run(3, "f" * 64)
+    _new = _reopened.acquire_history_run(3, "f" * 64)
 
     assert _reopened.read_run(_existing.run_id).history_pair == 2
-    assert _new.history_pair == 3
-    assert _reuse == "new"
+    assert _new.run.history_pair == 3
+    assert _new.disposition == "new"
     with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
         assert _database.execute("PRAGMA user_version").fetchone() == (2,)
 

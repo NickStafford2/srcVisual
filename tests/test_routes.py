@@ -374,8 +374,9 @@ def test_create_history_run_reuses_only_valid_completed_artifact(
     )
     _app = create_app()
     _store = _app.config["RUN_STORE"]
-    _run, _reuse = _store.acquire_history_run(13, "f" * 64)
-    assert _reuse == "new"
+    _acquired = _store.acquire_history_run(13, "f" * 64)
+    _run = _acquired.run
+    assert _acquired.disposition == "new"
     _store.mark_running(_run.run_id)
     _store.complete(_run.run_id, "a" * 32)
     monkeypatch.setattr(routes_module, "validate_artifact", lambda **kwargs: None)
@@ -400,8 +401,9 @@ def test_create_history_run_queues_fresh_work_after_invalid_reuse(
     )
     _app = create_app()
     _store = _app.config["RUN_STORE"]
-    _run, _reuse = _store.acquire_history_run(13, "f" * 64)
-    assert _reuse == "new"
+    _acquired = _store.acquire_history_run(13, "f" * 64)
+    _run = _acquired.run
+    assert _acquired.disposition == "new"
     _store.mark_running(_run.run_id)
     _store.complete(_run.run_id, "a" * 32)
     monkeypatch.setattr(

@@ -525,6 +525,10 @@ Otherwise the endpoint queues a new run with `202` and `reuse: new`; invalid
 completed candidates are quarantined when present and excluded from that
 request's reuse search.
 
+The run-creation response is a separate schema-version-1 contract containing
+the run-status object and the typed `reuse` disposition. Its schema evolves
+independently of the run-status and event contracts.
+
 `GET /api/runs/{run_id}` is the polling fallback and returns run contract
 schema version 1. Its run object contains the kind `history-visualization`,
 pair number, state, nullable artifact ID, cancellation flag, safe nullable

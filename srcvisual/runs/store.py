@@ -6,7 +6,14 @@ from pathlib import Path
 import sqlite3
 from uuid import uuid4
 
-from srcvisual.runs.models import RunDiagnostic, RunEvent, RunRecord, RunStatus
+from srcvisual.runs.models import (
+    RunAcquisition,
+    RunCreationDisposition,
+    RunDiagnostic,
+    RunEvent,
+    RunRecord,
+    RunStatus,
+)
 
 RUN_STORE_SCHEMA_VERSION = 2
 RUN_DATABASE_FILENAME = "runs.sqlite3"
@@ -166,7 +173,7 @@ class RunStore:
         fingerprint: str,
         *,
         excluded_completed_run_ids: frozenset[str] = frozenset(),
-    ) -> tuple[RunRecord, str]:
+    ) -> RunAcquisition:
         """Atomically follow active work, offer completed work, or queue new work."""
         _validate_history_pair(history_pair)
         _validate_fingerprint(fingerprint)
@@ -186,7 +193,7 @@ class RunStore:
                     """,
                     (fingerprint,),
                 ).fetchone()
-                _disposition = "active-run"
+                _disposition: RunCreationDisposition = "active-run"
                 if _row is None:
                     _parameters: list[object] = [fingerprint]
                     _exclusion = ""
@@ -240,7 +247,10 @@ class RunStore:
         _run_id = (
             _created_run_id if _created_run_id is not None else str(_row["run_id"])
         )
-        return self.read_run(_run_id), _disposition
+        return RunAcquisition(
+            run=self.read_run(_run_id),
+            disposition=_disposition,
+        )
 
     def mark_running(self, run_id: str) -> RunRecord:
         return self._transition(

@@ -256,23 +256,23 @@ def create_history_run(
         )
         _excluded_completed_run_ids: set[str] = set()
         while True:
-            _run, _reuse = current_app.config["RUN_STORE"].acquire_history_run(
+            _acquisition = current_app.config["RUN_STORE"].acquire_history_run(
                 pair_number,
                 _fingerprint,
                 excluded_completed_run_ids=frozenset(
                     _excluded_completed_run_ids
                 ),
             )
-            if _reuse != "artifact":
+            if _acquisition.disposition != "artifact":
                 break
             try:
-                assert _run.artifact_id is not None
+                assert _acquisition.run.artifact_id is not None
                 validate_artifact(
                     artifact_root=current_app.config["ARTIFACT_ROOT"],
-                    artifact_id=_run.artifact_id,
+                    artifact_id=_acquisition.run.artifact_id,
                 )
             except (ArtifactIntegrityError, FileNotFoundError):
-                _excluded_completed_run_ids.add(_run.run_id)
+                _excluded_completed_run_ids.add(_acquisition.run.run_id)
                 continue
             break
     except (HistoryConfigurationError, HistoryResponseError) as error:
@@ -280,13 +280,9 @@ def create_history_run(
     except ValueError as error:
         return {"error": str(error)}, 400
     return (
-        {
-            "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
-            "run": _run.to_dict(),
-            "reuse": _reuse,
-        },
-        200 if _reuse == "artifact" else 202,
-        {"Location": f"/api/runs/{_run.run_id}"},
+        _acquisition.to_dict(),
+        200 if _acquisition.disposition == "artifact" else 202,
+        {"Location": f"/api/runs/{_acquisition.run.run_id}"},
     )
 
 

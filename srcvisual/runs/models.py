@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from typing import Literal
 
 RUN_CONTRACT_SCHEMA_VERSION = 1
+RUN_CREATION_CONTRACT_SCHEMA_VERSION = 1
 
 RunKind = Literal["history-visualization"]
 RunStatus = Literal["queued", "running", "completed", "failed", "cancelled"]
 RunEventType = Literal["status", "progress", "cancellation-requested"]
+RunCreationDisposition = Literal["new", "active-run", "artifact"]
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,19 @@ class RunRecord:
             "started_at": self.started_at,
             "finished_at": self.finished_at,
             "latest_event_sequence": self.latest_event_sequence,
+        }
+
+
+@dataclass(frozen=True)
+class RunAcquisition:
+    run: RunRecord
+    disposition: RunCreationDisposition
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": RUN_CREATION_CONTRACT_SCHEMA_VERSION,
+            "run": self.run.to_dict(),
+            "reuse": self.disposition,
         }
 
 
