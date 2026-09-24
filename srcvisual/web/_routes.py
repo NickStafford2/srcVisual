@@ -34,7 +34,8 @@ from srcvisual.history.client import (
     read_history_status,
 )
 from srcvisual.runs.models import RUN_CONTRACT_SCHEMA_VERSION
-from srcvisual.runs.store import RunNotFoundError
+from srcvisual.runs.events import stream_run_events
+from srcvisual.runs.store import InvalidRunTransitionError, RunNotFoundError
 from srcvisual.web._examples import list_example_filenames, read_example_file
 from srcvisual.web._progress import progress_broker
 
@@ -201,6 +202,40 @@ def run_status(run_id: str) -> tuple[dict[str, object], int]:
         "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
         "run": _run.to_dict(),
     }, 200
+
+
+@api.get("/runs/<run_id>/events")
+def run_events(run_id: str) -> Response | tuple[dict[str, str], int]:
+    try:
+        _after = _last_event_id()
+        _store = current_app.config["RUN_STORE"]
+        _store.read_run(run_id)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    except RunNotFoundError:
+        return {"error": "Run not found."}, 404
+    return Response(
+        stream_run_events(_store, run_id, after=_after),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@api.post("/runs/<run_id>/cancel")
+def cancel_run(run_id: str) -> tuple[dict[str, object], int]:
+    try:
+        _run = current_app.config["RUN_STORE"].request_cancellation(run_id)
+    except RunNotFoundError:
+        return {"error": "Run not found."}, 404
+    except InvalidRunTransitionError as error:
+        return {"error": str(error)}, 409
+    return {
+        "schema_version": RUN_CONTRACT_SCHEMA_VERSION,
+        "run": _run.to_dict(),
+    }, 202
 
 
 @api.post("/history/pairs/<int:pair_number>/runs")
@@ -441,6 +476,19 @@ def _history_repository() -> Path:
             "SRCVISUAL_HISTORY_REPOSITORY when starting srcVisual."
         )
     return repository
+
+
+def _last_event_id() -> int:
+    _raw_value = request.headers.get("Last-Event-ID", "").strip()
+    if not _raw_value:
+        return 0
+    try:
+        _value = int(_raw_value)
+    except ValueError as error:
+        raise ValueError("Last-Event-ID must be a nonnegative integer.") from error
+    if _value < 0:
+        raise ValueError("Last-Event-ID must be a nonnegative integer.")
+    return _value
 
 
 def _positive_integer_query(name: str, *, default: int, maximum: int) -> int:

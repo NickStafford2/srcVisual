@@ -470,10 +470,24 @@ Run records and progress events are durable and shared by all web workers. SSE
 events have sequence numbers and support reconnection. The run status endpoint
 remains the authoritative fallback if an event connection is interrupted.
 
+`GET /api/runs/{run_id}/events` replays events after the standard
+`Last-Event-ID` header, uses the durable per-run sequence as each SSE event ID,
+and emits comment heartbeats while an active run is idle. A stream closes after
+delivering the terminal event. Reconnection therefore neither loses nor
+duplicates acknowledged progress, and `GET /api/runs/{run_id}` remains the
+authoritative polling fallback.
+
 Cancellation must terminate the native process group, wait for termination,
 and remove unpublished staging data. It must not corrupt srcMove's `.srcmove`
-operation state. Duplicate history work uses a fingerprinted single-flight
-lock; concurrent callers may follow the same run and artifact.
+operation state. Duplicate history work will use a fingerprinted single-flight
+lock so concurrent callers can follow the same run and artifact.
+
+Each claimed run executes in a separate child process group containing the
+Python artifact build and all descendant native commands. The queue worker
+monitors durable cancellation requests. It first sends termination to the
+whole group, escalates if the group does not exit, waits for it to be reaped,
+and only then records `cancelled`. Cancelling an already completed run returns
+a conflict and leaves its published artifact unchanged.
 
 Uploaded XML remains synchronous initially unless measurements show that it
 needs the run worker. The established multi-minute history path receives the
@@ -653,8 +667,9 @@ synchronous history endpoint remains available as a compatibility path.
   repeating repository-local work; queued jobs remain eligible.
 - Run creation returns a queued run ID immediately from
   `POST /api/history/pairs/{pair_number}/runs`.
-- Add reconnectable SSE, polling fallback, cancellation, process-group cleanup,
-  and duplicate-work suppression.
+- Reconnectable SSE, polling fallback, cancellation, and process-group cleanup
+  are complete.
+- Add duplicate-work suppression.
 - Reuse valid artifacts by fingerprint without transferring ownership of
   `.srcmove` state to srcVisual.
 

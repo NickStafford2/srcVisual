@@ -109,6 +109,7 @@ def build_visualization_artifact(
     artifact_root: Path | None = None,
     provenance: ArtifactProvenance | None = None,
     producer_move_results: dict[str, Any] | None = None,
+    artifact_id: str | None = None,
 ) -> PublishedArtifact:
     """Build and publish the canonical artifact without a legacy projection."""
     _artifact_root = artifact_root or get_artifact_root()
@@ -119,6 +120,7 @@ def build_visualization_artifact(
         artifact_root=_artifact_root,
         provenance=provenance,
         producer_move_results=producer_move_results,
+        artifact_id=artifact_id,
     )
     return _published
 
@@ -131,6 +133,7 @@ def _publish_canonical_visualization(
     artifact_root: Path,
     provenance: ArtifactProvenance | None,
     producer_move_results: dict[str, Any] | None,
+    artifact_id: str | None = None,
 ) -> tuple[PublishedArtifact, ArtifactProvenance]:
     _provenance = provenance or ArtifactProvenance(origin="upload")
     _canonical_payload, _effective_provenance = _build_canonical_payload(
@@ -146,6 +149,7 @@ def _publish_canonical_visualization(
         canonical_payload=_canonical_payload,
         input_payload=payload,
         provenance=_effective_provenance,
+        artifact_id=artifact_id,
     )
     notify_progress(
         progress, f"Published visualization artifact {_published.artifact_id}."

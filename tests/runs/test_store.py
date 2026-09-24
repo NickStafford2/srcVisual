@@ -136,3 +136,6 @@ def test_claim_cancels_queued_request_before_starting_next_run(tmp_path: Path) -
     assert _claimed is not None
     assert _claimed.run_id == _next.run_id
     assert _store_instance.read_run(_cancelled.run_id).status == "cancelled"
+    assert (
+        _store_instance.request_cancellation(_cancelled.run_id).status == "cancelled"
+    )

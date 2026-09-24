@@ -78,8 +78,13 @@ def publish_artifact(
     canonical_payload: VisualizationPayload,
     input_payload: bytes,
     provenance: ArtifactProvenance,
+    artifact_id: str | None = None,
 ) -> PublishedArtifact:
-    _artifact_id = uuid4().hex
+    _artifact_id = artifact_id or uuid4().hex
+    if len(_artifact_id) != 32 or any(
+        _character not in "0123456789abcdef" for _character in _artifact_id
+    ):
+        raise ValueError("Artifact ID must be a 32-character lowercase hex string.")
     _staging_root = artifact_root / ".staging"
     _staging_path = _staging_root / _artifact_id
     _published_path = artifact_root / _artifact_id

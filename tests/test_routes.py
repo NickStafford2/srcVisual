@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import srcvisual.web._routes as routes_module
@@ -250,6 +251,68 @@ def test_run_status_hides_invalid_and_unknown_ids(monkeypatch, tmp_path: Path) -
     assert invalid.status_code == 404
     assert unknown.status_code == 404
     assert invalid.get_json() == {"error": "Run not found."}
+
+
+def test_run_events_reconnects_after_last_event_id(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    _store = RunStore(get_run_database_path(tmp_path))
+    _store.initialize()
+    _run = _store.create_history_run(5)
+    _store.fail(_run.run_id, code="test-failure", message="Test failure.")
+
+    response = create_app().test_client().get(
+        f"/api/runs/{_run.run_id}/events",
+        headers={"Last-Event-ID": "1"},
+    )
+
+    assert response.status_code == 200
+    assert response.mimetype == "text/event-stream"
+    _body = response.get_data(as_text=True)
+    assert _body.startswith("id: 2\nevent: run\ndata: ")
+    _payload = json.loads(_body.split("data: ", 1)[1])
+    assert _payload["event"]["status"] == "failed"
+
+
+def test_run_events_rejects_invalid_last_event_id(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    _store = RunStore(get_run_database_path(tmp_path))
+    _store.initialize()
+    _run = _store.create_history_run(5)
+
+    response = create_app().test_client().get(
+        f"/api/runs/{_run.run_id}/events",
+        headers={"Last-Event-ID": "invalid"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_cancel_run_records_durable_request(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    _store = RunStore(get_run_database_path(tmp_path))
+    _store.initialize()
+    _run = _store.create_history_run(6)
+    _store.mark_running(_run.run_id)
+
+    response = create_app().test_client().post(f"/api/runs/{_run.run_id}/cancel")
+
+    assert response.status_code == 202
+    assert response.get_json()["run"]["cancellation_requested"] is True
+    assert _store.read_run(_run.run_id).cancellation_requested is True
+
+
+def test_cancel_completed_run_preserves_artifact(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    _store = RunStore(get_run_database_path(tmp_path))
+    _store.initialize()
+    _run = _store.create_history_run(6)
+    _store.mark_running(_run.run_id)
+    _store.complete(_run.run_id, "a" * 32)
+
+    response = create_app().test_client().post(f"/api/runs/{_run.run_id}/cancel")
+
+    assert response.status_code == 409
+    assert _store.read_run(_run.run_id).artifact_id == "a" * 32
 
 
 def test_create_history_run_returns_queued_run_and_location(

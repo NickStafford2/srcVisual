@@ -24,8 +24,10 @@ def test_publish_and_read_artifact_round_trip(tmp_path) -> None:
         canonical_payload=_payload,
         input_payload=b"original input",
         provenance=ArtifactProvenance(origin="upload"),
+        artifact_id="a" * 32,
     )
 
+    assert _published.artifact_id == "a" * 32
     assert _published.path == tmp_path / _published.artifact_id
     assert sorted(_path.name for _path in _published.path.iterdir()) == [
         "annotated.xml",

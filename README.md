@@ -82,8 +82,10 @@ events use `runs.sqlite3` in that same volume.
 History visualization runs are queued with
 `POST /api/history/pairs/{pair_number}/runs` and processed by the dedicated
 `history-worker` Compose service. The status polling endpoint is
-`GET /api/runs/{run_id}`. The current frontend continues to use the synchronous
-compatibility endpoint until progress streaming and cancellation are complete.
+`GET /api/runs/{run_id}`; durable progress streams from
+`GET /api/runs/{run_id}/events`, and `POST /api/runs/{run_id}/cancel` requests
+cancellation. The current frontend continues to use the synchronous
+compatibility endpoint until the remaining reuse policy is complete.
 
 ## Hosted application vision
 

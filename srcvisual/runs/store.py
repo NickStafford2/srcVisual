@@ -271,6 +271,9 @@ class RunStore:
             try:
                 _row = self._require_run(_database, run_id)
                 _status = str(_row["status"])
+                if _status == "cancelled":
+                    _database.commit()
+                    return self.read_run(run_id)
                 if _status in TERMINAL_STATUSES:
                     raise InvalidRunTransitionError(
                         f"Cannot cancel a {_status} run."
