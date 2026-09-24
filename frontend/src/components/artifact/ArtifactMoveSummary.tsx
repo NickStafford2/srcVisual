@@ -108,8 +108,8 @@ function EndpointList({
             onClick={() => onSelect(nodeId)}
             className={`rounded border px-2 py-1 text-left text-xs ${
               selectedNodeId === nodeId
-                ? "border-sky-300/60 bg-sky-400/15 text-sky-100"
-                : "border-white/10 bg-slate-950 text-slate-300 hover:border-diff-move-1/40"
+                ? "border-diff-move-1/70 bg-diff-move-1/20 text-amber-50 ring-1 ring-diff-move-1/30"
+                : "border-diff-move-1/20 bg-slate-950 text-slate-300 hover:border-diff-move-1/50 hover:text-amber-100"
             }`}
           >
             <span className="block max-w-64 truncate">

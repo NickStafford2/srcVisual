@@ -97,7 +97,12 @@ export function MoveConnectorOverlay({
           : INACTIVE_BOX_STROKE_WIDTH;
 
         return (
-          <g key={group.key} className="text-diff-move-1/70">
+          <g
+            key={group.key}
+            data-move-id={group.moveId}
+            data-move-visual-state={_isActive ? "active" : "visible"}
+            className="text-diff-move-1/70"
+          >
             {group.boxes.map((box) => (
               <g key={box.key}>
                 <rect

@@ -229,8 +229,12 @@ describe("ArtifactSourcePane", () => {
     );
     expect(moveSegments).toHaveLength(2);
     expect(moveSegments[0]).toHaveTextContent("moved");
-    expect(moveSegments[0]).toHaveClass("bg-diff-move-1/25");
-    expect(moveSegments[0]).toHaveClass("decoration-sky-300");
+    expect(moveSegments[0]).toHaveClass("bg-diff-move-1/35");
+    expect(moveSegments[0]).toHaveAttribute("data-move-visual-state", "selected");
+    expect(moveSegments[0]).toHaveClass("ring-diff-move-1/70");
+    expect(
+      document.querySelector('[data-source-row-kind="replace"]'),
+    ).toHaveClass("bg-black");
     await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
     expect(onSelectMove).toHaveBeenCalledWith("move-1");
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());

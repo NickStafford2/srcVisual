@@ -34,6 +34,11 @@ export function CodeSegment({
   const registersMove =
     isMoveHighlight &&
     (visibleMoveIds === undefined || visibleMoveIds.has(segment.moveId!));
+  const moveVisualState = selected
+    ? "selected"
+    : registersMove
+      ? "visible"
+      : "inactive";
 
   const text = segment.highlighted
     ? renderVisibleWhitespace(segment.text)
@@ -110,13 +115,15 @@ export function CodeSegment({
       data-highlight-kind={segment.kind}
       data-node-id={segment.nodeId ?? undefined}
       data-move-id={segment.moveId}
+      data-move-visual-state={moveVisualState}
       data-source-revision={revision}
       className={[
         `group relative inline rounded-md ${onMoveSelect ? "cursor-pointer" : ""}`,
-        getSourceSegmentClasses(segment.kind, segment.highlighted),
-        selected
-          ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"
-          : "",
+        getSourceSegmentClasses(
+          segment.kind,
+          segment.highlighted,
+          moveVisualState,
+        ),
       ].join(" ")}
     >
       {text}

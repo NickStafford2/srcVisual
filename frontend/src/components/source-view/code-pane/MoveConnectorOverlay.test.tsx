@@ -55,6 +55,10 @@ describe("MoveConnectorOverlay", () => {
     const _hub = document.querySelector("[data-move-overlay-hub='true']");
 
     expect(document.querySelector("svg")).not.toBeNull();
+    expect(document.querySelector("[data-move-id='move-1']")).toHaveAttribute(
+      "data-move-visual-state",
+      "visible",
+    );
     expect(_box).toHaveAttribute("stroke-opacity", "0.72");
     expect(_line).toHaveAttribute("stroke-opacity", "0.72");
     expect(_hub).toHaveAttribute("fill-opacity", "0.72");
@@ -112,6 +116,10 @@ describe("MoveConnectorOverlay", () => {
     const _line = document.querySelector("[data-move-overlay-line='true']");
     const _hub = document.querySelector("[data-move-overlay-hub='true']");
 
+    expect(document.querySelector("[data-move-id='move-1']")).toHaveAttribute(
+      "data-move-visual-state",
+      "active",
+    );
     expect(_box).toHaveAttribute("fill-opacity", "0.18");
     expect(_box).toHaveAttribute("stroke-opacity", "0.96");
     expect(_box).toHaveAttribute("stroke-width", "2");

@@ -96,12 +96,12 @@ export function ArtifactNavigator({
                 onClick={() => onToggleMove(move)}
                 className={`rounded border px-2 py-1 text-xs ${
                   selectedMoveId === move.move_id
-                    ? "ring-1 ring-sky-300/70"
+                    ? "ring-1 ring-diff-move-1/80"
                     : ""
                 } ${
                   visibleMoveIds.has(move.move_id)
                     ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
-                    : "border-white/15 bg-slate-950 text-slate-400 hover:border-diff-move-1/40"
+                    : "border-diff-move-1/25 bg-slate-950 text-amber-100/70 hover:border-diff-move-1/50 hover:text-amber-100"
                 }`}
               >
                 <span aria-hidden="true" className="mr-1">
@@ -179,7 +179,11 @@ function ArtifactTreeBranch({
     <div>
       <div
         className={`flex items-center rounded ${
-          selectedNodeId === node.node_id ? "bg-sky-400/10" : ""
+          selectedNodeId === node.node_id
+            ? node.kind === "move"
+              ? "bg-diff-move-1/12 ring-1 ring-diff-move-1/25"
+              : "bg-sky-400/10"
+            : ""
         }`}
       >
         {node.child_count > 0 ? (
@@ -199,12 +203,19 @@ function ArtifactTreeBranch({
           onClick={() => onSelectNode(node)}
           aria-pressed={selectedNodeId === node.node_id}
           className={`min-w-0 flex-1 py-0.5 text-left hover:text-white ${
-            selectedNodeId === node.node_id ? "text-sky-200" : "text-slate-300"
+            node.kind === "move"
+              ? "text-diff-move-1"
+              : selectedNodeId === node.node_id
+                ? "text-sky-200"
+                : "text-slate-300"
           }`}
         >
-          <span className={node.kind === "move" ? "text-diff-move-1" : ""}>
-            {node.label}
-          </span>
+          <span>{node.label}</span>
+          {node.kind === "move" ? (
+            <span className="ml-1 rounded-full bg-diff-move-1/15 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-move-1 uppercase">
+              move
+            </span>
+          ) : null}
           {!node.children_complete ? (
             <span className="ml-1 text-slate-600">({node.child_count})</span>
           ) : null}

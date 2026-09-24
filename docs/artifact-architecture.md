@@ -751,7 +751,7 @@ endpoint or relationship so one move cannot be mistaken for several moves.
   artifact-local identities, including same-file, cross-file, one-to-many, and
   many-to-one moves. Draw connectors only for rendered endpoints. (Complete.)
 - Restore the established yellow/amber move language and use a neutral
-  near-black background for unchanged source.
+  near-black background for unchanged source. (Complete.)
 - Add file-list filters when the manifest navigator needs them. (Complete.)
 - Add row virtualization if focused rendering measurements justify it.
 - Remove the monolithic response path and delete destructive pruning code only

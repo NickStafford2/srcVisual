@@ -223,7 +223,8 @@ export function ArtifactSourceFile({
                 {block.rows.map((row, index) => (
                   <div
                     key={`${block.block_id}-${index}`}
-                    className={`grid grid-cols-2 border-b border-white/5 ${rowClass(row.kind)}`}
+                    data-source-row-kind={row.kind}
+                    className="grid grid-cols-2 border-b border-white/5 bg-black"
                   >
                     <SourceCell
                       line={row.left}
@@ -355,13 +356,6 @@ function endpointCount(nodeIds: string[], fileId: string) {
 function boundedRange(start: number | null, end: number | null) {
   if (start === null || end === null) return undefined;
   return { start, end: Math.min(end, start + 1_999) };
-}
-
-function rowClass(kind: string) {
-  if (kind === "delete") return "bg-rose-950/25";
-  if (kind === "insert") return "bg-emerald-950/25";
-  if (kind === "replace") return "bg-amber-950/10";
-  return "bg-black";
 }
 
 function errorMessage(reason: unknown) {

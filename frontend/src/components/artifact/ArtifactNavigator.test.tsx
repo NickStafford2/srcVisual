@@ -89,6 +89,8 @@ beforeEach(() => {
         ...root,
         node_id: "f-one:n00000001",
         label: "function: moved",
+        kind: "move",
+        move_id: "move-1",
         child_count: 0,
         children_complete: true,
       },
@@ -123,6 +125,9 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
     0,
   );
   expect(await screen.findByText("function: moved")).toBeInTheDocument();
+  expect(screen.getByText("move", { selector: "span" })).toHaveClass(
+    "text-diff-move-1",
+  );
   await user.click(screen.getByRole("button", { name: /function: moved/ }));
   expect(onSelectNode).toHaveBeenCalledWith(
     expect.objectContaining({ node_id: "f-one:n00000001" }),
@@ -132,6 +137,9 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
   expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
     "aria-pressed",
     "true",
+  );
+  expect(screen.getByRole("button", { name: "move-1" })).toHaveClass(
+    "text-diff-move-1",
   );
   expect(onToggleMove).toHaveBeenCalledWith(manifest.moves.items[0]);
 
