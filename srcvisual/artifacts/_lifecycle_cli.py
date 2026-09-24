@@ -6,6 +6,7 @@ from pathlib import Path
 
 from srcvisual.artifacts.lifecycle import (
     ArtifactRetentionPolicy,
+    apply_artifact_collection,
     inventory_artifacts,
     plan_artifact_collection,
 )
@@ -36,12 +37,27 @@ def main() -> None:
         ),
     )
     _plan = plan_artifact_collection(_inventory, _policy)
+    _result = None
+    if _arguments.apply_plan is not None:
+        _result = apply_artifact_collection(
+            artifact_root=_artifact_root,
+            policy=_policy,
+            expected_plan_id=_arguments.apply_plan,
+            protected_artifact_ids=(
+                lambda: RunStore(_run_database).referenced_artifact_ids()
+                if _run_database.is_file()
+                else frozenset()
+            ),
+        )
     print(
         json.dumps(
             {
                 "artifact_root": str(_artifact_root),
                 "inventory": _inventory.to_dict(),
                 "collection_plan": _plan.to_dict(),
+                "collection_result": (
+                    None if _result is None else _result.to_dict()
+                ),
             },
             indent=2,
             sort_keys=True,
@@ -60,6 +76,11 @@ def _parse_arguments() -> argparse.Namespace:
     _parser.add_argument("--max-artifacts", type=_nonnegative_integer)
     _parser.add_argument("--max-bytes", type=_nonnegative_integer)
     _parser.add_argument("--max-age-days", type=_nonnegative_float)
+    _parser.add_argument(
+        "--apply-plan",
+        metavar="PLAN_ID",
+        help="delete candidates only if a fresh plan still has this exact ID",
+    )
     return _parser.parse_args()
 
 

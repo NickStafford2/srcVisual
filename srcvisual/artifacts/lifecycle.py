@@ -2,15 +2,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import stat
-from typing import Literal
+from typing import Callable, Literal
 
 from srcvisual.artifacts.store import ArtifactIntegrityError, check_artifact_integrity
 
 ArtifactIntegrityStatus = Literal["valid", "corrupt"]
+
+
+class StaleCollectionPlanError(RuntimeError):
+    """The reviewed collection plan no longer matches current storage."""
 
 
 @dataclass(frozen=True)
@@ -105,9 +112,24 @@ class ArtifactCollectionPlan:
     def reclaimable_bytes(self) -> int:
         return sum(_candidate.size_bytes for _candidate in self.candidates)
 
+    @property
+    def plan_id(self) -> str:
+        _document = json.dumps(
+            {
+                "policy": self.policy.to_dict(),
+                "candidates": [_candidate.to_dict() for _candidate in self.candidates],
+                "remaining_artifacts": self.remaining_artifacts,
+                "remaining_bytes": self.remaining_bytes,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(_document).hexdigest()
+
     def to_dict(self) -> dict[str, object]:
         return {
             "dry_run": True,
+            "plan_id": self.plan_id,
             "policy": self.policy.to_dict(),
             "candidate_count": len(self.candidates),
             "reclaimable_bytes": self.reclaimable_bytes,
@@ -115,6 +137,21 @@ class ArtifactCollectionPlan:
             "remaining_bytes": self.remaining_bytes,
             "satisfies_policy": self.satisfies_policy,
             "candidates": [_candidate.to_dict() for _candidate in self.candidates],
+        }
+
+
+@dataclass(frozen=True)
+class ArtifactCollectionResult:
+    plan_id: str
+    deleted_artifact_ids: tuple[str, ...]
+    reclaimed_bytes: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "plan_id": self.plan_id,
+            "deleted_artifact_ids": list(self.deleted_artifact_ids),
+            "deleted_count": len(self.deleted_artifact_ids),
+            "reclaimed_bytes": self.reclaimed_bytes,
         }
 
 
@@ -219,6 +256,57 @@ def plan_artifact_collection(
     )
 
 
+def apply_artifact_collection(
+    *,
+    artifact_root: Path,
+    policy: ArtifactRetentionPolicy,
+    expected_plan_id: str,
+    protected_artifact_ids: Callable[[], frozenset[str]],
+    now: datetime | None = None,
+) -> ArtifactCollectionResult:
+    """Apply an unchanged reviewed plan while holding the collection lock."""
+    if len(expected_plan_id) != 64 or any(
+        _character not in "0123456789abcdef" for _character in expected_plan_id
+    ):
+        raise ValueError("Expected plan ID must be a 64-character lowercase hex string.")
+
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    _lock_path = artifact_root / ".collection.lock"
+    with _lock_path.open("a+b") as _lock_file:
+        fcntl.flock(_lock_file.fileno(), fcntl.LOCK_EX)
+        _inventory = inventory_artifacts(
+            artifact_root=artifact_root,
+            protected_artifact_ids=protected_artifact_ids(),
+        )
+        _plan = plan_artifact_collection(_inventory, policy, now=now)
+        if _plan.plan_id != expected_plan_id:
+            raise StaleCollectionPlanError(
+                "Artifact storage or run references changed after the dry run."
+            )
+
+        _deleted_artifact_ids: list[str] = []
+        _reclaimed_bytes = 0
+        for _candidate in _plan.candidates:
+            if _candidate.artifact_id in protected_artifact_ids():
+                raise StaleCollectionPlanError(
+                    f"Artifact gained a run reference: {_candidate.artifact_id}."
+                )
+            _artifact_path = artifact_root / _candidate.artifact_id
+            if not _is_artifact_directory(_artifact_path):
+                raise StaleCollectionPlanError(
+                    f"Artifact changed before collection: {_candidate.artifact_id}."
+                )
+            shutil.rmtree(_artifact_path)
+            _deleted_artifact_ids.append(_candidate.artifact_id)
+            _reclaimed_bytes += _candidate.size_bytes
+
+    return ArtifactCollectionResult(
+        plan_id=_plan.plan_id,
+        deleted_artifact_ids=tuple(_deleted_artifact_ids),
+        reclaimed_bytes=_reclaimed_bytes,
+    )
+
+
 def _inventory_item(
     *,
     artifact_root: Path,
@@ -284,6 +372,7 @@ def _directory_size(path: Path) -> int:
 def _is_artifact_directory(path: Path) -> bool:
     return (
         path.is_dir()
+        and not path.is_symlink()
         and len(path.name) == 32
         and all(_character in "0123456789abcdef" for _character in path.name)
     )

@@ -817,13 +817,16 @@ inventory and deterministic dry-run collection plan. It reports artifact
 count, bytes, creation time, integrity, and completed-run references. Only
 valid, unreferenced artifacts can become candidates; corrupt and protected
 artifacts are reported but never selected. Artifact integrity inspection does
-not quarantine or otherwise mutate the store. No deletion path exists yet.
+not quarantine or otherwise mutate the store. Manual enforcement requires the
+exact ID of a reviewed plan, takes an exclusive collection lock, rebuilds the
+plan, and rechecks run references before deletion. Changed plans fail closed.
+Automatic collection is not enabled.
 
 - Add item and disk quotas, collection policy, integrity diagnostics, and cache
   metrics. (Inventory, policy planning, and integrity diagnostics are
   complete; enforcement and metrics remain.)
 - Add tested deletion with locking and run-reference revalidation only after
-  dry-run behavior is established.
+  dry-run behavior is established. (Complete for explicit manual collection.)
 - Add background upload runs if upload measurements justify them.
 - Add XML neighborhoods only if whole-document retrieval remains a measured
   problem.

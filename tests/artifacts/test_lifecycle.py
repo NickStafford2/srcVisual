@@ -12,6 +12,8 @@ from srcvisual.artifacts.lifecycle import (
     ArtifactInventory,
     ArtifactInventoryItem,
     ArtifactRetentionPolicy,
+    StaleCollectionPlanError,
+    apply_artifact_collection,
     inventory_artifacts,
     plan_artifact_collection,
 )
@@ -109,6 +111,76 @@ def test_collection_plan_is_deterministic_and_protects_references() -> None:
 def test_retention_policy_rejects_negative_limits() -> None:
     with pytest.raises(ValueError, match="max_bytes must be nonnegative"):
         ArtifactRetentionPolicy(max_bytes=-1)
+
+
+def test_apply_collection_requires_exact_fresh_plan(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _now = datetime(2026, 9, 24, tzinfo=timezone.utc)
+    _artifact_id = "a" * 32
+    _write_inventory_fixture(
+        tmp_path / _artifact_id,
+        created_at="2026-01-01T00:00:00+00:00",
+    )
+    monkeypatch.setattr(
+        lifecycle_module,
+        "check_artifact_integrity",
+        lambda **kwargs: None,
+    )
+    _policy = ArtifactRetentionPolicy(max_age_seconds=30 * 24 * 60 * 60)
+    _plan = plan_artifact_collection(
+        inventory_artifacts(artifact_root=tmp_path),
+        _policy,
+        now=_now,
+    )
+
+    _result = apply_artifact_collection(
+        artifact_root=tmp_path,
+        policy=_policy,
+        expected_plan_id=_plan.plan_id,
+        protected_artifact_ids=frozenset,
+        now=_now,
+    )
+
+    assert _result.deleted_artifact_ids == (_artifact_id,)
+    assert _result.reclaimed_bytes == _plan.reclaimable_bytes
+    assert not (tmp_path / _artifact_id).exists()
+    assert (tmp_path / ".collection.lock").is_file()
+
+
+def test_apply_collection_rejects_new_run_reference(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _now = datetime(2026, 9, 24, tzinfo=timezone.utc)
+    _artifact_id = "a" * 32
+    _write_inventory_fixture(
+        tmp_path / _artifact_id,
+        created_at="2026-01-01T00:00:00+00:00",
+    )
+    monkeypatch.setattr(
+        lifecycle_module,
+        "check_artifact_integrity",
+        lambda **kwargs: None,
+    )
+    _policy = ArtifactRetentionPolicy(max_artifacts=0)
+    _plan = plan_artifact_collection(
+        inventory_artifacts(artifact_root=tmp_path),
+        _policy,
+        now=_now,
+    )
+
+    with pytest.raises(StaleCollectionPlanError, match="run references changed"):
+        apply_artifact_collection(
+            artifact_root=tmp_path,
+            policy=_policy,
+            expected_plan_id=_plan.plan_id,
+            protected_artifact_ids=lambda: frozenset({_artifact_id}),
+            now=_now,
+        )
+
+    assert (tmp_path / _artifact_id).is_dir()
 
 
 def _write_inventory_fixture(path: Path, *, created_at: str) -> None:

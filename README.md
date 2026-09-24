@@ -94,8 +94,12 @@ docker compose -f srcVisual/compose.yaml run --rm srcvisual artifact-inventory \
   --max-artifacts 100 --max-bytes 10737418240 --max-age-days 90
 ```
 
-All retention limits are optional. The command is deliberately read-only;
-automatic collection is not enabled.
+All retention limits are optional. The default command is read-only and emits
+a `plan_id`. To apply that exact reviewed plan, repeat the same policy with
+`--apply-plan PLAN_ID`. Collection takes an exclusive lock, rebuilds the
+inventory, rechecks history-run references, and refuses stale plans. Applying
+a plan permanently deletes its candidates; automatic collection is not
+enabled.
 
 History visualization runs are queued with
 `POST /api/history/pairs/{pair_number}/runs` and processed by the dedicated
