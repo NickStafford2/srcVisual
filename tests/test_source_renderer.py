@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from srcvisual.core.source_span import SourceSpan
 from srcvisual.files.models import RevisionFile
-import srcvisual.workflow._pruned_source_builder as pruned_source_builder
 from srcvisual.workflow._source_renderer import (
     _compute_line_starts,
     _offset_to_line_col,
@@ -49,32 +48,6 @@ def test_render_revision_files_renders_revision_specific_source() -> None:
         end_line=1,
         end_col=9,
     )
-
-
-def test_pruned_source_builder_is_a_compatibility_wrapper(monkeypatch) -> None:
-    _captured = {}
-    _rendered_files = ()
-
-    def _render_revision_files(**kwargs):
-        _captured.update(kwargs)
-        return _rendered_files
-
-    monkeypatch.setattr(
-        pruned_source_builder,
-        "render_revision_files",
-        _render_revision_files,
-    )
-
-    assert pruned_source_builder.build_pruned_revision_files(
-        moved_srcdiff_xml="<unit />",
-        revision_files=(),
-        include_skipped_tags=False,
-    ) is _rendered_files
-    assert _captured == {
-        "moved_srcdiff_xml": "<unit />",
-        "revision_files": (),
-        "include_skipped_tags": False,
-    }
 
 
 def test_offset_to_line_col_uses_line_starts_correctly() -> None:

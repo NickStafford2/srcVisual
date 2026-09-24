@@ -27,7 +27,7 @@ High-level rules:
    The XML, srcDiff tree, source-code, diff, and move panes must be projections of the same immutable artifact and compatible view specification. Lazy retrieval may omit data that is not currently displayed, but omitted ranges must be explicit and every returned identity must refer to the canonical artifact.
 
 8. Interactive filtering must not rewrite canonical data.
-   File filters and source focus profiles decide which projections are requested or displayed. They must not prune or overwrite annotated XML, change canonical source coordinates, or create new node identities. The existing destructive pruning modes are compatibility behavior during the artifact-backed migration, not the target interactive model.
+   File filters and source focus profiles decide which projections are requested or displayed. They must not prune or overwrite annotated XML, change canonical source coordinates, or create new node identities. Destructive pruning is not part of the artifact architecture.
 
 9. Package boundaries should stay explicit.
    Keep `__init__.py` empty. Do not use re-exports. Files only imported inside the same subpackage should use `_` filenames. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. Files imported from outside the subpackage by non-test code should not use `_`.

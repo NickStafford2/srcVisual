@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
+from srcvisual.artifacts.store import read_artifact
 from srcvisual.core.validation import is_payload_validation_enabled
 from srcvisual.files.models import RevisionFile, VisualizedFile
 import srcvisual.workflow.payload as payload_module
@@ -13,8 +15,9 @@ def test_payload_validation_enabled_by_default(monkeypatch) -> None:
     assert is_payload_validation_enabled() is True
 
 
-def test_build_visualization_payload_skips_expensive_validation_when_disabled(
+def test_build_visualization_artifact_skips_expensive_validation_when_disabled(
     monkeypatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setenv("SRCVISUAL_PAYLOAD_VALIDATION", "false")
 
@@ -67,6 +70,7 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
         "build_visualized_files",
         lambda **kwargs: visualized_files,
     )
+
     def _render_revision_files(**kwargs):
         return (
             SimpleNamespace(
@@ -81,21 +85,6 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
         "render_revision_files",
         _render_revision_files,
     )
-    monkeypatch.setattr(
-        payload_module,
-        "build_pruned_revision_files",
-        _render_revision_files,
-    )
-    monkeypatch.setattr(
-        payload_module,
-        "prune_visualized_files",
-        lambda files, level: files,
-    )
-    monkeypatch.setattr(
-        payload_module,
-        "prune_move_results",
-        lambda **kwargs: {"move_count": 0, "moves": []},
-    )
 
     def fail_if_called(*args, **kwargs):
         raise AssertionError("expensive validation should be skipped")
@@ -108,12 +97,15 @@ def test_build_visualization_payload_skips_expensive_validation_when_disabled(
         payload_module, "validate_visualization_payload", fail_if_called
     )
 
-    result = payload_module.build_visualization_payload(
+    published = payload_module.build_visualization_artifact(
         filename="example.move.diff.xml",
         payload=b"<unit />",
-        include_skipped_tags=True,
-        pruning_level="none",
+        artifact_root=tmp_path,
     )
+    result = read_artifact(
+        artifact_root=tmp_path,
+        artifact_id=published.artifact_id,
+    ).payload
 
     assert result.source_filename == "example.move.diff.xml"
     assert result.move_results == {"move_count": 0, "moves": []}

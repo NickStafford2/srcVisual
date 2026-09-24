@@ -46,22 +46,22 @@ projections of the same immutable artifact.
    view sessions.
 9. Character-precise move highlighting and the existing SVG move relationship
    visualization are essential srcMove inspection behavior. The artifact UI
-   must restore them before the legacy renderer is removed; a line badge alone
-   is not sufficient.
+   were restored before the legacy renderer was removed; a line badge alone is
+   not sufficient.
 10. Moves retain the established yellow/amber semantic color. Unchanged source
     uses a neutral near-black background; blue is reserved for interaction or
     navigation and must not imply that unchanged source is modified.
 
-## Why the Current Model Must Change
+## Why the Legacy Model Had to Change
 
-`build_visualization_payload()` currently extracts complete sources, builds a
-complete tree and payload, validates them, and then reconstructs XML, sources,
-trees, spans, and move results after pruning. The frontend receives all of
+The legacy `build_visualization_payload()` extracted complete sources, built a
+complete tree and payload, validated them, and then reconstructed XML, sources,
+trees, spans, and move results after pruning. The frontend received all of
 those representations in one `VisualizeResponse`.
 
-History visualization forces `move-only` pruning. This makes a large response
-manageable but removes most surrounding source, producing nearly blank source
-files that cannot be expanded without another analysis request.
+History visualization forced `move-only` pruning. This made a large response
+manageable but removed most surrounding source, producing nearly blank source
+files that could not be expanded without another analysis request.
 
 The measured Notepad++ history pair 13 illustrates the mismatch:
 
@@ -423,10 +423,9 @@ Useful filtering remains as view behavior:
 These controls decide which projections are requested or displayed. They do
 not overwrite the artifact or create pruned XML.
 
-The old pruning implementation remains temporarily behind the legacy
-monolithic-response adapter during migration. It is deleted after the artifact
-interface covers existing workflows and compatibility tests. Filtered XML
-export is not implemented without a demonstrated requirement.
+The old pruning implementation and monolithic-response adapter have been
+deleted. Filtered XML export is not implemented without a demonstrated
+requirement.
 
 ## Projection API
 
@@ -608,9 +607,8 @@ Status: complete.
 
 ### Phase 1: artifact foundation
 
-Status: complete. The compatibility endpoint now constructs, atomically
-publishes, validates, reloads, and projects an artifact before returning the
-legacy response.
+Status: complete. This migration phase established canonical artifact
+construction behind the then-existing compatibility endpoint.
 
 - Separate canonical artifact construction from presentation payload creation.
 - Add the dedicated persistent artifact volume and configuration.
@@ -643,23 +641,20 @@ Status: complete.
 - Add bounded tree projections and lazy canonical-child retrieval.
 - Load the whole XML only when its tab is opened.
 - Remove destructive pruning controls from the artifact UI.
-- Keep the legacy interface available as a temporary fallback.
+- Keep the legacy interface available as a temporary fallback. (Retired after
+  parity was demonstrated.)
 
 The implemented projection contract uses schema version 1 over artifact schema
-version 2. Artifact creation requests opt into the manifest response explicitly,
-so existing API consumers retain the legacy response during migration. The new
-frontend always opts in. Source responses are capped at 2,000 aligned rows,
-tree responses at 500 nodes, and child pages at 100 nodes. Expanded source
-ranges remain browser state and are sent as explicit repeated revision-aware
-ranges; the server returns their union with the active focus profile. The
-complete XML is a separate lazy request. The artifact UI exposes focus profiles
-instead of the old pruning and skipped-tag controls; those request parameters
-remain accepted only by the legacy response adapter.
+version 2. Artifact creation now returns the manifest directly. Source
+responses are capped at 2,000 aligned rows, tree responses at 500 nodes, and
+child pages at 100 nodes. Expanded source ranges remain browser state and are
+sent as explicit repeated revision-aware ranges; the server returns their
+union with the active focus profile. The complete XML is a separate lazy
+request. The artifact UI exposes focus profiles instead of destructive pruning
+or skipped-tag request controls.
 
 The artifact-only creation path publishes the canonical artifact without
-constructing or reloading the legacy monolithic projection. The compatibility
-adapter remains available, but its destructive pruning and expanded-tree cost
-are no longer paid by the new interface.
+constructing or reloading a monolithic projection.
 
 This phase delivers the first user-visible payoff and validates the artifact
 model before expanding its scope.
@@ -684,7 +679,7 @@ Status: complete.
 This slice restored the essential source-level move inspection behavior. The
 remaining pane, selection, and navigation work is now complete, and the
 frontend compatibility renderer has been removed. Backend compatibility
-retirement remains separate and evidence-gated.
+retirement is also complete.
 
 ### Phase 3: durable history runs
 
@@ -707,7 +702,7 @@ synchronous history compatibility endpoint has been removed.
 
 ### Phase 4: complete frontend migration
 
-Status: in progress. History visualization creation uses the durable run
+Status: complete. History visualization creation uses the durable run
 contract, displays reconnectable SSE progress, retains authoritative status
 polling, supports durable cancellation, and opens the completed artifact
 through the projection interface. Upload visualization returns an artifact
@@ -753,8 +748,8 @@ endpoint or relationship so one move cannot be mistaken for several moves.
 #### Parity audit: projection identity and file ownership
 
 The first compatibility-retirement audit slice completed on 2026-09-24. Its
-parity evidence authorized removal of the frontend compatibility renderer,
-but not the backend compatibility routes or payload builder.
+parity evidence supported staged removal of the frontend renderer, HTTP
+compatibility surface, monolithic payload builder, and destructive pruning.
 
 Packaged-tool endpoint tests now exercise an archive input with a move into a
 new file and a single-root input with a same-file move. Both build artifacts
@@ -782,23 +777,21 @@ The audit found the compatibility callers that governed retirement:
   projections. The legacy render branch, selection state, tree and source
   containers, fixtures, and monolithic contract validation have been removed.
   Uploads send no response-format or destructive-pruning controls.
-- Compatibility route and workflow tests call the monolithic builder directly
-  to preserve the old contract while migration remains reversible.
+- Compatibility route and workflow tests were replaced by artifact-contract
+  coverage after the old contract became unreachable.
 
 The measurement script is no longer a compatibility caller. Historical
 monolithic numbers remain recorded in the Phase 0 baseline, while new runs
 measure immutable artifact storage and the bounded projections used by the
 current frontend.
 
-Destructive pruning remains confined to the compatibility projection in
-`workflow/payload.py`: it prunes files and trees, conditionally rebuilds
-filtered XML and revision sources, and then prunes move results. Request parsing
-still accepts `include_skipped_tags` and `pruning_level` for those callers. The
-canonical artifact builder now calls the neutral `render_revision_files()`
-implementation in `_source_renderer.py` to calculate revision-local source
-spans from the complete XML. The legacy `build_pruned_revision_files()` name is
-only a thin compatibility wrapper around that renderer, so later pruning-code
-removal cannot accidentally remove canonical source-span generation.
+The monolithic builder, destructive tree/XML/source/move pruning modules, and
+their compatibility tests have been deleted. The canonical artifact builder
+continues to call `render_revision_files()` in `_source_renderer.py` to
+calculate revision-local source spans from complete XML. Internal
+`include_skipped_tags` parameters remain where canonical XML, tree, span, and
+srcMove validation algorithms require an explicit semantic choice; they are
+not request controls.
 
 - Move tree, XML, move summary, selection, and navigation state to artifact
   contracts. (Complete.)
@@ -810,12 +803,12 @@ removal cannot accidentally remove canonical source-span generation.
 - Restore the established yellow/amber move language and use a neutral
   near-black background for unchanged source. (Complete.)
 - Add file-list filters when the manifest navigator needs them. (Complete.)
-- Add row virtualization if focused rendering measurements justify it.
+- Add row virtualization only if future focused-rendering measurements justify
+  it. (Deferred; the bounded projection is sufficient currently.)
 - Remove the frontend monolithic-response renderer and its legacy state,
   components, fixtures, and validation. (Complete.)
-- Remove the monolithic response path and delete destructive pruning code only
-  after the artifact renderer has move-inspection feature parity and
-  compatibility coverage passes.
+- Remove the monolithic response path and destructive pruning after parity is
+  demonstrated. (Complete.)
 
 ### Phase 5: operational hardening and measured extensions
 
