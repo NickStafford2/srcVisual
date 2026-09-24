@@ -39,8 +39,8 @@ controls show the selected connector, every rendered/proxied connector, or
 none. Omitted ranges remain expandable gaps, tree children are paged, and
 stable tag selection is shared by the structure tree, Move Summary, Node Info,
 Source, and XML navigation. Complete XML and its indexed change/move anchors
-are fetched only when the XML tab is opened. The old monolithic response and
-pruning controls remain only as a temporary compatibility interface.
+are fetched only when the XML tab is opened. Upload visualization returns an
+artifact manifest directly; destructive pruning is not part of the HTTP API.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).
@@ -94,7 +94,7 @@ History visualization runs are queued with
 cancellation. The history frontend now creates durable runs, shows their
 reconnectable progress stream, retains authoritative status polling, supports
 cancellation, and opens the resulting artifact. The synchronous history
-endpoint remains temporarily available as a compatibility path.
+visualization endpoint has been removed.
 
 Run creation derives an internal fingerprint from srcMove's versioned pair
 identity plus srcVisual's artifact schema and analysis configuration. A

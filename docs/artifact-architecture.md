@@ -691,8 +691,7 @@ retirement remains separate and evidence-gated.
 Status: complete. The durable SQLite run/event store and polling status
 contract are implemented. A dedicated worker claims queued history runs,
 materializes them through srcMove, and publishes their artifacts. The
-synchronous history endpoint remains available as a compatibility path for
-the Phase 4 frontend migration.
+synchronous history compatibility endpoint has been removed.
 
 - The dedicated worker and durable run/event store are complete. Worker
   startup marks interrupted running jobs failed without automatically
@@ -708,11 +707,11 @@ the Phase 4 frontend migration.
 
 ### Phase 4: complete frontend migration
 
-Status: in progress. History visualization creation now uses the durable run
+Status: in progress. History visualization creation uses the durable run
 contract, displays reconnectable SSE progress, retains authoritative status
 polling, supports durable cancellation, and opens the completed artifact
-through the projection interface. The synchronous history endpoint remains
-only as a temporary compatibility path.
+through the projection interface. Upload visualization returns an artifact
+manifest directly.
 
 The Source view now renders the complete manifest as a searchable,
 GitHub-inspired list of collapsible file cards. Source remains lazy per file.
@@ -772,18 +771,17 @@ files and their move endpoint IDs remain stable. This demonstrates that the
 artifact identity used by Source, XML, the structure tree, Node Info, and Move
 Summary does not derive from archive unit position.
 
-The audit also found these remaining compatibility callers:
+The audit found the compatibility callers that governed retirement:
 
-- `POST /api/visualize` and the synchronous
-  `POST /api/history/pairs/{pair_number}/visualize` route still default to the
-  monolithic response unless `response_format=artifact` is explicit. The
-  current frontend requests artifacts, and durable history runs have replaced
-  the synchronous history route in the normal UI.
+- `POST /api/visualize` now always returns an artifact manifest. Its
+  `response_format`, `include_skipped_tags`, and `pruning_level` options have
+  been removed. The synchronous
+  `POST /api/history/pairs/{pair_number}/visualize` route has also been removed;
+  durable history runs are the sole history visualization path.
 - The frontend now accepts only `ArtifactManifest` and renders only artifact
   projections. The legacy render branch, selection state, tree and source
   containers, fixtures, and monolithic contract validation have been removed.
-  Uploads explicitly request `response_format=artifact`; they do not send the
-  destructive-pruning controls.
+  Uploads send no response-format or destructive-pruning controls.
 - Compatibility route and workflow tests call the monolithic builder directly
   to preserve the old contract while migration remains reversible.
 

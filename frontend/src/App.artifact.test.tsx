@@ -190,7 +190,7 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   await user.click(screen.getByRole("button", { name: "Submit" }));
 
   await waitFor(() => {
-    expect(visualizeFormData?.get("response_format")).toBe("artifact");
+    expect(visualizeFormData?.has("response_format")).toBe(false);
     expect(visualizeFormData?.has("pruning_level")).toBe(false);
     expect(visualizeFormData?.has("include_skipped_tags")).toBe(false);
   });

@@ -212,7 +212,6 @@ async function fetchJson(url: string): Promise<Record<string, unknown>> {
 export async function visualizeSrcDiff(
   formData: FormData,
 ): Promise<ArtifactManifest> {
-  formData.set("response_format", "artifact");
   const response = await fetch("/api/visualize", {
     method: "POST",
     body: formData,

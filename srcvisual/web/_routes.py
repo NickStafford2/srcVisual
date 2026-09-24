@@ -22,19 +22,12 @@ from srcvisual.artifacts.store import (
     ArtifactIntegrityError,
     validate_artifact,
 )
-from srcvisual.core.commands import BackendCommandError
-from srcvisual.workflow._tree_pruning import PruningLevel, parse_tree_pruning_level
-from srcvisual.workflow.payload import (
-    build_visualization_payload,
-    build_visualization_artifact,
-)
+from srcvisual.workflow.payload import build_visualization_artifact
 from srcvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
     build_history_artifact_fingerprint,
     history_error_response,
-    materialize_history_pair,
-    read_materialized_move_results,
     read_history_pair,
     read_history_pairs,
     read_history_status,
@@ -52,8 +45,6 @@ api = Blueprint("api", __name__)
 class VisualizationRequest:
     filename: str
     payload: bytes
-    include_skipped_tags: bool
-    pruning_level: PruningLevel | None
     progress_token: str | None
 
 
@@ -298,69 +289,6 @@ def create_history_run(
     )
 
 
-@api.post("/history/pairs/<int:pair_number>/visualize")
-def visualize_history_pair(pair_number: int) -> tuple[dict[str, object], int]:
-    progress_token = get_progress_token()
-    try:
-        if progress_token is not None:
-            progress_broker.publish_progress(
-                progress_token,
-                f"Regenerating commit pair {pair_number} with its frozen tools.",
-            )
-        artifact = materialize_history_pair(_history_repository(), pair_number)
-        producer_move_results = read_materialized_move_results(artifact)
-        if progress_token is not None:
-            progress_broker.publish_progress(
-                progress_token,
-                "Building the synchronized visualization.",
-            )
-        build_arguments = dict(
-            filename=f"history-pair-{pair_number}.srcmove.xml",
-            payload=artifact.read_bytes(),
-            include_skipped_tags=request.form.get("include_skipped_tags") == "true",
-            pruning_level=get_pruning_level(),
-            artifact_root=current_app.config["ARTIFACT_ROOT"],
-            provenance=ArtifactProvenance(
-                origin="history",
-                history_pair=pair_number,
-                move_results_source=(
-                    "provided" if producer_move_results is not None else "reconstructed"
-                ),
-            ),
-            producer_move_results=producer_move_results,
-            progress=(
-                None
-                if progress_token is None
-                else lambda message: progress_broker.publish_progress(
-                    progress_token,
-                    message,
-                )
-            ),
-        )
-        if _artifact_response_requested():
-            published = build_visualization_artifact(
-                **_artifact_build_arguments(build_arguments)
-            )
-            response_payload = read_artifact_manifest(
-                artifact_root=current_app.config["ARTIFACT_ROOT"],
-                artifact_id=published.artifact_id,
-            )
-        else:
-            response_payload = build_visualization_payload(**build_arguments).to_dict()
-    except (
-        HistoryConfigurationError,
-        BackendCommandError,
-        HistoryResponseError,
-    ) as error:
-        payload, status = history_error_response(error)
-        if progress_token is not None:
-            progress_broker.publish_error(progress_token, payload["error"])
-        return payload, status
-    if progress_token is not None:
-        progress_broker.publish_complete(progress_token, "Visualization complete.")
-    return response_payload, 200
-
-
 @api.get("/visualize/events")
 def visualize_events() -> Response | tuple[dict[str, str], int]:
     token = request.args.get("token", "").strip()
@@ -383,7 +311,10 @@ def visualize_events() -> Response | tuple[dict[str, str], int]:
 def visualize() -> tuple[dict[str, object], int]:
     print("POST /api/visualize received", flush=True)
 
-    visualization_request = parse_visualization_request()
+    try:
+        visualization_request = parse_visualization_request()
+    except ValueError as error:
+        return {"error": str(error)}, 400
     progress_token = visualization_request.progress_token
 
     print(
@@ -391,19 +322,15 @@ def visualize() -> tuple[dict[str, object], int]:
         {
             "filename": visualization_request.filename,
             "payload_bytes": len(visualization_request.payload),
-            "include_skipped_tags": visualization_request.include_skipped_tags,
-            "pruning_level": visualization_request.pruning_level,
             "has_progress_token": progress_token is not None,
         },
         flush=True,
     )
 
     try:
-        build_arguments = dict(
+        published = build_visualization_artifact(
             filename=visualization_request.filename,
             payload=visualization_request.payload,
-            include_skipped_tags=visualization_request.include_skipped_tags,
-            pruning_level=visualization_request.pruning_level,
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             provenance=ArtifactProvenance(origin="upload"),
             progress=(
@@ -415,16 +342,10 @@ def visualize() -> tuple[dict[str, object], int]:
                 )
             ),
         )
-        if _artifact_response_requested():
-            published = build_visualization_artifact(
-                **_artifact_build_arguments(build_arguments)
-            )
-            response_payload = read_artifact_manifest(
-                artifact_root=current_app.config["ARTIFACT_ROOT"],
-                artifact_id=published.artifact_id,
-            )
-        else:
-            response_payload = build_visualization_payload(**build_arguments).to_dict()
+        response_payload = read_artifact_manifest(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=published.artifact_id,
+        )
     except Exception as exc:
         if progress_token is not None:
             progress_broker.publish_error(
@@ -441,6 +362,16 @@ def visualize() -> tuple[dict[str, object], int]:
 
 
 def parse_visualization_request() -> VisualizationRequest:
+    removed_options = sorted(
+        option
+        for option in ("response_format", "include_skipped_tags", "pruning_level")
+        if option in request.form
+    )
+    if removed_options:
+        raise ValueError(
+            "Unsupported visualization option(s): " + ", ".join(removed_options) + "."
+        )
+
     uploaded = request.files.get("srcdiff")
     xml_text = request.form.get("srcdiff_xml", "").strip()
 
@@ -469,8 +400,6 @@ def parse_visualization_request() -> VisualizationRequest:
     return VisualizationRequest(
         filename=filename,
         payload=payload,
-        include_skipped_tags=request.form.get("include_skipped_tags") == "true",
-        pruning_level=get_pruning_level(),
         progress_token=get_progress_token(),
     )
 
@@ -496,15 +425,6 @@ def get_progress_token() -> str | None:
         return None
 
     return token
-
-
-def get_pruning_level() -> PruningLevel | None:
-    raw_level = request.form.get("pruning_level", "").strip()
-
-    if not raw_level:
-        return None
-
-    return parse_tree_pruning_level(raw_level)
 
 
 def _history_repository() -> Path:
@@ -622,21 +542,6 @@ def _parse_compact_range(value: str) -> tuple[int, int] | None:
     if start < 1 or end < start or end - start + 1 > 2_000:
         raise ValueError("Each expanded source range must contain 1 to 2000 lines.")
     return start, end
-
-
-def _artifact_response_requested() -> bool:
-    response_format = request.form.get("response_format", "legacy")
-    if response_format not in {"legacy", "artifact"}:
-        raise ValueError("response_format must be legacy or artifact.")
-    return response_format == "artifact"
-
-
-def _artifact_build_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: value
-        for key, value in arguments.items()
-        if key not in {"include_skipped_tags", "pruning_level"}
-    }
 
 
 def _artifact_response(
