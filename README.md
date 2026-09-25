@@ -70,15 +70,20 @@ docker compose -f srcVisual/compose.yaml down
 ```
 
 The image contains a compiled snapshot of the sibling source checkouts at build
-time; building it does not edit those checkouts. Re-run the build command after
-changing srcVisual or a native dependency such as srcMove. This Compose setup
-is currently a production-style local build, not a hot-reload development
-server. The checked-in Compose configuration mounts the Notepad++ reference
-repository as the one preconfigured analysis target. Its source worktree is
-read-only; only its `.git` and `.srcmove` directories are writable so the
-`srcmove-history` CLI can manage its own operation state and saved comparison
-artifacts. Change the volume sources and `SRCVISUAL_HISTORY_REPOSITORY`
-together to use another analyzed repository.
+time; building it does not edit those checkouts. In the parent workspace's
+evaluation workflow, Compose replaces the packaged srcMove executable with the
+incrementally built Linux `srcMove/build/srcMove` binary in both services and
+one-off containers. Rebuild the full image after changing srcVisual,
+`srcmove_history` Python code, the Dockerfile, or another native dependency.
+The canonical commands and checksum-based analysis lifecycle are documented in
+the parent workspace's `docs/workspace.md`.
+This Compose setup is currently a production-style local build, not a
+hot-reload development server. The checked-in Compose configuration mounts the
+Notepad++ reference repository as the one preconfigured analysis target. Its
+source worktree is read-only; only its `.git` and `.srcmove` directories are
+writable so the `srcmove-history` CLI can manage its own operation state and
+saved comparison artifacts. Change the volume sources and
+`SRCVISUAL_HISTORY_REPOSITORY` together to use another analyzed repository.
 
 Published visualization artifacts are stored in the named
 `srcvisual-artifacts` volume mounted at `/var/lib/srcvisual/artifacts`. They
