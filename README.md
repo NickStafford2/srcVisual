@@ -38,8 +38,8 @@ files; SVG connectors use rendered semantic endpoints when available and
 collapsed file-header proxies otherwise. Move tags remain navigable semantic
 endpoints;
 sidebar move chips independently toggle individual connectors, while Source
-controls show the inspected connector, every rendered/proxied connector, or
-none. Omitted ranges remain expandable gaps, tree children are paged, and
+controls show only the current inspected connector, every rendered/proxied
+connector, or none. Omitted ranges remain expandable gaps, tree children are paged, and
 stable tag selection is shared by the structure tree, Move Summary, Node Info,
 Source, and XML navigation. Complete XML and its indexed change/move anchors
 are fetched only when the XML tab is opened. Upload visualization returns an

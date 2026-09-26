@@ -95,8 +95,18 @@ export function buildMoveConnectorGroup({
     ),
   ];
 
-  if (_fromBlocks.length === 0 || _toBlocks.length === 0) {
+  if (_boxes.length === 0) {
     return null;
+  }
+
+  if (_fromBlocks.length === 0 || _toBlocks.length === 0) {
+    return {
+      key: moveId,
+      moveId,
+      boxes: _boxes,
+      hub: null,
+      paths: [],
+    };
   }
 
   if (_fromBlocks.length === 1 && _toBlocks.length === 1) {

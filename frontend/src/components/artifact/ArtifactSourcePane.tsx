@@ -128,7 +128,7 @@ export function ArtifactSourcePane({
               }}
               className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
             >
-              Inspected
+              Current only
             </button>
             <button
               type="button"

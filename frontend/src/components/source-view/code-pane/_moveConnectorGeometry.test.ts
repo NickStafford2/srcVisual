@@ -58,14 +58,27 @@ describe("move connector geometry", () => {
     expect(_blocks[1]).toEqual(buildRect(110, 130, 260, 150));
   });
 
+  it("keeps visible endpoint boxes when the opposite side is unavailable", () => {
+    const _group = buildMoveConnectorGroup({
+      moveId: "move-partial",
+      containerRect: buildRect(0, 0, 800, 400),
+      toRects: [buildRect(520, 40, 680, 80)],
+    });
+
+    expect(_group).not.toBeNull();
+    expect(_group?.boxes).toHaveLength(1);
+    expect(_group?.boxes[0]?.revision).toBe("revision-1");
+    expect(_group?.paths).toEqual([]);
+    expect(_group?.hub).toBeNull();
+  });
+
   it("wraps every rendered fragment of one semantic endpoint in one box", () => {
     const _group = buildMoveConnectorGroup({
       moveId: "move-semantic",
       containerRect: buildRect(0, 0, 800, 500),
-      fromEndpointRectGroups: [[
-        buildRect(100, 20, 220, 40),
-        buildRect(110, 180, 250, 200),
-      ]],
+      fromEndpointRectGroups: [
+        [buildRect(100, 20, 220, 40), buildRect(110, 180, 250, 200)],
+      ],
       toEndpointRectGroups: [[buildRect(520, 60, 680, 100)]],
     });
 
@@ -84,14 +97,8 @@ describe("move connector geometry", () => {
     const _group = buildMoveConnectorGroup({
       moveId: "move-2",
       containerRect: buildRect(0, 0, 900, 600),
-      fromRects: [
-        buildRect(80, 20, 220, 60),
-        buildRect(90, 180, 250, 220),
-      ],
-      toRects: [
-        buildRect(620, 40, 760, 80),
-        buildRect(640, 260, 780, 300),
-      ],
+      fromRects: [buildRect(80, 20, 220, 60), buildRect(90, 180, 250, 220)],
+      toRects: [buildRect(620, 40, 760, 80), buildRect(640, 260, 780, 300)],
     });
 
     expect(_group).not.toBeNull();

@@ -292,8 +292,73 @@ describe("ArtifactSourcePane", () => {
       ),
     );
     expect(
-      screen.queryByText("move-1: 1 hidden to endpoint"),
+      await screen.findByText("move-1: 1 unrendered to endpoint"),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps a proxy for an endpoint missing from an expanded projection", async () => {
+    vi.mocked(fetchArtifactSource).mockResolvedValue({
+      ...projection,
+      focus_profile: "moves",
+      blocks: [
+        {
+          type: "hunk",
+          block_id: "h-10-11",
+          left: { start_line: 11, end_line: 11 },
+          right: { start_line: 11, end_line: 11 },
+          rows: [
+            {
+              kind: "replace",
+              left: null,
+              right: {
+                line_number: 11,
+                text: "moved();",
+                anchors: [
+                  {
+                    node_id: activeMove.to_node_ids[0],
+                    kind: "move",
+                    move_id: activeMove.move_id,
+                    span: {
+                      start_line: 11,
+                      start_col: 1,
+                      end_line: 11,
+                      end_col: 8,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    render(
+      <ArtifactSourcePane
+        artifactId="artifact-1"
+        files={[file]}
+        selectedFileId="f-1"
+        selectedNodeId={null}
+        active
+        focus="moves"
+        inspectedMoveId={null}
+        moves={[activeMove]}
+        visibleMoveIds={new Set([activeMove.move_id])}
+        onVisibleMoveIdsChange={vi.fn()}
+        onInspectMove={vi.fn()}
+        onFocusChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByText("move-1: 1 unrendered from endpoint"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("move-1: 1 unrendered to endpoint"),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "moved();" }),
+    ).toBeInTheDocument();
   });
 
   it("switches connector visibility without eagerly loading collapsed files", async () => {

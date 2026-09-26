@@ -60,6 +60,7 @@ export function ArtifactSourceFile({
     let active = true;
     setLoading(true);
     setError(null);
+    setProjection(null);
     setExpandedRanges([]);
     void fetchArtifactSource(artifactId, file.file_id, focus)
       .then((result) => {
@@ -84,14 +85,29 @@ export function ArtifactSourceFile({
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }, [active, expanded, projection, selectedNodeId]);
 
-  const _hasCollapsedEndpoints = visibleMoves.some(
-    (move) =>
-      endpointCount(move.from_node_ids, file.file_id) > 0 ||
-      endpointCount(move.to_node_ids, file.file_id) > 0,
-  );
   const _visibleMoveIds = useMemo(
     () => new Set(visibleMoves.map((move) => move.move_id)),
     [visibleMoves],
+  );
+  const _renderedNodeIds = useMemo(
+    () => (expanded && projection ? renderedMoveNodeIds(projection) : null),
+    [expanded, projection],
+  );
+  const _endpointProxies = visibleMoves.map((move) => ({
+    move,
+    fromCount: proxyEndpointCount(
+      move.from_node_ids,
+      file.file_id,
+      _renderedNodeIds?.["revision-0"],
+    ),
+    toCount: proxyEndpointCount(
+      move.to_node_ids,
+      file.file_id,
+      _renderedNodeIds?.["revision-1"],
+    ),
+  }));
+  const _hasEndpointProxies = _endpointProxies.some(
+    ({ fromCount, toCount }) => fromCount > 0 || toCount > 0,
   );
 
   async function showGap(
@@ -174,31 +190,33 @@ export function ArtifactSourceFile({
             </button>
           ) : null}
         </div>
-        {!expanded && _hasCollapsedEndpoints ? (
+        {_hasEndpointProxies ? (
           <div className="grid grid-cols-2 border-t border-white/5">
             <div className="space-y-1 px-3 py-1.5 text-xs text-slate-500">
-              {visibleMoves.map((move) => (
-                <CollapsedMoveAnchor
+              {_endpointProxies.map(({ move, fromCount }) => (
+                <MoveEndpointProxy
                   key={`${move.move_id}-from`}
                   fileId={file.file_id}
                   moveId={move.move_id}
                   revision="revision-0"
-                  count={endpointCount(move.from_node_ids, file.file_id)}
+                  count={fromCount}
                   label="from"
+                  reason={expanded ? "unrendered" : "hidden"}
                   registerMoveSegment={registerMoveSegment}
                   unregisterMoveSegment={unregisterMoveSegment}
                 />
               ))}
             </div>
             <div className="space-y-1 px-3 py-1.5 text-xs text-slate-500">
-              {visibleMoves.map((move) => (
-                <CollapsedMoveAnchor
+              {_endpointProxies.map(({ move, toCount }) => (
+                <MoveEndpointProxy
                   key={`${move.move_id}-to`}
                   fileId={file.file_id}
                   moveId={move.move_id}
                   revision="revision-1"
-                  count={endpointCount(move.to_node_ids, file.file_id)}
+                  count={toCount}
                   label="to"
+                  reason={expanded ? "unrendered" : "hidden"}
                   registerMoveSegment={registerMoveSegment}
                   unregisterMoveSegment={unregisterMoveSegment}
                 />
@@ -312,12 +330,13 @@ function SourceCell({
   );
 }
 
-function CollapsedMoveAnchor({
+function MoveEndpointProxy({
   fileId,
   moveId,
   revision,
   count,
   label,
+  reason,
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
@@ -326,6 +345,7 @@ function CollapsedMoveAnchor({
   revision: SourceRevision;
   count: number;
   label: string;
+  reason: "hidden" | "unrendered";
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -333,7 +353,7 @@ function CollapsedMoveAnchor({
   useEffect(() => {
     if (count === 0 || !ref.current) return;
     const element = ref.current;
-    const endpointId = `collapsed:${fileId}:${revision}`;
+    const endpointId = `proxy:${fileId}:${revision}`;
     registerMoveSegment({ moveId, endpointId, revision, element });
     return () => {
       unregisterMoveSegment({ moveId, endpointId, revision, element });
@@ -352,13 +372,52 @@ function CollapsedMoveAnchor({
       ref={ref}
       className="border-diff-move-1/50 bg-diff-move-1/10 block rounded border border-dashed px-2 py-0.5 text-amber-200"
     >
-      {moveId}: {count} hidden {label} endpoint{count === 1 ? "" : "s"}
+      {moveId}: {count} {reason} {label} endpoint{count === 1 ? "" : "s"}
     </span>
   ) : null;
 }
 
-function endpointCount(nodeIds: string[], fileId: string) {
-  return nodeIds.filter((nodeId) => nodeId.startsWith(`${fileId}:n`)).length;
+function proxyEndpointCount(
+  nodeIds: string[],
+  fileId: string,
+  renderedNodeIds: ReadonlySet<string> | undefined,
+) {
+  return nodeIds.filter(
+    (nodeId) =>
+      nodeId.startsWith(`${fileId}:n`) && !renderedNodeIds?.has(nodeId),
+  ).length;
+}
+
+function renderedMoveNodeIds(projection: ArtifactSourceProjection): {
+  "revision-0": Set<string>;
+  "revision-1": Set<string>;
+} {
+  const result = {
+    "revision-0": new Set<string>(),
+    "revision-1": new Set<string>(),
+  };
+
+  for (const block of projection.blocks) {
+    if (block.type !== "hunk") continue;
+    for (const row of block.rows) {
+      collectRenderedMoveNodeIds(row.left, result["revision-0"]);
+      collectRenderedMoveNodeIds(row.right, result["revision-1"]);
+    }
+  }
+
+  return result;
+}
+
+function collectRenderedMoveNodeIds(
+  line: ArtifactSourceLine | null,
+  nodeIds: Set<string>,
+) {
+  if (!line) return;
+  for (const segment of buildArtifactLineSegments(line)) {
+    if (segment.kind === "move" && segment.moveId && segment.nodeId) {
+      nodeIds.add(segment.nodeId);
+    }
+  }
 }
 
 function boundedRange(start: number | null, end: number | null) {
