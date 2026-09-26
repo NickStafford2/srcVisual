@@ -14,7 +14,7 @@ type CodeSegmentProps = {
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
   visibleMoveIds?: ReadonlySet<string>;
-  onMoveSelect?: (moveId: string) => void;
+  onMoveSelect?: (moveId: string, position: { x: number; y: number }) => void;
   selected?: boolean;
 };
 
@@ -101,14 +101,23 @@ export function CodeSegment({
       ref={ref}
       role={onMoveSelect ? "button" : undefined}
       tabIndex={onMoveSelect ? 0 : undefined}
-      onClick={() => {
-        if (segment.moveId) onMoveSelect?.(segment.moveId);
+      onClick={(event) => {
+        if (segment.moveId) {
+          onMoveSelect?.(segment.moveId, {
+            x: event.clientX,
+            y: event.clientY,
+          });
+        }
       }}
       onKeyDown={(event) => {
         if (!segment.moveId || !onMoveSelect) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onMoveSelect(segment.moveId);
+          const bounds = event.currentTarget.getBoundingClientRect();
+          onMoveSelect(segment.moveId, {
+            x: bounds.right,
+            y: bounds.bottom,
+          });
         }
       }}
       data-highlighted-segment="true"

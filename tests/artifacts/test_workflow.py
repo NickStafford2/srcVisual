@@ -26,7 +26,7 @@ def test_archive_input_publishes_canonical_artifact(
 
     assert "<diff:ws" in _stored.payload.moved_srcdiff_xml
     assert _stored.manifest["provenance"]["move_results_source"] == "generated"
-    assert _stored.payload.move_results["moves"][0]["match_kind"] == "exact"
+    assert _stored.payload.move_results["moves"][0]["match_kind"] == "type1"
 
 
 def test_single_root_input_round_trips_through_artifact(tmp_path: Path) -> None:

@@ -37,6 +37,46 @@ def read_artifact_manifest(*, artifact_root: Path, artifact_id: str) -> dict[str
     }
 
 
+def read_artifact_move(
+    *, artifact_root: Path, artifact_id: str, move_id: str
+) -> dict[str, Any]:
+    artifact_path, _ = _open_artifact(artifact_root, artifact_id)
+    with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:
+        row = database.execute(
+            "SELECT value FROM metadata WHERE key = 'move_results'"
+        ).fetchone()
+    if row is None:
+        raise ArtifactIntegrityError("Artifact move results are missing.")
+
+    move_results = json.loads(row[0])
+    moves = move_results.get("moves")
+    if not isinstance(moves, list):
+        raise ArtifactIntegrityError("Artifact move results are invalid.")
+    move = next(
+        (
+            candidate
+            for candidate in moves
+            if isinstance(candidate, dict) and candidate.get("move_id") == move_id
+        ),
+        None,
+    )
+    if move is None:
+        raise FileNotFoundError("Artifact move does not exist.")
+
+    producer_metadata = move_results.get("producer_metadata")
+    results_schema_version = (
+        producer_metadata.get("results_schema_version")
+        if isinstance(producer_metadata, dict)
+        else move_results.get("results_schema_version")
+    )
+    return {
+        "schema_version": 1,
+        "artifact_id": artifact_id,
+        "results_schema_version": results_schema_version,
+        "move": move,
+    }
+
+
 def read_artifact_xml(*, artifact_root: Path, artifact_id: str) -> dict[str, Any]:
     artifact_path, _ = _open_artifact(artifact_root, artifact_id)
     with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:

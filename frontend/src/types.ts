@@ -24,6 +24,27 @@ export interface ArtifactMoveSummary {
   to_node_ids: string[];
 }
 
+export interface ArtifactMoveRecord {
+  move_id: string;
+  match_kind?: "type1" | "type2" | "type3";
+  confidence_milli?: number;
+  selection_utility?: number;
+  matched_units?: number;
+  selection_reason?: string;
+  result_provenance?: "producer-results" | "xml-annotation";
+  from_xpaths?: string[];
+  to_xpaths?: string[];
+  from_raw_texts?: string[];
+  to_raw_texts?: string[];
+}
+
+export interface ArtifactMoveProjection {
+  schema_version: 1;
+  artifact_id: string;
+  results_schema_version: number | null;
+  move: ArtifactMoveRecord;
+}
+
 export interface ArtifactManifest {
   schema_version: number;
   projection_schema_version: 1;

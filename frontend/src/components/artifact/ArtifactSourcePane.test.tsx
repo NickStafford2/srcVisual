@@ -1,11 +1,14 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchArtifactSource } from "../../api";
+import { fetchArtifactMove, fetchArtifactSource } from "../../api";
 import type { ArtifactSourceProjection } from "../../types";
 import { ArtifactSourcePane } from "./ArtifactSourcePane";
 
-vi.mock("../../api", () => ({ fetchArtifactSource: vi.fn() }));
+vi.mock("../../api", () => ({
+  fetchArtifactMove: vi.fn(),
+  fetchArtifactSource: vi.fn(),
+}));
 
 const projection: ArtifactSourceProjection = {
   schema_version: 1,
@@ -64,7 +67,7 @@ const secondFile = {
 
 const activeMove = {
   move_id: "move-1",
-  match_kind: "exact",
+  match_kind: "type1",
   from_node_ids: ["f-1:n00000001"],
   to_node_ids: ["f-1:n00000002"],
 };
@@ -72,6 +75,23 @@ const activeMove = {
 describe("ArtifactSourcePane", () => {
   beforeEach(() => {
     vi.mocked(fetchArtifactSource).mockReset().mockResolvedValue(projection);
+    vi.mocked(fetchArtifactMove)
+      .mockReset()
+      .mockResolvedValue({
+        schema_version: 1,
+        artifact_id: "artifact-1",
+        results_schema_version: 1,
+        move: {
+          move_id: "move-1",
+          match_kind: "type1",
+          confidence_milli: 1000,
+          selection_utility: 8000,
+          matched_units: 8,
+          selection_reason: "greedy_utility",
+          from_raw_texts: ["moved"],
+          to_raw_texts: ["moved"],
+        },
+      });
   });
 
   afterEach(cleanup);
@@ -124,7 +144,7 @@ describe("ArtifactSourcePane", () => {
     );
   });
 
-  it("renders exact move fragments with the established move color", async () => {
+  it("renders type1 move fragments with the established move color", async () => {
     const user = userEvent.setup();
     const onSelectMove = vi.fn();
     const scrollIntoView = vi.fn();
@@ -230,17 +250,25 @@ describe("ArtifactSourcePane", () => {
     expect(moveSegments).toHaveLength(2);
     expect(moveSegments[0]).toHaveTextContent("moved");
     expect(moveSegments[0]).toHaveClass("bg-diff-move-1/35");
-    expect(moveSegments[0]).toHaveAttribute("data-move-visual-state", "selected");
+    expect(moveSegments[0]).toHaveAttribute(
+      "data-move-visual-state",
+      "selected",
+    );
     expect(moveSegments[0]).toHaveClass("ring-diff-move-1/70");
     expect(
       document.querySelector('[data-source-row-kind="replace"]'),
     ).toHaveClass("bg-black");
     await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
     expect(onSelectMove).toHaveBeenCalledWith("move-1");
+    expect(
+      await screen.findByLabelText("Move details move-1"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("type1")).toHaveLength(2);
+    expect(screen.getByText("1000")).toBeInTheDocument();
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
-    expect(screen.getByLabelText("Artifact source file example.cpp")).toHaveClass(
-      "bg-black",
-    );
+    expect(
+      screen.getByLabelText("Artifact source file example.cpp"),
+    ).toHaveClass("bg-black");
   });
 
   it("uses a collapsed file header as a lazy cross-file move endpoint", async () => {
@@ -310,9 +338,10 @@ describe("ArtifactSourcePane", () => {
 
     await screen.findByText("old();");
     await user.click(screen.getByRole("button", { name: "All" }));
-    const allCall = onVisibleMoveIdsChange.mock.calls[
-      onVisibleMoveIdsChange.mock.calls.length - 1
-    ];
+    const allCall =
+      onVisibleMoveIdsChange.mock.calls[
+        onVisibleMoveIdsChange.mock.calls.length - 1
+      ];
     expect([...allCall[0]]).toEqual(["move-1"]);
     expect(fetchArtifactSource).not.toHaveBeenCalledWith(
       "artifact-1",
@@ -321,9 +350,10 @@ describe("ArtifactSourcePane", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "None" }));
-    const noneCall = onVisibleMoveIdsChange.mock.calls[
-      onVisibleMoveIdsChange.mock.calls.length - 1
-    ];
+    const noneCall =
+      onVisibleMoveIdsChange.mock.calls[
+        onVisibleMoveIdsChange.mock.calls.length - 1
+      ];
     expect(noneCall[0].size).toBe(0);
   });
 });

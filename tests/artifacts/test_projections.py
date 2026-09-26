@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.artifacts.projections import (
+    read_artifact_move,
     read_artifact_node,
     read_artifact_manifest,
     read_artifact_xml,
@@ -72,6 +73,36 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
             },
         },
     ]
+
+
+def test_move_projection_returns_record_without_interpreting_it(tmp_path) -> None:
+    published = _publish_fixture(tmp_path)
+
+    projection = read_artifact_move(
+        artifact_root=tmp_path,
+        artifact_id=published.artifact_id,
+        move_id="move-1",
+    )
+
+    assert projection == {
+        "schema_version": 1,
+        "artifact_id": published.artifact_id,
+        "results_schema_version": 1,
+        "move": {
+            "move_id": "move-1",
+            "match_kind": "type1",
+            "confidence_milli": 1000,
+            "selection_utility": 8000,
+            "matched_units": 8,
+            "selection_reason": "greedy_utility",
+            "from_xpaths": ["/unit/move"],
+            "to_xpaths": ["/unit/move"],
+            "from_raw_texts": ["moved();"],
+            "to_raw_texts": ["moved();"],
+            "from_node_ids": ["/unit/move"],
+            "to_node_ids": ["/unit/move"],
+        },
+    }
 
 
 def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None:
@@ -385,7 +416,26 @@ def _publish_fixture(tmp_path):
             '  <move id="move-1">moved();</move>\n'
             "</unit>\n"
         ),
-        move_results={"move_count": 0, "moves": []},
+        move_results={
+            "move_count": 1,
+            "moves": [
+                {
+                    "move_id": "move-1",
+                    "match_kind": "type1",
+                    "confidence_milli": 1000,
+                    "selection_utility": 8000,
+                    "matched_units": 8,
+                    "selection_reason": "greedy_utility",
+                    "from_xpaths": ["/unit/move"],
+                    "to_xpaths": ["/unit/move"],
+                    "from_raw_texts": ["moved();"],
+                    "to_raw_texts": ["moved();"],
+                    "from_node_ids": ["/unit/move"],
+                    "to_node_ids": ["/unit/move"],
+                }
+            ],
+            "producer_metadata": {"results_schema_version": 1},
+        },
         has_position_data=True,
         files=(
             VisualizedFile(

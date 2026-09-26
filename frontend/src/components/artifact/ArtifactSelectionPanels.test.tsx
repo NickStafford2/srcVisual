@@ -34,7 +34,7 @@ const files: ArtifactFileSummary[] = [
 
 const move: ArtifactMoveSummary = {
   move_id: "move-1",
-  match_kind: "exact",
+  match_kind: "type1",
   from_node_ids: ["f-before:n00000001"],
   to_node_ids: ["f-after:n00000002"],
 };
@@ -91,7 +91,9 @@ it("presents canonical tag details and reveals positioned tags in Source", async
     />,
   );
 
-  expect(screen.getByRole("heading", { name: "<function>" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "<function>" }),
+  ).toBeInTheDocument();
   expect(screen.getByText("12:1–15:2")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Reveal in Source" }));
   expect(onRevealSource).toHaveBeenCalledOnce();

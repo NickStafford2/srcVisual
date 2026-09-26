@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -54,7 +60,7 @@ const statusDocument = {
     detections: 336,
     source_destination_pairings: 340,
     annotated_regions: 683,
-    by_match_type: { exact: 123 },
+    by_match_type: { type1: 123 },
   },
   history: {
     newest_commit: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -117,7 +123,7 @@ describe("repository history browser", () => {
               results_observation: {},
               moves: [
                 {
-                  match_kind: "exact",
+                  match_kind: "type1",
                   from_xpaths: ["/src:unit[1]/diff:delete[1]"],
                   to_xpaths: ["/src:unit[1]/diff:insert[1]"],
                 },
@@ -131,11 +137,14 @@ describe("repository history browser", () => {
           });
         }
         if (url === "/api/history/pairs/1/runs") {
-          return jsonResponse({
-            schema_version: 1,
-            reuse: "new",
-            run: historyRun("queued"),
-          }, 202);
+          return jsonResponse(
+            {
+              schema_version: 1,
+              reuse: "new",
+              run: historyRun("queued"),
+            },
+            202,
+          );
         }
         if (url === `/api/runs/${"r".repeat(32)}`) {
           runPollCount += 1;
@@ -194,16 +203,17 @@ describe("repository history browser", () => {
     expect(await screen.findByText("notepadpp")).toBeInTheDocument();
     expect(screen.getByText("370")).toBeInTheDocument();
     expect(screen.getByText("336")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "With moves" }),
-    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "With moves" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     const pairList = screen.getByLabelText("History commit pairs");
     await user.click(within(pairList).getByRole("button", { name: /#1/ }));
 
     const details = await screen.findByLabelText("Commit pair 1 details");
     await waitFor(() => {
-      expect(within(details).getByText("Move 1 · exact")).toBeInTheDocument();
+      expect(within(details).getByText("Move 1 · type1")).toBeInTheDocument();
       expect(within(details).getByText("Move 2 · type3")).toBeInTheDocument();
     });
 
@@ -254,7 +264,9 @@ describe("repository history browser", () => {
       within(details).getByRole("button", { name: "Open visualization" }),
     );
 
-    await user.click(await within(details).findByRole("button", { name: "Cancel" }));
+    await user.click(
+      await within(details).findByRole("button", { name: "Cancel" }),
+    );
 
     expect(fetch).toHaveBeenCalledWith(`/api/runs/${"r".repeat(32)}/cancel`, {
       method: "POST",

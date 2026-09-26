@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 
 from srcvisual.artifacts.models import ArtifactProvenance
 from srcvisual.artifacts.projections import (
+    read_artifact_move,
     read_artifact_node,
     read_artifact_manifest,
     read_artifact_xml,
@@ -84,6 +85,19 @@ def artifact_xml(artifact_id: str) -> tuple[dict[str, object], int]:
         lambda: read_artifact_xml(
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             artifact_id=artifact_id,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/moves/<move_id>")
+def artifact_move(
+    artifact_id: str, move_id: str
+) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_artifact_move(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            move_id=move_id,
         )
     )
 

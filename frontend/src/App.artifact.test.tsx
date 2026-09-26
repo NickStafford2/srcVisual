@@ -39,7 +39,7 @@ const manifest: ArtifactManifest = {
     items: [
       {
         move_id: "move-1",
-        match_kind: "exact",
+        match_kind: "type1",
         from_node_ids: [file.root_node_id],
         to_node_ids: [file.root_node_id],
       },

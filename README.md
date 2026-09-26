@@ -41,6 +41,9 @@ stable tag selection is shared by the structure tree, Move Summary, Node Info,
 Source, and XML navigation. Complete XML and its indexed change/move anchors
 are fetched only when the XML tab is opened. Upload visualization returns an
 artifact manifest directly; destructive pruning is not part of the HTTP API.
+Clicking a moved source fragment or connector opens a draggable detail window
+that lazily displays the fields retained from srcMove's result record. It does
+not infer unavailable classification or selection evidence from XML.
 
 Important implementation expectations are documented in
 [docs/Rules.md](docs/Rules.md).

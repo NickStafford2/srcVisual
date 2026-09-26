@@ -1,10 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
-import {
-  fetchArtifactNodeChildren,
-  fetchArtifactTree,
-} from "../../api";
+import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
 import type { ArtifactManifest, ArtifactTreeNode } from "../../types";
 import { ArtifactNavigator } from "./ArtifactNavigator";
 
@@ -65,7 +62,7 @@ const manifest: ArtifactManifest = {
     items: [
       {
         move_id: "move-1",
-        match_kind: "exact",
+        match_kind: "type1",
         from_node_ids: ["f-one:n00000001"],
         to_node_ids: ["f-two:n00000001"],
       },
@@ -118,7 +115,9 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
     />,
   );
 
-  await user.click(await screen.findByRole("button", { name: "Load more children" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Load more children" }),
+  );
   expect(fetchArtifactNodeChildren).toHaveBeenCalledWith(
     "artifact-1",
     root.node_id,
@@ -143,7 +142,12 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
   );
   expect(onToggleMove).toHaveBeenCalledWith(manifest.moves.items[0]);
 
-  await user.type(screen.getByRole("searchbox", { name: "Filter artifact files" }), "two");
-  expect(screen.queryByRole("button", { name: "one.cpp" })).not.toBeInTheDocument();
+  await user.type(
+    screen.getByRole("searchbox", { name: "Filter artifact files" }),
+    "two",
+  );
+  expect(
+    screen.queryByRole("button", { name: "one.cpp" }),
+  ).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "two.cpp" })).toBeInTheDocument();
 });

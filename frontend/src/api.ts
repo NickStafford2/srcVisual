@@ -1,6 +1,7 @@
 import type {
   ArtifactFocusProfile,
   ArtifactManifest,
+  ArtifactMoveProjection,
   ArtifactSourceProjection,
   ArtifactTreeNode,
   ArtifactTreeProjection,
@@ -335,6 +336,25 @@ export async function fetchArtifactSource(
   return (await fetchJson(
     `/api/artifacts/${artifactId}/files/${fileId}/source?${parameters.toString()}`,
   )) as unknown as ArtifactSourceProjection;
+}
+
+export async function fetchArtifactMove(
+  artifactId: string,
+  moveId: string,
+): Promise<ArtifactMoveProjection> {
+  const payload = await fetchJson(
+    `/api/artifacts/${artifactId}/moves/${encodeURIComponent(moveId)}`,
+  );
+  if (
+    payload.schema_version !== 1 ||
+    typeof payload.move !== "object" ||
+    payload.move === null
+  ) {
+    throw new Error(
+      "Backend returned an unsupported artifact move projection.",
+    );
+  }
+  return payload as unknown as ArtifactMoveProjection;
 }
 
 type ArtifactSourceRangeRequest = { start: number; end: number };

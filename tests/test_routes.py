@@ -68,6 +68,32 @@ def test_artifact_node_endpoint_forwards_stable_identity(
     assert captured["node_id"] == "f-one:n00000001"
 
 
+def test_artifact_move_endpoint_forwards_srcmove_identity(
+    monkeypatch, tmp_path: Path
+) -> None:
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+
+    def fake_read_artifact_move(**kwargs):
+        captured.update(kwargs)
+        return {
+            "schema_version": 1,
+            "move": {"move_id": kwargs["move_id"], "match_kind": "type1"},
+        }
+
+    monkeypatch.setattr(routes_module, "read_artifact_move", fake_read_artifact_move)
+    artifact_id = "a" * 32
+
+    response = create_app().test_client().get(
+        f"/api/artifacts/{artifact_id}/moves/move-1"
+    )
+
+    assert response.status_code == 200
+    assert captured["artifact_id"] == artifact_id
+    assert captured["move_id"] == "move-1"
+    assert response.get_json()["move"]["match_kind"] == "type1"
+
+
 def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
     artifact_id = "a" * 32

@@ -438,6 +438,7 @@ GET  /api/runs/{run_id}/events
 POST /api/runs/{run_id}/cancel
 
 GET  /api/artifacts/{artifact_id}
+GET  /api/artifacts/{artifact_id}/moves/{move_id}
 GET  /api/artifacts/{artifact_id}/files/{file_id}/source
 GET  /api/artifacts/{artifact_id}/files/{file_id}/tree
 GET  /api/artifacts/{artifact_id}/tree/nodes/{node_id}
@@ -449,6 +450,13 @@ The artifact manifest is small enough to render the file navigator and choose
 the first request. It includes file summaries, move summaries and lightweight
 endpoint anchors, available focus profiles, capabilities, and safe provenance.
 It does not expose filesystem paths.
+
+The move-detail projection lazily returns the retained srcMove record for one
+move without reclassifying it or deriving missing evidence. Producer fields
+such as `match_kind`, `confidence_milli`, `selection_utility`,
+`matched_units`, and `selection_reason` remain absent when an artifact was
+reconstructed from XML annotations alone. The Source view opens this projection
+in a draggable detail window when a moved fragment or connector is selected.
 
 The initial tree response is a bounded projection containing the file root,
 the ancestor paths needed for the active focus profile, child counts, and a

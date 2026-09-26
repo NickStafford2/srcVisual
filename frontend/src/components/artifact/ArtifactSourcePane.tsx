@@ -7,6 +7,7 @@ import type {
 import { MoveConnectorOverlay } from "../source-view/code-pane/MoveConnectorOverlay";
 import { useMoveConnectorOverlay } from "../source-view/code-pane/useMoveConnectorOverlay";
 import { ArtifactSourceFile } from "./ArtifactSourceFile";
+import { ArtifactMovePopup } from "./ArtifactMovePopup";
 
 type Props = {
   artifactId: string;
@@ -44,6 +45,10 @@ export function ArtifactSourcePane({
     () => new Set(selectedFileId ? [selectedFileId] : []),
   );
   const [showMoveFilesOnly, setShowMoveFilesOnly] = useState(false);
+  const [movePopup, setMovePopup] = useState<{
+    moveId: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const _moveFocused = activeMove !== null;
   const _moveFileIds = useMemo(
     () => new Set(activeMove ? moveFileIds(activeMove) : []),
@@ -74,6 +79,11 @@ export function ArtifactSourcePane({
       else next.add(fileId);
       return next;
     });
+  }
+
+  function inspectMove(moveId: string, position: { x: number; y: number }) {
+    onSelectMove(moveId);
+    setMovePopup({ moveId, position });
   }
 
   return (
@@ -126,7 +136,7 @@ export function ArtifactSourcePane({
                 onVisibleMoveIdsChange(new Set([activeMove.move_id]));
                 setShowMoveFilesOnly(true);
               }}
-              className="border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:bg-diff-move-1/20 aria-pressed:text-amber-200 disabled:opacity-40"
+              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
             >
               Selected
             </button>
@@ -134,10 +144,12 @@ export function ArtifactSourcePane({
               type="button"
               aria-pressed={visibleMoveIds.size === moves.length}
               onClick={() => {
-                onVisibleMoveIdsChange(new Set(moves.map((move) => move.move_id)));
+                onVisibleMoveIdsChange(
+                  new Set(moves.map((move) => move.move_id)),
+                );
                 setShowMoveFilesOnly(false);
               }}
-              className="border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:bg-diff-move-1/20 aria-pressed:text-amber-200"
+              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:text-amber-200"
             >
               All
             </button>
@@ -164,7 +176,7 @@ export function ArtifactSourcePane({
             <button
               type="button"
               onClick={() => setExpandedFileIds(new Set(_moveFileIds))}
-              className="rounded border border-diff-move-1/30 bg-diff-move-1/10 px-2 py-1 text-xs text-amber-200"
+              className="border-diff-move-1/30 bg-diff-move-1/10 rounded border px-2 py-1 text-xs text-amber-200"
             >
               Reveal all endpoints
             </button>
@@ -187,9 +199,9 @@ export function ArtifactSourcePane({
           onMoveLeave={(moveId) =>
             setHoveredMoveId((current) => (current === moveId ? null : current))
           }
-          onMoveClick={(moveId) => {
+          onMoveClick={(moveId, event) => {
             setHoveredMoveId(moveId);
-            onSelectMove(moveId);
+            inspectMove(moveId, { x: event.clientX, y: event.clientY });
           }}
         />
 
@@ -204,7 +216,7 @@ export function ArtifactSourcePane({
               visibleMoves={_visibleMoves}
               selectedNodeId={selectedNodeId}
               active={active}
-              onSelectMove={onSelectMove}
+              onSelectMove={inspectMove}
               onToggle={() => toggleFile(file.file_id)}
               registerMoveSegment={registerMoveSegment}
               unregisterMoveSegment={unregisterMoveSegment}
@@ -212,6 +224,15 @@ export function ArtifactSourcePane({
           ))}
         </div>
       </div>
+      {movePopup ? (
+        <ArtifactMovePopup
+          key={`${artifactId}:${movePopup.moveId}`}
+          artifactId={artifactId}
+          moveId={movePopup.moveId}
+          position={movePopup.position}
+          onClose={() => setMovePopup(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -219,8 +240,8 @@ export function ArtifactSourcePane({
 function moveFileIds(move: ArtifactMoveSummary): string[] {
   return [
     ...new Set(
-      [...move.from_node_ids, ...move.to_node_ids].map((nodeId) =>
-        nodeId.split(":n", 1)[0],
+      [...move.from_node_ids, ...move.to_node_ids].map(
+        (nodeId) => nodeId.split(":n", 1)[0],
       ),
     ),
   ];

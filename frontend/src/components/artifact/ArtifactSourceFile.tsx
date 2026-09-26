@@ -23,7 +23,7 @@ type Props = {
   visibleMoves: ArtifactMoveSummary[];
   selectedNodeId: string | null;
   active: boolean;
-  onSelectMove: (moveId: string) => void;
+  onSelectMove: (moveId: string, position: { x: number; y: number }) => void;
   onToggle: () => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
@@ -42,12 +42,16 @@ export function ArtifactSourceFile({
   registerMoveSegment,
   unregisterMoveSegment,
 }: Props) {
-  const [projection, setProjection] =
-    useState<ArtifactSourceProjection | null>(null);
+  const [projection, setProjection] = useState<ArtifactSourceProjection | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [expandedRanges, setExpandedRanges] = useState<
-    { left?: { start: number; end: number }; right?: { start: number; end: number } }[]
+    {
+      left?: { start: number; end: number };
+      right?: { start: number; end: number };
+    }[]
   >([]);
   const articleRef = useRef<HTMLElement | null>(null);
 
@@ -204,8 +208,12 @@ export function ArtifactSourceFile({
         ) : null}
       </header>
 
-      {expanded && loading ? <p className="p-3 text-sm text-slate-400">Loading source…</p> : null}
-      {expanded && error ? <p className="p-3 text-sm text-rose-300">{error}</p> : null}
+      {expanded && loading ? (
+        <p className="p-3 text-sm text-slate-400">Loading source…</p>
+      ) : null}
+      {expanded && error ? (
+        <p className="p-3 text-sm text-rose-300">{error}</p>
+      ) : null}
       {expanded && projection ? (
         <div className="overflow-auto bg-black font-mono text-xs">
           {projection.blocks.map((block) =>
@@ -216,7 +224,8 @@ export function ArtifactSourceFile({
                 onClick={() => void showGap(block)}
                 className="block w-full border-y border-sky-400/20 bg-neutral-950 px-3 py-2 text-left text-sky-300 hover:bg-slate-900"
               >
-                Show {block.left.line_count} left / {block.right.line_count} right hidden lines
+                Show {block.left.line_count} left / {block.right.line_count}{" "}
+                right hidden lines
               </button>
             ) : (
               <div key={block.block_id}>
@@ -251,7 +260,8 @@ export function ArtifactSourceFile({
           )}
           {projection.truncated ? (
             <p className="px-3 py-2 text-amber-300">
-              This projection reached the 2,000-row response bound. Expand a gap to inspect another range.
+              This projection reached the 2,000-row response bound. Expand a gap
+              to inspect another range.
             </p>
           ) : null}
         </div>
@@ -273,7 +283,7 @@ function SourceCell({
   revision: SourceRevision;
   visibleMoveIds: ReadonlySet<string>;
   selectedNodeId: string | null;
-  onSelectMove: (moveId: string) => void;
+  onSelectMove: (moveId: string, position: { x: number; y: number }) => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -281,10 +291,10 @@ function SourceCell({
 
   return (
     <div className="grid min-h-7 grid-cols-[3.5rem_1fr] border-r border-white/10">
-      <span className="select-none px-2 py-1 text-right text-slate-600">
+      <span className="px-2 py-1 text-right text-slate-600 select-none">
         {line?.line_number ?? ""}
       </span>
-      <code className="whitespace-pre px-2 py-1 text-slate-200">
+      <code className="px-2 py-1 whitespace-pre text-slate-200">
         {_segments.map((segment, index) => (
           <CodeSegment
             key={`${segment.nodeId ?? "plain"}-${index}`}
@@ -337,16 +347,14 @@ function CollapsedMoveAnchor({
     unregisterMoveSegment,
   ]);
 
-  return (
-    count > 0 ? (
-      <span
-        ref={ref}
-        className="block rounded border border-dashed border-diff-move-1/50 bg-diff-move-1/10 px-2 py-0.5 text-amber-200"
-      >
-        {moveId}: {count} hidden {label} endpoint{count === 1 ? "" : "s"}
-      </span>
-    ) : null
-  );
+  return count > 0 ? (
+    <span
+      ref={ref}
+      className="border-diff-move-1/50 bg-diff-move-1/10 block rounded border border-dashed px-2 py-0.5 text-amber-200"
+    >
+      {moveId}: {count} hidden {label} endpoint{count === 1 ? "" : "s"}
+    </span>
+  ) : null;
 }
 
 function endpointCount(nodeIds: string[], fileId: string) {
@@ -359,5 +367,7 @@ function boundedRange(start: number | null, end: number | null) {
 }
 
 function errorMessage(reason: unknown) {
-  return reason instanceof Error ? reason.message : "Unable to load source projection.";
+  return reason instanceof Error
+    ? reason.message
+    : "Unable to load source projection.";
 }
