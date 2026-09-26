@@ -76,8 +76,12 @@ describe("MoveConnectorOverlay", () => {
       />,
     );
 
-    const _visibleBox = document.querySelector("[data-move-overlay-box='true']");
-    const _boxHit = document.querySelector("[data-move-overlay-box-hit='true']");
+    const _visibleBox = document.querySelector(
+      "[data-move-overlay-box='true']",
+    );
+    const _boxHit = document.querySelector(
+      "[data-move-overlay-box-hit='true']",
+    );
 
     fireEvent.mouseEnter(_visibleBox as Element);
     expect(_hoveredMoveIds).toHaveLength(0);
@@ -109,8 +113,10 @@ describe("MoveConnectorOverlay", () => {
     expect(_revision1Stops?.[3]).toHaveAttribute("stop-opacity", "0.28");
   });
 
-  it("brightens the whole group together when active", () => {
-    render(<MoveConnectorOverlay groups={[_group]} activeMoveId="move-1" />);
+  it("brightens the whole group together when emphasized", () => {
+    render(
+      <MoveConnectorOverlay groups={[_group]} emphasizedMoveId="move-1" />,
+    );
 
     const _box = document.querySelector("[data-move-overlay-box='true']");
     const _line = document.querySelector("[data-move-overlay-line='true']");
@@ -118,7 +124,7 @@ describe("MoveConnectorOverlay", () => {
 
     expect(document.querySelector("[data-move-id='move-1']")).toHaveAttribute(
       "data-move-visual-state",
-      "active",
+      "emphasized",
     );
     expect(_box).toHaveAttribute("fill-opacity", "0.18");
     expect(_box).toHaveAttribute("stroke-opacity", "0.96");

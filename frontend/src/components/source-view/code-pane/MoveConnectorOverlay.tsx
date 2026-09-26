@@ -1,32 +1,26 @@
 import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
 
 const INACTIVE_BOX_FILL_OPACITY = 0.12;
-const ACTIVE_BOX_FILL_OPACITY = 0.18;
+const EMPHASIZED_BOX_FILL_OPACITY = 0.18;
 const INACTIVE_STROKE_OPACITY = 0.72;
-const ACTIVE_STROKE_OPACITY = 0.96;
+const EMPHASIZED_STROKE_OPACITY = 0.96;
 const INACTIVE_BOX_STROKE_WIDTH = 1.5;
-const ACTIVE_BOX_STROKE_WIDTH = 2;
+const EMPHASIZED_BOX_STROKE_WIDTH = 2;
 const BOX_BORDER_HIT_WIDTH = 12;
 const EDGE_FADE_OPACITY = 0.28;
 const MID_FADE_OPACITY = 0.92;
 
 type MoveConnectorOverlayProps = {
   groups: MoveConnectorGroup[];
-  activeMoveId?: string | null;
-  onMoveHover?: (
-    moveId: string,
-    event: React.MouseEvent<SVGElement>,
-  ) => void;
+  emphasizedMoveId?: string | null;
+  onMoveHover?: (moveId: string, event: React.MouseEvent<SVGElement>) => void;
   onMoveLeave?: (moveId: string) => void;
-  onMoveClick?: (
-    moveId: string,
-    event: React.MouseEvent<SVGElement>,
-  ) => void;
+  onMoveClick?: (moveId: string, event: React.MouseEvent<SVGElement>) => void;
 };
 
 export function MoveConnectorOverlay({
   groups,
-  activeMoveId = null,
+  emphasizedMoveId = null,
   onMoveHover,
   onMoveLeave,
   onMoveClick,
@@ -57,24 +51,40 @@ export function MoveConnectorOverlay({
                   x2={box.x + box.width}
                   y2={box.y}
                 >
-                  <stop offset="0%" stopColor="white" stopOpacity={_startOpacity} />
-                  <stop offset="35%" stopColor="white" stopOpacity={MID_FADE_OPACITY} />
-                  <stop offset="65%" stopColor="white" stopOpacity={MID_FADE_OPACITY} />
-                  <stop offset="100%" stopColor="white" stopOpacity={_endOpacity} />
+                  <stop
+                    offset="0%"
+                    stopColor="white"
+                    stopOpacity={_startOpacity}
+                  />
+                  <stop
+                    offset="35%"
+                    stopColor="white"
+                    stopOpacity={MID_FADE_OPACITY}
+                  />
+                  <stop
+                    offset="65%"
+                    stopColor="white"
+                    stopOpacity={MID_FADE_OPACITY}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="white"
+                    stopOpacity={_endOpacity}
+                  />
                 </linearGradient>
                 <mask
                   id={_maskId}
                   maskUnits="userSpaceOnUse"
-                  x={box.x - ACTIVE_BOX_STROKE_WIDTH}
-                  y={box.y - ACTIVE_BOX_STROKE_WIDTH}
-                  width={box.width + ACTIVE_BOX_STROKE_WIDTH * 2}
-                  height={box.height + ACTIVE_BOX_STROKE_WIDTH * 2}
+                  x={box.x - EMPHASIZED_BOX_STROKE_WIDTH}
+                  y={box.y - EMPHASIZED_BOX_STROKE_WIDTH}
+                  width={box.width + EMPHASIZED_BOX_STROKE_WIDTH * 2}
+                  height={box.height + EMPHASIZED_BOX_STROKE_WIDTH * 2}
                 >
                   <rect
-                    x={box.x - ACTIVE_BOX_STROKE_WIDTH}
-                    y={box.y - ACTIVE_BOX_STROKE_WIDTH}
-                    width={box.width + ACTIVE_BOX_STROKE_WIDTH * 2}
-                    height={box.height + ACTIVE_BOX_STROKE_WIDTH * 2}
+                    x={box.x - EMPHASIZED_BOX_STROKE_WIDTH}
+                    y={box.y - EMPHASIZED_BOX_STROKE_WIDTH}
+                    width={box.width + EMPHASIZED_BOX_STROKE_WIDTH * 2}
+                    height={box.height + EMPHASIZED_BOX_STROKE_WIDTH * 2}
                     fill={`url(#${_gradientId})`}
                   />
                 </mask>
@@ -85,22 +95,22 @@ export function MoveConnectorOverlay({
       </defs>
 
       {groups.map((group) => {
-        const _isActive = activeMoveId === group.moveId;
-        const _strokeOpacity = _isActive
-          ? ACTIVE_STROKE_OPACITY
+        const _isEmphasized = emphasizedMoveId === group.moveId;
+        const _strokeOpacity = _isEmphasized
+          ? EMPHASIZED_STROKE_OPACITY
           : INACTIVE_STROKE_OPACITY;
-        const _fillOpacity = _isActive
-          ? ACTIVE_BOX_FILL_OPACITY
+        const _fillOpacity = _isEmphasized
+          ? EMPHASIZED_BOX_FILL_OPACITY
           : INACTIVE_BOX_FILL_OPACITY;
-        const _boxStrokeWidth = _isActive
-          ? ACTIVE_BOX_STROKE_WIDTH
+        const _boxStrokeWidth = _isEmphasized
+          ? EMPHASIZED_BOX_STROKE_WIDTH
           : INACTIVE_BOX_STROKE_WIDTH;
 
         return (
           <g
             key={group.key}
             data-move-id={group.moveId}
-            data-move-visual-state={_isActive ? "active" : "visible"}
+            data-move-visual-state={_isEmphasized ? "emphasized" : "visible"}
             className="text-diff-move-1/70"
           >
             {group.boxes.map((box) => (
@@ -149,7 +159,7 @@ export function MoveConnectorOverlay({
                   fill="none"
                   stroke="currentColor"
                   strokeOpacity={_strokeOpacity}
-                  strokeWidth={_isActive ? 3.5 : 2}
+                  strokeWidth={_isEmphasized ? 3.5 : 2}
                   className="drop-shadow"
                 />
                 <path

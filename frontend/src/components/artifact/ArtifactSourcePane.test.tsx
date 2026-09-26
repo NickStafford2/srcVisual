@@ -1,12 +1,11 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchArtifactMove, fetchArtifactSource } from "../../api";
+import { fetchArtifactSource } from "../../api";
 import type { ArtifactSourceProjection } from "../../types";
 import { ArtifactSourcePane } from "./ArtifactSourcePane";
 
 vi.mock("../../api", () => ({
-  fetchArtifactMove: vi.fn(),
   fetchArtifactSource: vi.fn(),
 }));
 
@@ -75,23 +74,6 @@ const activeMove = {
 describe("ArtifactSourcePane", () => {
   beforeEach(() => {
     vi.mocked(fetchArtifactSource).mockReset().mockResolvedValue(projection);
-    vi.mocked(fetchArtifactMove)
-      .mockReset()
-      .mockResolvedValue({
-        schema_version: 1,
-        artifact_id: "artifact-1",
-        results_schema_version: 1,
-        move: {
-          move_id: "move-1",
-          match_kind: "type1",
-          confidence_milli: 1000,
-          selection_utility: 8000,
-          matched_units: 8,
-          selection_reason: "greedy_utility",
-          from_raw_texts: ["moved"],
-          to_raw_texts: ["moved"],
-        },
-      });
   });
 
   afterEach(cleanup);
@@ -106,11 +88,11 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={null}
         active
         focus="changes-and-moves"
-        activeMove={null}
+        inspectedMoveId={null}
         moves={[activeMove]}
         visibleMoveIds={new Set()}
         onVisibleMoveIdsChange={vi.fn()}
-        onSelectMove={vi.fn()}
+        onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
     );
@@ -146,7 +128,7 @@ describe("ArtifactSourcePane", () => {
 
   it("renders type1 move fragments with the established move color", async () => {
     const user = userEvent.setup();
-    const onSelectMove = vi.fn();
+    const onInspectMove = vi.fn();
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
@@ -234,11 +216,11 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={activeMove.from_node_ids[0]}
         active
         focus="moves"
-        activeMove={activeMove}
+        inspectedMoveId={activeMove.move_id}
         moves={[activeMove]}
         visibleMoveIds={new Set(["move-1"])}
         onVisibleMoveIdsChange={vi.fn()}
-        onSelectMove={onSelectMove}
+        onInspectMove={onInspectMove}
         onFocusChange={vi.fn()}
       />,
     );
@@ -259,12 +241,10 @@ describe("ArtifactSourcePane", () => {
       document.querySelector('[data-source-row-kind="replace"]'),
     ).toHaveClass("bg-black");
     await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
-    expect(onSelectMove).toHaveBeenCalledWith("move-1");
-    expect(
-      await screen.findByLabelText("Move details move-1"),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText("type1")).toHaveLength(2);
-    expect(screen.getByText("1000")).toBeInTheDocument();
+    expect(onInspectMove).toHaveBeenCalledWith(
+      "move-1",
+      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
+    );
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
     expect(
       screen.getByLabelText("Artifact source file example.cpp"),
@@ -285,11 +265,11 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={null}
         active
         focus="moves"
-        activeMove={crossFileMove}
+        inspectedMoveId={crossFileMove.move_id}
         moves={[crossFileMove]}
         visibleMoveIds={new Set(["move-1"])}
         onVisibleMoveIdsChange={vi.fn()}
-        onSelectMove={vi.fn()}
+        onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
     );
@@ -327,11 +307,11 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={null}
         active
         focus="moves"
-        activeMove={activeMove}
+        inspectedMoveId={activeMove.move_id}
         moves={[activeMove]}
         visibleMoveIds={new Set()}
         onVisibleMoveIdsChange={onVisibleMoveIdsChange}
-        onSelectMove={vi.fn()}
+        onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
     );
@@ -355,5 +335,36 @@ describe("ArtifactSourcePane", () => {
         onVisibleMoveIdsChange.mock.calls.length - 1
       ];
     expect(noneCall[0].size).toBe(0);
+  });
+
+  it("isolates inspected move files only after an explicit action", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArtifactSourcePane
+        artifactId="artifact-1"
+        files={[file, secondFile]}
+        selectedFileId="f-1"
+        selectedNodeId={null}
+        active
+        focus="changes-and-moves"
+        inspectedMoveId={activeMove.move_id}
+        moves={[activeMove]}
+        visibleMoveIds={new Set()}
+        onVisibleMoveIdsChange={vi.fn()}
+        onInspectMove={vi.fn()}
+        onFocusChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("other.cpp")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /Focus/ })).toBeEnabled();
+
+    await user.click(
+      screen.getByRole("button", { name: "Isolate inspected move" }),
+    );
+    expect(screen.queryByText("other.cpp")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show all files" }));
+    expect(screen.getByText("other.cpp")).toBeInTheDocument();
   });
 });

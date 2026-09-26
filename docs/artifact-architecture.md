@@ -569,8 +569,10 @@ states.
 The source view lists every manifest file as a collapsible card. Only expanded
 cards request focused source projections, so the list can represent a large
 change without eagerly downloading every file. File and move navigation can
-request additional files or ranges. Selecting a move narrows the list to its
-participating files by default and offers one action to reveal every endpoint.
+request additional files or ranges. Inspecting a move opens its retained
+srcMove result without changing the file list or focus profile. Isolating the
+inspected move is a separate, explicit action that narrows the list to its
+participating files and offers one action to reveal every endpoint.
 
 Move endpoint badges remain available when code is collapsed. A collapsed
 participating file registers revision-specific header proxies with the same SVG
@@ -581,7 +583,7 @@ source-row virtualization.
 
 The artifact renderer should adapt the proven legacy highlighting and SVG
 connector behavior to artifact-local identities instead of replacing it with a
-less expressive interaction. Selecting or hovering a move highlights every
+less expressive interaction. Inspecting or hovering a move highlights every
 rendered endpoint at character precision and draws the relationship between
 visible endpoints. Same-file, cross-file, one-to-many, and many-to-one moves
 retain clear endpoint and group identity. When an endpoint is not rendered,
@@ -718,29 +720,31 @@ manifest directly.
 
 The Source view now renders the complete manifest as a searchable,
 GitHub-inspired list of collapsible file cards. Source remains lazy per file.
-For a selected move, expanded cards expose exact semantic endpoints and
+For an isolated move, expanded cards expose exact semantic endpoints and
 collapsed cards expose file-header endpoint proxies, allowing one SVG overlay
 to communicate same-file and cross-file provenance. Rendered fragments that
 belong to one semantic endpoint are combined into one outline, so line wrapping
 does not imply multiple moves.
 
-Artifact selection now uses stable node and move identities across the
-structure tree, Move Summary, Node Info, and Source. A bounded single-node
-projection supplies canonical tag metadata and revision spans for Node Info.
+Artifact node selection and move inspection use stable identities across Move
+Summary, Node Info, Source, XML, and the structure tree where applicable. A
+bounded single-node projection supplies canonical tag metadata and revision
+spans for Node Info.
 Move Summary exposes each semantic from/to endpoint directly; choosing one
 selects its file, expands its lazy Source card, and scrolls to the rendered tag
 without converting the selection into a line-based diff concept.
 
 The lazy XML projection exposes indexed change/move spans with the same stable
 node IDs. Selecting one synchronizes the file, tree, Node Info, Move Summary,
-and Source state; a selected move also becomes visible when Source is reopened.
+and Source state. Move inspection does not change connector visibility.
 Nested move spans take visual precedence over enclosing insert/delete wrappers,
 so the XML view retains tag semantics rather than flattening them into lines.
 
-Connector visibility is independent of semantic selection. Clicking a moved
-tag selects the move and reveals its connector; navigator move chips toggle
-individual connectors without changing the current selection. Source provides
-`Selected`, `All`, and `None` visibility controls. `All` still respects lazy
+Connector visibility, move inspection, node selection, and move isolation are
+independent. Clicking a moved source fragment or connector inspects the move
+without changing visibility or filtering; navigator move chips toggle
+individual connectors. Source provides `Inspected`, `All`, and `None`
+visibility controls. `All` still respects lazy
 rendering: connectors terminate at rendered semantic endpoints or collapsed
 file-header proxies and never force every source projection to load.
 

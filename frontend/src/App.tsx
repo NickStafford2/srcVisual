@@ -7,6 +7,7 @@ import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useHistoryData } from "./history/useHistoryData";
 import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
+import { ArtifactMovePopup } from "./components/artifact/ArtifactMovePopup";
 import { ArtifactNodeInfo } from "./components/artifact/ArtifactNodeInfo";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
@@ -43,9 +44,10 @@ export default function App() {
   const artifact = srcDiffData.data;
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
   const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
-  const [selectedArtifactMoveId, setSelectedArtifactMoveId] = useState<
-    string | null
-  >(null);
+  const [inspectedArtifactMove, setInspectedArtifactMove] = useState<{
+    moveId: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const [visibleArtifactMoveIds, setVisibleArtifactMoveIds] = useState<
     Set<string>
   >(() => new Set());
@@ -88,7 +90,7 @@ export default function App() {
   useEffect(() => {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
-      setSelectedArtifactMoveId(null);
+      setInspectedArtifactMove(null);
       setVisibleArtifactMoveIds(new Set());
       setSelectedArtifactNodeId(null);
       setSelectedArtifactNode(null);
@@ -111,13 +113,6 @@ export default function App() {
         if (current) {
           setSelectedArtifactNode(node);
           setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
-          setSelectedArtifactMoveId(node.move_id);
-          if (node.move_id) {
-            const moveId = node.move_id;
-            setVisibleArtifactMoveIds((visible) =>
-              new Set(visible).add(moveId),
-            );
-          }
         }
       })
       .catch((reason: unknown) => {
@@ -141,22 +136,17 @@ export default function App() {
   const selectedArtifactFile = artifact?.files.find(
     (file) => file.file_id === selectedArtifactFileId,
   );
-  const selectedArtifactMove = artifact?.moves.items.find(
-    (move) => move.move_id === selectedArtifactMoveId,
-  );
-
   function selectArtifactFile(fileId: string) {
     setSelectedArtifactFileId(fileId);
-    setSelectedArtifactMoveId(null);
     setSelectedArtifactNodeId(null);
   }
 
-  function showArtifactMove(move: ArtifactMoveSummary) {
-    const fileId = moveFileIds(move)[0];
-    if (fileId) setSelectedArtifactFileId(fileId);
-    setSelectedArtifactMoveId(move.move_id);
-    setSelectedArtifactNodeId(null);
-    setVisibleArtifactMoveIds((current) => new Set(current).add(move.move_id));
+  function inspectArtifactMove(
+    moveId: string,
+    position: { x: number; y: number },
+  ) {
+    if (!artifact?.moves.items.some((move) => move.move_id === moveId)) return;
+    setInspectedArtifactMove({ moveId, position });
   }
 
   function toggleArtifactMove(move: ArtifactMoveSummary) {
@@ -170,12 +160,7 @@ export default function App() {
 
   function selectArtifactNode(node: ArtifactTreeNode) {
     setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
-    setSelectedArtifactMoveId(node.move_id);
     setSelectedArtifactNodeId(node.node_id);
-    if (node.move_id) {
-      const moveId = node.move_id;
-      setVisibleArtifactMoveIds((current) => new Set(current).add(moveId));
-    }
   }
 
   function selectArtifactNodeById(nodeId: string) {
@@ -184,20 +169,10 @@ export default function App() {
     setSelectedArtifactNode(null);
   }
 
-  function selectArtifactEndpoint(move: ArtifactMoveSummary, nodeId: string) {
+  function selectArtifactEndpoint(nodeId: string) {
     setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
-    setSelectedArtifactMoveId(move.move_id);
     setSelectedArtifactNodeId(nodeId);
-    setVisibleArtifactMoveIds((current) => new Set(current).add(move.move_id));
     setActiveMainTab("source-code");
-  }
-
-  function selectArtifactMoveById(moveId: string) {
-    const move = artifact?.moves.items.find((item) => item.move_id === moveId);
-    if (!move) return;
-    setSelectedArtifactMoveId(moveId);
-    setSelectedArtifactNodeId(null);
-    setVisibleArtifactMoveIds((current) => new Set(current).add(moveId));
   }
 
   return (
@@ -213,10 +188,10 @@ export default function App() {
               <ArtifactNavigator
                 manifest={artifact}
                 selectedFileId={selectedArtifactFileId}
-                selectedMoveId={selectedArtifactMoveId}
+                inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                 visibleMoveIds={visibleArtifactMoveIds}
                 selectedNodeId={selectedArtifactNodeId}
-                focus={selectedArtifactMove ? "moves" : artifactFocus}
+                focus={artifactFocus}
                 onSelectFile={selectArtifactFile}
                 onToggleMove={toggleArtifactMove}
                 onSelectNode={selectArtifactNode}
@@ -268,12 +243,12 @@ export default function App() {
                         selectedFileId={selectedArtifactFileId}
                         selectedNodeId={selectedArtifactNodeId}
                         active={activeMainTab === "source-code"}
-                        focus={selectedArtifactMove ? "moves" : artifactFocus}
-                        activeMove={selectedArtifactMove ?? null}
+                        focus={artifactFocus}
+                        inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                         moves={artifact.moves.items}
                         visibleMoveIds={visibleArtifactMoveIds}
                         onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
-                        onSelectMove={selectArtifactMoveById}
+                        onInspectMove={inspectArtifactMove}
                         onFocusChange={setArtifactFocus}
                       />
                     </TabPanel>
@@ -303,9 +278,9 @@ export default function App() {
                       <ArtifactMoveSummaryPane
                         files={artifact.files}
                         moves={artifact.moves.items}
-                        selectedMoveId={selectedArtifactMoveId}
+                        inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                         selectedNodeId={selectedArtifactNodeId}
-                        onSelectMove={showArtifactMove}
+                        onInspectMove={inspectArtifactMove}
                         onSelectEndpoint={selectArtifactEndpoint}
                       />
                     </TabPanel>
@@ -316,18 +291,17 @@ export default function App() {
           </div>
         </div>
       </div>
+      {artifact && inspectedArtifactMove ? (
+        <ArtifactMovePopup
+          key={`${artifact.artifact_id}:${inspectedArtifactMove.moveId}`}
+          artifactId={artifact.artifact_id}
+          moveId={inspectedArtifactMove.moveId}
+          position={inspectedArtifactMove.position}
+          onClose={() => setInspectedArtifactMove(null)}
+        />
+      ) : null}
     </main>
   );
-}
-
-function moveFileIds(move: ArtifactMoveSummary): string[] {
-  return [
-    ...new Set(
-      [...move.from_node_ids, ...move.to_node_ids].map(
-        (nodeId) => nodeId.split(":n", 1)[0],
-      ),
-    ),
-  ];
 }
 
 function fileIdFromNodeId(nodeId: string): string {

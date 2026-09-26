@@ -201,19 +201,13 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   await user.click(screen.getByRole("tab", { name: "XML" }));
   await waitFor(() => expect(xmlRequests).toBe(1));
   await user.click(await screen.findByRole("button", { name: "<unit />" }));
-  await waitFor(() =>
-    expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
-      "data-selected-move",
-      "true",
-    ),
-  );
   expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
     "aria-pressed",
-    "true",
+    "false",
   );
 
   await user.click(screen.getByRole("tab", { name: "Source" }));
-  expect(await screen.findByText("Move move-1 · 1 file")).toBeInTheDocument();
+  expect(await screen.findByText("1 changed file")).toBeInTheDocument();
 });
 
 function jsonResponse(payload: unknown): Response {

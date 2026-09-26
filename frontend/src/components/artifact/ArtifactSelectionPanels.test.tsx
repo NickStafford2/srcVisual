@@ -62,21 +62,28 @@ const node: ArtifactTreeNode = {
 
 it("navigates from a move summary to a stable semantic endpoint", async () => {
   const user = userEvent.setup();
+  const onInspectMove = vi.fn();
   const onSelectEndpoint = vi.fn();
   render(
     <ArtifactMoveSummaryPane
       files={files}
       moves={[move]}
-      selectedMoveId={move.move_id}
+      inspectedMoveId={move.move_id}
       selectedNodeId={null}
-      onSelectMove={vi.fn()}
+      onInspectMove={onInspectMove}
       onSelectEndpoint={onSelectEndpoint}
     />,
   );
 
+  await user.click(screen.getByRole("button", { name: /move-1/ }));
+  expect(onInspectMove).toHaveBeenCalledWith(
+    move.move_id,
+    expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
+  );
+
   await user.click(screen.getByRole("button", { name: /after\.cpp/ }));
 
-  expect(onSelectEndpoint).toHaveBeenCalledWith(move, move.to_node_ids[0]);
+  expect(onSelectEndpoint).toHaveBeenCalledWith(move.to_node_ids[0]);
 });
 
 it("presents canonical tag details and reveals positioned tags in Source", async () => {

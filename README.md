@@ -31,11 +31,14 @@ The backend:
 The frontend keeps its XML, tree, source-code, diff, and move views synchronized
 through stable artifact-local identities. Its GitHub-style Source view lists
 every changed file as a collapsible card but loads source projections only for
-expanded files. Selecting a move can narrow the list to participating files;
-SVG connectors use rendered semantic endpoints when available and collapsed
-file-header proxies otherwise. Move tags select and reveal their relationship;
+expanded files. Inspecting a move opens its retained srcMove details without
+changing source focus, connector visibility, or file filtering. An explicit
+isolation action can narrow the list to the inspected move's participating
+files; SVG connectors use rendered semantic endpoints when available and
+collapsed file-header proxies otherwise. Move tags remain navigable semantic
+endpoints;
 sidebar move chips independently toggle individual connectors, while Source
-controls show the selected connector, every rendered/proxied connector, or
+controls show the inspected connector, every rendered/proxied connector, or
 none. Omitted ranges remain expandable gaps, tree children are paged, and
 stable tag selection is shared by the structure tree, Move Summary, Node Info,
 Source, and XML navigation. Complete XML and its indexed change/move anchors

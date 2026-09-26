@@ -96,7 +96,7 @@ beforeEach(() => {
   });
 });
 
-it("pages tree children explicitly and selects cross-file moves", async () => {
+it("pages tree children and toggles cross-file move connectors", async () => {
   const user = userEvent.setup();
   const onSelectFile = vi.fn();
   const onToggleMove = vi.fn();
@@ -105,7 +105,7 @@ it("pages tree children explicitly and selects cross-file moves", async () => {
     <ArtifactNavigator
       manifest={manifest}
       selectedFileId="f-one"
-      selectedMoveId={null}
+      inspectedMoveId={null}
       visibleMoveIds={new Set(["move-1"])}
       selectedNodeId={null}
       focus="changes-and-moves"

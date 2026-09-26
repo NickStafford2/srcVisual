@@ -10,7 +10,7 @@ import type {
 type Props = {
   manifest: ArtifactManifest;
   selectedFileId: string;
-  selectedMoveId: string | null;
+  inspectedMoveId: string | null;
   visibleMoveIds: ReadonlySet<string>;
   selectedNodeId: string | null;
   focus: ArtifactFocusProfile;
@@ -22,7 +22,7 @@ type Props = {
 export function ArtifactNavigator({
   manifest,
   selectedFileId,
-  selectedMoveId,
+  inspectedMoveId,
   visibleMoveIds,
   selectedNodeId,
   focus,
@@ -54,9 +54,14 @@ export function ArtifactNavigator({
   }, [focus, manifest.artifact_id, selectedFileId]);
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75" aria-label="Artifact navigator">
+    <section
+      className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75"
+      aria-label="Artifact navigator"
+    >
       <div className="border-b border-white/10 p-4">
-        <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Files</p>
+        <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+          Files
+        </p>
         <input
           type="search"
           value={fileQuery}
@@ -77,31 +82,35 @@ export function ArtifactNavigator({
             </button>
           ))}
           {visibleFiles.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-slate-500">No matching files.</p>
+            <p className="px-2 py-2 text-xs text-slate-500">
+              No matching files.
+            </p>
           ) : null}
         </div>
       </div>
 
       {manifest.moves.items.length > 0 ? (
         <div className="border-b border-white/10 p-4">
-          <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">Moves</p>
+          <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+            Moves
+          </p>
           <div className="mt-2 flex flex-wrap gap-1">
             {manifest.moves.items.map((move) => (
               <button
                 key={move.move_id}
                 type="button"
                 aria-pressed={visibleMoveIds.has(move.move_id)}
-                data-selected-move={selectedMoveId === move.move_id}
+                data-inspected-move={inspectedMoveId === move.move_id}
                 title={`${visibleMoveIds.has(move.move_id) ? "Hide" : "Show"} ${move.move_id} connector`}
                 onClick={() => onToggleMove(move)}
                 className={`rounded border px-2 py-1 text-xs ${
-                  selectedMoveId === move.move_id
-                    ? "ring-1 ring-diff-move-1/80"
+                  inspectedMoveId === move.move_id
+                    ? "ring-diff-move-1/80 ring-1"
                     : ""
                 } ${
                   visibleMoveIds.has(move.move_id)
                     ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
-                    : "border-diff-move-1/25 bg-slate-950 text-amber-100/70 hover:border-diff-move-1/50 hover:text-amber-100"
+                    : "border-diff-move-1/25 hover:border-diff-move-1/50 bg-slate-950 text-amber-100/70 hover:text-amber-100"
                 }`}
               >
                 <span aria-hidden="true" className="mr-1">
@@ -116,7 +125,9 @@ export function ArtifactNavigator({
 
       <div className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs">
         {error ? <p className="text-rose-300">{error}</p> : null}
-        {!root && !error ? <p className="text-slate-500">Loading tree…</p> : null}
+        {!root && !error ? (
+          <p className="text-slate-500">Loading tree…</p>
+        ) : null}
         {root ? (
           <ArtifactTreeBranch
             key={`${root.node_id}-${focus}`}
@@ -181,7 +192,7 @@ function ArtifactTreeBranch({
         className={`flex items-center rounded ${
           selectedNodeId === node.node_id
             ? node.kind === "move"
-              ? "bg-diff-move-1/12 ring-1 ring-diff-move-1/25"
+              ? "bg-diff-move-1/12 ring-diff-move-1/25 ring-1"
               : "bg-sky-400/10"
             : ""
         }`}
@@ -212,7 +223,7 @@ function ArtifactTreeBranch({
         >
           <span>{node.label}</span>
           {node.kind === "move" ? (
-            <span className="ml-1 rounded-full bg-diff-move-1/15 px-1.5 py-0.5 text-[9px] tracking-wide text-diff-move-1 uppercase">
+            <span className="bg-diff-move-1/15 text-diff-move-1 ml-1 rounded-full px-1.5 py-0.5 text-[9px] tracking-wide uppercase">
               move
             </span>
           ) : null}
@@ -239,7 +250,7 @@ function ArtifactTreeBranch({
           type="button"
           onClick={() => void loadMore()}
           disabled={loading}
-          className="ml-5 my-1 rounded border border-white/10 px-2 py-1 text-[11px] text-sky-300 disabled:opacity-50"
+          className="my-1 ml-5 rounded border border-white/10 px-2 py-1 text-[11px] text-sky-300 disabled:opacity-50"
         >
           {loading ? "Loading…" : "Load more children"}
         </button>
@@ -268,5 +279,7 @@ function mergeNodes(current: ArtifactTreeNode[], loaded: ArtifactTreeNode[]) {
 }
 
 function errorMessage(reason: unknown) {
-  return reason instanceof Error ? reason.message : "Unable to load tree projection.";
+  return reason instanceof Error
+    ? reason.message
+    : "Unable to load tree projection.";
 }

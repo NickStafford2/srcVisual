@@ -13,7 +13,7 @@ const _moveSegment: ViewerLineSegment = {
 
 afterEach(cleanup);
 
-it("uses explicit amber states for inactive, visible, and selected moves", () => {
+it("uses explicit amber states for inactive, visible, and selected endpoints", () => {
   const _register = vi.fn();
   const { container, rerender } = render(
     <CodeSegment

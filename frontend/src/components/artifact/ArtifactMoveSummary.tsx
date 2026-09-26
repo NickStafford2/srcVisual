@@ -1,23 +1,20 @@
-import type {
-  ArtifactFileSummary,
-  ArtifactMoveSummary,
-} from "../../types";
+import type { ArtifactFileSummary, ArtifactMoveSummary } from "../../types";
 
 type Props = {
   files: ArtifactFileSummary[];
   moves: ArtifactMoveSummary[];
-  selectedMoveId: string | null;
+  inspectedMoveId: string | null;
   selectedNodeId: string | null;
-  onSelectMove: (move: ArtifactMoveSummary) => void;
-  onSelectEndpoint: (move: ArtifactMoveSummary, nodeId: string) => void;
+  onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
+  onSelectEndpoint: (nodeId: string) => void;
 };
 
 export function ArtifactMoveSummary({
   files,
   moves,
-  selectedMoveId,
+  inspectedMoveId,
   selectedNodeId,
-  onSelectMove,
+  onInspectMove,
   onSelectEndpoint,
 }: Props) {
   const filenames = new Map(files.map((file) => [file.file_id, file.filename]));
@@ -29,7 +26,7 @@ export function ArtifactMoveSummary({
           {moves.length} detected move{moves.length === 1 ? "" : "s"}
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          Choose a move, then open either tagged endpoint in Source.
+          Inspect a move or open either tagged endpoint in Source.
         </p>
       </header>
 
@@ -41,18 +38,25 @@ export function ArtifactMoveSummary({
             <article
               key={move.move_id}
               className={`rounded-xl border p-3 ${
-                selectedMoveId === move.move_id
+                inspectedMoveId === move.move_id
                   ? "border-diff-move-1/60 bg-diff-move-1/10"
                   : "border-white/10 bg-black/20"
               }`}
             >
               <button
                 type="button"
-                aria-pressed={selectedMoveId === move.move_id}
-                onClick={() => onSelectMove(move)}
+                aria-pressed={inspectedMoveId === move.move_id}
+                onClick={(event) =>
+                  onInspectMove(move.move_id, {
+                    x: event.clientX,
+                    y: event.clientY,
+                  })
+                }
                 className="flex w-full items-center justify-between gap-3 text-left"
               >
-                <span className="font-mono text-diff-move-1">{move.move_id}</span>
+                <span className="text-diff-move-1 font-mono">
+                  {move.move_id}
+                </span>
                 <span className="text-xs text-slate-400">
                   {move.match_kind ?? "unclassified"}
                 </span>
@@ -63,14 +67,14 @@ export function ArtifactMoveSummary({
                 nodeIds={move.from_node_ids}
                 filenames={filenames}
                 selectedNodeId={selectedNodeId}
-                onSelect={(nodeId) => onSelectEndpoint(move, nodeId)}
+                onSelect={onSelectEndpoint}
               />
               <EndpointList
                 label="To"
                 nodeIds={move.to_node_ids}
                 filenames={filenames}
                 selectedNodeId={selectedNodeId}
-                onSelect={(nodeId) => onSelectEndpoint(move, nodeId)}
+                onSelect={onSelectEndpoint}
               />
             </article>
           ))}
@@ -108,12 +112,13 @@ function EndpointList({
             onClick={() => onSelect(nodeId)}
             className={`rounded border px-2 py-1 text-left text-xs ${
               selectedNodeId === nodeId
-                ? "border-diff-move-1/70 bg-diff-move-1/20 text-amber-50 ring-1 ring-diff-move-1/30"
-                : "border-diff-move-1/20 bg-slate-950 text-slate-300 hover:border-diff-move-1/50 hover:text-amber-100"
+                ? "border-diff-move-1/70 bg-diff-move-1/20 ring-diff-move-1/30 text-amber-50 ring-1"
+                : "border-diff-move-1/20 hover:border-diff-move-1/50 bg-slate-950 text-slate-300 hover:text-amber-100"
             }`}
           >
             <span className="block max-w-64 truncate">
-              {filenames.get(fileIdFromNodeId(nodeId)) ?? fileIdFromNodeId(nodeId)}
+              {filenames.get(fileIdFromNodeId(nodeId)) ??
+                fileIdFromNodeId(nodeId)}
             </span>
             <span className="font-mono text-[10px] text-slate-500">
               {nodeId.split(":").slice(-1)[0]}

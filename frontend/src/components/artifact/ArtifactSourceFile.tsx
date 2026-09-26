@@ -23,7 +23,7 @@ type Props = {
   visibleMoves: ArtifactMoveSummary[];
   selectedNodeId: string | null;
   active: boolean;
-  onSelectMove: (moveId: string, position: { x: number; y: number }) => void;
+  onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   onToggle: () => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
@@ -37,7 +37,7 @@ export function ArtifactSourceFile({
   visibleMoves,
   selectedNodeId,
   active,
-  onSelectMove,
+  onInspectMove,
   onToggle,
   registerMoveSegment,
   unregisterMoveSegment,
@@ -240,7 +240,7 @@ export function ArtifactSourceFile({
                       revision="revision-0"
                       visibleMoveIds={_visibleMoveIds}
                       selectedNodeId={selectedNodeId}
-                      onSelectMove={onSelectMove}
+                      onInspectMove={onInspectMove}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -249,7 +249,7 @@ export function ArtifactSourceFile({
                       revision="revision-1"
                       visibleMoveIds={_visibleMoveIds}
                       selectedNodeId={selectedNodeId}
-                      onSelectMove={onSelectMove}
+                      onInspectMove={onInspectMove}
                       registerMoveSegment={registerMoveSegment}
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
@@ -275,7 +275,7 @@ function SourceCell({
   revision,
   visibleMoveIds,
   selectedNodeId,
-  onSelectMove,
+  onInspectMove,
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
@@ -283,7 +283,7 @@ function SourceCell({
   revision: SourceRevision;
   visibleMoveIds: ReadonlySet<string>;
   selectedNodeId: string | null;
-  onSelectMove: (moveId: string, position: { x: number; y: number }) => void;
+  onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
@@ -302,7 +302,7 @@ function SourceCell({
             segment={segment}
             visibleMoveIds={visibleMoveIds}
             selected={segment.nodeId === selectedNodeId}
-            onMoveSelect={onSelectMove}
+            onMoveInspect={onInspectMove}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
           />
