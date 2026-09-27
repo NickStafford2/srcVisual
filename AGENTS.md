@@ -70,7 +70,7 @@ single-root srcDiff inputs when applicable.
 
 Human-facing documentation is the technical source of truth. Keep `README.md`
 as the product entry point, `docs/README.md` as the index, and durable behavior
-in the most specific document. Keep `todo.md` and `notes.md` explicitly
+in the most specific document. Keep `docs/backlog.md` explicitly
 non-authoritative. Link instead of repeating facts.
 
 Use this file only for agent operating instructions. Do not put architecture,

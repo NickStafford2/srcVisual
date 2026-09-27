@@ -1,5 +1,5 @@
 {
-  "name": "src_move_visualizer",
+  "name": "srcvisual",
   "private": true,
   "version": "1.0.0",
   "description": "React frontend for visualizing srcDiff XML",

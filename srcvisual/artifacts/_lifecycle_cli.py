@@ -68,8 +68,8 @@ def main() -> None:
 def _parse_arguments() -> argparse.Namespace:
     _parser = argparse.ArgumentParser(
         description=(
-            "Inspect srcVisual artifact storage and report dry-run collection "
-            "candidates. This command never deletes artifacts."
+            "Inspect srcVisual artifact storage and report collection candidates. "
+            "The command is read-only unless --apply-plan is supplied."
         )
     )
     _parser.add_argument("--artifact-root", type=Path)

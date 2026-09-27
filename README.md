@@ -7,49 +7,34 @@ source code, and detected moves together in a code-editor-like interface.
 
 ## Current application
 
-srcVisual consists of a Python/Flask backend and a React frontend. It can accept
-uploaded or pasted srcDiff XML, including XML that has already been annotated
-by srcMove. In its Docker development configuration, it can also browse an
-existing `srcmove-history` analysis and regenerate a selected pair for the
-normal synchronized visualization.
+srcVisual has a Python/Flask backend and a React frontend. It supports four
+input workflows:
 
-The backend:
+- load a checked-in example;
+- paste or upload srcDiff XML;
+- import a deterministic BigMoveBench Type-3 review ZIP; or
+- browse one configured `srcmove-history` analysis and regenerate a selected
+  pair with that analysis's admitted tools.
 
-- queries history status, bounded commit-pair pages, and compact pair evidence
-  through srcMove's versioned JSON command interface
-- asks `srcmove-history` to regenerate a selected pair with the analysis's
-  admitted tool copies, then renders the resulting annotated XML
-- extracts the original and modified source with `archive_reader`
-- adds position information with `srcdiff --position` when needed
-- adds move annotations with `srcMove` when needed
-- atomically publishes an immutable artifact containing normalized annotated
-  XML, extracted revision sources, retained move metadata, checksums, and a
-  structural SQLite index
-- returns a small artifact manifest and loads bounded source and tree
-  projections on demand
+For XML input, the backend extracts both source revisions with
+`archive_reader`. It runs `srcdiff --position` only when position annotations
+are missing and runs `srcMove` only when move annotations are missing. It then
+atomically publishes an immutable artifact containing normalized annotated
+XML, extracted sources, retained move metadata, checksums, and a structural
+SQLite index.
 
-The frontend keeps its XML, tree, source-code, diff, and move views synchronized
-through stable artifact-local identities. Its GitHub-style Source view lists
-every changed file as a collapsible card but loads source projections only for
-expanded files. Inspecting a move opens its retained srcMove details without
-changing source focus, connector visibility, or file filtering. An explicit
-isolation action can narrow the list to the inspected move's participating
-files; SVG connectors use rendered semantic endpoints when available and
-collapsed file-header proxies otherwise. Move tags remain navigable semantic
-endpoints;
-sidebar move chips independently toggle individual connectors, while Source
-controls show only the current inspected connector, every rendered/proxied
-connector, or none. Omitted ranges remain expandable gaps, tree children are paged, and
-stable tag selection is shared by the structure tree, Move Summary, Node Info,
-Source, and XML navigation. Complete XML and its indexed change/move anchors
-are fetched only when the XML tab is opened. Upload visualization returns an
-artifact manifest directly; destructive pruning is not part of the HTTP API.
-Clicking a moved source fragment or connector opens a draggable detail window
-that lazily displays the fields retained from srcMove's result record. It does
-not infer unavailable classification or selection evidence from XML.
+The frontend loads bounded projections of that artifact. Its Source view lists
+changed files as collapsible cards, retrieves source only for expanded files,
+and represents omitted ranges as expandable gaps. Source, XML, the structure
+tree, Node Info, and Move Summary share stable artifact-local identities.
+Selecting a moved fragment or connector opens retained srcMove details;
+connector visibility and move isolation remain separate controls. The XML view
+is loaded only when opened. The application does not infer unavailable
+classification or selection evidence from XML-only input.
 
-Important implementation expectations are documented in
-[docs/Rules.md](docs/Rules.md).
+See [application rules](docs/Rules.md), the
+[artifact architecture](docs/artifact-architecture.md), and the
+[history-browser contract](docs/history-browser.md) for the canonical details.
 
 ## Run locally with Docker
 
@@ -128,6 +113,17 @@ matching queued or running request follows the existing run (`202`); a valid
 completed artifact is returned immediately (`200`). The response field
 `reuse` distinguishes `new`, `active-run`, and `artifact`. Missing or corrupt
 completed artifacts are never reused and fresh work is queued instead.
+
+## Current limitations
+
+- The local history browser targets one repository configured when the service
+  starts; the browser cannot choose repositories or start a full analysis.
+- Uploaded XML is processed synchronously. Its optional progress stream uses a
+  process-local broker, so a multi-worker deployment can route the upload and
+  progress connection to different workers. Durable history progress does not
+  have this limitation.
+- Artifact retention is manual. Automatic collection is not enabled.
+- The application is not hardened for public, untrusted input.
 
 ## Hosted application vision
 

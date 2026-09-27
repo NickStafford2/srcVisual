@@ -133,7 +133,7 @@ export function useSrcDiffData() {
       (inputMode === "examples" || inputMode === "paste") &&
       !xmlInput.trim()
     ) {
-      setError("Paste srcdiff XML or load an example before submitting.");
+      setError("Paste srcDiff XML or load an example before submitting.");
       return;
     }
 

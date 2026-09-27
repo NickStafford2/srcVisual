@@ -1,4 +1,6 @@
-Programming style for `srcVisual` should optimize for brevity and clarity first.
+# Programming Style
+
+Optimize srcVisual code for clarity and brevity.
 
 Rules:
 
@@ -11,7 +13,7 @@ Rules:
 3. Keep code concise.
    Avoid unnecessary helper layers, indirection, and boilerplate when the logic is small.
 
-4. Prefix local variables with `_`.
+4. Prefix Python local variables with `_`.
    Use `_name` for local variables inside functions and methods.
 
 5. Prefix private Python module filenames with `_`.
@@ -26,13 +28,13 @@ Rules:
 8. Use `_` module filenames for subpackage-private files.
    If a file is only imported inside the same subpackage, prefix it with `_`. Example: if `examples.py` is only used by `routes.py` inside `web/`, it should be `_examples.py`. Test imports do not count when deciding this. If a file is imported from outside that subpackage by non-test code, do not prefix it with `_`.
 
-9. functions not used outside the module it is defined in should be prefixed with a _. if a function is needed outside that module, rewrite it so that it has no _ prefix.
+9. Prefix module-private Python functions with `_`.
+   If production code outside the module uses a function, give it a public
+   name without the prefix.
 
-10. Beware Fallbacks
-    the frontend should receive a specific and well known data type from the backend.
+10. Avoid silent contract fallbacks.
+    The frontend must receive an explicit, versioned backend data shape.
 
-11. Validation
-    all validation files should follow the format: validate_whatever.py
+11. Name validation modules `validate_<subject>.py`.
 
-12. assert functions
-    all functions that do nothing but assert should follow the format: assert_whatever()
+12. Name assertion-only functions `assert_<condition>()`.

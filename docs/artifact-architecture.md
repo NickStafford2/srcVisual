@@ -1,6 +1,6 @@
 # Artifact-Backed Visualization Architecture
 
-Status: accepted architecture and implementation plan.
+Status: current architecture and completed migration record.
 
 Date: 2026-09-23
 
@@ -8,8 +8,8 @@ Repository: `srcVisual`
 
 ## Goal
 
-Replace the monolithic visualization response and destructive pruning pipeline
-with an immutable artifact and bounded, lazily requested projections.
+srcVisual uses immutable artifacts and bounded, lazily requested projections
+instead of its former monolithic response and destructive pruning pipeline.
 
 The source view should behave like a large, aligned GitHub-style diff:
 
@@ -32,18 +32,18 @@ projections of the same immutable artifact.
    three initial context lines.
 3. A moves-only focus remains useful for srcMove research, but it is a view
    profile rather than a destructive pruning mode.
-4. Move connectors are drawn only when both endpoints are rendered. Endpoint
-   badges and navigation remain available when an endpoint is collapsed,
-   virtualized, or in another file.
+4. Move connectors terminate at exact rendered semantic endpoints when source
+   is expanded and at file-header proxies when a participating file is
+   collapsed. The UI does not invent off-screen coordinates.
 5. Artifacts survive worker restarts and Docker container replacement through
-   a dedicated, bounded srcVisual storage volume.
-6. Complete normalized XML is the primary XML view and export. Filtered XML is
+   a dedicated srcVisual storage volume. Retention is inspected and applied
+   explicitly; automatic collection is disabled.
+6. Complete normalized XML is the primary XML view. Filtered XML export is
    deferred until a concrete user or research workflow requires it.
-7. Move provenance is preserved in the artifact. The first redesigned UI does
-   not need to expose every provenance distinction unless it helps the active
-   research workflow.
-8. Browser and URL state are sufficient for views. There are no server-side
-   view sessions.
+7. Move provenance is preserved in the artifact. The UI exposes retained
+   producer details on demand and does not fabricate missing evidence.
+8. View state is browser-local; there are no server-side view sessions. The
+   current frontend does not encode view state in the URL.
 9. Character-precise move highlighting and the existing SVG move relationship
    visualization are essential srcMove inspection behavior. The artifact UI
    were restored before the legacy renderer was removed; a line badge alone is
@@ -74,19 +74,19 @@ The measured Notepad++ history pair 13 illustrates the mismatch:
 The primary delivery problem is duplicated source, tree, XML, and JSON data,
 not the canonical XML by itself.
 
-Other verified constraints:
+The migration began with these verified constraints in the legacy system:
 
-- current node IDs are positional XML paths and are not stable if units or
+- legacy node IDs were positional XML paths and were not stable if units or
   siblings are removed or reordered;
-- current SSE progress queues live in one Flask worker while Gunicorn runs
-  multiple workers;
-- every source line is rendered into the DOM;
+- upload SSE progress queues are still process-local while Gunicorn runs
+  multiple workers; durable history progress uses the shared run store instead;
+- every source line was rendered into the DOM;
 - move connector geometry depends on live DOM elements;
-- history materialization currently retains the XML path but discards useful
+- history materialization retained the XML path but discarded useful
   `results.json` classification metadata;
 - retained history XML can contain absolute temporary scratch paths, which
   must not be exposed by artifact XML or manifests;
-- Compose has no persistent writable location owned by srcVisual.
+- Compose had no persistent writable location owned by srcVisual.
 
 ## Phase 0 Baseline
 
@@ -227,9 +227,9 @@ A view is the browser's projection of an artifact:
 - active tab;
 - tree expansion and navigation state.
 
-The selected artifact, file, tab, focus profile, and primary selection may be
-encoded in the URL. Expanded gaps and transient highlights can remain ordinary
-browser state.
+The current frontend keeps the selected artifact, file, tab, focus profile,
+expanded gaps, and selections in browser memory. URL persistence is not part of
+the implemented contract.
 
 ## Artifact Storage
 
@@ -279,14 +279,14 @@ Artifact and run failure semantics are explicit:
 - failed reuse validation starts a new run and does not repair an artifact in
   place;
 - projection failure does not invalidate an otherwise valid artifact;
-- cleanup never removes an artifact with an active reader lease or run
-  reference.
+- manual collection never removes an artifact referenced by a completed run;
+  it rechecks those references while holding the collection lock.
 
-The external artifact ID is an opaque random identifier. A separate internal
-fingerprint supports reuse and duplicate-work suppression. The fingerprint
-includes relevant input checksums, admitted tool identities, analysis
-configuration, and artifact schema version. An artifact ID is an identifier,
-not an authorization mechanism.
+The external artifact ID is an opaque random identifier. History-run reuse has
+a separate internal fingerprint combining srcMove's versioned pair fingerprint,
+the artifact schema version, and artifact-building configuration. Uploaded XML
+is not automatically deduplicated. An artifact ID is an identifier, not an
+authorization mechanism.
 
 The deliberate source-file copies support bounded line reads without reparsing
 XML. srcVisual does not copy both srcDiff and srcMove documents when the final
@@ -429,7 +429,7 @@ requirement.
 
 ## Projection API
 
-The initial API should remain small:
+The core artifact and durable-run API is:
 
 ```text
 POST /api/history/pairs/{pair_number}/runs
@@ -494,10 +494,10 @@ delivering the terminal event. Reconnection therefore neither loses nor
 duplicates acknowledged progress, and `GET /api/runs/{run_id}` remains the
 authoritative polling fallback.
 
-Cancellation must terminate the native process group, wait for termination,
-and remove unpublished staging data. It must not corrupt srcMove's `.srcmove`
-operation state. Duplicate history work will use a fingerprinted single-flight
-lock so concurrent callers can follow the same run and artifact.
+Cancellation terminates the native process group, waits for termination, and
+removes unpublished staging data without transferring ownership of srcMove's
+`.srcmove` operation state. Fingerprinted single-flight run creation lets
+concurrent callers follow the same run and artifact.
 
 Each claimed run executes in a separate child process group containing the
 Python artifact build and all descendant native commands. The queue worker
@@ -506,9 +506,8 @@ whole group, escalates if the group does not exit, waits for it to be reaped,
 and only then records `cancelled`. Cancelling an already completed run returns
 a conflict and leaves its published artifact unchanged.
 
-Uploaded XML remains synchronous initially unless measurements show that it
-needs the run worker. The established multi-minute history path receives the
-durable run model first.
+Uploaded XML is processed synchronously. Moving it to the durable run worker is
+deferred unless measurements demonstrate a usability problem.
 
 ### Durable run contract
 
@@ -557,8 +556,8 @@ Every lifecycle transition and progress update appends an event in the same
 SQLite transaction as its run-state change. Event sequence numbers are
 positive, contiguous, and local to one run. Events record their type, the
 resulting run status, display-safe message, and UTC timestamp. Ordered reads
-accept an exclusive `after` cursor and a bounded limit; the later SSE endpoint
-will use the same durable sequence as its event ID.
+accept an exclusive `after` cursor and a bounded limit. The SSE endpoint uses
+the same durable sequence as its event ID.
 
 ## Frontend Rendering
 
@@ -581,13 +580,12 @@ source endpoints. This preserves cross-file provenance without eagerly loading
 code or inventing off-screen coordinates, and it remains compatible with later
 source-row virtualization.
 
-The artifact renderer should adapt the proven legacy highlighting and SVG
-connector behavior to artifact-local identities instead of replacing it with a
-less expressive interaction. Inspecting or hovering a move highlights every
-rendered endpoint at character precision and draws the relationship between
-visible endpoints. Same-file, cross-file, one-to-many, and many-to-one moves
-retain clear endpoint and group identity. When an endpoint is not rendered,
-navigation and badges remain available without drawing misleading geometry.
+The artifact renderer preserves the proven highlighting and SVG connector
+behavior with artifact-local identities. Inspecting a move highlights its
+rendered endpoints at character precision; connector visibility is controlled
+independently. Same-file, cross-file, one-to-many, and many-to-one moves retain
+clear endpoint and group identity. Collapsed participating files use explicit
+header proxies rather than misleading off-screen geometry.
 
 Move fragments, badges, tree nodes, and connectors use the established
 yellow/amber move hue. Ordinary unchanged source is neutral near-black. Insert
@@ -598,7 +596,7 @@ Virtualization is introduced only after the hunk/gap model works correctly and
 measurements show that rendered focused rows remain excessive. Expansion must
 preserve the user's scroll anchor.
 
-## Delivery Plan
+## Migration Record
 
 ### Phase 0: contract and baseline
 
@@ -835,8 +833,9 @@ plan, and rechecks run references before deletion. Changed plans fail closed.
 Automatic collection is not enabled.
 
 - Add item and disk quotas, collection policy, integrity diagnostics, and cache
-  metrics. (Inventory, policy planning, and integrity diagnostics are
-  complete; enforcement and metrics remain.)
+  metrics. (Inventory, policy planning, integrity diagnostics, and explicit
+  reviewed-plan enforcement are complete; automatic enforcement and metrics
+  remain.)
 - Add tested deletion with locking and run-reference revalidation only after
   dry-run behavior is established. (Complete for explicit manual collection.)
 - Add background upload runs if upload measurements justify them.

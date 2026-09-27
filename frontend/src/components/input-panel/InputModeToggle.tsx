@@ -29,7 +29,7 @@ const OPTIONS: ReadonlyArray<{
   {
     mode: "paste",
     label: "Custom XML",
-    description: "Paste raw srcdiff XML directly into the page.",
+    description: "Paste raw srcDiff XML directly into the page.",
   },
   {
     mode: "upload",

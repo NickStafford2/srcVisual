@@ -8,7 +8,10 @@ application, relationship to srcMove, and hosted-service vision.
 - [Application rules](Rules.md): canonical backend/frontend data invariants,
   supported srcDiff shapes, metadata preservation, and package boundaries
 - [Artifact-backed visualization architecture](artifact-architecture.md):
-  accepted artifact, projection, source-hunk, execution, and migration design
+  current artifact, projection, source-hunk, execution, and lifecycle design,
+  plus the migration record
+- [Repository history browser](history-browser.md): current srcMove/srcVisual
+  ownership boundary, durable run workflow, API, and deliberate limits
 - [Frontend color guide](../frontend/docs/color-guide.md): visual language for
   diffs, revisions, interactions, and move relationships
 - [BigMoveBench Type-3 review](bigmovebench-review.md): portable review bundle,
@@ -34,17 +37,13 @@ When srcVisual is checked out inside SrcMLBuildTemplate, use the parent
 workspace's Docker environment for builds, tests, and native srcML-toolchain
 diagnostics rather than installing the toolchain directly on macOS.
 
-## Planning and non-authoritative notes
+## Non-authoritative planning
 
-- [Repository history browser plan](history-browser-plan.md): evaluated
-  integration options, scoped-write boundary, delivery phases, and remaining
-  work
-- [Todo](todo.md): candidate backend and frontend work; entries may be stale and
-  do not establish current behavior
-- [Notes](notes.md): exploratory interface and srcMove-integration ideas
+- [Backlog](backlog.md): evidence-gated candidate improvements; entries do not
+  establish current behavior
 
-Plans and notes should be updated or retired when work is implemented. Verified
-behavior belongs in the project README or application rules.
+Update or retire backlog entries when work is implemented. Verified behavior
+belongs in the project README or the most specific architecture document.
 
 ## Guidance for AI agents
 

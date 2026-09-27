@@ -103,7 +103,7 @@ background treatment.
 
 ## Suggested System
 
-Define the UI in four layers:
+Define the UI in five layers:
 
 1. Semantic colors for `insert`, `delete`, `move`, and `plain`
 2. Structural labels for `revision 0` and `revision 1`
