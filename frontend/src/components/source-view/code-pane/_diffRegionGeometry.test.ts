@@ -14,8 +14,8 @@ describe("diff region geometry", () => {
     );
 
     expect(paths).toHaveLength(1);
-    expect(paths[0]).toContain("M 5 18");
-    expect(paths[0]).toContain("H 155");
+    expect(paths[0]).toContain("M 7 18");
+    expect(paths[0]).toContain("H 153");
     expect(paths[0]).toContain("Z");
   });
 

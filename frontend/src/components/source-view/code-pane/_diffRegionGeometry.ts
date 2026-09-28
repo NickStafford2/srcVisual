@@ -114,7 +114,7 @@ function buildSteppedPath(lines: LineRect[]) {
 }
 
 function regionPadding(relation: ArtifactDiffRegionRelation, distance: number) {
-  if (relation === "selected") return 5;
-  if (relation === "ancestor") return 7 + distance * 3;
-  return 2;
+  if (relation === "selected") return 3;
+  if (relation === "ancestor") return 2 + distance * 2;
+  return 1;
 }
