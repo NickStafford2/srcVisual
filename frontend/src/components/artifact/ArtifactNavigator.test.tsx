@@ -1,11 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
-import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
-import type { ArtifactManifest, ArtifactTreeNode } from "../../types";
+import {
+  fetchArtifactDiffTree,
+  fetchArtifactNodeChildren,
+  fetchArtifactTree,
+} from "../../api";
+import type {
+  ArtifactDiffTreeNode,
+  ArtifactManifest,
+  ArtifactTreeNode,
+} from "../../types";
 import { ArtifactNavigator } from "./ArtifactNavigator";
 
 vi.mock("../../api", () => ({
+  fetchArtifactDiffTree: vi.fn(),
   fetchArtifactNodeChildren: vi.fn(),
   fetchArtifactTree: vi.fn(),
 }));
@@ -70,6 +79,34 @@ const manifest: ArtifactManifest = {
   },
 };
 
+const commonDiffNode: ArtifactDiffTreeNode = {
+  ...root,
+  node_id: "f-one:n00000003",
+  path: "/unit/diff:insert/diff:common",
+  tag: "diff:common",
+  label: "diff:common",
+  kind: "common",
+  diff_kind: "common",
+  parent_diff_node_id: "f-one:n00000002",
+  child_count: 0,
+  children_complete: true,
+  children: [],
+};
+
+const insertDiffNode: ArtifactDiffTreeNode = {
+  ...root,
+  node_id: "f-one:n00000002",
+  path: "/unit/diff:insert",
+  tag: "diff:insert",
+  label: "diff:insert",
+  kind: "insert",
+  diff_kind: "insert",
+  parent_diff_node_id: null,
+  child_count: 1,
+  children_complete: true,
+  children: [commonDiffNode],
+};
+
 beforeEach(() => {
   vi.mocked(fetchArtifactTree).mockResolvedValue({
     schema_version: 1,
@@ -94,6 +131,15 @@ beforeEach(() => {
     ],
     next_offset: 100,
   });
+  vi.mocked(fetchArtifactDiffTree).mockResolvedValue({
+    schema_version: 1,
+    artifact_id: manifest.artifact_id,
+    file_id: "f-one",
+    roots: [insertDiffNode],
+    node_count: 2,
+    total_node_count: 2,
+    truncated: false,
+  });
 });
 
 it("pages tree children and toggles cross-file move connectors", async () => {
@@ -103,6 +149,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   const onVisibleMoveIdsChange = vi.fn();
   const onToggleDiffKind = vi.fn();
   const onVisibleDiffKindsChange = vi.fn();
+  const onDiffOverlayRegionsChange = vi.fn();
   const onSelectNode = vi.fn();
   render(
     <ArtifactNavigator
@@ -121,6 +168,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       onVisibleMoveIdsChange={onVisibleMoveIdsChange}
       onToggleDiffKind={onToggleDiffKind}
       onVisibleDiffKindsChange={onVisibleDiffKindsChange}
+      onDiffOverlayRegionsChange={onDiffOverlayRegionsChange}
       onSelectNode={onSelectNode}
       onClearNode={vi.fn()}
       onRevealNode={vi.fn()}
@@ -161,11 +209,10 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Current only" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
 
-  expect(screen.getByRole("button", { name: "diff:common" })).toHaveAttribute(
-    "aria-pressed",
-    "false",
-  );
-  await user.click(screen.getByRole("button", { name: "diff:common" }));
+  expect(
+    screen.getAllByRole("button", { name: "diff:common" })[0],
+  ).toHaveAttribute("aria-pressed", "false");
+  await user.click(screen.getAllByRole("button", { name: "diff:common" })[0]);
   expect(onToggleDiffKind).toHaveBeenCalledWith("common");
   fireEvent.click(screen.getByRole("button", { name: "All diff regions" }));
   expect(onVisibleDiffKindsChange).toHaveBeenLastCalledWith(
@@ -175,6 +222,9 @@ it("pages tree children and toggles cross-file move connectors", async () => {
     screen.getByRole("button", { name: "Clear diff highlights" }),
   );
   expect(onVisibleDiffKindsChange).toHaveBeenLastCalledWith(new Set());
+
+  await user.click(screen.getAllByRole("button", { name: "diff:common" })[1]);
+  expect(onSelectNode).toHaveBeenLastCalledWith(commonDiffNode);
 
   await user.type(
     screen.getByRole("searchbox", { name: "Filter artifact files" }),

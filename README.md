@@ -28,8 +28,10 @@ changed files as collapsible cards, retrieves source only for expanded files,
 and represents omitted ranges as expandable gaps. A dedicated srcDiff sidebar
 control independently highlights explicit `diff:common`, `diff:delete`, and
 `diff:insert` source regions; unwrapped common source remains neutral. Move
-highlighting and connectors remain a separate layer. Source, XML, the structure tree,
-sidebar node inspector, and Move Summary share stable artifact-local identities.
+highlighting and connectors remain a separate layer. A diff-only tree collapses
+intervening srcML syntax nodes and selecting a region outlines that region, its
+diff ancestors, and its direct diff children in Source. Source, XML, the structure
+tree, sidebar node inspector, and Move Summary share stable artifact-local identities.
 Selecting a moved fragment or connector opens retained srcMove details;
 connector visibility and move isolation remain separate controls. The XML view
 is loaded only when opened. The application does not infer unavailable

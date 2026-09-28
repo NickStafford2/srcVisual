@@ -13,6 +13,10 @@ export interface ViewerLineSegment {
   highlighted: boolean;
   nodeId?: string | null;
   moveId?: string | null;
+  diffRegions?: {
+    nodeId: string;
+    kind: "common" | "delete" | "insert";
+  }[];
 }
 
 export interface ViewerLine {

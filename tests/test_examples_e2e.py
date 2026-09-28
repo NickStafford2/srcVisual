@@ -147,6 +147,15 @@ def test_nested_insert_example_projects_explicit_common_regions(
         if anchor["kind"] == "common"
     }
     assert source_common_node_ids
+    assert all(
+        anchor["diff_kind"] == "common"
+        for block in source_response.get_json()["blocks"]
+        for row in block.get("rows", [])
+        for line in (row["left"], row["right"])
+        if line is not None
+        for anchor in line["anchors"]
+        if anchor["node_id"] in source_common_node_ids
+    )
 
     xml_response = client.get(f"/api/artifacts/{artifact_id}/xml")
     assert xml_response.status_code == 200
@@ -156,6 +165,23 @@ def test_nested_insert_example_projects_explicit_common_regions(
         if anchor["kind"] == "common"
     }
     assert xml_common_node_ids == source_common_node_ids
+
+    diff_tree_response = client.get(
+        f"/api/artifacts/{artifact_id}/files/{file_id}/diff-tree"
+    )
+    assert diff_tree_response.status_code == 200
+    diff_tree = diff_tree_response.get_json()
+    assert diff_tree["truncated"] is False
+    outer_insert = diff_tree["roots"][0]
+    assert outer_insert["diff_kind"] == "insert"
+    common = next(
+        child
+        for child in outer_insert["children"]
+        if child["diff_kind"] == "common"
+    )
+    assert common["node_id"] in source_common_node_ids
+    assert common["parent_diff_node_id"] == outer_insert["node_id"]
+    assert {child["diff_kind"] for child in common["children"]} == {"insert"}
 
 
 def test_blocks_swapped_example_accepts_single_root_artifact_inputs(

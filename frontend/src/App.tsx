@@ -20,6 +20,7 @@ import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
 import { BigMoveBenchCaseBar } from "./components/BigMoveBenchCaseBar";
 import {
   type ArtifactDiffKind,
+  type ArtifactDiffOverlayRegion,
   type ArtifactFocusProfile,
   type ArtifactMoveSummary,
   type ArtifactTreeNode,
@@ -79,6 +80,9 @@ export default function App() {
   const [visibleDiffKinds, setVisibleDiffKinds] = useState<
     Set<ArtifactDiffKind>
   >(() => new Set(defaultVisibleDiffKinds));
+  const [diffOverlayRegions, setDiffOverlayRegions] = useState<
+    ArtifactDiffOverlayRegion[]
+  >([]);
 
   const hasData = Boolean(artifact);
   const sidebarWidthClass = hasData ? "lg:w-[360px]" : "lg:w-[108px]";
@@ -118,6 +122,7 @@ export default function App() {
       setArtifactNodeError(null);
       setArtifactFocus("changes-and-moves");
       setVisibleDiffKinds(new Set(defaultVisibleDiffKinds));
+      setDiffOverlayRegions([]);
     }
   }, [artifact]);
 
@@ -211,6 +216,7 @@ export default function App() {
     setSelectedArtifactNodeId(null);
     setSelectedArtifactNode(null);
     setArtifactNodeError(null);
+    setDiffOverlayRegions([]);
   }
 
   return (
@@ -259,6 +265,7 @@ export default function App() {
                 onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
                 onToggleDiffKind={toggleDiffKind}
                 onVisibleDiffKindsChange={setVisibleDiffKinds}
+                onDiffOverlayRegionsChange={setDiffOverlayRegions}
                 onSelectNode={selectArtifactNode}
                 onClearNode={clearArtifactNodeSelection}
                 onRevealNode={() => setActiveMainTab("source-code")}
@@ -321,6 +328,7 @@ export default function App() {
                         moves={artifact.moves.items}
                         visibleMoveIds={visibleArtifactMoveIds}
                         visibleDiffKinds={visibleDiffKinds}
+                        diffOverlayRegions={diffOverlayRegions}
                         onInspectMove={inspectArtifactMove}
                         onFocusChange={setArtifactFocus}
                       />

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
   ArtifactDiffKind,
+  ArtifactDiffOverlayRegion,
   ArtifactFileSummary,
   ArtifactFocusProfile,
   ArtifactMoveSummary,
 } from "../../types";
 import { MoveConnectorOverlay } from "../source-view/code-pane/MoveConnectorOverlay";
+import { DiffRegionOverlay } from "../source-view/code-pane/DiffRegionOverlay";
+import { useDiffRegionOverlay } from "../source-view/code-pane/useDiffRegionOverlay";
 import { useMoveConnectorOverlay } from "../source-view/code-pane/useMoveConnectorOverlay";
 import {
   CorrespondenceSourceContext,
@@ -25,6 +28,7 @@ type Props = {
   moves: ArtifactMoveSummary[];
   visibleMoveIds: ReadonlySet<string>;
   visibleDiffKinds?: ReadonlySet<ArtifactDiffKind>;
+  diffOverlayRegions?: ArtifactDiffOverlayRegion[];
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   visibleCorrespondences?: Pair[];
   onInspectCorrespondence?: (
@@ -45,6 +49,7 @@ export function ArtifactSourcePane({
   moves,
   visibleMoveIds,
   visibleDiffKinds = DEFAULT_VISIBLE_DIFF_KINDS,
+  diffOverlayRegions = EMPTY_DIFF_REGIONS,
   onInspectMove,
   onFocusChange,
   visibleCorrespondences = EMPTY_PAIRS,
@@ -52,6 +57,7 @@ export function ArtifactSourcePane({
 }: Props) {
   const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
+  const diffRegionOverlay = useDiffRegionOverlay(diffOverlayRegions);
   const correspondenceOverlay = useMoveConnectorOverlay();
   const correspondenceContext = useMemo(
     () => ({
@@ -180,6 +186,7 @@ export function ArtifactSourcePane({
           ref={(element) => {
             containerRef.current = element;
             correspondenceOverlay.containerRef.current = element;
+            diffRegionOverlay.containerRef.current = element;
           }}
           className="relative isolate space-y-4"
         >
@@ -188,6 +195,7 @@ export function ArtifactSourcePane({
             pairs={visibleCorrespondences}
             inspect={onInspectCorrespondence}
           />
+          <DiffRegionOverlay groups={diffRegionOverlay.groups} />
           <MoveConnectorOverlay
             groups={groups}
             emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
@@ -239,6 +247,7 @@ function moveFileIds(move: ArtifactMoveSummary): string[] {
 }
 
 const EMPTY_PAIRS: Pair[] = [];
+const EMPTY_DIFF_REGIONS: ArtifactDiffOverlayRegion[] = [];
 const NO_INSPECT = () => {};
 const DEFAULT_VISIBLE_DIFF_KINDS = new Set<ArtifactDiffKind>([
   "delete",

@@ -50,7 +50,12 @@ export function ArtifactXmlPane({
     if (!projection) return [];
     const anchors: SourceViewHighlight[] = projection.anchors
       .filter(
-        (anchor) => anchor.kind === "move" || visibleDiffKinds.has(anchor.kind),
+        (anchor) =>
+          anchor.kind === "move" ||
+          (anchor.diff_kind !== null &&
+            anchor.diff_kind !== undefined &&
+            visibleDiffKinds.has(anchor.diff_kind)) ||
+          (anchor.diff_kind === undefined && visibleDiffKinds.has(anchor.kind)),
       )
       .map((anchor) => ({
         nodeId: anchor.node_id,

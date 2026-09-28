@@ -18,7 +18,7 @@ export function buildArtifactLineSegments(
 
   if (line.text.length === 0) {
     const _anchor = preferredAnchor(line.anchors);
-    return [segmentForRange(" ", _anchor)];
+    return [segmentForRange(" ", _anchor, diffRegions(line.anchors))];
   }
 
   const _boundaries = [
@@ -33,18 +33,22 @@ export function buildArtifactLineSegments(
   for (let _index = 0; _index < _boundaries.length - 1; _index += 1) {
     const _start = _boundaries[_index];
     const _end = _boundaries[_index + 1];
-    const _anchor = preferredAnchor(
-      _slices
-        .filter((slice) => slice.start <= _start && slice.end >= _end)
-        .map((slice) => slice.anchor),
+    const _anchors = _slices
+      .filter((slice) => slice.start <= _start && slice.end >= _end)
+      .map((slice) => slice.anchor);
+    const _anchor = preferredAnchor(_anchors);
+    const _segment = segmentForRange(
+      line.text.slice(_start, _end),
+      _anchor,
+      diffRegions(_anchors),
     );
-    const _segment = segmentForRange(line.text.slice(_start, _end), _anchor);
     const _previous = _segments[_segments.length - 1];
     if (
       _previous &&
       _previous.kind === _segment.kind &&
       _previous.nodeId === _segment.nodeId &&
-      _previous.moveId === _segment.moveId
+      _previous.moveId === _segment.moveId &&
+      sameDiffRegions(_previous.diffRegions, _segment.diffRegions)
     ) {
       _previous.text += _segment.text;
     } else {
@@ -66,6 +70,7 @@ function preferredAnchor(anchors: ArtifactSourceLine["anchors"]) {
 function segmentForRange(
   text: string,
   anchor: ArtifactSourceLine["anchors"][number] | undefined,
+  regions: NonNullable<ViewerLineSegment["diffRegions"]>,
 ): ViewerLineSegment {
   return {
     text,
@@ -73,7 +78,44 @@ function segmentForRange(
     highlighted: anchor !== undefined,
     nodeId: anchor?.node_id ?? null,
     moveId: anchor?.move_id ?? null,
+    ...(regions.length > 0 ? { diffRegions: regions } : {}),
   };
+}
+
+function diffRegions(
+  anchors: ArtifactSourceLine["anchors"],
+): NonNullable<ViewerLineSegment["diffRegions"]> {
+  const _regions = new Map<
+    string,
+    NonNullable<ViewerLineSegment["diffRegions"]>[number]
+  >();
+  for (const anchor of [...anchors].sort(
+    (left, right) => spanSize(right.span) - spanSize(left.span),
+  )) {
+    const kind =
+      anchor.diff_kind ??
+      (anchor.kind === "common" ||
+      anchor.kind === "delete" ||
+      anchor.kind === "insert"
+        ? anchor.kind
+        : null);
+    if (kind) _regions.set(anchor.node_id, { nodeId: anchor.node_id, kind });
+  }
+  return [..._regions.values()];
+}
+
+function sameDiffRegions(
+  left: ViewerLineSegment["diffRegions"],
+  right: ViewerLineSegment["diffRegions"],
+) {
+  return (
+    left?.length === right?.length &&
+    left?.every(
+      (region, index) =>
+        region.nodeId === right?.[index]?.nodeId &&
+        region.kind === right[index].kind,
+    )
+  );
 }
 
 function anchorPriority(kind: ArtifactSourceLine["anchors"][number]["kind"]) {

@@ -88,8 +88,14 @@ export function ArtifactSourceFile({
   useEffect(() => {
     if (!active || !expanded || !projection || !selectedNodeId) return;
     const target = Array.from(
-      articleRef.current?.querySelectorAll<HTMLElement>("[data-node-id]") ?? [],
-    ).find((element) => element.dataset.nodeId === selectedNodeId);
+      articleRef.current?.querySelectorAll<HTMLElement>(
+        "[data-node-id], [data-diff-region-ids]",
+      ) ?? [],
+    ).find(
+      (element) =>
+        element.dataset.nodeId === selectedNodeId ||
+        element.dataset.diffRegionIds?.split("|").includes(selectedNodeId),
+    );
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }, [active, expanded, projection, selectedNodeId]);
 

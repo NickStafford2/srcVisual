@@ -1,4 +1,5 @@
 import type {
+  ArtifactDiffTreeProjection,
   ArtifactFocusProfile,
   ArtifactManifest,
   ArtifactMoveProjection,
@@ -372,6 +373,15 @@ export async function fetchArtifactTree(
   return (await fetchJson(
     `/api/artifacts/${artifactId}/files/${fileId}/tree?${parameters.toString()}`,
   )) as unknown as ArtifactTreeProjection;
+}
+
+export async function fetchArtifactDiffTree(
+  artifactId: string,
+  fileId: string,
+): Promise<ArtifactDiffTreeProjection> {
+  return (await fetchJson(
+    `/api/artifacts/${artifactId}/files/${fileId}/diff-tree?limit=1000`,
+  )) as unknown as ArtifactDiffTreeProjection;
 }
 
 export async function fetchArtifactNodeChildren(

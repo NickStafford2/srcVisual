@@ -24,6 +24,7 @@ FOCUS_PROFILES: tuple[FocusProfile, ...] = (
 )
 MAX_SOURCE_ROWS = 2_000
 MAX_TREE_NODES = 500
+MAX_DIFF_TREE_NODES = 1_000
 MAX_CHILDREN = 100
 
 
@@ -94,14 +95,16 @@ def read_artifact_xml(*, artifact_root: Path, artifact_id: str) -> dict[str, Any
         span = payload.get("xml_span")
         if span is None:
             continue
-        anchors.append(
-            {
-                "node_id": _node_id(file_id, ordinal),
-                "kind": kind,
-                "move_id": move_id,
-                "span": span,
-            }
-        )
+        anchor = {
+            "node_id": _node_id(file_id, ordinal),
+            "kind": kind,
+            "move_id": move_id,
+            "span": span,
+        }
+        diff_kind = _diff_kind_for_tag(payload.get("tag"))
+        if diff_kind is not None:
+            anchor["diff_kind"] = diff_kind
+        anchors.append(anchor)
     return {
         "schema_version": 1,
         "artifact_id": artifact_id,
@@ -216,6 +219,80 @@ def read_tree_projection(
         "root": root,
         "node_count": len(included),
         "truncated": len(included) < len(rows),
+    }
+
+
+def read_diff_tree_projection(
+    *,
+    artifact_root: Path,
+    artifact_id: str,
+    file_id: str,
+    node_limit: int = MAX_DIFF_TREE_NODES,
+) -> dict[str, Any]:
+    if not 1 <= node_limit <= MAX_DIFF_TREE_NODES:
+        raise ValueError(f"limit must be between 1 and {MAX_DIFF_TREE_NODES}.")
+    artifact_path, _ = _open_artifact(artifact_root, artifact_id)
+    _read_file_row(artifact_path, file_id)
+    with closing(_connect_readonly(artifact_path / "index.sqlite")) as database:
+        rows = database.execute(
+            """
+            SELECT node_ordinal, parent_ordinal, sibling_index, child_count,
+                   kind, payload
+              FROM nodes
+             WHERE file_id = ?
+             ORDER BY node_ordinal
+            """,
+            (file_id,),
+        ).fetchall()
+
+    by_ordinal = {row[0]: row for row in rows}
+    payload_by_ordinal = {
+        row[0]: json.loads(zlib.decompress(row[5])) for row in rows
+    }
+    diff_kind_by_ordinal = {
+        ordinal: diff_kind
+        for ordinal, payload in payload_by_ordinal.items()
+        if (diff_kind := _diff_kind_for_tag(payload.get("tag"))) is not None
+    }
+    diff_ordinals = list(diff_kind_by_ordinal)
+    included = set(diff_ordinals[:node_limit])
+    diff_parent: dict[int, int | None] = {}
+    diff_children: dict[int | None, list[int]] = {}
+    for ordinal in diff_ordinals:
+        parent = by_ordinal[ordinal][1]
+        while parent is not None and parent not in diff_kind_by_ordinal:
+            parent = by_ordinal[parent][1]
+        diff_parent[ordinal] = parent
+        diff_children.setdefault(parent, []).append(ordinal)
+
+    def project(ordinal: int) -> dict[str, Any]:
+        row = by_ordinal[ordinal]
+        children = diff_children.get(ordinal, [])
+        node = _project_flat_node(file_id, ordinal, row[3], row[5])
+        node["diff_kind"] = diff_kind_by_ordinal[ordinal]
+        node["parent_diff_node_id"] = (
+            _node_id(file_id, diff_parent[ordinal])
+            if diff_parent[ordinal] is not None
+            else None
+        )
+        node["child_count"] = len(children)
+        node["children"] = [project(child) for child in children if child in included]
+        node["children_complete"] = len(node["children"]) == len(children)
+        return node
+
+    roots = [
+        project(ordinal)
+        for ordinal in diff_children.get(None, [])
+        if ordinal in included
+    ]
+    return {
+        "schema_version": 1,
+        "artifact_id": artifact_id,
+        "file_id": file_id,
+        "roots": roots,
+        "node_count": len(included),
+        "total_node_count": len(diff_ordinals),
+        "truncated": len(included) < len(diff_ordinals),
     }
 
 
@@ -370,15 +447,17 @@ def _read_focus_anchors(artifact_path: Path, file_id: str) -> list[dict[str, Any
     _anchors = []
     for _row in rows:
         _payload = json.loads(zlib.decompress(_row[3]))
-        _anchors.append(
-            {
-                "node_id": _node_id(file_id, _row[0]),
-                "kind": _row[1],
-                "move_id": _row[2],
-                "left": _payload.get("revision_0_span"),
-                "right": _payload.get("revision_1_span"),
-            }
-        )
+        _anchor = {
+            "node_id": _node_id(file_id, _row[0]),
+            "kind": _row[1],
+            "move_id": _row[2],
+            "left": _payload.get("revision_0_span"),
+            "right": _payload.get("revision_1_span"),
+        }
+        _diff_kind = _diff_kind_for_tag(_payload.get("tag"))
+        if _diff_kind is not None:
+            _anchor["diff_kind"] = _diff_kind
+        _anchors.append(_anchor)
     return _anchors
 
 
@@ -393,6 +472,8 @@ def _attach_anchors(rows: list[dict[str, Any]], anchors: list[dict[str, Any]]) -
             "kind": anchor["kind"],
             "move_id": anchor["move_id"],
         }
+        if "diff_kind" in anchor:
+            _public["diff_kind"] = anchor["diff_kind"]
         for _side, _line_rows in (("left", left_rows), ("right", right_rows)):
             _span = anchor[_side]
             if _span is None:
@@ -603,3 +684,13 @@ def _parse_node_id(node_id: str) -> tuple[str, int]:
 
 def _node_id(file_id: str, ordinal: int) -> str:
     return f"{file_id}:n{ordinal:08x}"
+
+
+def _diff_kind_for_tag(tag: object) -> str | None:
+    if tag == "diff:common":
+        return "common"
+    if tag == "diff:delete":
+        return "delete"
+    if tag == "diff:insert":
+        return "insert"
+    return None

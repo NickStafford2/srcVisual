@@ -18,6 +18,7 @@ from srcdiffvisual.artifacts.projections import (
     read_artifact_node,
     read_artifact_manifest,
     read_artifact_xml,
+    read_diff_tree_projection,
     read_node_children,
     read_source_projection,
     read_tree_projection,
@@ -169,6 +170,24 @@ def artifact_tree(artifact_id: str, file_id: str) -> tuple[dict[str, object], in
             artifact_id=artifact_id,
             file_id=file_id,
             focus_profile=request.args.get("focus", "changes-and-moves"),  # type: ignore[arg-type]
+            node_limit=limit,
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/files/<file_id>/diff-tree")
+def artifact_diff_tree(
+    artifact_id: str, file_id: str
+) -> tuple[dict[str, object], int]:
+    try:
+        limit = _positive_integer_query("limit", default=1000, maximum=1000)
+    except ValueError as error:
+        return {"error": str(error)}, 400
+    return _artifact_response(
+        lambda: read_diff_tree_projection(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            file_id=file_id,
             node_limit=limit,
         )
     )

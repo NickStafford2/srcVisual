@@ -1,7 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
+import {
+  fetchArtifactDiffTree,
+  fetchArtifactNodeChildren,
+  fetchArtifactTree,
+} from "../../api";
 import type {
   ArtifactDiffKind,
+  ArtifactDiffOverlayRegion,
+  ArtifactDiffTreeNode,
   ArtifactFocusProfile,
   ArtifactManifest,
   ArtifactMoveSummary,
@@ -26,6 +32,7 @@ type Props = {
   onVisibleMoveIdsChange: (moveIds: Set<string>) => void;
   onToggleDiffKind: (kind: ArtifactDiffKind) => void;
   onVisibleDiffKindsChange: (kinds: Set<ArtifactDiffKind>) => void;
+  onDiffOverlayRegionsChange: (regions: ArtifactDiffOverlayRegion[]) => void;
   onSelectNode: (node: ArtifactTreeNode) => void;
   onClearNode: () => void;
   onRevealNode: () => void;
@@ -48,11 +55,15 @@ export function ArtifactNavigator({
   onVisibleMoveIdsChange,
   onToggleDiffKind,
   onVisibleDiffKindsChange,
+  onDiffOverlayRegionsChange,
   onSelectNode,
   onClearNode,
   onRevealNode,
 }: Props) {
   const [root, setRoot] = useState<ArtifactTreeNode | null>(null);
+  const [diffRoots, setDiffRoots] = useState<ArtifactDiffTreeNode[]>([]);
+  const [diffTreeLoading, setDiffTreeLoading] = useState(true);
+  const [diffTreeError, setDiffTreeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileQuery, setFileQuery] = useState("");
   const visibleFiles = manifest.files.filter((file) =>
@@ -75,6 +86,70 @@ export function ArtifactNavigator({
       active = false;
     };
   }, [focus, manifest.artifact_id, selectedFileId]);
+
+  useEffect(() => {
+    let active = true;
+    setDiffRoots([]);
+    setDiffTreeLoading(true);
+    setDiffTreeError(null);
+    void fetchArtifactDiffTree(manifest.artifact_id, selectedFileId)
+      .then((projection) => {
+        if (active) setDiffRoots(projection.roots);
+      })
+      .catch((reason: unknown) => {
+        if (active) setDiffTreeError(errorMessage(reason));
+      })
+      .finally(() => {
+        if (active) setDiffTreeLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [manifest.artifact_id, selectedFileId]);
+
+  useEffect(() => {
+    const path = selectedNodeId
+      ? findDiffNodePath(diffRoots, selectedNodeId)
+      : null;
+    if (!path) {
+      onDiffOverlayRegionsChange([]);
+      return;
+    }
+    const selected = path[path.length - 1];
+    const regions: ArtifactDiffOverlayRegion[] = [
+      {
+        nodeId: selected.node_id,
+        kind: selected.diff_kind,
+        relation: "selected",
+        distance: 0,
+      },
+      ...path.slice(0, -1).flatMap((node, index) =>
+        visibleDiffKinds.has(node.diff_kind)
+          ? [
+              {
+                nodeId: node.node_id,
+                kind: node.diff_kind,
+                relation: "ancestor" as const,
+                distance: path.length - index - 1,
+              },
+            ]
+          : [],
+      ),
+      ...selected.children.flatMap((node) =>
+        visibleDiffKinds.has(node.diff_kind)
+          ? [
+              {
+                nodeId: node.node_id,
+                kind: node.diff_kind,
+                relation: "child" as const,
+                distance: 1,
+              },
+            ]
+          : [],
+      ),
+    ];
+    onDiffOverlayRegionsChange(regions);
+  }, [diffRoots, onDiffOverlayRegionsChange, selectedNodeId, visibleDiffKinds]);
 
   return (
     <section
@@ -169,6 +244,39 @@ export function ArtifactNavigator({
               Clear diff highlights
             </button>
           </div>
+        </div>
+        <div
+          className="max-h-56 overflow-auto border-t border-white/10 p-3 font-mono text-xs"
+          aria-label="srcDiff region tree"
+        >
+          <div className="mb-2 flex items-center justify-between gap-2 font-sans">
+            <p className="text-[11px] tracking-[0.24em] text-slate-500 uppercase">
+              Nested diff tags
+            </p>
+            {diffRoots.length > 0 ? (
+              <span className="text-[10px] text-slate-600">
+                Select to outline
+              </span>
+            ) : null}
+          </div>
+          {diffTreeLoading ? (
+            <p className="text-slate-500">Loading diff regions…</p>
+          ) : null}
+          {diffTreeError ? (
+            <p className="text-rose-300">{diffTreeError}</p>
+          ) : null}
+          {!diffTreeLoading && !diffTreeError && diffRoots.length === 0 ? (
+            <p className="text-slate-500">No explicit diff tags.</p>
+          ) : null}
+          {diffRoots.map((node) => (
+            <ArtifactDiffTreeBranch
+              key={node.node_id}
+              node={node}
+              depth={0}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={onSelectNode}
+            />
+          ))}
         </div>
       </div>
 
@@ -316,6 +424,89 @@ const DIFF_KIND_OPTIONS: {
     classes: "border-diff-insert/50 bg-diff-insert/20 text-green-200",
   },
 ];
+
+function ArtifactDiffTreeBranch({
+  node,
+  depth,
+  selectedNodeId,
+  onSelectNode,
+}: {
+  node: ArtifactDiffTreeNode;
+  depth: number;
+  selectedNodeId: string | null;
+  onSelectNode: (node: ArtifactTreeNode) => void;
+}) {
+  const [expanded, setExpanded] = useState(depth < 2);
+  const selected = selectedNodeId === node.node_id;
+  return (
+    <div>
+      <div
+        className={`flex items-center rounded ${selected ? "bg-sky-400/10 ring-1 ring-sky-300/25" : ""}`}
+      >
+        {node.children.length > 0 ? (
+          <button
+            type="button"
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${node.tag}`}
+            onClick={() => setExpanded((current) => !current)}
+            className="w-5 shrink-0 py-1 text-slate-600 hover:text-white"
+          >
+            {expanded ? "▾" : "▸"}
+          </button>
+        ) : (
+          <span className="w-5 shrink-0 text-center text-slate-700">·</span>
+        )}
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => onSelectNode(node)}
+          className={`min-w-0 flex-1 truncate py-1 text-left ${diffTreeTextColor(node.diff_kind, selected)}`}
+        >
+          {node.tag}
+          {node.kind === "move" ? (
+            <span className="ml-1 text-[9px] text-amber-300">move</span>
+          ) : null}
+          {node.child_count > 0 ? (
+            <span className="ml-1 text-[10px] text-slate-600">
+              ({node.child_count})
+            </span>
+          ) : null}
+        </button>
+      </div>
+      {expanded && node.children.length > 0 ? (
+        <div className="ml-3 border-l border-white/10 pl-2">
+          {node.children.map((child) => (
+            <ArtifactDiffTreeBranch
+              key={child.node_id}
+              node={child}
+              depth={depth + 1}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={onSelectNode}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function findDiffNodePath(
+  roots: ArtifactDiffTreeNode[],
+  nodeId: string,
+): ArtifactDiffTreeNode[] | null {
+  for (const node of roots) {
+    if (node.node_id === nodeId) return [node];
+    const childPath = findDiffNodePath(node.children, nodeId);
+    if (childPath) return [node, ...childPath];
+  }
+  return null;
+}
+
+function diffTreeTextColor(kind: ArtifactDiffKind, selected: boolean) {
+  if (selected) return "text-sky-100";
+  if (kind === "delete") return "text-red-200";
+  if (kind === "insert") return "text-green-200";
+  return "text-slate-300";
+}
 
 function ArtifactTreeBranch({
   artifactId,

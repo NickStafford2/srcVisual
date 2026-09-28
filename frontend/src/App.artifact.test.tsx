@@ -157,6 +157,17 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
       if (url.includes(`/files/${file.file_id}/source?`)) {
         return jsonResponse(source);
       }
+      if (url.includes(`/files/${file.file_id}/diff-tree?`)) {
+        return jsonResponse({
+          schema_version: 1,
+          artifact_id: manifest.artifact_id,
+          file_id: file.file_id,
+          roots: [],
+          node_count: 0,
+          total_node_count: 0,
+          truncated: false,
+        });
+      }
       if (url.includes(`/files/${file.file_id}/tree?`)) {
         return jsonResponse(tree);
       }
@@ -218,8 +229,13 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   await user.click(screen.getByRole("tab", { name: "Input" }));
   await user.click(screen.getByRole("tab", { name: /Custom XML/ }));
   await user.clear(screen.getByPlaceholderText("Paste srcDiff XML here"));
-  await user.type(screen.getByPlaceholderText("Paste srcDiff XML here"), "<unit />");
-  expect(screen.getByText("e2e_generated_example.xml", { selector: "header p" })).toBeInTheDocument();
+  await user.type(
+    screen.getByPlaceholderText("Paste srcDiff XML here"),
+    "<unit />",
+  );
+  expect(
+    screen.getByText("e2e_generated_example.xml", { selector: "header p" }),
+  ).toBeInTheDocument();
   expect(screen.getByText("Example · Development")).toBeInTheDocument();
 });
 

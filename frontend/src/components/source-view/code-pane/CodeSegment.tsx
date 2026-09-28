@@ -94,7 +94,9 @@ export function CodeSegment({
         data-highlighted-segment={isVisuallyHighlighted ? "true" : "false"}
         data-highlight-kind={segment.kind}
         data-diff-kind={diffKind ?? undefined}
+        data-diff-region-ids={diffRegionIds(segment)}
         data-node-id={segment.nodeId ?? undefined}
+        data-source-revision={revision}
         className={[
           getSourceSegmentClasses(segment.kind, isVisuallyHighlighted),
           selected
@@ -134,6 +136,7 @@ export function CodeSegment({
       data-highlighted-segment="true"
       data-highlight-kind={segment.kind}
       data-node-id={segment.nodeId ?? undefined}
+      data-diff-region-ids={diffRegionIds(segment)}
       data-move-id={segment.moveId}
       data-move-visual-state={moveVisualState}
       data-source-revision={revision}
@@ -149,6 +152,11 @@ export function CodeSegment({
       {text}
     </span>
   );
+}
+
+function diffRegionIds(segment: ViewerLineSegment) {
+  const ids = segment.diffRegions?.map((region) => region.nodeId) ?? [];
+  return ids.length > 0 ? ids.join("|") : undefined;
 }
 
 function sourceDiffKind(

@@ -150,5 +150,14 @@ describe("artifact source segments", () => {
       ["shared ", "common"],
       ["removed", "delete"],
     ]);
+
+    const nested = buildArtifactLineSegments(_line).find(
+      (segment) => segment.text === "removed",
+    );
+    expect(nested?.diffRegions).toEqual([
+      { nodeId: "f-1:n00000000", kind: "insert" },
+      { nodeId: "f-1:n00000001", kind: "common" },
+      { nodeId: "f-1:n00000002", kind: "delete" },
+    ]);
   });
 });

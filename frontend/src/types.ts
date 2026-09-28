@@ -80,6 +80,7 @@ export interface ArtifactManifest {
 export interface ArtifactXmlAnchor {
   node_id: string;
   kind: "common" | "delete" | "insert" | "move";
+  diff_kind?: ArtifactDiffKind | null;
   move_id: string | null;
   span: SourceCodeSpan;
 }
@@ -97,6 +98,7 @@ export interface ArtifactSourceLine {
   anchors: {
     node_id: string;
     kind: "common" | "delete" | "insert" | "move";
+    diff_kind?: ArtifactDiffKind | null;
     move_id: string | null;
     span: SourceCodeSpan;
   }[];
@@ -167,4 +169,32 @@ export interface ArtifactTreeProjection {
   root: ArtifactTreeNode | null;
   node_count: number;
   truncated: boolean;
+}
+
+export interface ArtifactDiffTreeNode extends Omit<
+  ArtifactTreeNode,
+  "children"
+> {
+  diff_kind: ArtifactDiffKind;
+  parent_diff_node_id: string | null;
+  children: ArtifactDiffTreeNode[];
+}
+
+export interface ArtifactDiffTreeProjection {
+  schema_version: 1;
+  artifact_id: string;
+  file_id: string;
+  roots: ArtifactDiffTreeNode[];
+  node_count: number;
+  total_node_count: number;
+  truncated: boolean;
+}
+
+export type ArtifactDiffRegionRelation = "selected" | "ancestor" | "child";
+
+export interface ArtifactDiffOverlayRegion {
+  nodeId: string;
+  kind: ArtifactDiffKind;
+  relation: ArtifactDiffRegionRelation;
+  distance: number;
 }
