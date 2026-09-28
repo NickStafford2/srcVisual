@@ -331,7 +331,7 @@ function SourceCell({
             revision={revision}
             segment={segment}
             visibleMoveIds={visibleMoveIds}
-            selected={segment.nodeId === selectedNodeId}
+            selected={selectedNodeId !== null && segment.nodeId === selectedNodeId}
             onMoveInspect={onInspectMove}
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}

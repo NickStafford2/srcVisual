@@ -97,6 +97,8 @@ describe("ArtifactSourcePane", () => {
     );
 
     expect(await screen.findByText("old();")).toBeInTheDocument();
+    expect(screen.getByText("old();")).not.toHaveClass("underline");
+    expect(screen.getByText("new();")).not.toHaveClass("underline");
     expect(fetchArtifactSource).toHaveBeenCalledWith(
       "artifact-1",
       "f-1",
