@@ -38,6 +38,10 @@ from srcdiffvisual.history.client import (
     read_history_pairs,
     read_history_status,
 )
+from srcdiffvisual.history.repositories import (
+    HistoryRepository,
+    HistoryRepositoryRegistry,
+)
 from srcdiffvisual.runs.models import RUN_CONTRACT_SCHEMA_VERSION
 from srcdiffvisual.runs.events import stream_run_events
 from srcdiffvisual.runs.store import InvalidRunTransitionError, RunNotFoundError
@@ -224,10 +228,23 @@ def artifact_node(artifact_id: str, node_id: str) -> tuple[dict[str, object], in
     )
 
 
+@api.get("/history/repositories")
+def history_repositories() -> tuple[dict[str, object], int]:
+    try:
+        registry = _history_repository_registry()
+    except HistoryConfigurationError as error:
+        return history_error_response(error)
+    return registry.public_dict(), 200
+
+
 @api.get("/history/status")
 def history_status() -> tuple[dict[str, object], int]:
     try:
         result = read_history_status(_history_repository())
+    except HistoryConfigurationError as error:
+        return history_error_response(error)
+    except ValueError as error:
+        return {"error": str(error)}, 400
     except Exception as error:
         return history_error_response(error)
     return result, 200
@@ -247,6 +264,8 @@ def history_pairs() -> tuple[dict[str, object], int]:
             after=after,
             oldest_first=oldest_first,
         )
+    except HistoryConfigurationError as error:
+        return history_error_response(error)
     except ValueError as error:
         return {"error": str(error)}, 400
     except Exception as error:
@@ -258,6 +277,8 @@ def history_pairs() -> tuple[dict[str, object], int]:
 def history_pair(pair_number: int) -> tuple[dict[str, object], int]:
     try:
         result = read_history_pair(_history_repository(), pair_number)
+    except HistoryConfigurationError as error:
+        return history_error_response(error)
     except ValueError as error:
         return {"error": str(error)}, 400
     except Exception as error:
@@ -316,17 +337,20 @@ def create_history_run(
     pair_number: int,
 ) -> tuple[dict[str, object], int, dict[str, str]] | tuple[dict[str, str], int]:
     try:
-        _repository = _history_repository()
+        _configured_repository = _configured_history_repository()
+        _repository = _configured_repository.path
         _fingerprint = build_history_artifact_fingerprint(
             _repository,
             pair_number,
             artifact_schema_version=ARTIFACT_SCHEMA_VERSION,
+            repository_id=_configured_repository.repository_id,
         )
         _excluded_completed_run_ids: set[str] = set()
         while True:
             _acquisition = current_app.config["RUN_STORE"].acquire_history_run(
                 pair_number,
                 _fingerprint,
+                repository_id=_configured_repository.repository_id,
                 excluded_completed_run_ids=frozenset(_excluded_completed_run_ids),
             )
             if _acquisition.disposition != "artifact":
@@ -500,14 +524,22 @@ def get_progress_token() -> str | None:
     return token
 
 
-def _history_repository() -> Path:
-    repository = current_app.config.get("HISTORY_REPOSITORY")
-    if repository is None:
+def _history_repository_registry() -> HistoryRepositoryRegistry:
+    registry = current_app.config.get("HISTORY_REPOSITORIES")
+    if registry is None:
         raise HistoryConfigurationError(
             "History browsing is not configured. Set "
-            "SRCDIFFVISUAL_HISTORY_REPOSITORY when starting srcDiffVisual."
+            "SRCDIFFVISUAL_HISTORY_REPOSITORIES when starting srcDiffVisual."
         )
-    return repository
+    return registry
+
+
+def _configured_history_repository() -> HistoryRepository:
+    return _history_repository_registry().resolve(request.args.get("repository"))
+
+
+def _history_repository() -> Path:
+    return _configured_history_repository().path
 
 
 def _last_event_id() -> int:

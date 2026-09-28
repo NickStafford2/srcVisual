@@ -21,9 +21,12 @@ from srcdiffvisual.core.commands import BackendCommandError
 from srcdiffvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
-    get_history_repository,
     materialize_history_pair,
     read_materialized_move_results,
+)
+from srcdiffvisual.history.repositories import (
+    HistoryRepositoryRegistry,
+    get_history_repository_registry,
 )
 from srcdiffvisual.runs.models import RunRecord
 from srcdiffvisual.runs.store import RunStore, get_run_database_path
@@ -129,11 +132,11 @@ class HistoryRunExecutor:
         self,
         *,
         store: RunStore,
-        history_repository: Path,
+        history_repositories: HistoryRepositoryRegistry,
         artifact_root: Path,
     ) -> None:
         self.store = store
-        self.history_repository = history_repository
+        self.history_repositories = history_repositories
         self.artifact_root = artifact_root
 
     def execute(self, run_id: str, artifact_id: str) -> None:
@@ -160,8 +163,9 @@ class HistoryRunExecutor:
             run.run_id,
             f"Regenerating history pair {run.history_pair} with its frozen tools.",
         )
+        _repository = self.history_repositories.resolve(run.repository_id).path
         _materialized = materialize_history_pair(
-            self.history_repository,
+            _repository,
             run.history_pair,
         )
         _producer_results = read_materialized_move_results(_materialized)
@@ -204,10 +208,10 @@ def main() -> None:
     _artifact_root = get_artifact_root()
     _store = RunStore(get_run_database_path(_artifact_root))
     _store.initialize()
-    _repository = get_history_repository()
-    if _repository is None:
+    _repositories = get_history_repository_registry()
+    if _repositories is None:
         raise HistoryConfigurationError(
-            "SRCDIFFVISUAL_HISTORY_REPOSITORY is required by the history worker."
+            "SRCDIFFVISUAL_HISTORY_REPOSITORIES is required by the history worker."
         )
     if _arguments.execute_run is not None:
         def _terminate_execution(signum: int, frame: object) -> None:
@@ -218,7 +222,7 @@ def main() -> None:
         try:
             HistoryRunExecutor(
                 store=_store,
-                history_repository=_repository,
+                history_repositories=_repositories,
                 artifact_root=_artifact_root,
             ).execute(_arguments.execute_run, _arguments.artifact_id)
         except _ExecutionTerminated:

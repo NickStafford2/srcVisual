@@ -182,12 +182,56 @@ def test_get_example_rejects_unknown_filename(
 
 def test_history_status_requires_configured_repository(monkeypatch) -> None:
     monkeypatch.delenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", raising=False)
+    monkeypatch.delenv("SRCDIFFVISUAL_HISTORY_REPOSITORIES", raising=False)
 
     client = create_app().test_client()
     response = client.get("/api/history/status")
 
     assert response.status_code == 503
     assert "not configured" in response.get_json()["error"]
+
+
+def test_history_repository_registry_selects_an_allowed_repository(
+    monkeypatch, tmp_path: Path
+) -> None:
+    notepadpp = tmp_path / "notepadpp"
+    sqlite = tmp_path / "sqlite"
+    monkeypatch.setenv(
+        "SRCDIFFVISUAL_HISTORY_REPOSITORIES",
+        json.dumps(
+            [
+                {"id": "notepadpp", "label": "Notepad++", "path": str(notepadpp)},
+                {"id": "sqlite", "label": "SQLite", "path": str(sqlite)},
+            ]
+        ),
+    )
+    monkeypatch.setenv("SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY", "notepadpp")
+    captured: list[Path] = []
+    monkeypatch.setattr(
+        routes_module,
+        "read_history_status",
+        lambda repository: captured.append(repository)
+        or {"schema_version": 2, "analysis": {"name": repository.name}},
+    )
+    client = create_app().test_client()
+
+    repositories = client.get("/api/history/repositories")
+    selected = client.get("/api/history/status?repository=sqlite")
+    rejected = client.get("/api/history/status?repository=unknown")
+
+    assert repositories.status_code == 200
+    assert repositories.get_json() == {
+        "schema_version": 1,
+        "default_id": "notepadpp",
+        "repositories": [
+            {"id": "notepadpp", "label": "Notepad++"},
+            {"id": "sqlite", "label": "SQLite"},
+        ],
+    }
+    assert selected.status_code == 200
+    assert selected.get_json()["analysis"]["name"] == "sqlite"
+    assert captured == [sqlite.absolute()]
+    assert rejected.status_code == 400
 
 
 def test_history_status_returns_cli_document(
@@ -371,7 +415,7 @@ def test_create_history_run_returns_queued_run_and_location(
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
-        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+        lambda repository, pair_number, **kwargs: "f" * 64,
     )
 
     response = create_app().test_client().post("/api/history/pairs/13/runs")
@@ -395,7 +439,7 @@ def test_create_history_run_follows_active_matching_run(
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
-        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+        lambda repository, pair_number, **kwargs: "f" * 64,
     )
     _app = create_app()
 
@@ -417,7 +461,7 @@ def test_create_history_run_reuses_only_valid_completed_artifact(
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
-        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+        lambda repository, pair_number, **kwargs: "f" * 64,
     )
     _app = create_app()
     _store = _app.config["RUN_STORE"]
@@ -444,7 +488,7 @@ def test_create_history_run_queues_fresh_work_after_invalid_reuse(
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
-        lambda repository, pair_number, artifact_schema_version: "f" * 64,
+        lambda repository, pair_number, **kwargs: "f" * 64,
     )
     _app = create_app()
     _store = _app.config["RUN_STORE"]

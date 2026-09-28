@@ -3,6 +3,7 @@ import {
   cancelHistoryRun,
   fetchHistoryPair,
   fetchHistoryPairs,
+  fetchHistoryRepositories,
   fetchHistoryStatus,
   visualizeHistoryPair,
 } from "../api";
@@ -10,6 +11,7 @@ import type { ArtifactManifest, ComparisonContext } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
+  HistoryRepositoryOption,
   HistoryRun,
   HistoryRunEvent,
   HistorySelection,
@@ -23,6 +25,10 @@ export function useHistoryData(
     context?: ComparisonContext,
   ) => void,
 ) {
+  const [repositories, setRepositories] = useState<HistoryRepositoryOption[]>(
+    [],
+  );
+  const [selectedRepositoryId, setSelectedRepositoryId] = useState("");
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);
   const [pairs, setPairs] = useState<HistoryPairListItem[]>([]);
   const [nextAfter, setNextAfter] = useState<number | null>(null);
@@ -44,11 +50,44 @@ export function useHistoryData(
     if (!enabled) return;
 
     let isActive = true;
+    setError(null);
+    void fetchHistoryRepositories()
+      .then((document) => {
+        if (!isActive) return;
+        setRepositories(document.repositories);
+        setSelectedRepositoryId((current) =>
+          document.repositories.some((repository) => repository.id === current)
+            ? current
+            : document.default_id,
+        );
+      })
+      .catch((loadError: unknown) => {
+        if (!isActive) return;
+        setError(errorMessage(loadError, "Unable to load repositories."));
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [enabled, refreshKey]);
+
+  useEffect(() => {
+    if (!enabled || !selectedRepositoryId) return;
+
+    let isActive = true;
     setIsLoading(true);
     setError(null);
+    setStatus(null);
+    setPairs([]);
+    setNextAfter(null);
     setSelectedPair(null);
+    setActiveRun(null);
+    setRunEvents([]);
 
-    void Promise.all([fetchHistoryStatus(), fetchHistoryPairs(selection)])
+    void Promise.all([
+      fetchHistoryStatus(selectedRepositoryId),
+      fetchHistoryPairs(selectedRepositoryId, selection),
+    ])
       .then(([statusDocument, pairDocument]) => {
         if (!isActive) return;
         setStatus(statusDocument);
@@ -66,13 +105,13 @@ export function useHistoryData(
     return () => {
       isActive = false;
     };
-  }, [enabled, refreshKey, selection]);
+  }, [enabled, refreshKey, selectedRepositoryId, selection]);
 
   async function selectPair(pairNumber: number) {
     setIsLoadingPair(true);
     setError(null);
     try {
-      const document = await fetchHistoryPair(pairNumber);
+      const document = await fetchHistoryPair(selectedRepositoryId, pairNumber);
       setSelectedPair(document.pair);
     } catch (loadError) {
       setError(
@@ -88,7 +127,11 @@ export function useHistoryData(
     setIsLoadingMore(true);
     setError(null);
     try {
-      const document = await fetchHistoryPairs(selection, nextAfter);
+      const document = await fetchHistoryPairs(
+        selectedRepositoryId,
+        selection,
+        nextAfter,
+      );
       setPairs((current) => [...current, ...document.pairs.items]);
       setNextAfter(document.pairs.next_after);
     } catch (loadError) {
@@ -105,19 +148,29 @@ export function useHistoryData(
     setActiveRun(null);
     setRunEvents([]);
     try {
-      const payload = await visualizeHistoryPair(pairNumber, {
-        onRun: setActiveRun,
-        onEvent: (event) => {
-          setRunEvents((current) =>
-            current.some((item) => item.sequence === event.sequence)
-              ? current
-              : [...current, event],
-          );
+      const payload = await visualizeHistoryPair(
+        selectedRepositoryId,
+        pairNumber,
+        {
+          onRun: setActiveRun,
+          onEvent: (event) => {
+            setRunEvents((current) =>
+              current.some((item) => item.sequence === event.sequence)
+                ? current
+                : [...current, event],
+            );
+          },
         },
-      });
+      );
       onVisualization(payload, {
         mode: "history",
-        label: `${status?.analysis.repository ?? "Repository"} · Pair ${pairNumber}`,
+        label: `${
+          repositories.find(
+            (repository) => repository.id === selectedRepositoryId,
+          )?.label ??
+          status?.analysis.repository ??
+          "Repository"
+        } · Pair ${pairNumber}`,
         before:
           selectedPair?.number === pairNumber
             ? selectedPair.old_commit
@@ -160,6 +213,8 @@ export function useHistoryData(
   }
 
   return {
+    repositories,
+    selectedRepositoryId,
     status,
     pairs,
     nextAfter,
@@ -173,6 +228,7 @@ export function useHistoryData(
     activeRun,
     runEvents,
     error,
+    setSelectedRepositoryId,
     setSelection,
     selectPair,
     loadMore,

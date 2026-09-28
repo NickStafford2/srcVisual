@@ -25,6 +25,7 @@ class RunDiagnostic:
 class RunRecord:
     run_id: str
     kind: RunKind
+    repository_id: str
     history_pair: int
     status: RunStatus
     artifact_id: str | None
@@ -39,6 +40,7 @@ class RunRecord:
         return {
             "run_id": self.run_id,
             "kind": self.kind,
+            "repository_id": self.repository_id,
             "history_pair": self.history_pair,
             "status": self.status,
             "artifact_id": self.artifact_id,

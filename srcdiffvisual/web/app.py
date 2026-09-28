@@ -12,7 +12,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from srcdiffvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
 from srcdiffvisual.bigmovebench.routes import bigmovebench_api
 from srcdiffvisual.core.commands import get_command_timeout_seconds
-from srcdiffvisual.history.client import get_history_repository
+from srcdiffvisual.history.repositories import get_history_repository_registry
 from srcdiffvisual.runs.store import RunStore, get_run_database_path
 from srcdiffvisual.web._routes import api
 
@@ -26,7 +26,7 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = get_max_content_length_bytes()
     app.config["COMMAND_TIMEOUT_SECONDS"] = get_command_timeout_seconds()
     app.config["EXAMPLES_DIR"] = get_examples_dir()
-    app.config["HISTORY_REPOSITORY"] = get_history_repository()
+    app.config["HISTORY_REPOSITORIES"] = get_history_repository_registry()
     app.config["ARTIFACT_ROOT"] = get_artifact_root()
     cleanup_stale_staging(app.config["ARTIFACT_ROOT"])
     app.config["RUN_STORE"] = RunStore(

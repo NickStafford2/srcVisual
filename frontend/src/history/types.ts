@@ -1,5 +1,16 @@
 export type HistorySelection = "all" | "moves" | "failed";
 
+export interface HistoryRepositoryOption {
+  id: string;
+  label: string;
+}
+
+export interface HistoryRepositoryDocument {
+  schema_version: 1;
+  default_id: string;
+  repositories: HistoryRepositoryOption[];
+}
+
 export interface HistoryStatusDocument {
   schema_version: 2;
   analysis: {
@@ -105,6 +116,7 @@ export type HistoryRunStatus =
 export interface HistoryRun {
   run_id: string;
   kind: "history-visualization";
+  repository_id: string;
   history_pair: number;
   status: HistoryRunStatus;
   artifact_id: string | null;

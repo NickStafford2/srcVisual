@@ -13,8 +13,8 @@ input workflows:
 - load a checked-in example;
 - paste or upload srcDiff XML;
 - import a deterministic BigMoveBench Type-3 review ZIP; or
-- browse one configured `srcmove-history` analysis and regenerate a selected
-  pair with that analysis's admitted tools.
+- browse configured `srcmove-history` analyses and regenerate a selected pair
+  with that analysis's admitted tools.
 
 For XML input, the backend extracts both source revisions with
 `archive_reader`. It runs `srcdiff --position` only when position annotations
@@ -94,12 +94,14 @@ Port 5000 serves the packaged build; port 5173 provides frontend hot reload
 through `compose.dev.yaml`. In development, the API source is also mounted with Gunicorn reload.
 Python dependency and native dependency edits still require rebuilding the image;
 the history worker continues using its packaged code. Outside development,
-application changes require rebuilding the packaged application. The checked-in Compose configuration mounts the
-Notepad++ reference repository as the one preconfigured analysis target. Its
-source worktree is read-only; only its `.git` and `.srcmove` directories are
-writable so the `srcmove-history` CLI can manage its own operation state and
-saved comparison artifacts. Change the volume sources and
-`SRCDIFFVISUAL_HISTORY_REPOSITORY` together to use another analyzed repository.
+application changes require rebuilding the packaged application. The checked-in
+Compose configuration makes the analyzed Notepad++ and SQLite reference
+repositories available in the History selector, with Notepad++ selected by
+default. Their source worktrees are read-only; only their `.git` and `.srcmove`
+directories are writable so the `srcmove-history` CLI can manage its own
+operation state and saved comparison artifacts. Additional repositories must be
+mounted into both services and added to the allow-listed
+`SRCDIFFVISUAL_HISTORY_REPOSITORIES` JSON configuration.
 
 Published visualization artifacts are stored in the named
 `srcdiffvisual-artifacts` volume mounted at `/var/lib/srcdiffvisual/artifacts`. They
@@ -141,8 +143,9 @@ completed artifacts are never reused and fresh work is queued instead.
 
 ## Current limitations
 
-- The local history browser targets one repository configured when the service
-  starts; the browser cannot choose repositories or start a full analysis.
+- The local history browser can choose only repositories explicitly mounted and
+  configured when the services start; it cannot browse arbitrary paths or start
+  a full analysis.
 - Uploaded XML is processed synchronously. Its optional progress stream uses a
   process-local broker, so a multi-worker deployment can route the upload and
   progress connection to different workers. Durable history progress does not

@@ -99,17 +99,46 @@ describe("repository history browser", () => {
         if (url === "/api/examples") {
           return jsonResponse({ examples: [] });
         }
-        if (url === "/api/history/status") {
+        if (url === "/api/history/repositories") {
+          return jsonResponse({
+            schema_version: 1,
+            default_id: "notepadpp",
+            repositories: [
+              { id: "notepadpp", label: "Notepad++" },
+              { id: "sqlite", label: "SQLite" },
+            ],
+          });
+        }
+        if (url === "/api/history/status?repository=notepadpp") {
           return jsonResponse(statusDocument);
         }
-        if (url === "/api/history/pairs?selection=moves&limit=50") {
+        if (url === "/api/history/status?repository=sqlite") {
+          return jsonResponse({
+            ...statusDocument,
+            analysis: { ...statusDocument.analysis, name: "sqlite" },
+          });
+        }
+        if (
+          url ===
+          "/api/history/pairs?repository=notepadpp&selection=moves&limit=50"
+        ) {
           return jsonResponse({
             schema_version: 1,
             analysis: statusDocument.analysis,
             pairs: { items: [pairItem], next_after: null },
           });
         }
-        if (url === "/api/history/pairs/1") {
+        if (
+          url ===
+          "/api/history/pairs?repository=sqlite&selection=moves&limit=50"
+        ) {
+          return jsonResponse({
+            schema_version: 1,
+            analysis: { ...statusDocument.analysis, name: "sqlite" },
+            pairs: { items: [], next_after: null },
+          });
+        }
+        if (url === "/api/history/pairs/1?repository=notepadpp") {
           return jsonResponse({
             schema_version: 1,
             analysis: statusDocument.analysis,
@@ -136,7 +165,7 @@ describe("repository history browser", () => {
             },
           });
         }
-        if (url === "/api/history/pairs/1/runs") {
+        if (url === "/api/history/pairs/1/runs?repository=notepadpp") {
           return jsonResponse(
             {
               schema_version: 1,
@@ -200,7 +229,9 @@ describe("repository history browser", () => {
 
     await user.click(screen.getByRole("tab", { name: /^History/ }));
 
-    expect(await screen.findByText("notepadpp")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Notepad++" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("370")).toBeInTheDocument();
     expect(screen.getByText("336")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "With moves" })).toHaveAttribute(
@@ -243,11 +274,16 @@ describe("repository history browser", () => {
         "true",
       );
     });
-    expect(fetch).toHaveBeenCalledWith("/api/history/pairs/1/runs", {
-      method: "POST",
-    });
-    expect(screen.getByText(`${statusDocument.analysis.repository} · Pair 1`)).toBeInTheDocument();
-    expect(screen.getByText(`Before ${pairItem.old_commit.slice(0, 10)} → After ${pairItem.new_commit.slice(0, 10)}`)).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/history/pairs/1/runs?repository=notepadpp",
+      { method: "POST" },
+    );
+    expect(screen.getByText("Notepad++ · Pair 1")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `Before ${pairItem.old_commit.slice(0, 10)} → After ${pairItem.new_commit.slice(0, 10)}`,
+      ),
+    ).toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalledWith(
       "/api/history/pairs/1/visualize",
       expect.anything(),
@@ -278,6 +314,23 @@ describe("repository history browser", () => {
     ).toBeInTheDocument();
     expect(MockEventSource.instances[0].closed).toBe(true);
   });
+
+  it("switches between configured repository histories", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: /^History/ }));
+
+    const repository = await screen.findByRole("combobox", {
+      name: "Repository",
+    });
+    expect(repository).toHaveValue("notepadpp");
+    await user.selectOptions(repository, "sqlite");
+
+    expect(
+      await screen.findByRole("heading", { name: "SQLite" }),
+    ).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/history/status?repository=sqlite");
+  });
 });
 
 function historyRun(
@@ -287,6 +340,7 @@ function historyRun(
   return {
     run_id: "r".repeat(32),
     kind: "history-visualization",
+    repository_id: "notepadpp",
     history_pair: 1,
     status,
     artifact_id: status === "completed" ? "a".repeat(32) : null,

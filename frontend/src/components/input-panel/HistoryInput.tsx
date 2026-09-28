@@ -10,6 +10,8 @@ const FILTERS = [
 
 export function HistoryInput(props: HistoryInputProps) {
   const {
+    repositories,
+    selectedRepositoryId,
     status,
     pairs,
     nextAfter,
@@ -23,6 +25,7 @@ export function HistoryInput(props: HistoryInputProps) {
     activeRun,
     runEvents,
     error,
+    setSelectedRepositoryId,
     setSelection,
     selectPair,
     loadMore,
@@ -30,6 +33,9 @@ export function HistoryInput(props: HistoryInputProps) {
     cancelVisualization,
     refresh,
   } = props;
+  const selectedRepositoryLabel = repositories.find(
+    (repository) => repository.id === selectedRepositoryId,
+  )?.label;
 
   return (
     <div className="space-y-4" aria-label="Repository history browser">
@@ -39,21 +45,41 @@ export function HistoryInput(props: HistoryInputProps) {
             Repository analysis
           </p>
           <h2 className="mt-1 text-xl font-semibold text-slate-100">
-            {status?.analysis.name ?? "Repository history"}
+            {selectedRepositoryLabel ??
+              status?.analysis.name ??
+              "Repository history"}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
             Browse durable srcMove results and open a move-focused visualization
             of any successfully compared pair.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={isLoading}
-          className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-50"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400">
+            <span className="sr-only">Repository</span>
+            <select
+              aria-label="Repository"
+              value={selectedRepositoryId}
+              onChange={(event) => setSelectedRepositoryId(event.target.value)}
+              disabled={repositories.length < 2 || isLoading}
+              className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
+            >
+              {repositories.map((repository) => (
+                <option key={repository.id} value={repository.id}>
+                  {repository.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={isLoading}
+            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-50"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -161,7 +187,10 @@ function HistoryPairList({
         <span>Moves</span>
         <span>Time</span>
       </div>
-      <div className="max-h-[520px] space-y-1 overflow-auto" aria-label="History commit pairs">
+      <div
+        className="max-h-[520px] space-y-1 overflow-auto"
+        aria-label="History commit pairs"
+      >
         {isLoading ? (
           <p className="px-3 py-8 text-center text-sm text-slate-400">
             Loading repository history…
@@ -235,21 +264,32 @@ function HistoryPairDetails({
     return <DetailShell>Loading pair evidence…</DetailShell>;
   }
   if (!pair) {
-    return <DetailShell>Select a commit pair to inspect its evidence.</DetailShell>;
+    return (
+      <DetailShell>Select a commit pair to inspect its evidence.</DetailShell>
+    );
   }
 
   return (
-    <section className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-4" aria-label={`Commit pair ${pair.number} details`}>
+    <section
+      className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-4"
+      aria-label={`Commit pair ${pair.number} details`}
+    >
       <p className="text-xs text-slate-500">Commit pair</p>
       <h3 className="text-xl font-semibold text-slate-100">#{pair.number}</h3>
-      <p className="mt-2 break-all font-mono text-[11px] text-slate-400">
+      <p className="mt-2 font-mono text-[11px] break-all text-slate-400">
         {shortCommit(pair.old_commit, 12)} → {shortCommit(pair.new_commit, 12)}
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <DetailStat label="Status" value={displayStatus(pair.status)} />
         <DetailStat label="Moves" value={String(pair.moves.length)} />
-        <DetailStat label="Changed paths" value={String(pair.changed_path_count)} />
-        <DetailStat label="Analyzable" value={String(pair.analyzable_path_count)} />
+        <DetailStat
+          label="Changed paths"
+          value={String(pair.changed_path_count)}
+        />
+        <DetailStat
+          label="Analyzable"
+          value={String(pair.analyzable_path_count)}
+        />
       </div>
       <button
         type="button"
@@ -277,7 +317,10 @@ function HistoryPairDetails({
               </button>
             ) : null}
           </div>
-          <ol className="mt-2 space-y-1 text-emerald-100/80" aria-label="History run progress">
+          <ol
+            className="mt-2 space-y-1 text-emerald-100/80"
+            aria-label="History run progress"
+          >
             {runEvents.map((event) => (
               <li key={event.sequence}>{event.message}</li>
             ))}
@@ -294,7 +337,10 @@ function HistoryPairDetails({
           <p className="text-sm text-slate-400">No moves detected.</p>
         ) : null}
         {pair.moves.map((move, index) => (
-          <article key={index} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+          <article
+            key={index}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+          >
             <p className="text-xs font-semibold text-amber-200">
               Move {index + 1} · {move.match_kind ?? "unknown"}
             </p>
@@ -331,7 +377,10 @@ function MovePaths({ label, paths }: { label: string; paths: string[] }) {
         {label}
       </span>
       {paths.map((path) => (
-        <code key={path} className="mt-1 block break-all text-[10px] leading-4 text-slate-300">
+        <code
+          key={path}
+          className="mt-1 block text-[10px] leading-4 break-all text-slate-300"
+        >
           {path}
         </code>
       ))}

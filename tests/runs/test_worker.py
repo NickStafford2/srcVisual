@@ -5,6 +5,10 @@ import sys
 
 from srcdiffvisual.artifacts.models import PublishedArtifact
 from srcdiffvisual.core.commands import BackendCommandError
+from srcdiffvisual.history.repositories import (
+    HistoryRepository,
+    HistoryRepositoryRegistry,
+)
 from srcdiffvisual.runs.store import RunStore
 import srcdiffvisual.runs.worker as worker_module
 from srcdiffvisual.runs.worker import HistoryRunExecutor, HistoryRunWorker
@@ -15,7 +19,14 @@ def _components(tmp_path: Path) -> tuple[RunStore, HistoryRunExecutor]:
     _store.initialize()
     return _store, HistoryRunExecutor(
         store=_store,
-        history_repository=tmp_path / "repository",
+        history_repositories=HistoryRepositoryRegistry(
+            {
+                "default": HistoryRepository(
+                    "default", "Repository", tmp_path / "repository"
+                )
+            },
+            "default",
+        ),
         artifact_root=tmp_path / "artifacts",
     )
 

@@ -16,7 +16,9 @@ services:
       SRCDIFFVISUAL_GUNICORN_WORKERS: "2"
       SRCDIFFVISUAL_GUNICORN_THREADS: "4"
       SRCDIFFVISUAL_GUNICORN_TIMEOUT_SECONDS: "360"
-      SRCDIFFVISUAL_HISTORY_REPOSITORY: "/history/repository"
+      SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"}]
+      SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
     volumes:
@@ -24,12 +26,15 @@ services:
       # The parent workspace builds this Linux executable incrementally. The
       # bind applies to long-running services and `docker compose run`.
       - ../srcMove/build/srcMove:/opt/srcMove/bin/srcMove:ro
-      - ../srcMove/reference-repositories/notepadpp:/history/repository:ro
+      - ../srcMove/reference-repositories/notepadpp:/history/notepadpp:ro
       # srcmove-history owns these two repository-local areas. The source
       # working tree remains read-only while repository analysis and retained
       # comparisons can update their own state.
-      - ../srcMove/reference-repositories/notepadpp/.git:/history/repository/.git:rw
-      - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/repository/.srcmove:rw
+      - ../srcMove/reference-repositories/notepadpp/.git:/history/notepadpp/.git:rw
+      - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/notepadpp/.srcmove:rw
+      - ../srcMove/reference-repositories/sqlite:/history/sqlite:ro
+      - ../srcMove/reference-repositories/sqlite/.git:/history/sqlite/.git:rw
+      - ../srcMove/reference-repositories/sqlite/.srcmove:/history/sqlite/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:
@@ -43,15 +48,20 @@ services:
     read_only: true
     environment:
       SRCDIFFVISUAL_COMMAND_TIMEOUT_SECONDS: "300"
-      SRCDIFFVISUAL_HISTORY_REPOSITORY: "/history/repository"
+      SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"}]
+      SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
     volumes:
       - srcdiffvisual-artifacts:/var/lib/srcdiffvisual/artifacts
       - ../srcMove/build/srcMove:/opt/srcMove/bin/srcMove:ro
-      - ../srcMove/reference-repositories/notepadpp:/history/repository:ro
-      - ../srcMove/reference-repositories/notepadpp/.git:/history/repository/.git:rw
-      - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/repository/.srcmove:rw
+      - ../srcMove/reference-repositories/notepadpp:/history/notepadpp:ro
+      - ../srcMove/reference-repositories/notepadpp/.git:/history/notepadpp/.git:rw
+      - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/notepadpp/.srcmove:rw
+      - ../srcMove/reference-repositories/sqlite:/history/sqlite:ro
+      - ../srcMove/reference-repositories/sqlite/.git:/history/sqlite/.git:rw
+      - ../srcMove/reference-repositories/sqlite/.srcmove:/history/sqlite/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:

@@ -96,6 +96,7 @@ def build_history_artifact_fingerprint(
     *,
     artifact_schema_version: int,
     source_projection_version: int = SOURCE_PROJECTION_VERSION,
+    repository_id: str = "default",
 ) -> str:
     """Bind srcMove's canonical pair identity to srcDiffVisual's artifact contract."""
     _document = read_history_pair(repository, pair_number)
@@ -126,6 +127,7 @@ def build_history_artifact_fingerprint(
         raise ValueError("Source projection version must be a positive integer.")
     _identity = {
         "schema_version": 1,
+        "repository_id": repository_id,
         "srcmove_pair_fingerprint": _pair_fingerprint,
         "artifact_schema_version": artifact_schema_version,
         "analysis_configuration": {

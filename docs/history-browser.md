@@ -2,25 +2,26 @@
 
 Status: implemented local workflow.
 
-The History input mode browses an existing `srcmove-history` analysis and
-opens one selected adjacent-commit comparison in srcDiffVisual. It is a local,
-Docker-oriented integration for one operator-configured repository, not a
-general filesystem browser or hosted repository-analysis service.
+The History input mode browses existing `srcmove-history` analyses and opens
+one selected adjacent-commit comparison in srcDiffVisual. It is a local,
+Docker-oriented integration for operator-configured repositories, not a general
+filesystem browser or hosted repository-analysis service.
 
 ## Ownership boundary
 
-- srcMove owns repository selection, pair numbering, frozen analysis
+- srcMove owns repository analysis, pair numbering, frozen analysis
   configuration and tools, compact move evidence, comparison execution, and
   repository-local state below `.srcmove`.
 - srcDiffVisual owns the durable run queue, progress presentation, immutable
   visualization artifacts, and frontend projections.
 - srcDiffVisual uses the versioned `srcmove-history` JSON interface. It does not
   query srcMove's private SQLite database.
-- Browser requests may select only a positive pair number. They cannot supply
-  repository paths, executables, Git revisions, or shell commands.
+- Browser requests may select an allow-listed repository ID and a positive pair
+  number. They cannot supply repository paths, executables, Git revisions, or
+  shell commands.
 
-The configured source worktree is mounted read-only. The local Compose setup
-grants narrowly scoped write access to `.git` and `.srcmove` because
+Configured source worktrees are mounted read-only. The local Compose setup
+grants narrowly scoped write access to each `.git` and `.srcmove` because
 `srcmove-history compare` records operation state and saved comparisons there.
 
 ## Current workflow
@@ -56,6 +57,7 @@ srcDiffVisual artifact schema and artifact-building configuration.
 
 ```text
 GET  /api/history/status
+GET  /api/history/repositories
 GET  /api/history/pairs
 GET  /api/history/pairs/{pair_number}
 POST /api/history/pairs/{pair_number}/runs
@@ -64,9 +66,12 @@ GET  /api/runs/{run_id}/events
 POST /api/runs/{run_id}/cancel
 ```
 
-The pair-list endpoint accepts bounded pagination and the `all`, `moves`, and
-`failed` selections. Run events use durable per-run sequence numbers and the
-standard `Last-Event-ID` header for reconnection.
+The status, pair-list, pair-detail, and run-creation endpoints accept a
+configured `repository` ID. The pair-list endpoint also accepts bounded
+pagination and the `all`, `moves`, and `failed` selections. Durable run records
+retain the repository ID so the worker cannot accidentally execute a queued
+pair against a different repository. Run events use durable per-run sequence
+numbers and the standard `Last-Event-ID` header for reconnection.
 
 ## Deliberate limits
 

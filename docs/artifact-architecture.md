@@ -432,6 +432,10 @@ requirement.
 The core artifact and durable-run API is:
 
 ```text
+GET  /api/history/repositories
+GET  /api/history/status
+GET  /api/history/pairs
+GET  /api/history/pairs/{pair_number}
 POST /api/history/pairs/{pair_number}/runs
 GET  /api/runs/{run_id}
 GET  /api/runs/{run_id}/events
@@ -531,8 +535,9 @@ change the run to `cancelled`; the worker must first terminate and reap the
 native process group. Terminal runs cannot transition again.
 
 Run creation is a fingerprinted single-flight operation. srcDiffVisual hashes
-srcMove's versioned `pair_fingerprint` together with the srcDiffVisual artifact
-schema version and artifact-building configuration. It does not inspect
+the allow-listed repository ID and srcMove's versioned `pair_fingerprint`
+together with the srcDiffVisual artifact schema version and artifact-building
+configuration. It does not inspect
 srcMove's database or recreate srcMove's history identity rules. Matching
 queued or running work returns the existing run with `202` and
 `reuse: active-run`. A matching completed run is returned with `200` and
@@ -547,8 +552,8 @@ independently of the run-status and event contracts.
 
 `GET /api/runs/{run_id}` is the polling fallback and returns run contract
 schema version 1. Its run object contains the kind `history-visualization`,
-pair number, state, nullable artifact ID, cancellation flag, safe nullable
-diagnostic, UTC lifecycle timestamps, and latest event sequence. Diagnostics
+repository ID, pair number, state, nullable artifact ID, cancellation flag,
+safe nullable diagnostic, UTC lifecycle timestamps, and latest event sequence. Diagnostics
 contain a stable code and display-safe message, never an exception traceback
 or filesystem path.
 

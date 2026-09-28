@@ -11,6 +11,7 @@ import type {
 import type {
   HistoryPairDocument,
   HistoryPairPageDocument,
+  HistoryRepositoryDocument,
   HistoryRun,
   HistoryRunCreationDocument,
   HistoryRunDocument,
@@ -55,8 +56,24 @@ export async function fetchExampleContent(filename: string): Promise<string> {
   return payload.content;
 }
 
-export async function fetchHistoryStatus(): Promise<HistoryStatusDocument> {
-  const payload = await fetchJson("/api/history/status");
+export async function fetchHistoryRepositories(): Promise<HistoryRepositoryDocument> {
+  const payload = await fetchJson("/api/history/repositories");
+  if (
+    payload.schema_version !== 1 ||
+    typeof payload.default_id !== "string" ||
+    !Array.isArray(payload.repositories)
+  ) {
+    throw new Error("Backend returned an unsupported repository list.");
+  }
+  return payload as unknown as HistoryRepositoryDocument;
+}
+
+export async function fetchHistoryStatus(
+  repositoryId: string,
+): Promise<HistoryStatusDocument> {
+  const payload = await fetchJson(
+    `/api/history/status?repository=${encodeURIComponent(repositoryId)}`,
+  );
   if (payload.schema_version !== 2 || typeof payload.analysis !== "object") {
     throw new Error("Backend returned an unsupported history status document.");
   }
@@ -64,10 +81,15 @@ export async function fetchHistoryStatus(): Promise<HistoryStatusDocument> {
 }
 
 export async function fetchHistoryPairs(
+  repositoryId: string,
   selection: HistorySelection,
   after?: number,
 ): Promise<HistoryPairPageDocument> {
-  const parameters = new URLSearchParams({ selection, limit: "50" });
+  const parameters = new URLSearchParams({
+    repository: repositoryId,
+    selection,
+    limit: "50",
+  });
   if (after !== undefined) parameters.set("after", String(after));
   const payload = await fetchJson(
     `/api/history/pairs?${parameters.toString()}`,
@@ -84,9 +106,12 @@ export async function fetchHistoryPairs(
 }
 
 export async function fetchHistoryPair(
+  repositoryId: string,
   pairNumber: number,
 ): Promise<HistoryPairDocument> {
-  const payload = await fetchJson(`/api/history/pairs/${pairNumber}`);
+  const payload = await fetchJson(
+    `/api/history/pairs/${pairNumber}?repository=${encodeURIComponent(repositoryId)}`,
+  );
   if (payload.schema_version !== 1 || typeof payload.pair !== "object") {
     throw new Error("Backend returned unsupported history pair evidence.");
   }
@@ -94,15 +119,17 @@ export async function fetchHistoryPair(
 }
 
 export async function visualizeHistoryPair(
+  repositoryId: string,
   pairNumber: number,
   observer: {
     onRun?: (run: HistoryRun) => void;
     onEvent?: (event: HistoryRunEvent) => void;
   } = {},
 ): Promise<ArtifactManifest> {
-  const response = await fetch(`/api/history/pairs/${pairNumber}/runs`, {
-    method: "POST",
-  });
+  const response = await fetch(
+    `/api/history/pairs/${pairNumber}/runs?repository=${encodeURIComponent(repositoryId)}`,
+    { method: "POST" },
+  );
   const payload: unknown = await response.json();
   if (!response.ok) {
     throw new Error(
@@ -284,6 +311,7 @@ function isHistoryRun(value: unknown): value is HistoryRun {
   return (
     typeof run.run_id === "string" &&
     run.kind === "history-visualization" &&
+    typeof run.repository_id === "string" &&
     typeof run.history_pair === "number" &&
     run.history_pair > 0 &&
     (run.artifact_id === null || typeof run.artifact_id === "string") &&

@@ -15,7 +15,7 @@ from srcdiffvisual.runs.models import (
     RunStatus,
 )
 
-RUN_STORE_SCHEMA_VERSION = 2
+RUN_STORE_SCHEMA_VERSION = 3
 RUN_DATABASE_FILENAME = "runs.sqlite3"
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
 
@@ -41,7 +41,7 @@ class RunStore:
         with closing(self._connect()) as _database:
             _database.execute("PRAGMA journal_mode = WAL")
             _version = int(_database.execute("PRAGMA user_version").fetchone()[0])
-            if _version not in {0, 1, RUN_STORE_SCHEMA_VERSION}:
+            if _version not in {0, 1, 2, RUN_STORE_SCHEMA_VERSION}:
                 raise RunStoreSchemaError(
                     "Unsupported run store schema: "
                     f"expected {RUN_STORE_SCHEMA_VERSION}, received {_version}."
@@ -51,6 +51,7 @@ class RunStore:
                 CREATE TABLE IF NOT EXISTS runs (
                     run_id TEXT PRIMARY KEY,
                     kind TEXT NOT NULL CHECK (kind = 'history-visualization'),
+                    repository_id TEXT NOT NULL DEFAULT 'default',
                     history_pair INTEGER NOT NULL CHECK (history_pair > 0),
                     fingerprint TEXT CHECK (
                         fingerprint IS NULL
@@ -110,23 +111,28 @@ class RunStore:
                     ON run_events(run_id, created_at);
                 """
             )
-            if _version == 1:
-                _columns = {
-                    str(_row[1])
-                    for _row in _database.execute("PRAGMA table_info(runs)")
-                }
-                if "fingerprint" not in _columns:
-                    _database.execute(
-                        """
-                        ALTER TABLE runs ADD COLUMN fingerprint TEXT CHECK (
-                            fingerprint IS NULL
-                            OR (
-                                length(fingerprint) = 64
-                                AND fingerprint NOT GLOB '*[^0-9a-f]*'
-                            )
+            _columns = {
+                str(_row[1]) for _row in _database.execute("PRAGMA table_info(runs)")
+            }
+            if "fingerprint" not in _columns:
+                _database.execute(
+                    """
+                    ALTER TABLE runs ADD COLUMN fingerprint TEXT CHECK (
+                        fingerprint IS NULL
+                        OR (
+                            length(fingerprint) = 64
+                            AND fingerprint NOT GLOB '*[^0-9a-f]*'
                         )
-                        """
                     )
+                    """
+                )
+            if "repository_id" not in _columns:
+                _database.execute(
+                    """
+                    ALTER TABLE runs
+                    ADD COLUMN repository_id TEXT NOT NULL DEFAULT 'default'
+                    """
+                )
             _database.execute(
                 """
                 CREATE UNIQUE INDEX IF NOT EXISTS active_run_fingerprint
@@ -138,8 +144,11 @@ class RunStore:
             _database.execute(f"PRAGMA user_version = {RUN_STORE_SCHEMA_VERSION}")
             _database.commit()
 
-    def create_history_run(self, history_pair: int) -> RunRecord:
+    def create_history_run(
+        self, history_pair: int, *, repository_id: str = "default"
+    ) -> RunRecord:
         _validate_history_pair(history_pair)
+        _validate_repository_id(repository_id)
         _run_id = uuid4().hex
         _created_at = _timestamp()
         with closing(self._connect()) as _database:
@@ -148,10 +157,10 @@ class RunStore:
                 _database.execute(
                     """
                     INSERT INTO runs (
-                        run_id, kind, history_pair, status, created_at
-                    ) VALUES (?, 'history-visualization', ?, 'queued', ?)
+                        run_id, kind, repository_id, history_pair, status, created_at
+                    ) VALUES (?, 'history-visualization', ?, ?, 'queued', ?)
                     """,
-                    (_run_id, history_pair, _created_at),
+                    (_run_id, repository_id, history_pair, _created_at),
                 )
                 self._insert_event(
                     _database,
@@ -172,10 +181,12 @@ class RunStore:
         history_pair: int,
         fingerprint: str,
         *,
+        repository_id: str = "default",
         excluded_completed_run_ids: frozenset[str] = frozenset(),
     ) -> RunAcquisition:
         """Atomically follow active work, offer completed work, or queue new work."""
         _validate_history_pair(history_pair)
+        _validate_repository_id(repository_id)
         _validate_fingerprint(fingerprint)
         for _run_id in excluded_completed_run_ids:
             _validate_run_id(_run_id)
@@ -221,11 +232,13 @@ class RunStore:
                     _database.execute(
                         """
                         INSERT INTO runs (
-                            run_id, kind, history_pair, fingerprint, status, created_at
-                        ) VALUES (?, 'history-visualization', ?, ?, 'queued', ?)
+                            run_id, kind, repository_id, history_pair, fingerprint,
+                            status, created_at
+                        ) VALUES (?, 'history-visualization', ?, ?, ?, 'queued', ?)
                         """,
                         (
                             _created_run_id,
+                            repository_id,
                             history_pair,
                             fingerprint,
                             _created_at,
@@ -636,6 +649,7 @@ def _run_from_row(row: sqlite3.Row) -> RunRecord:
     return RunRecord(
         run_id=str(row["run_id"]),
         kind=str(row["kind"]),  # type: ignore[arg-type]
+        repository_id=str(row["repository_id"]),
         history_pair=int(row["history_pair"]),
         status=str(row["status"]),  # type: ignore[arg-type]
         artifact_id=(None if row["artifact_id"] is None else str(row["artifact_id"])),
@@ -680,6 +694,18 @@ def _validate_history_pair(history_pair: int) -> None:
         or history_pair <= 0
     ):
         raise ValueError("History pair number must be a positive integer.")
+
+
+def _validate_repository_id(repository_id: str) -> None:
+    if (
+        not repository_id
+        or len(repository_id) > 64
+        or any(
+            not (character.islower() or character.isdigit() or character == "-")
+            for character in repository_id
+        )
+    ):
+        raise ValueError("History repository ID is invalid.")
 
 
 def _validate_fingerprint(fingerprint: str) -> None:

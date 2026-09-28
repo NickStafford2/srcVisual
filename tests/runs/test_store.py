@@ -182,7 +182,22 @@ def test_version_one_store_migrates_without_losing_runs(tmp_path: Path) -> None:
     assert _new.run.history_pair == 3
     assert _new.disposition == "new"
     with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
-        assert _database.execute("PRAGMA user_version").fetchone() == (2,)
+        assert _database.execute("PRAGMA user_version").fetchone() == (3,)
+
+
+def test_version_two_store_adds_default_repository_identity(tmp_path: Path) -> None:
+    _store_instance = _store(tmp_path)
+    _existing = _store_instance.create_history_run(2)
+    with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
+        _database.execute("ALTER TABLE runs DROP COLUMN repository_id")
+        _database.execute("PRAGMA user_version = 2")
+
+    _reopened = RunStore(tmp_path / "runs.sqlite3")
+    _reopened.initialize()
+
+    assert _reopened.read_run(_existing.run_id).repository_id == "default"
+    with sqlite3.connect(tmp_path / "runs.sqlite3") as _database:
+        assert _database.execute("PRAGMA user_version").fetchone() == (3,)
 
 
 def test_abandoned_running_runs_fail_while_queued_runs_remain(tmp_path: Path) -> None:
