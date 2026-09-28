@@ -237,4 +237,29 @@ it("pages tree children and toggles cross-file move connectors", async () => {
     screen.queryByRole("button", { name: "one.cpp" }),
   ).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "two.cpp" })).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Collapse Files" }));
+  expect(
+    screen.queryByRole("searchbox", { name: "Filter artifact files" }),
+  ).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Expand Files" }));
+  expect(
+    screen.getByRole("searchbox", { name: "Filter artifact files" }),
+  ).toHaveValue("two");
+
+  for (const panel of [
+    "srcDiff",
+    "srcMove",
+    "Node inspector",
+    "Structure tree",
+  ]) {
+    const collapse = screen.getByRole("button", {
+      name: `Collapse ${panel}`,
+    });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    await user.click(collapse);
+    expect(
+      screen.getByRole("button", { name: `Expand ${panel}` }),
+    ).toHaveAttribute("aria-expanded", "false");
+  }
 });

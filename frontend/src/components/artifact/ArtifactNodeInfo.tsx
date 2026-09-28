@@ -6,6 +6,7 @@ type Props = {
   error: string | null;
   onRevealSource: () => void;
   onClear: () => void;
+  embedded?: boolean;
 };
 
 export function ArtifactNodeInfo({
@@ -14,17 +15,22 @@ export function ArtifactNodeInfo({
   error,
   onRevealSource,
   onClear,
+  embedded = false,
 }: Props) {
   if (loading) {
     return (
-      <p className="border-b border-white/10 p-4 text-xs text-slate-400">
+      <p
+        className={`${embedded ? "" : "border-b border-white/10"} p-4 text-xs text-slate-400`}
+      >
         Loading inspected node…
       </p>
     );
   }
   if (error) {
     return (
-      <div className="border-b border-white/10 p-4 text-xs text-rose-300">
+      <div
+        className={`${embedded ? "" : "border-b border-white/10"} p-4 text-xs text-rose-300`}
+      >
         <p>{error}</p>
         <button type="button" onClick={onClear} className="mt-2 underline">
           Clear selection
@@ -34,11 +40,15 @@ export function ArtifactNodeInfo({
   }
   if (!node) {
     return (
-      <div className="border-b border-white/10 px-4 py-3">
-        <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
-          Node inspector
-        </p>
-        <p className="mt-1 text-xs text-slate-500">
+      <div
+        className={`${embedded ? "" : "border-b border-white/10"} px-4 py-3`}
+      >
+        {!embedded ? (
+          <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+            Node inspector
+          </p>
+        ) : null}
+        <p className={`${embedded ? "" : "mt-1"} text-xs text-slate-500`}>
           No node inspected. Choose a node in the structure tree or a move
           endpoint.
         </p>
@@ -54,13 +64,19 @@ export function ArtifactNodeInfo({
   );
 
   return (
-    <article className="border-b border-white/10 bg-sky-400/[0.04] p-4">
+    <article
+      className={`${embedded ? "" : "border-b border-white/10"} bg-sky-400/[0.04] p-4`}
+    >
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] tracking-[0.24em] text-sky-300/70 uppercase">
-            Inspected node
-          </p>
-          <h2 className="mt-1 truncate font-mono text-base text-slate-100">
+          {!embedded ? (
+            <p className="text-[11px] tracking-[0.24em] text-sky-300/70 uppercase">
+              Inspected node
+            </p>
+          ) : null}
+          <h2
+            className={`${embedded ? "" : "mt-1"} truncate font-mono text-base text-slate-100`}
+          >
             &lt;{node.tag}&gt;
           </h2>
           <p

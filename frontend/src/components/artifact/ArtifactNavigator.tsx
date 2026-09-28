@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import {
   fetchArtifactDiffTree,
   fetchArtifactNodeChildren,
@@ -156,41 +156,37 @@ export function ArtifactNavigator({
       className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75"
       aria-label="Artifact navigator"
     >
-      <div className="border-b border-white/10 p-4">
-        <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
-          Files
-        </p>
-        <input
-          type="search"
-          value={fileQuery}
-          onChange={(event) => setFileQuery(event.target.value)}
-          placeholder="Filter files…"
-          aria-label="Filter artifact files"
-          className="mt-3 w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 placeholder:text-slate-600"
-        />
-        <div className="mt-3 max-h-48 space-y-1 overflow-auto">
-          {visibleFiles.map((file) => (
-            <button
-              key={file.file_id}
-              type="button"
-              onClick={() => onSelectFile(file.file_id)}
-              className={`block w-full truncate rounded px-2 py-1 text-left text-xs ${file.file_id === selectedFileId ? "bg-sky-500/20 text-sky-200" : "text-slate-300 hover:bg-white/5"}`}
-            >
-              {file.filename}
-            </button>
-          ))}
-          {visibleFiles.length === 0 ? (
-            <p className="px-2 py-2 text-xs text-slate-500">
-              No matching files.
-            </p>
-          ) : null}
+      <SidebarPanel title="Files">
+        <div className="px-4 pb-4">
+          <input
+            type="search"
+            value={fileQuery}
+            onChange={(event) => setFileQuery(event.target.value)}
+            placeholder="Filter files…"
+            aria-label="Filter artifact files"
+            className="w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 placeholder:text-slate-600"
+          />
+          <div className="mt-3 max-h-48 space-y-1 overflow-auto">
+            {visibleFiles.map((file) => (
+              <button
+                key={file.file_id}
+                type="button"
+                onClick={() => onSelectFile(file.file_id)}
+                className={`block w-full truncate rounded px-2 py-1 text-left text-xs ${file.file_id === selectedFileId ? "bg-sky-500/20 text-sky-200" : "text-slate-300 hover:bg-white/5"}`}
+              >
+                {file.filename}
+              </button>
+            ))}
+            {visibleFiles.length === 0 ? (
+              <p className="px-2 py-2 text-xs text-slate-500">
+                No matching files.
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
+      </SidebarPanel>
 
-      <div className="shrink-0 border-b border-white/10">
-        <h2 className="px-4 pt-3 text-sm font-semibold text-slate-200">
-          srcDiff
-        </h2>
+      <SidebarPanel title="srcDiff">
         <div className="p-4 pt-2">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
@@ -279,12 +275,12 @@ export function ArtifactNavigator({
             />
           ))}
         </div>
-      </div>
+      </SidebarPanel>
 
-      <div className="max-h-[55vh] shrink-0 overflow-auto border-b border-white/10">
-        <h2 className="sticky top-0 z-10 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-200">
-          srcMove
-        </h2>
+      <SidebarPanel
+        title="srcMove"
+        contentClassName="max-h-[55vh] overflow-auto"
+      >
         {manifest.moves.items.length > 0 ? (
           <div className="border-b border-white/10 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -370,33 +366,77 @@ export function ArtifactNavigator({
         ) : null}
 
         {correspondenceControls}
-      </div>
+      </SidebarPanel>
 
-      <ArtifactNodeInfo
-        node={selectedNode}
-        loading={nodeLoading}
-        error={nodeError}
-        onRevealSource={onRevealNode}
-        onClear={onClearNode}
-      />
+      <SidebarPanel title="Node inspector">
+        <ArtifactNodeInfo
+          node={selectedNode}
+          loading={nodeLoading}
+          error={nodeError}
+          onRevealSource={onRevealNode}
+          onClear={onClearNode}
+          embedded
+        />
+      </SidebarPanel>
 
-      <div
-        className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs"
-        aria-label="Structure tree"
+      <SidebarPanel
+        title="Structure tree"
+        grow
+        contentClassName="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs"
       >
-        {error ? <p className="text-rose-300">{error}</p> : null}
-        {!root && !error ? (
-          <p className="text-slate-500">Loading tree…</p>
-        ) : null}
-        {root ? (
-          <ArtifactTreeBranch
-            key={`${root.node_id}-${focus}`}
-            artifactId={manifest.artifact_id}
-            initialNode={root}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={onSelectNode}
-          />
-        ) : null}
+        <div aria-label="Structure tree">
+          {error ? <p className="text-rose-300">{error}</p> : null}
+          {!root && !error ? (
+            <p className="text-slate-500">Loading tree…</p>
+          ) : null}
+          {root ? (
+            <ArtifactTreeBranch
+              key={`${root.node_id}-${focus}`}
+              artifactId={manifest.artifact_id}
+              initialNode={root}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={onSelectNode}
+            />
+          ) : null}
+        </div>
+      </SidebarPanel>
+    </section>
+  );
+}
+
+function SidebarPanel({
+  title,
+  children,
+  contentClassName = "",
+  grow = false,
+}: {
+  title: string;
+  children: ReactNode;
+  contentClassName?: string;
+  grow?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const contentId = useId();
+
+  return (
+    <section
+      className={`flex shrink-0 flex-col border-b border-white/10 ${grow && expanded ? "min-h-0 flex-1" : ""}`}
+    >
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        aria-label={`${expanded ? "Collapse" : "Expand"} ${title}`}
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-center gap-2 bg-slate-950 px-4 py-3 text-left text-sm font-semibold text-slate-200 hover:bg-white/[0.03] hover:text-white"
+      >
+        <span aria-hidden="true" className="w-3 text-slate-500">
+          {expanded ? "▾" : "▸"}
+        </span>
+        <span>{title}</span>
+      </button>
+      <div id={contentId} hidden={!expanded} className={contentClassName}>
+        {children}
       </div>
     </section>
   );
