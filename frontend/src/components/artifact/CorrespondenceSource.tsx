@@ -115,10 +115,10 @@ export function CorrespondenceOverlay({
         const to = group.boxes.find((b) => b.revision === "revision-1");
         const click = (event: React.MouseEvent<SVGElement>) =>
           inspect(pair, { x: event.clientX, y: event.clientY });
-        // Inset the corner route slightly to keep it distinct from the move center route.
+        // Connect facing edges near the top, offset from the move center route.
         const path =
           from && to
-            ? `M ${from.x} ${from.y + 3} C ${from.x} ${from.y - 9}, ${to.x} ${to.y - 9}, ${to.x} ${to.y + 3}`
+            ? `M ${from.x + from.width} ${from.y + 3} C ${from.x + from.width} ${from.y - 9}, ${to.x} ${to.y - 9}, ${to.x} ${to.y + 3}`
             : null;
         return (
           <g

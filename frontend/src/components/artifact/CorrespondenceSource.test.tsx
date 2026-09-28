@@ -48,7 +48,7 @@ it("uses type colors, corner routes and clickable swatches below moves", async (
   });
   expect(container.querySelector("path")).toHaveAttribute(
     "d",
-    "M 20 23 C 20 11, 200 61, 200 73",
+    "M 100 23 C 100 11, 200 61, 200 73",
   );
   await user.click(
     screen.getByRole("button", { name: "Inspect correspondence 3 before" }),
