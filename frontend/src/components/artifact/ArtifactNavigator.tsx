@@ -153,7 +153,7 @@ export function ArtifactNavigator({
 
   return (
     <section
-      className="flex h-full min-h-0 flex-col overflow-hidden border border-white/10 bg-slate-950/75"
+      className="flex h-full min-h-0 flex-col overflow-x-hidden overflow-y-auto border border-white/10 bg-slate-950/75"
       aria-label="Artifact navigator"
     >
       <SidebarPanel title="Files">
