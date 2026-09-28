@@ -26,10 +26,15 @@ def build_moved_srcdiff_xml(
     tmpdir: Path,
     include_skipped_tags: bool,
     progress: ProgressCallback | None = None,
+    diagnostics: bool = False,
 ) -> tuple[str, dict[str, Any], bool]:
     uploaded_srcdiff_xml = input_path.read_text(encoding="utf-8")
 
     if has_srcmove_annotations(uploaded_srcdiff_xml):
+        if diagnostics:
+            raise ValueError(
+                "Correspondence diagnostics require srcDiff XML before srcMove annotations. Use an unannotated example or upload."
+            )
         notify_progress(
             progress,
             "Uploaded srcdiff already has srcMove annotations. Skipping srcdiff and srcMove.",
@@ -63,6 +68,7 @@ def build_moved_srcdiff_xml(
 
         moved_srcdiff_xml, move_results = run_srcmove(
             positioned_path=input_path,
+            **({"diagnostics": True} if diagnostics else {}),
             tmpdir=tmpdir,
             progress=progress,
         )
@@ -98,6 +104,7 @@ def build_moved_srcdiff_xml(
 
     moved_srcdiff_xml, move_results = run_srcmove(
         positioned_path=positioned_path,
+        **({"diagnostics": True} if diagnostics else {}),
         tmpdir=tmpdir,
         progress=progress,
     )

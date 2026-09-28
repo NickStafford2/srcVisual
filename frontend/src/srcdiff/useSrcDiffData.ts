@@ -32,6 +32,7 @@ export function useSrcDiffData() {
   const [comparisonContext, setComparisonContext] =
     useState<ComparisonContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [diagnostics, setDiagnostics] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
   const [progressMessages, setProgressMessages] = useState<ProgressLogEntry[]>(
@@ -147,6 +148,7 @@ export function useSrcDiffData() {
       formData.append("srcdiff_xml", xmlInput);
     }
 
+    if (diagnostics) formData.append("diagnostics", "true");
     const progressToken = crypto.randomUUID();
     formData.append("progress_token", progressToken);
 
@@ -202,6 +204,8 @@ export function useSrcDiffData() {
 
   return {
     inputMode,
+    diagnostics,
+    setDiagnostics,
     selectedUpload,
     xmlInput,
     loadedExampleFilename,

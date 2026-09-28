@@ -47,3 +47,30 @@ def test_single_root_input_round_trips_through_artifact(tmp_path: Path) -> None:
         "original.cpp|modified.cpp"
     )
     assert _stored.payload.files[0].tree is not None
+
+
+def test_diagnostics_survive_real_srcmove_run(tmp_path: Path) -> None:
+    from srcdiffvisual.artifacts.correspondences import (
+        read_correspondences,
+        read_correspondence,
+    )
+
+    _example = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
+    _published = build_visualization_artifact(
+        filename=_example.name,
+        payload=_example.read_bytes(),
+        artifact_root=tmp_path,
+        diagnostics=True,
+    )
+    _page = read_correspondences(
+        artifact_root=tmp_path, artifact_id=_published.artifact_id
+    )
+    assert _page["available"] is True
+    assert _page["total"] > 0
+    _detail = read_correspondence(
+        artifact_root=tmp_path,
+        artifact_id=_published.artifact_id,
+        index=_page["items"][0]["id"],
+    )
+    assert _detail["before"]["raw_text"].strip()
+    assert _detail["after"]["raw_text"].strip()

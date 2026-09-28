@@ -1,4 +1,9 @@
 services:
+  srcdiffvisual:
+    command: ["gunicorn", "--reload", "--config", "gunicorn.conf.py", "srcdiffvisual.web.wsgi:app"]
+    volumes:
+      - ./srcdiffvisual:/app/srcdiffvisual:ro
+
   frontend:
     image: node:22-bookworm-slim
     init: true

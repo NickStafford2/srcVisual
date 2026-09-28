@@ -40,7 +40,7 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
     )
     assert xml["anchors"] == [
         {
-            "node_id": f'{manifest["files"][0]["file_id"]}:n00000001',
+            "node_id": f"{manifest['files'][0]['file_id']}:n00000001",
             "kind": "delete",
             "move_id": None,
             "span": {
@@ -51,7 +51,7 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
             },
         },
         {
-            "node_id": f'{manifest["files"][0]["file_id"]}:n00000002',
+            "node_id": f"{manifest['files'][0]['file_id']}:n00000002",
             "kind": "insert",
             "move_id": None,
             "span": {
@@ -62,7 +62,7 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
             },
         },
         {
-            "node_id": f'{manifest["files"][0]["file_id"]}:n00000003',
+            "node_id": f"{manifest['files'][0]['file_id']}:n00000003",
             "kind": "move",
             "move_id": "move-1",
             "span": {
@@ -283,12 +283,9 @@ def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
         context_lines=0,
     )
 
-    _hunk = next(
-        _block for _block in _projection["blocks"] if _block["type"] == "hunk"
-    )
+    _hunk = next(_block for _block in _projection["blocks"] if _block["type"] == "hunk")
     assert [
-        (_row["left"]["line_number"], _row["left"]["text"])
-        for _row in _hunk["rows"]
+        (_row["left"]["line_number"], _row["left"]["text"]) for _row in _hunk["rows"]
     ] == [(2, "prefix moved"), (3, ""), (4, "after tail")]
     for _row in _hunk["rows"]:
         for _side in ("left", "right"):
@@ -361,7 +358,7 @@ def test_tree_projection_is_bounded_and_children_are_pageable(tmp_path) -> None:
     assert node["node"]["revision_1_span"]["start_line"] == 2
 
 
-def _publish_fixture(tmp_path):
+def _publish_fixture(tmp_path, diagnostics=None):
     def node(
         path: str,
         kind: str,
@@ -434,7 +431,10 @@ def _publish_fixture(tmp_path):
                     "to_node_ids": ["/unit/move"],
                 }
             ],
-            "producer_metadata": {"results_schema_version": 1},
+            "producer_metadata": {
+                "results_schema_version": 1,
+                **({"diagnostics": diagnostics} if diagnostics is not None else {}),
+            },
         },
         has_position_data=True,
         files=(
@@ -458,3 +458,99 @@ def _publish_fixture(tmp_path):
         input_payload=b"input",
         provenance=ArtifactProvenance(origin="upload"),
     )
+
+
+def test_correspondence_pages_and_snippets_preserve_nonmove_evidence(tmp_path):
+    from srcdiffvisual.artifacts.correspondences import (
+        read_correspondences,
+        read_correspondence,
+    )
+
+    _diagnostics = {
+        "schema_version": 4,
+        "candidates": [
+            {
+                "candidate_id": 1,
+                "side": "delete",
+                "filename": "old.cpp",
+                "xpath": "/unit/delete",
+                "construct": "function",
+                "raw_text": "x" * 20001,
+            },
+            {
+                "candidate_id": 2,
+                "side": "insert",
+                "filename": "new.cpp",
+                "xpath": "/unit/insert",
+                "construct": "function",
+                "raw_text": "after();",
+            },
+        ],
+        "correspondences": [
+            {
+                "delete_candidate_id": 1,
+                "insert_candidate_id": 2,
+                "correspondence_kind": "type1",
+                "shadow_change": "stationary",
+                "current_result": "not_move",
+                "classification_reason": "same_interval",
+                "cardinality": "one_to_one",
+            },
+            {
+                "delete_candidate_id": 1,
+                "insert_candidate_id": 2,
+                "correspondence_kind": "type3",
+                "shadow_change": "relocated",
+                "current_result": "move",
+                "classification_reason": "different_file",
+                "cardinality": "one_to_one",
+            },
+        ],
+    }
+    _artifact = _publish_fixture(tmp_path, diagnostics=_diagnostics)
+    _args = {"artifact_root": tmp_path, "artifact_id": _artifact.artifact_id}
+    _page = read_correspondences(**_args, limit=1)
+    assert _page["available"] is True
+    assert _page["next_offset"] == 1
+    assert _page["total"] == 2
+    assert "raw_text" not in str(_page)
+    assert read_correspondences(**_args, offset=1, limit=1)["items"][0]["id"] == 1
+    _filtered = read_correspondences(
+        **_args,
+        query="OLD.CPP",
+        kind="type1",
+        outcome="not_move",
+        classification="stationary",
+    )
+    assert _filtered["matched"] == 1
+    assert _filtered["items"][0]["outcome"] == "not_move"
+    _detail = read_correspondence(**_args, index=0)
+    assert _detail["before"]["text_truncated"] is True
+    assert len(_detail["before"]["raw_text"]) == 20000
+    assert _detail["after"]["raw_text"] == "after();"
+    assert _detail["evidence"]["classification_reason"] == "same_interval"
+
+
+def test_correspondences_distinguish_missing_empty_and_unsupported(tmp_path):
+    import pytest
+    from srcdiffvisual.artifacts.correspondences import read_correspondences
+    from srcdiffvisual.artifacts.store import ArtifactIntegrityError
+
+    _missing = _publish_fixture(tmp_path)
+    assert (
+        read_correspondences(artifact_root=tmp_path, artifact_id=_missing.artifact_id)[
+            "available"
+        ]
+        is False
+    )
+    _empty = _publish_fixture(
+        tmp_path,
+        diagnostics={"schema_version": 4, "candidates": [], "correspondences": []},
+    )
+    _page = read_correspondences(artifact_root=tmp_path, artifact_id=_empty.artifact_id)
+    assert _page["available"] is True and _page["total"] == 0
+    _unsupported = _publish_fixture(tmp_path, diagnostics={"schema_version": 999})
+    with pytest.raises(ArtifactIntegrityError, match="Unsupported"):
+        read_correspondences(
+            artifact_root=tmp_path, artifact_id=_unsupported.artifact_id
+        )

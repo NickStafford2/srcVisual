@@ -9,6 +9,7 @@ import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
 import { ArtifactMovePopup } from "./components/artifact/ArtifactMovePopup";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
+import { ArtifactCorrespondences } from "./components/artifact/ArtifactCorrespondences";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
 import { fetchArtifactNode } from "./api";
 import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
@@ -19,12 +20,18 @@ import {
   type ArtifactTreeNode,
 } from "./types";
 
-type MainTabId = "input" | "source-code" | "xml-pane" | "move-summary";
+type MainTabId =
+  | "input"
+  | "source-code"
+  | "xml-pane"
+  | "move-summary"
+  | "correspondences";
 
 const resultTabs: TabDefinition<MainTabId>[] = [
   { id: "source-code", label: "Source" },
   { id: "xml-pane", label: "XML" },
   { id: "move-summary", label: "Move Summary" },
+  { id: "correspondences", label: "Correspondences" },
 ];
 
 export default function App() {
@@ -183,7 +190,9 @@ export default function App() {
         <AppHeader
           artifact={artifact}
           context={srcDiffData.comparisonContext}
-          view={mainTabs.find((tab) => tab.id === activeMainTab)?.label ?? "Input"}
+          view={
+            mainTabs.find((tab) => tab.id === activeMainTab)?.label ?? "Input"
+          }
           focus={artifactFocus}
           visibleMoveCount={visibleArtifactMoveIds.size}
         />
@@ -227,6 +236,8 @@ export default function App() {
                 <TabPanel tabId="input" activeTabId={activeMainTab}>
                   <InputPanel
                     inputMode={srcDiffData.inputMode}
+                    diagnostics={srcDiffData.diagnostics}
+                    onDiagnosticsChange={srcDiffData.setDiagnostics}
                     selectedUpload={srcDiffData.selectedUpload}
                     xmlInput={srcDiffData.xmlInput}
                     loadedExampleFilename={srcDiffData.loadedExampleFilename}
@@ -275,6 +286,16 @@ export default function App() {
                       />
                     </TabPanel>
 
+                    <TabPanel
+                      tabId="correspondences"
+                      activeTabId={activeMainTab}
+                    >
+                      <ArtifactCorrespondences
+                        key={artifact.artifact_id}
+                        artifactId={artifact.artifact_id}
+                        active={activeMainTab === "correspondences"}
+                      />
+                    </TabPanel>
                     <TabPanel tabId="move-summary" activeTabId={activeMainTab}>
                       <ArtifactMoveSummaryPane
                         files={artifact.files}

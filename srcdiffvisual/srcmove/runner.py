@@ -14,6 +14,7 @@ def run_srcmove(
     positioned_path: Path,
     tmpdir: Path,
     progress: ProgressCallback | None = None,
+    diagnostics: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     moved_path = tmpdir / "moved.srcdiff.xml"
     results_path = tmpdir / "results.json"
@@ -26,6 +27,7 @@ def run_srcmove(
             str(moved_path),
             "--results",
             str(results_path),
+            *(["--diagnostics"] if diagnostics else []),
         ]
     )
 

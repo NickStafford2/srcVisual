@@ -9,6 +9,10 @@ from flask import Blueprint, Response, current_app, request
 from werkzeug.datastructures import FileStorage
 
 from srcdiffvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.correspondences import (
+    read_correspondences,
+    read_correspondence,
+)
 from srcdiffvisual.artifacts.projections import (
     read_artifact_move,
     read_artifact_node,
@@ -47,11 +51,41 @@ class VisualizationRequest:
     filename: str
     payload: bytes
     progress_token: str | None
+    diagnostics: bool = False
 
 
 @api.get("/health")
 def health() -> tuple[dict[str, str], int]:
     return {"status": "ok"}, 200
+
+
+@api.get("/artifacts/<artifact_id>/correspondences")
+def artifact_correspondences(artifact_id: str) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_correspondences(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            offset=_nonnegative_integer_query("offset", default=0, maximum=1000000000),
+            limit=_positive_integer_query("limit", default=50, maximum=100),
+            query=request.args.get("q", ""),
+            kind=request.args.get("kind", ""),
+            classification=request.args.get("classification", ""),
+            outcome=request.args.get("outcome", ""),
+        )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/correspondences/<int:index>")
+def artifact_correspondence(
+    artifact_id: str, index: int
+) -> tuple[dict[str, object], int]:
+    return _artifact_response(
+        lambda: read_correspondence(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            artifact_id=artifact_id,
+            index=index,
+        )
+    )
 
 
 @api.get("/examples")
@@ -90,9 +124,7 @@ def artifact_xml(artifact_id: str) -> tuple[dict[str, object], int]:
 
 
 @api.get("/artifacts/<artifact_id>/moves/<move_id>")
-def artifact_move(
-    artifact_id: str, move_id: str
-) -> tuple[dict[str, object], int]:
+def artifact_move(artifact_id: str, move_id: str) -> tuple[dict[str, object], int]:
     return _artifact_response(
         lambda: read_artifact_move(
             artifact_root=current_app.config["ARTIFACT_ROOT"],
@@ -276,9 +308,7 @@ def create_history_run(
             _acquisition = current_app.config["RUN_STORE"].acquire_history_run(
                 pair_number,
                 _fingerprint,
-                excluded_completed_run_ids=frozenset(
-                    _excluded_completed_run_ids
-                ),
+                excluded_completed_run_ids=frozenset(_excluded_completed_run_ids),
             )
             if _acquisition.disposition != "artifact":
                 break
@@ -347,6 +377,7 @@ def visualize() -> tuple[dict[str, object], int]:
             payload=visualization_request.payload,
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             provenance=ArtifactProvenance(origin="upload"),
+            **({"diagnostics": True} if visualization_request.diagnostics else {}),
             progress=(
                 None
                 if progress_token is None
@@ -360,6 +391,10 @@ def visualize() -> tuple[dict[str, object], int]:
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             artifact_id=published.artifact_id,
         )
+    except ValueError as exc:
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, str(exc))
+        return {"error": str(exc)}, 400
     except Exception as exc:
         if progress_token is not None:
             progress_broker.publish_error(
@@ -411,10 +446,15 @@ def parse_visualization_request() -> VisualizationRequest:
     if not payload:
         raise ValueError("The uploaded srcdiff payload is empty.")
 
+    _diagnostics = request.form.get("diagnostics", "false")
+    if _diagnostics not in {"true", "false"}:
+        raise ValueError("diagnostics must be true or false.")
+
     return VisualizationRequest(
         filename=filename,
         payload=payload,
         progress_token=get_progress_token(),
+        diagnostics=_diagnostics == "true",
     )
 
 

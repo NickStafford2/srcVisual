@@ -44,6 +44,7 @@ def build_visualization_artifact(
     provenance: ArtifactProvenance | None = None,
     producer_move_results: dict[str, Any] | None = None,
     artifact_id: str | None = None,
+    diagnostics: bool = False,
 ) -> PublishedArtifact:
     """Build and publish a canonical visualization artifact."""
     _artifact_root = artifact_root or get_artifact_root()
@@ -55,6 +56,7 @@ def build_visualization_artifact(
         provenance=provenance,
         producer_move_results=producer_move_results,
         artifact_id=artifact_id,
+        diagnostics=diagnostics,
     )
     return _published
 
@@ -68,6 +70,7 @@ def _publish_canonical_visualization(
     provenance: ArtifactProvenance | None,
     producer_move_results: dict[str, Any] | None,
     artifact_id: str | None = None,
+    diagnostics: bool = False,
 ) -> tuple[PublishedArtifact, ArtifactProvenance]:
     _provenance = provenance or ArtifactProvenance(origin="upload")
     _canonical_payload, _effective_provenance = _build_canonical_payload(
@@ -76,6 +79,7 @@ def _publish_canonical_visualization(
         progress=progress,
         provenance=_provenance,
         producer_move_results=producer_move_results,
+        diagnostics=diagnostics,
     )
     notify_progress(progress, "Publishing immutable visualization artifact.")
     _published = publish_artifact(
@@ -98,6 +102,7 @@ def _build_canonical_payload(
     progress: ProgressCallback | None,
     provenance: ArtifactProvenance,
     producer_move_results: dict[str, Any] | None,
+    diagnostics: bool = False,
 ) -> tuple[VisualizationPayload, ArtifactProvenance]:
     payload_validation_enabled = is_payload_validation_enabled()
     strict_srcmove_validation_enabled = is_strict_srcmove_validation_enabled()
@@ -145,6 +150,7 @@ def _build_canonical_payload(
                 revision_1_dir=revision_1_dir,
                 revision_0_input=extracted_layout.revision_0_input,
                 revision_1_input=extracted_layout.revision_1_input,
+                **({"diagnostics": True} if diagnostics else {}),
                 tmpdir=tmpdir,
                 include_skipped_tags=True,
                 progress=progress,

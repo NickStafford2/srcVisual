@@ -14,6 +14,8 @@ import type { ReturnTypeOfUseBigMoveBenchReview } from "./bigMoveBenchInputTypes
 
 type InputPanelProps = {
   inputMode: InputMode;
+  diagnostics: boolean;
+  onDiagnosticsChange: (value: boolean) => void;
   selectedUpload: File | null;
   xmlInput: string;
   loadedExampleFilename: string | null;
@@ -36,6 +38,8 @@ type InputPanelProps = {
 
 export function InputPanel({
   inputMode,
+  diagnostics,
+  onDiagnosticsChange,
   selectedUpload,
   xmlInput,
   loadedExampleFilename,
@@ -99,6 +103,22 @@ export function InputPanel({
 
         {inputMode !== "history" && inputMode !== "benchmark" ? (
           <>
+            <label className="flex items-start gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={diagnostics}
+                disabled={isLoading}
+                onChange={(event) => onDiagnosticsChange(event.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Collect correspondence diagnostics
+                <span className="block text-xs text-slate-500">
+                  Adds debugging evidence and can increase processing time and
+                  artifact size. Requires XML before srcMove annotations.
+                </span>
+              </span>
+            </label>
             <InputPanelSubmitRow
               isLoading={isLoading}
               error={error}

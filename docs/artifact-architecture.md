@@ -892,3 +892,30 @@ configuration and fingerprint implementation. This includes local edits and
 updates during development. It is a frontend source fingerprint, not a Git
 revision, backend version, or emitted-bundle checksum. The Details control
 exposes full hashes and comparison context with a Copy details action.
+
+### Correspondence diagnostics inspector
+
+For examples, pasted XML and uploads, **Collect correspondence diagnostics**
+opts the srcMove invocation into `--diagnostics`. This requires srcDiff XML
+without existing srcMove annotations; the application does not strip annotations
+or claim to reconstruct lost diagnostics. The ordinary execution path is unchanged.
+History and benchmark run integration is deferred.
+
+The Correspondences tab lazily reads retained diagnostics schema 4 from the
+artifact's producer results. It lists classified correspondence records, including
+nonmoves and verified Type-3 selection losers, not every possible candidate pair.
+Type-3 classifications are observational and do not govern selection. The list
+filters by filename/construct/reason, match type, classification and selection
+outcome; each page contains at most 50 records in the UI (100 via the API).
+Selecting a pair retrieves its original candidate text, filenames, XPaths and
+recorded classification/context. Candidate snippets are independent of the source
+pane's text alignment and have no inferred line numbers or source connectors.
+Each snippet is bounded to 20,000 characters with explicit truncation feedback.
+
+`GET /api/artifacts/{id}/correspondences` accepts `offset`, `limit`, `q`, `kind`,
+`classification` and `outcome`; `/correspondences/{index}` retrieves pair detail.
+Missing diagnostics and an empty diagnostic result are distinct states; unsupported
+schema versions fail explicitly. Existing artifact identities/data are immutable.
+The server currently reads the stored diagnostic JSON for each request, so paging
+bounds response/render size, not server-side parsing cost. Very large diagnostic
+runs may need a dedicated index later.

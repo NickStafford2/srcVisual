@@ -86,8 +86,10 @@ one-off containers. Rebuild the full image after changing srcDiffVisual,
 The canonical commands and checksum-based analysis lifecycle are documented in
 the parent workspace's `docs/workspace.md`.
 Port 5000 serves the packaged build; port 5173 provides frontend hot reload
-through `compose.dev.yaml`. Backend and native dependency edits still require
-rebuilding the packaged application. The checked-in Compose configuration mounts the
+through `compose.dev.yaml`. In development, the API source is also mounted with Gunicorn reload.
+Python dependency and native dependency edits still require rebuilding the image;
+the history worker continues using its packaged code. Outside development,
+application changes require rebuilding the packaged application. The checked-in Compose configuration mounts the
 Notepad++ reference repository as the one preconfigured analysis target. Its
 source worktree is read-only; only its `.git` and `.srcmove` directories are
 writable so the `srcmove-history` CLI can manage its own operation state and
