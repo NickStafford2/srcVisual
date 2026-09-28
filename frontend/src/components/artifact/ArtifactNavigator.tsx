@@ -275,6 +275,7 @@ export function ArtifactNavigator({
               depth={0}
               selectedNodeId={selectedNodeId}
               onSelectNode={onSelectNode}
+              onClearNode={onClearNode}
             />
           ))}
         </div>
@@ -430,11 +431,13 @@ function ArtifactDiffTreeBranch({
   depth,
   selectedNodeId,
   onSelectNode,
+  onClearNode,
 }: {
   node: ArtifactDiffTreeNode;
   depth: number;
   selectedNodeId: string | null;
   onSelectNode: (node: ArtifactTreeNode) => void;
+  onClearNode: () => void;
 }) {
   const [expanded, setExpanded] = useState(depth < 2);
   const selected = selectedNodeId === node.node_id;
@@ -458,7 +461,7 @@ function ArtifactDiffTreeBranch({
         <button
           type="button"
           aria-pressed={selected}
-          onClick={() => onSelectNode(node)}
+          onClick={() => (selected ? onClearNode() : onSelectNode(node))}
           className={`min-w-0 flex-1 truncate py-1 text-left ${diffTreeTextColor(node.diff_kind, selected)}`}
         >
           {node.tag}
@@ -481,6 +484,7 @@ function ArtifactDiffTreeBranch({
               depth={depth + 1}
               selectedNodeId={selectedNodeId}
               onSelectNode={onSelectNode}
+              onClearNode={onClearNode}
             />
           ))}
         </div>

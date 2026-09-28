@@ -151,6 +151,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   const onVisibleDiffKindsChange = vi.fn();
   const onDiffOverlayRegionsChange = vi.fn();
   const onSelectNode = vi.fn();
+  const onClearNode = vi.fn();
   render(
     <ArtifactNavigator
       manifest={manifest}
@@ -158,8 +159,8 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       inspectedMoveId="move-1"
       visibleMoveIds={new Set(["move-1"])}
       visibleDiffKinds={new Set(["delete", "insert"])}
-      selectedNodeId={null}
-      selectedNode={null}
+      selectedNodeId={commonDiffNode.node_id}
+      selectedNode={commonDiffNode}
       nodeLoading={false}
       nodeError={null}
       focus="changes-and-moves"
@@ -170,7 +171,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       onVisibleDiffKindsChange={onVisibleDiffKindsChange}
       onDiffOverlayRegionsChange={onDiffOverlayRegionsChange}
       onSelectNode={onSelectNode}
-      onClearNode={vi.fn()}
+      onClearNode={onClearNode}
       onRevealNode={vi.fn()}
     />,
   );
@@ -223,8 +224,10 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   );
   expect(onVisibleDiffKindsChange).toHaveBeenLastCalledWith(new Set());
 
+  await user.click(screen.getByRole("button", { name: "diff:insert(1)" }));
+  expect(onSelectNode).toHaveBeenLastCalledWith(insertDiffNode);
   await user.click(screen.getAllByRole("button", { name: "diff:common" })[1]);
-  expect(onSelectNode).toHaveBeenLastCalledWith(commonDiffNode);
+  expect(onClearNode).toHaveBeenCalledOnce();
 
   await user.type(
     screen.getByRole("searchbox", { name: "Filter artifact files" }),
