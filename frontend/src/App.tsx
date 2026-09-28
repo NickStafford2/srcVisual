@@ -9,7 +9,11 @@ import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
 import { ArtifactMovePopup } from "./components/artifact/ArtifactMovePopup";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
-import { ArtifactCorrespondences } from "./components/artifact/ArtifactCorrespondences";
+import { CorrespondencePopup } from "./components/artifact/CorrespondencePopup";
+import {
+  ArtifactCorrespondences,
+  type Pair,
+} from "./components/artifact/ArtifactCorrespondences";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
 import { fetchArtifactNode } from "./api";
 import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
@@ -42,6 +46,13 @@ export default function App() {
   );
   const benchmarkData = useBigMoveBenchReview(srcDiffData.acceptVisualization);
   const artifact = srcDiffData.data;
+  const [visibleCorrespondences, setVisibleCorrespondences] = useState<Pair[]>(
+    [],
+  );
+  const [inspectedCorrespondence, setInspectedCorrespondence] = useState<{
+    pair: Pair;
+    position: { x: number; y: number };
+  } | null>(null);
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
   const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
   const [inspectedArtifactMove, setInspectedArtifactMove] = useState<{
@@ -91,6 +102,8 @@ export default function App() {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
       setInspectedArtifactMove(null);
+      setVisibleCorrespondences([]);
+      setInspectedCorrespondence(null);
       setVisibleArtifactMoveIds(
         new Set(artifact.moves.items.map((move) => move.move_id)),
       );
@@ -203,6 +216,18 @@ export default function App() {
           >
             {artifact && selectedArtifactFileId ? (
               <ArtifactNavigator
+                correspondenceControls={
+                  activeMainTab === "source-code" ? (
+                    <ArtifactCorrespondences
+                      key={artifact.artifact_id}
+                      artifactId={artifact.artifact_id}
+                      active
+                      sidebar
+                      visiblePairs={visibleCorrespondences}
+                      onVisiblePairsChange={setVisibleCorrespondences}
+                    />
+                  ) : null
+                }
                 manifest={artifact}
                 selectedFileId={selectedArtifactFileId}
                 inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
@@ -264,6 +289,10 @@ export default function App() {
                     <TabPanel tabId="source-code" activeTabId={activeMainTab}>
                       <ArtifactSourcePane
                         artifactId={artifact.artifact_id}
+                        visibleCorrespondences={visibleCorrespondences}
+                        onInspectCorrespondence={(pair, position) =>
+                          setInspectedCorrespondence({ pair, position })
+                        }
                         files={artifact.files}
                         selectedFileId={selectedArtifactFileId}
                         selectedNodeId={selectedArtifactNodeId}
@@ -313,6 +342,15 @@ export default function App() {
           </div>
         </div>
       </div>
+      {artifact && inspectedCorrespondence ? (
+        <CorrespondencePopup
+          key={`${artifact.artifact_id}:${inspectedCorrespondence.pair.id}`}
+          artifactId={artifact.artifact_id}
+          pair={inspectedCorrespondence.pair}
+          position={inspectedCorrespondence.position}
+          onClose={() => setInspectedCorrespondence(null)}
+        />
+      ) : null}
       {artifact && inspectedArtifactMove ? (
         <ArtifactMovePopup
           key={`${artifact.artifact_id}:${inspectedArtifactMove.moveId}`}

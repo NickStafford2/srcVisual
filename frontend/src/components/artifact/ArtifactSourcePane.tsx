@@ -6,6 +6,11 @@ import type {
 } from "../../types";
 import { MoveConnectorOverlay } from "../source-view/code-pane/MoveConnectorOverlay";
 import { useMoveConnectorOverlay } from "../source-view/code-pane/useMoveConnectorOverlay";
+import {
+  CorrespondenceSourceContext,
+  CorrespondenceOverlay,
+} from "./CorrespondenceSource";
+import type { Pair } from "./ArtifactCorrespondences";
 import { ArtifactSourceFile } from "./ArtifactSourceFile";
 
 type Props = {
@@ -19,6 +24,11 @@ type Props = {
   moves: ArtifactMoveSummary[];
   visibleMoveIds: ReadonlySet<string>;
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
+  visibleCorrespondences?: Pair[];
+  onInspectCorrespondence?: (
+    pair: Pair,
+    position: { x: number; y: number },
+  ) => void;
   onFocusChange: (focus: ArtifactFocusProfile) => void;
 };
 
@@ -34,9 +44,26 @@ export function ArtifactSourcePane({
   visibleMoveIds,
   onInspectMove,
   onFocusChange,
+  visibleCorrespondences = EMPTY_PAIRS,
+  onInspectCorrespondence = NO_INSPECT,
 }: Props) {
   const { containerRef, groups, registerMoveSegment, unregisterMoveSegment } =
     useMoveConnectorOverlay();
+  const correspondenceOverlay = useMoveConnectorOverlay();
+  const correspondenceContext = useMemo(
+    () => ({
+      pairs: visibleCorrespondences,
+      register: correspondenceOverlay.registerMoveSegment,
+      unregister: correspondenceOverlay.unregisterMoveSegment,
+      inspect: onInspectCorrespondence,
+    }),
+    [
+      visibleCorrespondences,
+      correspondenceOverlay.registerMoveSegment,
+      correspondenceOverlay.unregisterMoveSegment,
+      onInspectCorrespondence,
+    ],
+  );
   const [hoveredMoveId, setHoveredMoveId] = useState<string | null>(null);
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(
     () => new Set(selectedFileId ? [selectedFileId] : []),
@@ -145,39 +172,54 @@ export function ArtifactSourcePane({
         </button>
       </div>
 
-      <div ref={containerRef} className="relative isolate space-y-4">
-        <MoveConnectorOverlay
-          groups={groups}
-          emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
-          onMoveHover={(moveId) => setHoveredMoveId(moveId)}
-          onMoveLeave={(moveId) =>
-            setHoveredMoveId((current) => (current === moveId ? null : current))
-          }
-          onMoveClick={(moveId, event) => {
-            setHoveredMoveId(moveId);
-            inspectMove(moveId, { x: event.clientX, y: event.clientY });
+      <CorrespondenceSourceContext.Provider value={correspondenceContext}>
+        <div
+          ref={(element) => {
+            containerRef.current = element;
+            correspondenceOverlay.containerRef.current = element;
           }}
-        />
+          className="relative isolate space-y-4"
+        >
+          <CorrespondenceOverlay
+            groups={correspondenceOverlay.groups}
+            pairs={visibleCorrespondences}
+            inspect={onInspectCorrespondence}
+          />
+          <MoveConnectorOverlay
+            groups={groups}
+            emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
+            onMoveHover={(moveId) => setHoveredMoveId(moveId)}
+            onMoveLeave={(moveId) =>
+              setHoveredMoveId((current) =>
+                current === moveId ? null : current,
+              )
+            }
+            onMoveClick={(moveId, event) => {
+              setHoveredMoveId(moveId);
+              inspectMove(moveId, { x: event.clientX, y: event.clientY });
+            }}
+          />
 
-        <div className="relative z-10 space-y-4">
-          {_visibleFiles.map((file) => (
-            <ArtifactSourceFile
-              key={file.file_id}
-              artifactId={artifactId}
-              file={file}
-              focus={focus}
-              expanded={expandedFileIds.has(file.file_id)}
-              visibleMoves={_visibleMoves}
-              selectedNodeId={selectedNodeId}
-              active={active}
-              onInspectMove={inspectMove}
-              onToggle={() => toggleFile(file.file_id)}
-              registerMoveSegment={registerMoveSegment}
-              unregisterMoveSegment={unregisterMoveSegment}
-            />
-          ))}
+          <div className="relative z-10 space-y-4">
+            {_visibleFiles.map((file) => (
+              <ArtifactSourceFile
+                key={file.file_id}
+                artifactId={artifactId}
+                file={file}
+                focus={focus}
+                expanded={expandedFileIds.has(file.file_id)}
+                visibleMoves={_visibleMoves}
+                selectedNodeId={selectedNodeId}
+                active={active}
+                onInspectMove={inspectMove}
+                onToggle={() => toggleFile(file.file_id)}
+                registerMoveSegment={registerMoveSegment}
+                unregisterMoveSegment={unregisterMoveSegment}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      </CorrespondenceSourceContext.Provider>
     </section>
   );
 }
@@ -191,3 +233,6 @@ function moveFileIds(move: ArtifactMoveSummary): string[] {
     ),
   ];
 }
+
+const EMPTY_PAIRS: Pair[] = [];
+const NO_INSPECT = () => {};

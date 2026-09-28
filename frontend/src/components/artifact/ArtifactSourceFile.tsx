@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CorrespondenceSourceContext,
+  CorrespondenceSpan,
+  type CorrespondenceEndpoint,
+} from "./CorrespondenceSource";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { fetchArtifactSource } from "../../api";
 import type { SourceRevision } from "../../srcdiff/lineLinks";
 import type {
@@ -85,6 +90,43 @@ export function ArtifactSourceFile({
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }, [active, expanded, projection, selectedNodeId]);
 
+  const correspondenceContext = useContext(CorrespondenceSourceContext);
+  const correspondenceEndpoints = (correspondenceContext?.pairs ?? []).flatMap(
+    (pair) =>
+      [
+        {
+          pair,
+          revision: "revision-0" as const,
+          location: pair.before_location,
+        },
+        {
+          pair,
+          revision: "revision-1" as const,
+          location: pair.after_location,
+        },
+      ].filter(
+        (endpoint) =>
+          endpoint.location?.file_id === file.file_id && endpoint.location.span,
+      ),
+  );
+  const renderedCorrespondences = correspondenceEndpoints.filter((endpoint) => {
+    if (!expanded || !projection) return false;
+    const numbers = new Set(
+      projection.blocks.flatMap((block) =>
+        block.type === "hunk"
+          ? block.rows.flatMap((row) => {
+              const line =
+                endpoint.revision === "revision-0" ? row.left : row.right;
+              return line ? [line.line_number] : [];
+            })
+          : [],
+      ),
+    );
+    const span = endpoint.location.span!;
+    for (let line = span.start_line; line <= span.end_line; line++)
+      if (!numbers.has(line)) return false;
+    return true;
+  });
   const _visibleMoveIds = useMemo(
     () => new Set(visibleMoves.map((move) => move.move_id)),
     [visibleMoves],
@@ -236,6 +278,20 @@ export function ArtifactSourceFile({
             </div>
           </div>
         ) : null}
+        {correspondenceEndpoints
+          .filter((endpoint) => !renderedCorrespondences.includes(endpoint))
+          .map((endpoint) => (
+            <div
+              key={`${endpoint.pair.id}:${endpoint.revision}`}
+              className="px-3 py-1 text-xs"
+            >
+              <CorrespondenceSpan endpoints={[endpoint]} proxy>
+                ● Pair {endpoint.pair.id + 1} ·{" "}
+                {endpoint.revision === "revision-0" ? "Before" : "After"}{" "}
+                endpoint hidden · expand file/gaps to reveal
+              </CorrespondenceSpan>
+            </div>
+          ))}
       </header>
 
       {expanded && loading ? (
@@ -266,6 +322,7 @@ export function ArtifactSourceFile({
                     className="grid grid-cols-2 border-b border-white/5 bg-black"
                   >
                     <SourceCell
+                      correspondenceEndpoints={renderedCorrespondences}
                       line={row.left}
                       revision="revision-0"
                       visibleMoveIds={_visibleMoveIds}
@@ -275,6 +332,7 @@ export function ArtifactSourceFile({
                       unregisterMoveSegment={unregisterMoveSegment}
                     />
                     <SourceCell
+                      correspondenceEndpoints={renderedCorrespondences}
                       line={row.right}
                       revision="revision-1"
                       visibleMoveIds={_visibleMoveIds}
@@ -301,6 +359,7 @@ export function ArtifactSourceFile({
 }
 
 function SourceCell({
+  correspondenceEndpoints,
   line,
   revision,
   visibleMoveIds,
@@ -309,6 +368,7 @@ function SourceCell({
   registerMoveSegment,
   unregisterMoveSegment,
 }: {
+  correspondenceEndpoints: CorrespondenceEndpoint[];
   line: ArtifactSourceLine | null;
   revision: SourceRevision;
   visibleMoveIds: ReadonlySet<string>;
@@ -317,7 +377,58 @@ function SourceCell({
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
-  const _segments = line ? buildArtifactLineSegments(line) : [];
+  const originalSegments = line ? buildArtifactLineSegments(line) : [];
+  const endpoints = correspondenceEndpoints.filter(
+    (endpoint) =>
+      endpoint.revision === revision &&
+      line &&
+      line.line_number >= endpoint.location.span!.start_line &&
+      line.line_number <= endpoint.location.span!.end_line,
+  );
+  const columnOffset = (column: number) =>
+    Array.from(line?.text ?? "")
+      .slice(0, column)
+      .join("").length;
+  let offset = 0;
+  const _segments = originalSegments.flatMap((segment) => {
+    const start = offset;
+    offset += segment.text.length;
+    const bounds = [
+      ...new Set([
+        start,
+        offset,
+        ...endpoints
+          .flatMap((endpoint) => {
+            const span = endpoint.location.span!;
+            return [
+              line!.line_number === span.start_line
+                ? columnOffset(span.start_col - 1)
+                : 0,
+              line!.line_number === span.end_line
+                ? columnOffset(span.end_col)
+                : line!.text.length,
+            ];
+          })
+          .filter((n) => n > start && n < offset),
+      ]),
+    ].sort((a, b) => a - b);
+    return bounds.slice(0, -1).map((left, i) => ({
+      segment: {
+        ...segment,
+        text: segment.text.slice(left - start, bounds[i + 1] - start),
+      },
+      endpoints: endpoints.filter((endpoint) => {
+        const span = endpoint.location.span!;
+        const right = bounds[i + 1];
+        return (
+          (line!.line_number !== span.start_line ||
+            left >= columnOffset(span.start_col - 1)) &&
+          (line!.line_number !== span.end_line ||
+            right <= columnOffset(span.end_col))
+        );
+      }),
+    }));
+  });
 
   return (
     <div className="grid min-h-7 grid-cols-[3.5rem_1fr] border-r border-white/10">
@@ -325,17 +436,23 @@ function SourceCell({
         {line?.line_number ?? ""}
       </span>
       <code className="px-2 py-1 whitespace-pre text-slate-200">
-        {_segments.map((segment, index) => (
-          <CodeSegment
+        {_segments.map(({ segment, endpoints }, index) => (
+          <CorrespondenceSpan
             key={`${segment.nodeId ?? "plain"}-${index}`}
-            revision={revision}
-            segment={segment}
-            visibleMoveIds={visibleMoveIds}
-            selected={selectedNodeId !== null && segment.nodeId === selectedNodeId}
-            onMoveInspect={onInspectMove}
-            registerMoveSegment={registerMoveSegment}
-            unregisterMoveSegment={unregisterMoveSegment}
-          />
+            endpoints={endpoints}
+          >
+            <CodeSegment
+              revision={revision}
+              segment={segment}
+              visibleMoveIds={visibleMoveIds}
+              selected={
+                selectedNodeId !== null && segment.nodeId === selectedNodeId
+              }
+              onMoveInspect={onInspectMove}
+              registerMoveSegment={registerMoveSegment}
+              unregisterMoveSegment={unregisterMoveSegment}
+            />
+          </CorrespondenceSpan>
         ))}
       </code>
     </div>

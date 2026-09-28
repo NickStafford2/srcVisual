@@ -103,3 +103,29 @@ it("explains unavailable diagnostics instead of reporting zero correspondences",
   ).toBeInTheDocument();
   expect(screen.queryByText(/0 matching/)).not.toBeInTheDocument();
 });
+
+it("starts sidebar highlighting at None and enables only the current page", async () => {
+  const user = userEvent.setup();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify(page))),
+  );
+  const change = vi.fn();
+  render(
+    <ArtifactCorrespondences
+      artifactId="a"
+      active
+      sidebar
+      onVisiblePairsChange={change}
+    />,
+  );
+  await screen.findByRole("button", { name: "All on page" });
+  expect(screen.getByRole("button", { name: "None" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: "All on page" }));
+  expect(change).toHaveBeenLastCalledWith([pair]);
+  await user.click(screen.getByRole("button", { name: "None" }));
+  expect(change).toHaveBeenLastCalledWith([]);
+});

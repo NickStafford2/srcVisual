@@ -14,6 +14,9 @@ from srcdiffvisual.workflow._positioned_srcdiff_builder import (
 )
 from srcdiffvisual.core.notify import ProgressCallback, notify_progress
 from srcdiffvisual.srcmove.runner import run_srcmove
+from srcdiffvisual.workflow._correspondence_locations import (
+    add_correspondence_locations,
+)
 
 
 def build_moved_srcdiff_xml(
@@ -78,6 +81,10 @@ def build_moved_srcdiff_xml(
             f"moves={move_results.get('move_count', '?')}.",
         )
 
+        if diagnostics:
+            add_correspondence_locations(
+                uploaded_srcdiff_xml, moved_srcdiff_xml, move_results
+            )
         return moved_srcdiff_xml, move_results, True
 
     notify_progress(
@@ -114,4 +121,8 @@ def build_moved_srcdiff_xml(
         f"moves={move_results.get('move_count', '?')}.",
     )
 
+    if diagnostics:
+        add_correspondence_locations(
+            positioned_path.read_text(encoding="utf-8"), moved_srcdiff_xml, move_results
+        )
     return moved_srcdiff_xml, move_results, True

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchArtifactSource } from "../../api";
 import type { ArtifactSourceProjection } from "../../types";
+import type { Pair } from "./ArtifactCorrespondences";
 import { ArtifactSourcePane } from "./ArtifactSourcePane";
 
 vi.mock("../../api", () => ({
@@ -77,6 +78,85 @@ describe("ArtifactSourcePane", () => {
   });
 
   afterEach(cleanup);
+
+  it.each([false, true])(
+    "highlights exact correspondence columns and uses explicit proxies (unicode=%s)",
+    async (unicode) => {
+      const user = userEvent.setup();
+      if (unicode) {
+        const unicodeProjection = structuredClone(projection);
+        const hunk = unicodeProjection.blocks[1];
+        if (hunk.type === "hunk") {
+          hunk.rows[0].left!.text = "😀old();";
+          hunk.rows[0].right!.text = "😀new();";
+        }
+        vi.mocked(fetchArtifactSource).mockResolvedValue(unicodeProjection);
+      }
+      const location = {
+        file_id: "f-1",
+        span: {
+          start_line: 11,
+          start_col: unicode ? 2 : 1,
+          end_line: 11,
+          end_col: unicode ? 4 : 3,
+        },
+        reason: null,
+      };
+      const pair: Pair = {
+        id: 0,
+        kind: "type2",
+        classification: "stationary",
+        outcome: "not_move",
+        reason: "same_interval",
+        cardinality: "one_to_one",
+        before_file: "example.cpp",
+        after_file: "example.cpp",
+        before_location: location,
+        after_location: location,
+      };
+      const inspect = vi.fn();
+      const { container } = render(
+        <ArtifactSourcePane
+          artifactId="artifact-1"
+          files={[file]}
+          selectedFileId="f-1"
+          selectedNodeId={null}
+          active
+          focus="changes-and-moves"
+          inspectedMoveId={null}
+          moves={[]}
+          visibleMoveIds={new Set()}
+          onInspectMove={vi.fn()}
+          onFocusChange={vi.fn()}
+          visibleCorrespondences={[pair]}
+          onInspectCorrespondence={inspect}
+        />,
+      );
+      await waitFor(() =>
+        expect(
+          container.querySelectorAll('[data-correspondence-segment="0"]'),
+        ).toHaveLength(2),
+      );
+      expect(
+        [
+          ...container.querySelectorAll('[data-correspondence-segment="0"]'),
+        ].map((e) => e.textContent),
+      ).toEqual(["old", "new"]);
+      await user.click(screen.getByRole("button", { name: "Collapse all" }));
+      const proxy = screen.getByRole("button", {
+        name: /Pair 1 · Before endpoint hidden/,
+      });
+      await user.click(proxy);
+      expect(inspect).toHaveBeenCalledWith(
+        pair,
+        expect.objectContaining({
+          x: expect.any(Number),
+          y: expect.any(Number),
+        }),
+      );
+      expect(container.querySelector("code")).toBeNull();
+    },
+  );
 
   it("loads a bounded focus projection and requests explicit gap ranges", async () => {
     const user = userEvent.setup();
@@ -225,7 +305,10 @@ describe("ArtifactSourcePane", () => {
       />,
     );
 
-    await screen.findAllByText("before", { exact: false, selector: "code span" });
+    await screen.findAllByText("before", {
+      exact: false,
+      selector: "code span",
+    });
     const moveSegments = document.querySelectorAll(
       '[data-highlight-kind="move"][data-move-id="move-1"]',
     );

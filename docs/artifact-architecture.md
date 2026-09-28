@@ -919,3 +919,27 @@ schema versions fail explicitly. Existing artifact identities/data are immutable
 The server currently reads the stored diagnostic JSON for each request, so paging
 bounds response/render size, not server-side parsing cost. Very large diagnostic
 runs may need a dedicated index later.
+
+### Correspondences on source
+
+The Source sidebar groups move and correspondence controls under **srcMove**.
+Correspondences default to None. The diagnostic filters also apply to the
+sidebar list; **All on page** enables that page's pairs without drawing an
+unbounded result set. Filters do not clear already enabled pairs; None clears
+all of them. Type-1 is violet, Type-2 green, and Type-3 rose; these colors express
+match type, not confidence. Dashed correspondence boxes and offset corner
+connectors render below the amber move overlay. Source swatches and connectors
+open a recolored version of the shared draggable details popup, with the same
+explicit Close behavior as move details.
+
+New diagnostic runs resolve candidate XPaths against the exact pre-annotation
+input. The mapper requires a unique endpoint, exact candidate text, and identical
+rendered revision source before and after annotation. It stores verified unit
+and source spans in producer metadata (`visualization_candidate_locations`).
+Artifact projections translate unit IDs to artifact file IDs. Ambiguous paths,
+unsupported XPath predicates, mismatched text, and older artifacts without
+locations are explicitly unavailable for source highlighting; no text-search
+fallback is used. Regenerate older diagnostic artifacts to collect locations.
+Collapsed files or source gaps use labeled hidden-endpoint proxies rather than
+boxes across unrendered code. This remains diagnostic evidence and does not
+change source alignment or move selection.

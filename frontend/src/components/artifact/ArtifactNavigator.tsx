@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
 import type {
   ArtifactFocusProfile,
@@ -9,6 +9,7 @@ import type {
 import { ArtifactNodeInfo } from "./ArtifactNodeInfo";
 
 type Props = {
+  correspondenceControls?: ReactNode;
   manifest: ArtifactManifest;
   selectedFileId: string;
   inspectedMoveId: string | null;
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export function ArtifactNavigator({
+  correspondenceControls,
   manifest,
   selectedFileId,
   inspectedMoveId,
@@ -103,87 +105,96 @@ export function ArtifactNavigator({
         </div>
       </div>
 
-      {manifest.moves.items.length > 0 ? (
-        <div className="border-b border-white/10 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
-              Move highlighting
-            </p>
-            <span className="text-[10px] text-slate-600">
-              {visibleMoveIds.size}/{manifest.moves.items.length} shown
-            </span>
-          </div>
-          <div
-            role="group"
-            aria-label="Move connector visibility"
-            className="mt-3 grid grid-cols-3 overflow-hidden rounded border border-white/15 bg-slate-950 text-xs"
-          >
-            <button
-              type="button"
-              disabled={!currentMoveId}
-              aria-pressed={
-                currentMoveId !== null &&
-                visibleMoveIds.size === 1 &&
-                visibleMoveIds.has(currentMoveId)
-              }
-              onClick={() => {
-                if (currentMoveId) {
-                  onVisibleMoveIdsChange(new Set([currentMoveId]));
-                }
-              }}
-              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
+      <div className="max-h-[55vh] shrink-0 overflow-auto border-b border-white/10">
+        <h2 className="sticky top-0 z-10 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-200">
+          srcMove
+        </h2>
+        {manifest.moves.items.length > 0 ? (
+          <div className="border-b border-white/10 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+                Move highlighting
+              </p>
+              <span className="text-[10px] text-slate-600">
+                {visibleMoveIds.size}/{manifest.moves.items.length} shown
+              </span>
+            </div>
+            <div
+              role="group"
+              aria-label="Move connector visibility"
+              className="mt-3 grid grid-cols-3 overflow-hidden rounded border border-white/15 bg-slate-950 text-xs"
             >
-              Current only
-            </button>
-            <button
-              type="button"
-              aria-pressed={visibleMoveIds.size === manifest.moves.items.length}
-              onClick={() =>
-                onVisibleMoveIdsChange(
-                  new Set(manifest.moves.items.map((move) => move.move_id)),
-                )
-              }
-              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 aria-pressed:text-amber-200"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              aria-pressed={visibleMoveIds.size === 0}
-              onClick={() => onVisibleMoveIdsChange(new Set())}
-              className="px-2 py-1.5 text-slate-300 aria-pressed:bg-white/10 aria-pressed:text-white"
-            >
-              None
-            </button>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {manifest.moves.items.map((move) => (
               <button
-                key={move.move_id}
                 type="button"
-                aria-pressed={visibleMoveIds.has(move.move_id)}
-                data-inspected-move={inspectedMoveId === move.move_id}
-                title={`${visibleMoveIds.has(move.move_id) ? "Hide" : "Show"} ${move.move_id} connector`}
-                onClick={() => onToggleMove(move)}
-                className={`rounded border px-2 py-1 text-xs ${
-                  inspectedMoveId === move.move_id
-                    ? "ring-diff-move-1/80 ring-1"
-                    : ""
-                } ${
-                  visibleMoveIds.has(move.move_id)
-                    ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
-                    : "border-diff-move-1/25 hover:border-diff-move-1/50 bg-slate-950 text-amber-100/70 hover:text-amber-100"
-                }`}
+                disabled={!currentMoveId}
+                aria-pressed={
+                  currentMoveId !== null &&
+                  visibleMoveIds.size === 1 &&
+                  visibleMoveIds.has(currentMoveId)
+                }
+                onClick={() => {
+                  if (currentMoveId) {
+                    onVisibleMoveIdsChange(new Set([currentMoveId]));
+                  }
+                }}
+                className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
               >
-                <span aria-hidden="true" className="mr-1">
-                  {visibleMoveIds.has(move.move_id) ? "●" : "○"}
-                </span>
-                {move.move_id}
+                Current only
               </button>
-            ))}
+              <button
+                type="button"
+                aria-pressed={
+                  visibleMoveIds.size === manifest.moves.items.length
+                }
+                onClick={() =>
+                  onVisibleMoveIdsChange(
+                    new Set(manifest.moves.items.map((move) => move.move_id)),
+                  )
+                }
+                className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 aria-pressed:text-amber-200"
+              >
+                All
+              </button>
+              <button
+                type="button"
+                aria-pressed={visibleMoveIds.size === 0}
+                onClick={() => onVisibleMoveIdsChange(new Set())}
+                className="px-2 py-1.5 text-slate-300 aria-pressed:bg-white/10 aria-pressed:text-white"
+              >
+                None
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {manifest.moves.items.map((move) => (
+                <button
+                  key={move.move_id}
+                  type="button"
+                  aria-pressed={visibleMoveIds.has(move.move_id)}
+                  data-inspected-move={inspectedMoveId === move.move_id}
+                  title={`${visibleMoveIds.has(move.move_id) ? "Hide" : "Show"} ${move.move_id} connector`}
+                  onClick={() => onToggleMove(move)}
+                  className={`rounded border px-2 py-1 text-xs ${
+                    inspectedMoveId === move.move_id
+                      ? "ring-diff-move-1/80 ring-1"
+                      : ""
+                  } ${
+                    visibleMoveIds.has(move.move_id)
+                      ? "border-diff-move-1/70 bg-diff-move-1/25 text-diff-move-1"
+                      : "border-diff-move-1/25 hover:border-diff-move-1/50 bg-slate-950 text-amber-100/70 hover:text-amber-100"
+                  }`}
+                >
+                  <span aria-hidden="true" className="mr-1">
+                    {visibleMoveIds.has(move.move_id) ? "●" : "○"}
+                  </span>
+                  {move.move_id}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+
+        {correspondenceControls}
+      </div>
 
       <ArtifactNodeInfo
         node={selectedNode}

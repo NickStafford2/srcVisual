@@ -71,7 +71,17 @@ def _read_diagnostics(root: Path, artifact_id: str) -> dict[str, Any] | None:
                 raise ArtifactIntegrityError(
                     "Correspondence references a missing or incorrect endpoint."
                 )
-    return {"pairs": _pairs, "candidates": _by_id}
+    with closing(_connect_readonly(_path / "index.sqlite")) as _db:
+        _files = dict(_db.execute("SELECT unit_id, file_id FROM files"))
+    _locations = {}
+    for _id, _location in _producer.get(
+        "visualization_candidate_locations", {}
+    ).items():
+        _locations[int(_id)] = {
+            **_location,
+            "file_id": _files.get(_location["unit_id"]),
+        }
+    return {"pairs": _pairs, "candidates": _by_id, "locations": _locations}
 
 
 def read_correspondences(
@@ -134,6 +144,8 @@ def read_correspondences(
                 "cardinality": _pair["cardinality"],
                 "before_file": _before["filename"],
                 "after_file": _after["filename"],
+                "before_location": _location(_data, _before["candidate_id"]),
+                "after_location": _location(_data, _after["candidate_id"]),
             }
         )
     _response.update(
@@ -163,6 +175,7 @@ def read_correspondence(
         _text = _candidate["raw_text"]
         return {
             **_candidate,
+            "source_location": _location(_data, candidate_id),
             "raw_text": _text[:20000],
             "text_length": len(_text),
             "text_truncated": len(_text) > 20000,
@@ -176,3 +189,14 @@ def read_correspondence(
         "before": _endpoint(_pair["delete_candidate_id"]),
         "after": _endpoint(_pair["insert_candidate_id"]),
     }
+
+
+def _location(data: dict[str, Any], candidate_id: int) -> dict[str, Any]:
+    return data["locations"].get(
+        candidate_id,
+        {
+            "file_id": None,
+            "span": None,
+            "reason": "Source locations were not recorded. Rerun with correspondence diagnostics.",
+        },
+    )

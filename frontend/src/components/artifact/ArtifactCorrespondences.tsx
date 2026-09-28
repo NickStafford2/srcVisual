@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 
-type Pair = {
+export type SourceLocation = {
+  file_id: string | null;
+  span: {
+    start_line: number;
+    start_col: number;
+    end_line: number;
+    end_col: number;
+  } | null;
+  reason: string | null;
+};
+export type Pair = {
   id: number;
   kind: string;
   classification: string;
@@ -9,6 +19,8 @@ type Pair = {
   cardinality: string;
   before_file: string;
   after_file: string;
+  before_location: SourceLocation;
+  after_location: SourceLocation;
 };
 type Page = {
   schema_version: 1;
@@ -29,7 +41,7 @@ type Endpoint = {
   text_length: number;
   text_truncated: boolean;
 };
-type Detail = {
+export type Detail = {
   schema_version: 1;
   artifact_id: string;
   id: number;
@@ -38,7 +50,7 @@ type Detail = {
   evidence: Record<string, unknown>;
 };
 
-async function getProjection<T>(url: string): Promise<T> {
+export async function getProjection<T>(url: string): Promise<T> {
   const response = await fetch(url);
   const payload = await response.json();
   if (!response.ok)
@@ -69,9 +81,15 @@ const evidenceLabel = (key: string) =>
 export function ArtifactCorrespondences({
   artifactId,
   active,
+  sidebar = false,
+  visiblePairs = [],
+  onVisiblePairsChange,
 }: {
   artifactId: string;
   active: boolean;
+  sidebar?: boolean;
+  visiblePairs?: Pair[];
+  onVisiblePairsChange?: (pairs: Pair[]) => void;
 }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("");
@@ -122,7 +140,7 @@ export function ArtifactCorrespondences({
     };
   }, [active, artifactId, query, kind, classification, outcome, offset]);
   useEffect(() => {
-    if (!active || selected === null) return;
+    if (!active || sidebar || selected === null) return;
     let current = true;
     setDetail(null);
     setDetailError(null);
@@ -138,24 +156,29 @@ export function ArtifactCorrespondences({
     return () => {
       current = false;
     };
-  }, [active, artifactId, selected]);
+  }, [active, artifactId, selected, sidebar]);
   const change = (setter: (value: string) => void, value: string) => {
     setter(value);
     setOffset(0);
   };
+  if (sidebar && page && !page.available) return null;
   return (
     <section
-      aria-label="Correspondence inspector"
+      aria-label={
+        sidebar ? "Correspondence highlighting" : "Correspondence inspector"
+      }
       className="space-y-4 rounded-xl border border-white/10 bg-slate-950 p-4 text-sm text-slate-300"
     >
       <div>
         <h2 className="font-semibold text-slate-100">
-          Correspondences · diagnostic evidence
+          {sidebar
+            ? "Correspondence highlighting"
+            : "Correspondences · diagnostic evidence"}
         </h2>
         <p className="mt-1 text-xs text-slate-400">
-          Inspect recorded relationships, including pairs not selected as moves.
-          This is not an exhaustive trace of every candidate considered. Type-3
-          classifications are observations; they do not control move selection.
+          {sidebar
+            ? "Colors indicate match type. Click a source swatch or connector for details."
+            : "Inspect recorded relationships, including pairs not selected as moves. This is not an exhaustive trace of every candidate considered. Type-3 classifications are observations; they do not control move selection."}
         </p>
       </div>
       {error ? (
@@ -173,6 +196,55 @@ export function ArtifactCorrespondences({
       ) : null}
       {page?.available ? (
         <>
+          {sidebar ? (
+            <>
+              <p className="text-xs">
+                Type-1{" "}
+                <span style={{ color: correspondenceColor("type1") }}>●</span> ·
+                Type-2{" "}
+                <span style={{ color: correspondenceColor("type2") }}>●</span> ·
+                Type-3{" "}
+                <span style={{ color: correspondenceColor("type3") }}>●</span>
+              </p>
+              <div
+                role="group"
+                aria-label="Correspondence connector visibility"
+                className="flex gap-2 rounded border border-white/15 bg-slate-900 p-2 text-xs [&>button]:cursor-pointer [&>button:disabled]:opacity-40 [&>button[aria-pressed=true]]:text-white"
+              >
+                <button
+                  disabled={selected === null}
+                  onClick={() =>
+                    onVisiblePairsChange?.(
+                      page.items.filter((p) => p.id === selected),
+                    )
+                  }
+                >
+                  Current only
+                </button>
+                <button
+                  disabled={loading}
+                  onClick={() =>
+                    onVisiblePairsChange?.([
+                      ...new Map(
+                        [...visiblePairs, ...page.items].map((p) => [p.id, p]),
+                      ).values(),
+                    ])
+                  }
+                >
+                  All on page
+                </button>
+                <button
+                  aria-pressed={visiblePairs.length === 0}
+                  onClick={() => onVisiblePairsChange?.([])}
+                >
+                  None
+                </button>
+              </div>
+              <p className="text-xs">
+                {visiblePairs.length} enabled · click a pair to toggle
+              </p>
+            </>
+          ) : null}
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-xs">
               Search files, constructs or reasons
@@ -231,13 +303,30 @@ export function ArtifactCorrespondences({
                   <button
                     key={pair.id}
                     type="button"
-                    aria-pressed={selected === pair.id}
-                    onClick={() => setSelected(pair.id)}
+                    aria-pressed={
+                      sidebar
+                        ? visiblePairs.some((p) => p.id === pair.id)
+                        : selected === pair.id
+                    }
+                    onClick={() => {
+                      setSelected(pair.id);
+                      if (sidebar)
+                        onVisiblePairsChange?.(
+                          visiblePairs.some((p) => p.id === pair.id)
+                            ? visiblePairs.filter((p) => p.id !== pair.id)
+                            : [...visiblePairs, pair],
+                        );
+                    }}
                     className="block w-full border-b border-white/10 p-3 text-left hover:bg-white/5 aria-pressed:bg-sky-500/15"
                   >
                     <span className="flex flex-wrap gap-x-3 gap-y-1">
                       <strong>Pair {pair.id + 1}</strong>
-                      <span className="text-sky-300">
+                      <span style={{ color: correspondenceColor(pair.kind) }}>
+                        {sidebar
+                          ? visiblePairs.some((p) => p.id === pair.id)
+                            ? "● "
+                            : "○ "
+                          : ""}
                         {pair.kind.toUpperCase()}
                       </span>
                       <span>{label(pair.classification)}</span>
@@ -251,9 +340,19 @@ export function ArtifactCorrespondences({
                         {outcomeLabel(pair.outcome)}
                       </span>
                     </span>
-                    <span className="mt-1 block break-all text-xs">
+                    <span className="mt-1 block text-xs break-all">
                       {pair.before_file} → {pair.after_file}
                     </span>
+                    {sidebar &&
+                    (!pair.before_location?.span ||
+                      !pair.after_location?.span) ? (
+                      <span className="mt-1 block text-xs text-amber-200">
+                        Source highlight unavailable:{" "}
+                        {pair.before_location?.reason ??
+                          pair.after_location?.reason ??
+                          "Rerun with correspondence diagnostics."}
+                      </span>
+                    ) : null}
                     <span className="mt-1 block text-xs text-slate-500">
                       {label(pair.reason)} · {label(pair.cardinality)}
                     </span>
@@ -281,7 +380,7 @@ export function ArtifactCorrespondences({
               Next page
             </button>
           </div>
-          {selected === null && !loading ? (
+          {!sidebar && selected === null && !loading ? (
             <p className="text-xs text-slate-400">
               Choose a pair to inspect its original candidate snippets and
               recorded reasoning.
@@ -295,83 +394,96 @@ export function ArtifactCorrespondences({
           {detailError}
         </p>
       ) : null}
-      {selected !== null && !detail && !detailError ? (
+      {!sidebar && selected !== null && !detail && !detailError ? (
         <p role="status">Loading pair…</p>
       ) : null}
-      {detail ? (
-        <div className="space-y-3">
-          <h3 className="font-semibold text-slate-100">
-            Pair {detail.id + 1} · candidate snippets
-          </h3>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {(
-              [
-                ["Before", detail.before],
-                ["After", detail.after],
-              ] as const
-            ).map(([side, endpoint]) => (
-              <section
-                key={side}
-                aria-label={`${side} candidate`}
-                className="min-w-0 rounded border border-white/15 bg-black"
-              >
-                <div className="border-b border-white/10 p-3 text-xs">
-                  <strong className="text-sky-200">
-                    {side} · Candidate {endpoint.candidate_id}
-                  </strong>
-                  <p className="mt-1 break-all">
-                    {endpoint.filename} · {endpoint.construct}
-                  </p>
-                  <p className="mt-1 break-all text-slate-500">
-                    {endpoint.xpath}
-                  </p>
-                </div>
-                <pre className="max-h-96 overflow-auto p-3 text-xs text-slate-200">
-                  {endpoint.raw_text || "(Empty candidate text)"}
-                </pre>
-                {endpoint.text_truncated ? (
-                  <p className="p-3 text-xs text-amber-300">
-                    Showing first 20,000 of {endpoint.text_length} characters.
-                  </p>
-                ) : null}
-              </section>
-            ))}
-          </div>
-          <h3 className="font-semibold text-slate-100">Recorded reasoning</h3>
-          <p className="text-xs text-slate-400">
-            The location reason explains the classification; it does not
-            necessarily explain why a pair was omitted from the final moves.
-          </p>
-          <dl className="grid gap-2 text-xs sm:grid-cols-2">
-            {Object.entries(detail.evidence)
-              .filter(([key]) => !key.endsWith("_context"))
-              .map(([key, value]) => (
-                <div key={key} className="rounded bg-white/5 p-2">
-                  <dt className="text-slate-500">{evidenceLabel(key)}</dt>
-                  <dd className="mt-1 break-words">
-                    {key === "current_result"
-                      ? outcomeLabel(String(value))
-                      : value === null
-                        ? "Not applicable"
-                        : typeof value === "boolean"
-                          ? value
-                            ? "Yes"
-                            : "No"
-                          : label(String(value))}
-                  </dd>
-                </div>
-              ))}
-          </dl>
-          <details className="text-xs">
-            <summary className="cursor-pointer text-sky-300">
-              Full recorded context (JSON)
-            </summary>
-            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-all">
-              {JSON.stringify(detail.evidence, null, 2)}
-            </pre>
-          </details>
-        </div>
-      ) : null}
+      {detail ? <CorrespondenceRecord detail={detail} /> : null}
     </section>
+  );
+}
+
+export function CorrespondenceRecord({ detail }: { detail: Detail }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold text-slate-100">
+        Pair {detail.id + 1} · candidate snippets
+      </h3>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {(
+          [
+            ["Before", detail.before],
+            ["After", detail.after],
+          ] as const
+        ).map(([side, endpoint]) => (
+          <section
+            key={side}
+            aria-label={`${side} candidate`}
+            className="min-w-0 rounded border border-white/15 bg-black"
+          >
+            <div className="border-b border-white/10 p-3 text-xs">
+              <strong className="text-sky-200">
+                {side} · Candidate {endpoint.candidate_id}
+              </strong>
+              <p className="mt-1 break-all">
+                {endpoint.filename} · {endpoint.construct}
+              </p>
+              <p className="mt-1 break-all text-slate-500">{endpoint.xpath}</p>
+            </div>
+            <pre className="max-h-96 overflow-auto p-3 text-xs text-slate-200">
+              {endpoint.raw_text || "(Empty candidate text)"}
+            </pre>
+            {endpoint.text_truncated ? (
+              <p className="p-3 text-xs text-amber-300">
+                Showing first 20,000 of {endpoint.text_length} characters.
+              </p>
+            ) : null}
+          </section>
+        ))}
+      </div>
+      <h3 className="font-semibold text-slate-100">Recorded reasoning</h3>
+      <p className="text-xs text-slate-400">
+        The location reason explains the classification; it does not necessarily
+        explain why a pair was omitted from the final moves.
+      </p>
+      <dl className="grid gap-2 text-xs sm:grid-cols-2">
+        {Object.entries(detail.evidence)
+          .filter(([key]) => !key.endsWith("_context"))
+          .map(([key, value]) => (
+            <div key={key} className="rounded bg-white/5 p-2">
+              <dt className="text-slate-500">{evidenceLabel(key)}</dt>
+              <dd className="mt-1 break-words">
+                {key === "current_result"
+                  ? outcomeLabel(String(value))
+                  : value === null
+                    ? "Not applicable"
+                    : typeof value === "boolean"
+                      ? value
+                        ? "Yes"
+                        : "No"
+                      : label(String(value))}
+              </dd>
+            </div>
+          ))}
+      </dl>
+      <details className="text-xs">
+        <summary className="cursor-pointer text-sky-300">
+          Full recorded context (JSON)
+        </summary>
+        <pre className="mt-2 max-h-96 overflow-auto break-all whitespace-pre-wrap">
+          {JSON.stringify(detail.evidence, null, 2)}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
+export function correspondenceColor(kind: string) {
+  return (
+    (
+      { type1: "#a78bfa", type2: "#34d399", type3: "#fb7185" } as Record<
+        string,
+        string
+      >
+    )[kind.toLowerCase().replace(/[-_]/g, "")] ?? "#94a3b8"
   );
 }

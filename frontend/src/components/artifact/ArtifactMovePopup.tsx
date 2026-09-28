@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { ArtifactPopup } from "./ArtifactPopup";
 import { fetchArtifactMove } from "../../api";
 import type { ArtifactMoveProjection } from "../../types";
 
@@ -12,9 +12,6 @@ type Props = {
   onClose: () => void;
 };
 
-const POPUP_WIDTH = 480;
-const VIEWPORT_PADDING = 12;
-
 export function ArtifactMovePopup({
   artifactId,
   moveId,
@@ -25,15 +22,6 @@ export function ArtifactMovePopup({
     null,
   );
   const [error, setError] = useState<string | null>(null);
-  const [windowPosition, setWindowPosition] = useState(() =>
-    initialPosition(position),
-  );
-  const [drag, setDrag] = useState<{
-    pointerId: number;
-    offsetX: number;
-    offsetY: number;
-  } | null>(null);
-
   useEffect(() => {
     let current = true;
     setProjection(null);
@@ -50,85 +38,22 @@ export function ArtifactMovePopup({
     };
   }, [artifactId, moveId]);
 
-  useEffect(() => {
-    if (!drag) return;
-    const activeDrag = drag;
-
-    function move(event: PointerEvent) {
-      if (event.pointerId !== activeDrag.pointerId) return;
-      setWindowPosition(
-        clampPosition({
-          left: event.clientX - activeDrag.offsetX,
-          top: event.clientY - activeDrag.offsetY,
-        }),
-      );
-    }
-
-    function end(event: PointerEvent) {
-      if (event.pointerId === activeDrag.pointerId) setDrag(null);
-    }
-
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", end);
-    window.addEventListener("pointercancel", end);
-    return () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", end);
-      window.removeEventListener("pointercancel", end);
-    };
-  }, [drag]);
-
-  const popup = (
-    <section
-      aria-label={`Move details ${moveId}`}
-      className="border-diff-move-1/40 fixed z-50 max-h-[calc(100vh-24px)] w-[480px] max-w-[calc(100vw-24px)] overflow-auto rounded-2xl border bg-slate-950/95 text-slate-200 shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
-      style={windowPosition}
+  return (
+    <ArtifactPopup
+      title="Move details"
+      badge={projection?.move.match_kind}
+      identity={moveId}
+      position={position}
+      color="#fbbf24"
+      onClose={onClose}
     >
-      <header
-        className={`border-diff-move-1/20 bg-diff-move-1/10 flex touch-none items-start gap-3 border-b px-4 py-3 ${drag ? "cursor-grabbing" : "cursor-grab"}`}
-        onPointerDown={(event) => {
-          setDrag({
-            pointerId: event.pointerId,
-            offsetX: event.clientX - windowPosition.left,
-            offsetY: event.clientY - windowPosition.top,
-          });
-        }}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] tracking-[0.2em] text-amber-300 uppercase">
-            Move details
-          </p>
-          <h2 className="mt-1 truncate font-mono text-sm text-slate-100">
-            {moveId}
-          </h2>
-        </div>
-        {projection?.move.match_kind ? (
-          <span className="border-diff-move-1/40 bg-diff-move-1/15 rounded-full border px-2.5 py-1 font-mono text-xs text-amber-200">
-            {projection.move.match_kind}
-          </span>
-        ) : null}
-        <button
-          type="button"
-          aria-label={`Close move details ${moveId}`}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={onClose}
-          className="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 hover:bg-white/10"
-        >
-          Close
-        </button>
-      </header>
-
       {error ? <p className="p-4 text-sm text-rose-300">{error}</p> : null}
       {!projection && !error ? (
         <p className="p-4 text-sm text-slate-400">Loading srcMove result…</p>
       ) : null}
       {projection ? <MoveRecord projection={projection} /> : null}
-    </section>
+    </ArtifactPopup>
   );
-
-  return typeof document === "undefined"
-    ? popup
-    : createPortal(popup, document.body);
 }
 
 function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
@@ -222,33 +147,6 @@ function PathList({ label, values }: { label: string; values?: string[] }) {
       ))}
     </div>
   );
-}
-
-function initialPosition(position: Position) {
-  return clampPosition({ left: position.x + 16, top: position.y + 16 });
-}
-
-function clampPosition(position: { left: number; top: number }) {
-  if (typeof window === "undefined") return position;
-  return {
-    left: Math.max(
-      VIEWPORT_PADDING,
-      Math.min(
-        position.left,
-        Math.max(
-          VIEWPORT_PADDING,
-          window.innerWidth - POPUP_WIDTH - VIEWPORT_PADDING,
-        ),
-      ),
-    ),
-    top: Math.max(
-      VIEWPORT_PADDING,
-      Math.min(
-        position.top,
-        Math.max(VIEWPORT_PADDING, window.innerHeight - 260),
-      ),
-    ),
-  };
 }
 
 function errorMessage(reason: unknown) {
