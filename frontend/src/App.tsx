@@ -84,7 +84,9 @@ export default function App() {
     if (artifact) {
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
       setInspectedArtifactMove(null);
-      setVisibleArtifactMoveIds(new Set());
+      setVisibleArtifactMoveIds(
+        new Set(artifact.moves.items.map((move) => move.move_id)),
+      );
       setSelectedArtifactNodeId(null);
       setSelectedArtifactNode(null);
       setArtifactNodeError(null);

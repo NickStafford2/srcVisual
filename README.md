@@ -38,6 +38,23 @@ See [application rules](docs/Rules.md), the
 
 ## Run locally with Docker
 
+For frontend development, first build the application once using the command
+below, then run this from the parent workspace:
+
+```bash
+make -C srcDiffVisual dev
+```
+
+Open <http://localhost:5173>. React and CSS edits update automatically through
+Vite hot reload. The development server runs in Docker and proxies `/api` to
+the existing backend, sharing its artifacts and history. The first start
+installs frontend dependencies; `make -C srcDiffVisual dev-logs` shows readiness.
+After changing frontend dependencies, restart it with `make -C srcDiffVisual
+dev-stop` followed by `make -C srcDiffVisual dev` to reinstall from the lockfile.
+The stop command stops only the frontend development server.
+
+The following command builds and starts the packaged application at port 5000:
+
 On macOS, run srcDiffVisual from the parent workspace directory. Docker builds the
 Linux frontend, backend, srcML, srcReader, srcDiff, and srcMove dependencies;
 the host does not need native build tools for those projects.
@@ -68,8 +85,9 @@ one-off containers. Rebuild the full image after changing srcDiffVisual,
 `srcmove_history` Python code, the Dockerfile, or another native dependency.
 The canonical commands and checksum-based analysis lifecycle are documented in
 the parent workspace's `docs/workspace.md`.
-This Compose setup is currently a production-style local build, not a
-hot-reload development server. The checked-in Compose configuration mounts the
+Port 5000 serves the packaged build; port 5173 provides frontend hot reload
+through `compose.dev.yaml`. Backend and native dependency edits still require
+rebuilding the packaged application. The checked-in Compose configuration mounts the
 Notepad++ reference repository as the one preconfigured analysis target. Its
 source worktree is read-only; only its `.git` and `.srcmove` directories are
 writable so the `srcmove-history` CLI can manage its own operation state and

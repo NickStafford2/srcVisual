@@ -1,0 +1,20 @@
+services:
+  frontend:
+    image: node:22-bookworm-slim
+    init: true
+    working_dir: /frontend
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"]
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      SRCDIFFVISUAL_API_TARGET: "http://srcdiffvisual:5000"
+      SRCDIFFVISUAL_POLL_FILES: "1"
+    volumes:
+      - ./frontend:/frontend:ro
+      - /frontend/node_modules
+      - frontend-npm-cache:/root/.npm
+    depends_on:
+      - srcdiffvisual
+
+volumes:
+  frontend-npm-cache:

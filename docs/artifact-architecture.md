@@ -741,8 +741,9 @@ so the XML view retains tag semantics rather than flattening them into lines.
 Connector visibility, move inspection, node selection, and move isolation are
 independent. Clicking a moved source fragment or connector inspects the move
 without changing visibility or filtering; navigator move chips toggle
-individual connectors. Source provides `Current only`, `All`, and `None`
-visibility controls. `All` still respects lazy
+individual connectors. The navigator's move section provides `Current only`,
+`All`, and `None` visibility controls, defaulting to `All` when a comparison
+opens. `All` still respects lazy
 rendering: connectors terminate at rendered semantic endpoints or collapsed
 file-header proxies and never force every source projection to load.
 

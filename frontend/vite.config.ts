@@ -5,8 +5,11 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    watch: process.env.SRCDIFFVISUAL_POLL_FILES === "1"
+      ? { usePolling: true, interval: 250 }
+      : undefined,
     proxy: {
-      "/api": "http://127.0.0.1:5000",
+      "/api": process.env.SRCDIFFVISUAL_API_TARGET ?? "http://127.0.0.1:5000",
     },
   },
   test: {

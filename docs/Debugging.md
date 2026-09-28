@@ -24,6 +24,9 @@ test container.
 
 Frontend:
 
+- start Docker hot reload: `make dev` (see [local development](../README.md#run-locally-with-docker))
+- follow development startup and errors: `make dev-logs`
+- stop only the frontend development server: `make dev-stop`
 - run tests and the production build: `make test-frontend`
 - run only the production build: `make build-frontend`
 

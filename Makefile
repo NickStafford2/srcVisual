@@ -5,13 +5,17 @@ PYTEST_ARGS ?=
 
 WORKSPACE_ROOT := $(abspath ..)
 BACKEND_RUN = $(DOCKER) run --rm -v "$(CURDIR):/app" -w /app $(BACKEND_IMAGE)
+DEV_COMPOSE = $(DOCKER) compose -f compose.yaml -f compose.dev.yaml
 
 .DEFAULT_GOAL := help
 
-.PHONY: help image lint test test-backend test-backend-unit test-frontend build-frontend
+.PHONY: help dev dev-stop dev-logs image lint test test-backend test-backend-unit test-frontend build-frontend
 
 help:
 	@echo "srcDiffVisual development targets"
+	@echo "  make dev                Start frontend hot reload at http://localhost:5173"
+	@echo "  make dev-stop           Stop the frontend development server"
+	@echo "  make dev-logs           Follow the frontend development logs"
 	@echo "  make test               Run every required check"
 	@echo "  make lint               Run backend lint"
 	@echo "  make test-backend       Run backend tests; pass PYTEST_ARGS='tests/...' to focus"
@@ -19,6 +23,17 @@ help:
 	@echo "  make test-frontend      Run frontend tests and production build in Docker"
 	@echo "  make build-frontend     Run the production frontend build in Docker"
 	@echo "  make image              Rebuild the packaged backend and native-tool image"
+
+dev:
+	$(DEV_COMPOSE) up -d --no-build srcdiffvisual history-worker frontend
+	@echo "Frontend starting at http://localhost:5173 (first start installs dependencies)."
+	@echo "Use make dev-logs to check readiness."
+
+dev-stop:
+	$(DEV_COMPOSE) stop frontend
+
+dev-logs:
+	$(DEV_COMPOSE) logs -f frontend
 
 image:
 	$(DOCKER) compose build srcdiffvisual

@@ -198,6 +198,12 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   expect(await screen.findByText("unit: example.cpp")).toBeInTheDocument();
   expect(xmlRequests).toBe(0);
 
+  expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await user.click(screen.getByRole("button", { name: "None" }));
+
   await user.click(screen.getByRole("tab", { name: "XML" }));
   await waitFor(() => expect(xmlRequests).toBe(1));
   await user.click(await screen.findByRole("button", { name: "<unit />" }));
