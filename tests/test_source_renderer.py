@@ -50,6 +50,53 @@ def test_render_revision_files_renders_revision_specific_source() -> None:
     )
 
 
+def test_nested_diff_boundaries_restore_their_explicit_revisions() -> None:
+    moved_srcdiff_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff"><unit filename="example.cpp"><diff:delete>deleted-before<diff:common>shared</diff:common>deleted-after</diff:delete><diff:insert>inserted-before<diff:common>also-shared</diff:common>inserted-after</diff:insert></unit></unit>
+"""
+    revision_files = (
+        RevisionFile(
+            unit_id=1,
+            filename="example.cpp",
+            revision_0_filename="original.cpp",
+            revision_1_filename="modified.cpp",
+            language="C++",
+            revision_0_source_code="",
+            revision_1_source_code="",
+        ),
+    )
+
+    rendered = render_revision_files(
+        moved_srcdiff_xml=moved_srcdiff_xml,
+        revision_files=revision_files,
+        include_skipped_tags=False,
+    )[0]
+
+    assert (
+        rendered.revision_file.revision_0_source_code
+        == "deleted-beforeshareddeleted-afteralso-shared"
+    )
+    assert (
+        rendered.revision_file.revision_1_source_code
+        == "sharedinserted-beforealso-sharedinserted-after"
+    )
+
+    delete_path = "/src:unit[1]/diff:delete[1]"
+    common_in_delete_path = f"{delete_path}/diff:common[1]"
+    insert_path = "/src:unit[1]/diff:insert[1]"
+    common_in_insert_path = f"{insert_path}/diff:common[1]"
+
+    assert delete_path in rendered.revision_0_spans_by_path
+    assert delete_path not in rendered.revision_1_spans_by_path
+    assert insert_path not in rendered.revision_0_spans_by_path
+    assert insert_path in rendered.revision_1_spans_by_path
+    assert common_in_delete_path in rendered.revision_0_spans_by_path
+    assert common_in_delete_path in rendered.revision_1_spans_by_path
+    assert common_in_insert_path in rendered.revision_0_spans_by_path
+    assert common_in_insert_path in rendered.revision_1_spans_by_path
+
+
 def test_offset_to_line_col_uses_line_starts_correctly() -> None:
     line_starts = _compute_line_starts("abc\ndef\n")
 

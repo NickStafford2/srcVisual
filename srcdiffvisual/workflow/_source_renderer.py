@@ -13,6 +13,7 @@ RevisionName = str
 REVISION_0 = "revision_0"
 REVISION_1 = "revision_1"
 ALL_REVISIONS = (REVISION_0, REVISION_1)
+SOURCE_PROJECTION_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -176,10 +177,13 @@ def _active_revisions_for_element(
     _tag = prefixed_name(element.tag)
 
     if _tag == "diff:delete":
-        return parent_revisions & {REVISION_0}
+        return {REVISION_0}
 
     if _tag == "diff:insert":
-        return parent_revisions & {REVISION_1}
+        return {REVISION_1}
+
+    if _tag == "diff:common":
+        return set(ALL_REVISIONS)
 
     return set(parent_revisions)
 

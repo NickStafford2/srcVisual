@@ -111,7 +111,7 @@ def test_read_pair_rejects_unexpected_schema(
         read_history_pair(repository, 1)
 
 
-def test_history_artifact_fingerprint_binds_srcmove_identity_and_schema(
+def test_history_artifact_fingerprint_binds_srcmove_identity_and_analysis_contract(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -140,10 +140,17 @@ def test_history_artifact_fingerprint_binds_srcmove_identity_and_schema(
         3,
         artifact_schema_version=3,
     )
+    changed_projection = build_history_artifact_fingerprint(
+        repository,
+        3,
+        artifact_schema_version=2,
+        source_projection_version=999,
+    )
 
     assert first == same
     assert len(first) == 64
     assert changed != first
+    assert changed_projection != first
 
 
 def test_history_artifact_fingerprint_rejects_invalid_srcmove_identity(

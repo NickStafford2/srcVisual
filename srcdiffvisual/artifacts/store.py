@@ -20,6 +20,7 @@ from srcdiffvisual.artifacts.models import (
     StoredArtifact,
 )
 from srcdiffvisual.files.models import RevisionFile, VisualizedFile
+from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
 from srcdiffvisual.workflow.models import VisualizationPayload
 
 ARTIFACT_SCHEMA_VERSION = 3
@@ -238,6 +239,7 @@ def _write_artifact(
         "tools": _tool_provenance,
         "analysis_configuration": {
             "include_skipped_tags": True,
+            "source_projection_version": SOURCE_PROJECTION_VERSION,
         },
         "checksums": {
             "input_sha256": _sha256_bytes(input_payload),
@@ -686,6 +688,7 @@ def _build_fingerprint(
     _document = json.dumps(
         {
             "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+            "source_projection_version": SOURCE_PROJECTION_VERSION,
             "input_sha256": _sha256_bytes(input_payload),
             "move_results_sha256": _sha256_bytes(
                 json.dumps(

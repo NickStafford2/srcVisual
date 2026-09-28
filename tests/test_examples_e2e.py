@@ -147,6 +147,16 @@ def test_nested_insert_example_projects_explicit_common_regions(
         if anchor["kind"] == "common"
     }
     assert source_common_node_ids
+    common_sides = {
+        side
+        for block in source_response.get_json()["blocks"]
+        for row in block.get("rows", [])
+        for side, line in (("left", row["left"]), ("right", row["right"]))
+        if line is not None
+        for anchor in line["anchors"]
+        if anchor["node_id"] in source_common_node_ids
+    }
+    assert common_sides == {"left", "right"}
     assert all(
         anchor["diff_kind"] == "common"
         for block in source_response.get_json()["blocks"]

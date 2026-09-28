@@ -7,6 +7,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
+
 from srcdiffvisual.core.commands import BackendCommandError, run_command
 
 
@@ -93,6 +95,7 @@ def build_history_artifact_fingerprint(
     pair_number: int,
     *,
     artifact_schema_version: int,
+    source_projection_version: int = SOURCE_PROJECTION_VERSION,
 ) -> str:
     """Bind srcMove's canonical pair identity to srcDiffVisual's artifact contract."""
     _document = read_history_pair(repository, pair_number)
@@ -115,11 +118,20 @@ def build_history_artifact_fingerprint(
         or artifact_schema_version <= 0
     ):
         raise ValueError("Artifact schema version must be a positive integer.")
+    if (
+        isinstance(source_projection_version, bool)
+        or not isinstance(source_projection_version, int)
+        or source_projection_version <= 0
+    ):
+        raise ValueError("Source projection version must be a positive integer.")
     _identity = {
         "schema_version": 1,
         "srcmove_pair_fingerprint": _pair_fingerprint,
         "artifact_schema_version": artifact_schema_version,
-        "analysis_configuration": {"include_skipped_tags": True},
+        "analysis_configuration": {
+            "include_skipped_tags": True,
+            "source_projection_version": source_projection_version,
+        },
     }
     _canonical = json.dumps(
         _identity,
