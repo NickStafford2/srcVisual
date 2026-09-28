@@ -18,6 +18,7 @@ type CodeSegmentProps = {
   visibleDiffKinds?: ReadonlySet<ArtifactDiffKind>;
   onMoveInspect?: (moveId: string, position: { x: number; y: number }) => void;
   selected?: boolean;
+  sourceColumn?: number;
 };
 
 export function CodeSegment({
@@ -29,6 +30,7 @@ export function CodeSegment({
   visibleDiffKinds,
   onMoveInspect,
   selected = false,
+  sourceColumn = 0,
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
 
@@ -51,7 +53,7 @@ export function CodeSegment({
 
   const text =
     segment.highlighted && isVisuallyHighlighted
-      ? renderVisibleWhitespace(segment.text)
+      ? renderVisibleWhitespace(segment.text, sourceColumn)
       : segment.text;
 
   useEffect(() => {

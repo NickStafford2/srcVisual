@@ -19,6 +19,7 @@ import type {
   RegisterMoveSegment,
   UnregisterMoveSegment,
 } from "../source-view/code-pane/moveConnectors";
+import { sourceColumnAt } from "../source-view/code-pane/renderVisibleWhitespace";
 import { buildArtifactLineSegments } from "./artifactSourceSegments";
 
 type Props = {
@@ -483,6 +484,7 @@ function SourceCell({
         ...segment,
         text: segment.text.slice(left - start, bounds[i + 1] - start),
       },
+      sourceColumn: sourceColumnAt(line!.text, left),
       endpoints: endpoints.filter((endpoint) => {
         const span = endpoint.location.span!;
         const right = bounds[i + 1];
@@ -504,8 +506,8 @@ function SourceCell({
       <span className="sticky left-0 z-10 w-14 shrink-0 bg-black px-2 py-1 text-right text-slate-600 select-none">
         {line?.line_number ?? ""}
       </span>
-      <code className="px-2 py-1 whitespace-pre text-slate-200">
-        {_segments.map(({ segment, endpoints }, index) => (
+      <code className="px-2 py-1 whitespace-pre text-slate-200 [tab-size:8]">
+        {_segments.map(({ segment, sourceColumn, endpoints }, index) => (
           <CorrespondenceSpan
             key={`${segment.nodeId ?? "plain"}-${index}`}
             endpoints={endpoints}
@@ -513,6 +515,7 @@ function SourceCell({
             <CodeSegment
               revision={revision}
               segment={segment}
+              sourceColumn={sourceColumn}
               visibleMoveIds={visibleMoveIds}
               visibleDiffKinds={visibleDiffKinds}
               selected={
