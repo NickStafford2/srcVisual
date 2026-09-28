@@ -67,13 +67,25 @@ const manifest: ArtifactManifest = {
     },
   ],
   moves: {
-    move_count: 1,
+    move_count: 3,
     items: [
       {
         move_id: "move-1",
         match_kind: "type1",
         from_node_ids: ["f-one:n00000001"],
         to_node_ids: ["f-two:n00000001"],
+      },
+      {
+        move_id: "move-2",
+        match_kind: "type2",
+        from_node_ids: ["f-one:n00000002"],
+        to_node_ids: ["f-two:n00000002"],
+      },
+      {
+        move_id: "move-3",
+        match_kind: "type3",
+        from_node_ids: ["f-one:n00000003"],
+        to_node_ids: ["f-two:n00000003"],
       },
     ],
   },
@@ -206,9 +218,21 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   fireEvent.click(screen.getByRole("button", { name: "None" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
   fireEvent.click(screen.getByRole("button", { name: "All" }));
-  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
+    new Set(["move-1", "move-2", "move-3"]),
+  );
   fireEvent.click(screen.getByRole("button", { name: "Current only" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
+  fireEvent.click(screen.getByRole("button", { name: "Type 1 (1 move)" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
+  fireEvent.click(screen.getByRole("button", { name: "Type 2 (1 move)" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
+    new Set(["move-1", "move-2"]),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Type 3 (1 move)" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
+    new Set(["move-1", "move-3"]),
+  );
 
   expect(
     screen.getAllByRole("button", { name: "diff:common" })[0],

@@ -171,6 +171,21 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
       if (url.includes(`/files/${file.file_id}/tree?`)) {
         return jsonResponse(tree);
       }
+      if (url.endsWith("/moves/move-1")) {
+        return jsonResponse({
+          schema_version: 1,
+          artifact_id: manifest.artifact_id,
+          results_schema_version: null,
+          move: {
+            move_id: "move-1",
+            result_provenance: "xml-annotation",
+            from_xpaths: ["/unit/delete"],
+            to_xpaths: ["/unit/insert"],
+            from_raw_texts: ["old();"],
+            to_raw_texts: ["new();"],
+          },
+        });
+      }
       if (
         url.includes(`/tree/nodes/${encodeURIComponent(file.root_node_id)}`)
       ) {
@@ -214,13 +229,37 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
     "true",
   );
   await user.click(screen.getByRole("button", { name: "None" }));
+  expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+
+  await user.click(screen.getByRole("button", { name: "old();" }));
+  expect(
+    await screen.findByRole("button", {
+      name: "Close move details move-1",
+    }),
+  ).toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    ),
+  );
+  await waitFor(() =>
+    expect(
+      document.querySelector(
+        "svg [data-move-id='move-1'][data-move-visual-state='emphasized']",
+      ),
+    ).not.toBeNull(),
+  );
 
   await user.click(screen.getByRole("tab", { name: "XML" }));
   await waitFor(() => expect(xmlRequests).toBe(1));
   await user.click(await screen.findByRole("button", { name: "<unit />" }));
   expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
     "aria-pressed",
-    "false",
+    "true",
   );
 
   await user.click(screen.getByRole("tab", { name: "Source" }));

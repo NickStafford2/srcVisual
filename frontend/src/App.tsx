@@ -173,6 +173,12 @@ export default function App() {
     position: { x: number; y: number },
   ) {
     if (!artifact?.moves.items.some((move) => move.move_id === moveId)) return;
+    setVisibleArtifactMoveIds((current) => {
+      if (current.has(moveId)) return current;
+      const next = new Set(current);
+      next.add(moveId);
+      return next;
+    });
     setInspectedArtifactMove({ moveId, position });
   }
 

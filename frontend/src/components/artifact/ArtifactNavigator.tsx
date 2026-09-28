@@ -70,6 +70,24 @@ export function ArtifactNavigator({
     file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
   );
   const currentMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
+  const moveTypes = ["type1", "type2", "type3"] as const;
+
+  function toggleMoveType(matchKind: (typeof moveTypes)[number]) {
+    const movesOfType = manifest.moves.items.filter(
+      (move) => move.match_kind === matchKind,
+    );
+    if (movesOfType.length === 0) return;
+
+    const allVisible = movesOfType.every((move) =>
+      visibleMoveIds.has(move.move_id),
+    );
+    const next = new Set(visibleMoveIds);
+    for (const move of movesOfType) {
+      if (allVisible) next.delete(move.move_id);
+      else next.add(move.move_id);
+    }
+    onVisibleMoveIdsChange(next);
+  }
 
   useEffect(() => {
     let active = true;
@@ -335,6 +353,43 @@ export function ArtifactNavigator({
               >
                 None
               </button>
+            </div>
+            <div
+              role="group"
+              aria-label="Move type visibility"
+              className="mt-2 grid grid-cols-3 gap-1 text-xs"
+            >
+              {moveTypes.map((matchKind, index) => {
+                const movesOfType = manifest.moves.items.filter(
+                  (move) => move.match_kind === matchKind,
+                );
+                const allVisible =
+                  movesOfType.length > 0 &&
+                  movesOfType.every((move) =>
+                    visibleMoveIds.has(move.move_id),
+                  );
+                return (
+                  <button
+                    key={matchKind}
+                    type="button"
+                    disabled={movesOfType.length === 0}
+                    aria-pressed={allVisible}
+                    aria-label={`Type ${index + 1} (${movesOfType.length} ${
+                      movesOfType.length === 1 ? "move" : "moves"
+                    })`}
+                    onClick={() => toggleMoveType(matchKind)}
+                    className="border-diff-move-1/25 hover:border-diff-move-1/50 aria-pressed:border-diff-move-1/70 aria-pressed:bg-diff-move-1/20 rounded border bg-slate-950 px-2 py-1.5 text-amber-100/70 disabled:opacity-35 aria-pressed:text-amber-200"
+                  >
+                    Type {index + 1}
+                    <span
+                      aria-hidden="true"
+                      className="ml-1 text-[10px] opacity-60"
+                    >
+                      ({movesOfType.length})
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               {manifest.moves.items.map((move) => (
