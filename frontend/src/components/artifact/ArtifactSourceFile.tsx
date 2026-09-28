@@ -386,38 +386,36 @@ function SourceRevisionPane({
       aria-label={label}
       className="min-w-0 overflow-x-auto border-r border-white/10"
     >
-      <div className="w-max min-w-full">
-        {projection.blocks.map((block) =>
-          block.type === "gap" ? (
-            <button
-              key={block.block_id}
-              type="button"
-              onClick={() => void showGap(block)}
-              className="block h-9 min-w-full border-y border-sky-400/20 bg-neutral-950 px-3 text-left text-sky-300 hover:bg-slate-900"
-            >
-              Show {block[side].line_count} {side} hidden lines
-            </button>
-          ) : (
-            <div key={block.block_id}>
-              {block.rows.map((row, index) => (
-                <SourceCell
-                  key={`${block.block_id}-${index}`}
-                  correspondenceEndpoints={correspondenceEndpoints}
-                  line={row[side]}
-                  rowKind={row.kind}
-                  revision={revision}
-                  visibleMoveIds={visibleMoveIds}
-                  visibleDiffKinds={visibleDiffKinds}
-                  selectedNodeId={selectedNodeId}
-                  onInspectMove={onInspectMove}
-                  registerMoveSegment={registerMoveSegment}
-                  unregisterMoveSegment={unregisterMoveSegment}
-                />
-              ))}
-            </div>
-          ),
-        )}
-      </div>
+      {projection.blocks.map((block) =>
+        block.type === "gap" ? (
+          <button
+            key={block.block_id}
+            type="button"
+            onClick={() => void showGap(block)}
+            className="sticky left-0 z-20 block h-9 w-full border-y border-sky-400/20 bg-neutral-950 px-3 text-left text-sky-300 hover:bg-slate-900"
+          >
+            Show {block[side].line_count} {side} hidden lines
+          </button>
+        ) : (
+          <div key={block.block_id} className="w-max min-w-full">
+            {block.rows.map((row, index) => (
+              <SourceCell
+                key={`${block.block_id}-${index}`}
+                correspondenceEndpoints={correspondenceEndpoints}
+                line={row[side]}
+                rowKind={row.kind}
+                revision={revision}
+                visibleMoveIds={visibleMoveIds}
+                visibleDiffKinds={visibleDiffKinds}
+                selectedNodeId={selectedNodeId}
+                onInspectMove={onInspectMove}
+                registerMoveSegment={registerMoveSegment}
+                unregisterMoveSegment={unregisterMoveSegment}
+              />
+            ))}
+          </div>
+        ),
+      )}
     </div>
   );
 }

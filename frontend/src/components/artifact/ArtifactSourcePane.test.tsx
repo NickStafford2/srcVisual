@@ -201,7 +201,11 @@ describe("ArtifactSourcePane", () => {
       "changes-and-moves",
     );
 
-    await user.click(screen.getByRole("button", { name: /Show 10 left/ }));
+    const leftGapControl = screen.getByRole("button", {
+      name: /Show 10 left/,
+    });
+    expect(leftGapControl).toHaveClass("sticky", "left-0");
+    await user.click(leftGapControl);
     await waitFor(() =>
       expect(fetchArtifactSource).toHaveBeenLastCalledWith(
         "artifact-1",
