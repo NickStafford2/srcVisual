@@ -89,12 +89,14 @@ it("navigates from a move summary to a stable semantic endpoint", async () => {
 it("presents canonical tag details and reveals positioned tags in Source", async () => {
   const user = userEvent.setup();
   const onRevealSource = vi.fn();
+  const onClear = vi.fn();
   render(
     <ArtifactNodeInfo
       node={node}
       loading={false}
       error={null}
       onRevealSource={onRevealSource}
+      onClear={onClear}
     />,
   );
 
@@ -104,4 +106,6 @@ it("presents canonical tag details and reveals positioned tags in Source", async
   expect(screen.getByText("12:1–15:2")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Reveal in Source" }));
   expect(onRevealSource).toHaveBeenCalledOnce();
+  await user.click(screen.getByRole("button", { name: "Deselect" }));
+  expect(onClear).toHaveBeenCalledOnce();
 });

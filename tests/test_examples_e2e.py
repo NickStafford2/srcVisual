@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from srcvisual.web.app import create_app
+from srcdiffvisual.web.app import create_app
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[1] / "examples"
 EXAMPLE_PATHS = (
@@ -21,7 +21,7 @@ EXAMPLE_PATHS = (
 
 @pytest.mark.skipif(
     not EXAMPLE_PATHS,
-    reason="No example files found in srcVisual/examples.",
+    reason="No example files found in srcDiffVisual/examples.",
 )
 @pytest.mark.parametrize("example_path", EXAMPLE_PATHS, ids=lambda path: path.name)
 def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
@@ -54,7 +54,7 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
 def test_artifact_interface_serves_real_bounded_projections(
     monkeypatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_to_new_file_diff.xml"
 
@@ -118,7 +118,7 @@ def test_artifact_interface_serves_real_bounded_projections(
 def test_blocks_swapped_example_accepts_single_root_artifact_inputs(
     monkeypatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     client = create_app().test_client()
     example_path = EXAMPLES_DIR / "e2e_generated_blocks_swapped_diff.xml"
     original_root = ET.fromstring(example_path.read_text(encoding="utf-8"))

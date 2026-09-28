@@ -18,7 +18,6 @@ type Props = {
   inspectedMoveId: string | null;
   moves: ArtifactMoveSummary[];
   visibleMoveIds: ReadonlySet<string>;
-  onVisibleMoveIdsChange: (moveIds: Set<string>) => void;
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   onFocusChange: (focus: ArtifactFocusProfile) => void;
 };
@@ -33,7 +32,6 @@ export function ArtifactSourcePane({
   inspectedMoveId,
   moves,
   visibleMoveIds,
-  onVisibleMoveIdsChange,
   onInspectMove,
   onFocusChange,
 }: Props) {
@@ -108,50 +106,6 @@ export function ArtifactSourcePane({
             <option value="complete-file">Complete file</option>
           </select>
         </label>
-        {moves.length > 0 ? (
-          <div
-            role="group"
-            aria-label="Move connector visibility"
-            className="flex overflow-hidden rounded border border-white/15 bg-neutral-900 text-xs"
-          >
-            <button
-              type="button"
-              disabled={!_inspectedMove}
-              aria-pressed={
-                _inspectedMove !== undefined &&
-                visibleMoveIds.size === 1 &&
-                visibleMoveIds.has(_inspectedMove.move_id)
-              }
-              onClick={() => {
-                if (!_inspectedMove) return;
-                onVisibleMoveIdsChange(new Set([_inspectedMove.move_id]));
-              }}
-              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
-            >
-              Current only
-            </button>
-            <button
-              type="button"
-              aria-pressed={visibleMoveIds.size === moves.length}
-              onClick={() => {
-                onVisibleMoveIdsChange(
-                  new Set(moves.map((move) => move.move_id)),
-                );
-              }}
-              className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1 text-slate-300 aria-pressed:text-amber-200"
-            >
-              All
-            </button>
-            <button
-              type="button"
-              aria-pressed={visibleMoveIds.size === 0}
-              onClick={() => onVisibleMoveIdsChange(new Set())}
-              className="px-2 py-1 text-slate-300 aria-pressed:bg-white/10 aria-pressed:text-white"
-            >
-              None
-            </button>
-          </div>
-        ) : null}
         {_inspectedMove ? (
           <button
             type="button"

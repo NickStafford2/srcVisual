@@ -1,5 +1,5 @@
-from srcvisual.artifacts.normalization import normalize_annotated_xml
-from srcvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.normalization import normalize_annotated_xml
+from srcdiffvisual.artifacts.models import ArtifactProvenance
 
 
 def test_history_normalization_replaces_only_root_scratch_url() -> None:

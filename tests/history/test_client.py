@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-import srcvisual.history.client as history_client
-from srcvisual.core.commands import CommandResult
-from srcvisual.history.client import (
+import srcdiffvisual.history.client as history_client
+from srcdiffvisual.core.commands import CommandResult
+from srcdiffvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
     build_history_artifact_fingerprint,

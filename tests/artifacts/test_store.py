@@ -5,8 +5,8 @@ import sqlite3
 
 import pytest
 
-from srcvisual.artifacts.models import ArtifactProvenance
-from srcvisual.artifacts.store import (
+from srcdiffvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.store import (
     ArtifactIntegrityError,
     check_artifact_integrity,
     cleanup_stale_staging,
@@ -14,8 +14,8 @@ from srcvisual.artifacts.store import (
     read_artifact,
     validate_artifact,
 )
-from srcvisual.files.models import RevisionFile, VisualizedFile
-from srcvisual.workflow.models import VisualizationPayload
+from srcdiffvisual.files.models import RevisionFile, VisualizedFile
+from srcdiffvisual.workflow.models import VisualizationPayload
 
 
 def test_publish_and_read_artifact_round_trip(tmp_path) -> None:

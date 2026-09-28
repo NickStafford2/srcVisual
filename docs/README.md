@@ -1,6 +1,6 @@
-# srcVisual Documentation
+# srcDiffVisual Documentation
 
-Start with the project [README](../README.md) for srcVisual's purpose, current
+Start with the project [README](../README.md) for srcDiffVisual's purpose, current
 application, relationship to srcMove, and hosted-service vision.
 
 ## Product behavior and design
@@ -10,7 +10,7 @@ application, relationship to srcMove, and hosted-service vision.
 - [Artifact-backed visualization architecture](artifact-architecture.md):
   current artifact, projection, source-hunk, execution, and lifecycle design,
   plus the migration record
-- [Repository history browser](history-browser.md): current srcMove/srcVisual
+- [Repository history browser](history-browser.md): current srcMove/srcDiffVisual
   ownership boundary, durable run workflow, API, and deliberate limits
 - [Frontend color guide](../frontend/docs/color-guide.md): visual language for
   diffs, revisions, interactions, and move relationships
@@ -33,7 +33,7 @@ disagree with current behavior.
 - [`Dockerfile`](../Dockerfile) and [`compose.yaml`](../compose.yaml): packaged
   application build and runtime configuration
 
-When srcVisual is checked out inside SrcMLBuildTemplate, use the parent
+When srcDiffVisual is checked out inside SrcMLBuildTemplate, use the parent
 workspace's Docker environment for builds, tests, and native srcML-toolchain
 diagnostics rather than installing the toolchain directly on macOS.
 
@@ -52,4 +52,4 @@ belongs in the project README or the most specific architecture document.
 
 AI agents use the same product and development documentation as human
 contributors. `AGENTS.md` contains operating instructions, not a separate
-description of srcVisual.
+description of srcDiffVisual.

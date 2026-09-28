@@ -1,6 +1,6 @@
 # Application Rules
 
-srcVisual makes srcDiff and srcMove output easier to inspect, with srcMove
+srcDiffVisual makes srcDiff and srcMove output easier to inspect, with srcMove
 evaluation as its primary use case.
 
 High-level rules:
@@ -10,7 +10,7 @@ High-level rules:
    from temporary backend implementation details.
 
 2. Temporary files are implementation details only.
-   Generated temp filenames or temp paths may be used internally to run backend tools, but they must not leak into the final positioned or annotated XML returned by `srcVisual`.
+   Generated temp filenames or temp paths may be used internally to run backend tools, but they must not leak into the final positioned or annotated XML returned by `srcDiffVisual`.
 
 3. Position generation must preserve the original srcDiff content.
    When input lacks position information, generating positioned srcDiff XML
@@ -43,7 +43,7 @@ High-level rules:
 10. Repository history and comparison execution belong to srcMove.
     srcMove's versioned CLI owns history status, pair ordering, compact
     evidence, frozen-tool execution, and repository-local analysis state.
-    srcVisual must not query `.srcmove` with SQL, accept repository paths or
+    srcDiffVisual must not query `.srcmove` with SQL, accept repository paths or
     commands from browser requests, or modify source files. A local deployment
     may give the CLI narrowly scoped write access to `.git` and `.srcmove`
     while keeping the source worktree read-only.

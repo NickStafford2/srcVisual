@@ -3,11 +3,11 @@ import os
 import subprocess
 import sys
 
-from srcvisual.artifacts.models import PublishedArtifact
-from srcvisual.core.commands import BackendCommandError
-from srcvisual.runs.store import RunStore
-import srcvisual.runs.worker as worker_module
-from srcvisual.runs.worker import HistoryRunExecutor, HistoryRunWorker
+from srcdiffvisual.artifacts.models import PublishedArtifact
+from srcdiffvisual.core.commands import BackendCommandError
+from srcdiffvisual.runs.store import RunStore
+import srcdiffvisual.runs.worker as worker_module
+from srcdiffvisual.runs.worker import HistoryRunExecutor, HistoryRunWorker
 
 
 def _components(tmp_path: Path) -> tuple[RunStore, HistoryRunExecutor]:
@@ -110,7 +110,7 @@ def test_worker_terminates_process_group_before_marking_run_cancelled(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_TMP_ROOT", str(tmp_path / "scratch"))
+    monkeypatch.setenv("SRCDIFFVISUAL_TMP_ROOT", str(tmp_path / "scratch"))
     _store, _ = _components(tmp_path)
     _run = _store.create_history_run(9)
     _terminated: list[object] = []
@@ -174,14 +174,14 @@ def test_execute_run_child_mode_observes_preexisting_cancellation(
     _store.claim_next()
     _store.request_cancellation(_run.run_id)
     _environment = os.environ.copy()
-    _environment["SRCVISUAL_ARTIFACT_ROOT"] = str(_artifact_root)
-    _environment["SRCVISUAL_HISTORY_REPOSITORY"] = str(tmp_path / "repository")
+    _environment["SRCDIFFVISUAL_ARTIFACT_ROOT"] = str(_artifact_root)
+    _environment["SRCDIFFVISUAL_HISTORY_REPOSITORY"] = str(tmp_path / "repository")
 
     subprocess.run(
         [
             sys.executable,
             "-m",
-            "srcvisual.runs.worker",
+            "srcdiffvisual.runs.worker",
             "--execute-run",
             _run.run_id,
             "--artifact-id",

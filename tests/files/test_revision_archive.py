@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from srcvisual.files.revision_archive import (
+from srcdiffvisual.files.revision_archive import (
     detect_archive_kind,
     resolve_revision_output_paths,
     resolve_srcdiff_inputs,

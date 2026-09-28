@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-import srcvisual.artifacts.lifecycle as lifecycle_module
-from srcvisual.artifacts.lifecycle import (
+import srcdiffvisual.artifacts.lifecycle as lifecycle_module
+from srcdiffvisual.artifacts.lifecycle import (
     ArtifactCollectionCandidate,
     ArtifactInventory,
     ArtifactInventoryItem,
@@ -17,7 +17,7 @@ from srcvisual.artifacts.lifecycle import (
     inventory_artifacts,
     plan_artifact_collection,
 )
-from srcvisual.artifacts.store import ArtifactIntegrityError
+from srcdiffvisual.artifacts.store import ArtifactIntegrityError
 
 
 def test_inventory_is_read_only_and_ignores_nonartifact_storage(

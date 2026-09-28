@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from srcvisual.workflow._srcdiff import build_moved_srcdiff_xml
+from srcdiffvisual.workflow._srcdiff import build_moved_srcdiff_xml
 
 
 def test_build_moved_srcdiff_xml_restores_positioned_xml_before_srcmove(
@@ -15,11 +15,11 @@ def test_build_moved_srcdiff_xml_restores_positioned_xml_before_srcmove(
     _calls: list[object] = []
 
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.has_srcmove_annotations",
+        "srcdiffvisual.workflow._srcdiff.has_srcmove_annotations",
         lambda _xml: False,
     )
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.has_position_annotations",
+        "srcdiffvisual.workflow._srcdiff.has_position_annotations",
         lambda _xml: False,
     )
 
@@ -46,14 +46,14 @@ def test_build_moved_srcdiff_xml_restores_positioned_xml_before_srcmove(
         return "annotated xml", {"moves": []}
 
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.run_srcdiff_with_positions",
+        "srcdiffvisual.workflow._srcdiff.run_srcdiff_with_positions",
         _fake_run_srcdiff_with_positions,
     )
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.restore_original_metadata_on_path",
+        "srcdiffvisual.workflow._srcdiff.restore_original_metadata_on_path",
         _fake_restore_original_metadata_on_path,
     )
-    monkeypatch.setattr("srcvisual.workflow._srcdiff.run_srcmove", _fake_run_srcmove)
+    monkeypatch.setattr("srcdiffvisual.workflow._srcdiff.run_srcmove", _fake_run_srcmove)
 
     _moved_xml, _move_results, _has_position_data = build_moved_srcdiff_xml(
         input_path=_input_path,
@@ -82,11 +82,11 @@ def test_build_moved_srcdiff_xml_skips_restore_when_input_has_positions(
     _calls: list[object] = []
 
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.has_srcmove_annotations",
+        "srcdiffvisual.workflow._srcdiff.has_srcmove_annotations",
         lambda _xml: False,
     )
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.has_position_annotations",
+        "srcdiffvisual.workflow._srcdiff.has_position_annotations",
         lambda _xml: True,
     )
 
@@ -103,10 +103,10 @@ def test_build_moved_srcdiff_xml_skips_restore_when_input_has_positions(
         return "annotated xml", {"moves": []}
 
     monkeypatch.setattr(
-        "srcvisual.workflow._srcdiff.restore_original_metadata_on_path",
+        "srcdiffvisual.workflow._srcdiff.restore_original_metadata_on_path",
         _fake_restore_original_metadata_on_path,
     )
-    monkeypatch.setattr("srcvisual.workflow._srcdiff.run_srcmove", _fake_run_srcmove)
+    monkeypatch.setattr("srcdiffvisual.workflow._srcdiff.run_srcmove", _fake_run_srcmove)
 
     _moved_xml, _move_results, _has_position_data = build_moved_srcdiff_xml(
         input_path=_input_path,

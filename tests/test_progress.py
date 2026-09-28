@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-import srcvisual.web._progress as progress_module
-from srcvisual.web._progress import ProgressBroker, ProgressEvent, format_sse_event
+import srcdiffvisual.web._progress as progress_module
+from srcdiffvisual.web._progress import ProgressBroker, ProgressEvent, format_sse_event
 
 
 def test_format_sse_event_serializes_json_payload() -> None:

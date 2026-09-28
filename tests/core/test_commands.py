@@ -4,11 +4,11 @@ import sys
 
 import pytest
 
-from srcvisual.core.commands import BackendCommandError, run_command
+from srcdiffvisual.core.commands import BackendCommandError, run_command
 
 
 def test_run_command_returns_stdout_and_stderr(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("SRCVISUAL_COMMAND_TIMEOUT_SECONDS", "2")
+    monkeypatch.setenv("SRCDIFFVISUAL_COMMAND_TIMEOUT_SECONDS", "2")
 
     result = run_command(
         [
@@ -25,7 +25,7 @@ def test_run_command_returns_stdout_and_stderr(monkeypatch: pytest.MonkeyPatch) 
 def test_run_command_raises_backend_error_when_timed_out(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_COMMAND_TIMEOUT_SECONDS", "0.01")
+    monkeypatch.setenv("SRCDIFFVISUAL_COMMAND_TIMEOUT_SECONDS", "0.01")
 
     with pytest.raises(BackendCommandError) as exc_info:
         run_command([sys.executable, "-c", "import time; time.sleep(0.2)"])

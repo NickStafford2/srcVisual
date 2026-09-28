@@ -5,10 +5,10 @@ import json
 import zipfile
 from pathlib import Path
 
-import srcvisual.bigmovebench.routes as routes_module
-from srcvisual.artifacts.models import PublishedArtifact
-from srcvisual.bigmovebench.bundles import publish_review_bundle, read_review_case
-from srcvisual.web.app import create_app
+import srcdiffvisual.bigmovebench.routes as routes_module
+from srcdiffvisual.artifacts.models import PublishedArtifact
+from srcdiffvisual.bigmovebench.bundles import publish_review_bundle, read_review_case
+from srcdiffvisual.web.app import create_app
 
 
 def _bundle() -> bytes:

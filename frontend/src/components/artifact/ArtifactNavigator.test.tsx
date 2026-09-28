@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
@@ -100,18 +100,25 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   const user = userEvent.setup();
   const onSelectFile = vi.fn();
   const onToggleMove = vi.fn();
+  const onVisibleMoveIdsChange = vi.fn();
   const onSelectNode = vi.fn();
   render(
     <ArtifactNavigator
       manifest={manifest}
       selectedFileId="f-one"
-      inspectedMoveId={null}
+      inspectedMoveId="move-1"
       visibleMoveIds={new Set(["move-1"])}
       selectedNodeId={null}
+      selectedNode={null}
+      nodeLoading={false}
+      nodeError={null}
       focus="changes-and-moves"
       onSelectFile={onSelectFile}
       onToggleMove={onToggleMove}
+      onVisibleMoveIdsChange={onVisibleMoveIdsChange}
       onSelectNode={onSelectNode}
+      onClearNode={vi.fn()}
+      onRevealNode={vi.fn()}
     />,
   );
 
@@ -141,6 +148,13 @@ it("pages tree children and toggles cross-file move connectors", async () => {
     "text-diff-move-1",
   );
   expect(onToggleMove).toHaveBeenCalledWith(manifest.moves.items[0]);
+
+  fireEvent.click(screen.getByRole("button", { name: "None" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
+  fireEvent.click(screen.getByRole("button", { name: "All" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
+  fireEvent.click(screen.getByRole("button", { name: "Current only" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
 
   await user.type(
     screen.getByRole("searchbox", { name: "Filter artifact files" }),

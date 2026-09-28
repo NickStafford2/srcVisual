@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Guidance for AI agents working in the srcVisual repository.
+Guidance for AI agents working in the srcDiffVisual repository.
 
 ## Repository scope
 
-srcVisual is an independent repository containing a Python/Flask backend and a
+srcDiffVisual is an independent repository containing a Python/Flask backend and a
 React frontend for inspecting srcDiff and srcMove results. It is commonly
-checked out as `srcVisual/` inside the SrcMLBuildTemplate workspace, but its
+checked out as `srcDiffVisual/` inside the SrcMLBuildTemplate workspace, but its
 source and Git history belong to this repository.
 
 ## Required reading

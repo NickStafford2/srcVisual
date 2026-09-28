@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from srcvisual.artifacts.models import ArtifactProvenance
-from srcvisual.artifacts.store import read_artifact
-from srcvisual.workflow.payload import build_visualization_artifact
+from srcdiffvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.store import read_artifact
+from srcdiffvisual.workflow.payload import build_visualization_artifact
 
 EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "examples"
 

@@ -33,7 +33,7 @@ Reserve color hue for the four base diff kinds:
 This should be the primary color system for nodes, highlights, and source
 fragments.
 
-The established srcVisual move color is yellow/amber and should remain
+The established srcDiffVisual move color is yellow/amber and should remain
 consistent across exact source fragments, tree nodes, badges, and SVG
 connectors. Unchanged source rows use a neutral near-black background. Do not
 give ordinary source a blue wash: blue is an interaction/navigation accent,

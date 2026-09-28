@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import srcvisual.web._routes as routes_module
-from srcvisual.artifacts.models import PublishedArtifact
-from srcvisual.runs.store import RunStore, get_run_database_path
-from srcvisual.web.app import create_app
+import srcdiffvisual.web._routes as routes_module
+from srcdiffvisual.artifacts.models import PublishedArtifact
+from srcdiffvisual.runs.store import RunStore, get_run_database_path
+from srcdiffvisual.web.app import create_app
 
 
 def test_visualize_events_requires_token() -> None:
@@ -24,7 +24,7 @@ def test_artifact_source_endpoint_forwards_focus_and_expanded_ranges(
     monkeypatch, tmp_path: Path
 ) -> None:
     captured: dict[str, object] = {}
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
 
     def fake_read_source_projection(**kwargs):
         captured.update(kwargs)
@@ -49,7 +49,7 @@ def test_artifact_node_endpoint_forwards_stable_identity(
     monkeypatch, tmp_path: Path
 ) -> None:
     captured: dict[str, object] = {}
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
 
     def fake_read_artifact_node(**kwargs):
         captured.update(kwargs)
@@ -72,7 +72,7 @@ def test_artifact_move_endpoint_forwards_srcmove_identity(
     monkeypatch, tmp_path: Path
 ) -> None:
     captured: dict[str, object] = {}
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
 
     def fake_read_artifact_move(**kwargs):
         captured.update(kwargs)
@@ -95,7 +95,7 @@ def test_artifact_move_endpoint_forwards_srcmove_identity(
 
 
 def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     artifact_id = "a" * 32
     published = PublishedArtifact(
         artifact_id=artifact_id,
@@ -139,7 +139,7 @@ def test_list_examples_returns_filenames(
     (examples_dir / "beta.srcdiff").write_text("<unit />", encoding="utf-8")
     (examples_dir / "ignore.txt").write_text("nope", encoding="utf-8")
 
-    monkeypatch.setenv("SRCVISUAL_EXAMPLES_DIR", str(examples_dir))
+    monkeypatch.setenv("SRCDIFFVISUAL_EXAMPLES_DIR", str(examples_dir))
 
     client = create_app().test_client()
     response = client.get("/api/examples")
@@ -156,7 +156,7 @@ def test_get_example_returns_file_content(
     examples_dir.mkdir()
     (examples_dir / "alpha.xml").write_text("<unit />", encoding="utf-8")
 
-    monkeypatch.setenv("SRCVISUAL_EXAMPLES_DIR", str(examples_dir))
+    monkeypatch.setenv("SRCDIFFVISUAL_EXAMPLES_DIR", str(examples_dir))
 
     client = create_app().test_client()
     response = client.get("/api/examples/alpha.xml")
@@ -172,7 +172,7 @@ def test_get_example_rejects_unknown_filename(
     examples_dir = tmp_path / "examples"
     examples_dir.mkdir()
 
-    monkeypatch.setenv("SRCVISUAL_EXAMPLES_DIR", str(examples_dir))
+    monkeypatch.setenv("SRCDIFFVISUAL_EXAMPLES_DIR", str(examples_dir))
 
     client = create_app().test_client()
     response = client.get("/api/examples/../secret.xml")
@@ -181,7 +181,7 @@ def test_get_example_rejects_unknown_filename(
 
 
 def test_history_status_requires_configured_repository(monkeypatch) -> None:
-    monkeypatch.delenv("SRCVISUAL_HISTORY_REPOSITORY", raising=False)
+    monkeypatch.delenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", raising=False)
 
     client = create_app().test_client()
     response = client.get("/api/history/status")
@@ -194,7 +194,7 @@ def test_history_status_returns_cli_document(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path))
     monkeypatch.setattr(
         routes_module,
         "read_history_status",
@@ -217,7 +217,7 @@ def test_history_pairs_validates_and_forwards_query(
     tmp_path: Path,
 ) -> None:
     captured: dict[str, object] = {}
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path))
 
     def fake_read_history_pairs(repository, **kwargs):
         captured.update(kwargs)
@@ -253,7 +253,7 @@ def test_history_pair_returns_compact_evidence(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path))
     monkeypatch.setattr(
         routes_module,
         "read_history_pair",
@@ -274,7 +274,7 @@ def test_run_status_returns_durable_history_contract(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     _store = RunStore(get_run_database_path(tmp_path))
     _store.initialize()
     _run = _store.create_history_run(42)
@@ -289,7 +289,7 @@ def test_run_status_returns_durable_history_contract(
 
 
 def test_run_status_hides_invalid_and_unknown_ids(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     client = create_app().test_client()
 
     invalid = client.get("/api/runs/not-a-run-id")
@@ -301,7 +301,7 @@ def test_run_status_hides_invalid_and_unknown_ids(monkeypatch, tmp_path: Path) -
 
 
 def test_run_events_reconnects_after_last_event_id(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     _store = RunStore(get_run_database_path(tmp_path))
     _store.initialize()
     _run = _store.create_history_run(5)
@@ -321,7 +321,7 @@ def test_run_events_reconnects_after_last_event_id(monkeypatch, tmp_path: Path) 
 
 
 def test_run_events_rejects_invalid_last_event_id(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     _store = RunStore(get_run_database_path(tmp_path))
     _store.initialize()
     _run = _store.create_history_run(5)
@@ -335,7 +335,7 @@ def test_run_events_rejects_invalid_last_event_id(monkeypatch, tmp_path: Path) -
 
 
 def test_cancel_run_records_durable_request(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     _store = RunStore(get_run_database_path(tmp_path))
     _store.initialize()
     _run = _store.create_history_run(6)
@@ -349,7 +349,7 @@ def test_cancel_run_records_durable_request(monkeypatch, tmp_path: Path) -> None
 
 
 def test_cancel_completed_run_preserves_artifact(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
     _store = RunStore(get_run_database_path(tmp_path))
     _store.initialize()
     _run = _store.create_history_run(6)
@@ -366,8 +366,8 @@ def test_create_history_run_returns_queued_run_and_location(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
@@ -390,8 +390,8 @@ def test_create_history_run_follows_active_matching_run(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
@@ -412,8 +412,8 @@ def test_create_history_run_reuses_only_valid_completed_artifact(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
@@ -439,8 +439,8 @@ def test_create_history_run_queues_fresh_work_after_invalid_reuse(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
-    monkeypatch.setenv("SRCVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
+    monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path / "repository"))
     monkeypatch.setattr(
         routes_module,
         "build_history_artifact_fingerprint",
@@ -470,8 +470,8 @@ def test_create_history_run_requires_configured_repository(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_ARTIFACT_ROOT", str(tmp_path))
-    monkeypatch.delenv("SRCVISUAL_HISTORY_REPOSITORY", raising=False)
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    monkeypatch.delenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", raising=False)
 
     response = create_app().test_client().post("/api/history/pairs/13/runs")
 

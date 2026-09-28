@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from srcvisual.core.source_span import SourceSpan
-from srcvisual.files.models import RevisionFile
-from srcvisual.workflow._source_renderer import (
+from srcdiffvisual.core.source_span import SourceSpan
+from srcdiffvisual.files.models import RevisionFile
+from srcdiffvisual.workflow._source_renderer import (
     _compute_line_starts,
     _offset_to_line_col,
     render_revision_files,

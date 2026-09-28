@@ -7,12 +7,12 @@ from pathlib import Path
 
 def main() -> None:
     script_dir = Path(__file__).resolve().parent
-    srcvisual_dir = script_dir.parent
-    workspace_dir = srcvisual_dir.parent
+    srcdiffvisual_dir = script_dir.parent
+    workspace_dir = srcdiffvisual_dir.parent
 
     e2e_custom_dir = workspace_dir / "srcMove" / "test" / "e2e_custom" / "test_out"
     e2e_generated_dir = workspace_dir / "srcMove" / "test" / "e2e_generated"
-    examples_dir = srcvisual_dir / "examples"
+    examples_dir = srcdiffvisual_dir / "examples"
 
     if not e2e_custom_dir.is_dir():
         raise SystemExit(f"Source directory not found: {e2e_custom_dir}")

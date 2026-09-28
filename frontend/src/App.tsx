@@ -8,7 +8,6 @@ import { useHistoryData } from "./history/useHistoryData";
 import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
 import { ArtifactMovePopup } from "./components/artifact/ArtifactMovePopup";
-import { ArtifactNodeInfo } from "./components/artifact/ArtifactNodeInfo";
 import { ArtifactSourcePane } from "./components/artifact/ArtifactSourcePane";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
 import { fetchArtifactNode } from "./api";
@@ -20,17 +19,11 @@ import {
   type ArtifactTreeNode,
 } from "./types";
 
-type MainTabId =
-  | "input"
-  | "source-code"
-  | "xml-pane"
-  | "highlighted-node-info"
-  | "move-summary";
+type MainTabId = "input" | "source-code" | "xml-pane" | "move-summary";
 
 const resultTabs: TabDefinition<MainTabId>[] = [
   { id: "source-code", label: "Source" },
   { id: "xml-pane", label: "XML" },
-  { id: "highlighted-node-info", label: "Node Info" },
   { id: "move-summary", label: "Move Summary" },
 ];
 
@@ -138,7 +131,7 @@ export default function App() {
   );
   function selectArtifactFile(fileId: string) {
     setSelectedArtifactFileId(fileId);
-    setSelectedArtifactNodeId(null);
+    clearArtifactNodeSelection();
   }
 
   function inspectArtifactMove(
@@ -161,6 +154,7 @@ export default function App() {
   function selectArtifactNode(node: ArtifactTreeNode) {
     setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
     setSelectedArtifactNodeId(node.node_id);
+    setSelectedArtifactNode(node);
   }
 
   function selectArtifactNodeById(nodeId: string) {
@@ -173,6 +167,12 @@ export default function App() {
     setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
     setSelectedArtifactNodeId(nodeId);
     setActiveMainTab("source-code");
+  }
+
+  function clearArtifactNodeSelection() {
+    setSelectedArtifactNodeId(null);
+    setSelectedArtifactNode(null);
+    setArtifactNodeError(null);
   }
 
   return (
@@ -191,10 +191,16 @@ export default function App() {
                 inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                 visibleMoveIds={visibleArtifactMoveIds}
                 selectedNodeId={selectedArtifactNodeId}
+                selectedNode={selectedArtifactNode}
+                nodeLoading={artifactNodeLoading}
+                nodeError={artifactNodeError}
                 focus={artifactFocus}
                 onSelectFile={selectArtifactFile}
                 onToggleMove={toggleArtifactMove}
+                onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
                 onSelectNode={selectArtifactNode}
+                onClearNode={clearArtifactNodeSelection}
+                onRevealNode={() => setActiveMainTab("source-code")}
               />
             ) : null}
           </aside>
@@ -247,7 +253,6 @@ export default function App() {
                         inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                         moves={artifact.moves.items}
                         visibleMoveIds={visibleArtifactMoveIds}
-                        onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
                         onInspectMove={inspectArtifactMove}
                         onFocusChange={setArtifactFocus}
                       />
@@ -259,18 +264,6 @@ export default function App() {
                         active={activeMainTab === "xml-pane"}
                         selectedNode={selectedArtifactNode}
                         onSelectNodeId={selectArtifactNodeById}
-                      />
-                    </TabPanel>
-
-                    <TabPanel
-                      tabId="highlighted-node-info"
-                      activeTabId={activeMainTab}
-                    >
-                      <ArtifactNodeInfo
-                        node={selectedArtifactNode}
-                        loading={artifactNodeLoading}
-                        error={artifactNodeError}
-                        onRevealSource={() => setActiveMainTab("source-code")}
                       />
                     </TabPanel>
 

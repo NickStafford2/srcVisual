@@ -3,14 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-from srcvisual.artifacts.store import read_artifact
-from srcvisual.core.validation import is_payload_validation_enabled
-from srcvisual.files.models import RevisionFile, VisualizedFile
-import srcvisual.workflow.payload as payload_module
+from srcdiffvisual.artifacts.store import read_artifact
+from srcdiffvisual.core.validation import is_payload_validation_enabled
+from srcdiffvisual.files.models import RevisionFile, VisualizedFile
+import srcdiffvisual.workflow.payload as payload_module
 
 
 def test_payload_validation_enabled_by_default(monkeypatch) -> None:
-    monkeypatch.delenv("SRCVISUAL_PAYLOAD_VALIDATION", raising=False)
+    monkeypatch.delenv("SRCDIFFVISUAL_PAYLOAD_VALIDATION", raising=False)
 
     assert is_payload_validation_enabled() is True
 
@@ -19,7 +19,7 @@ def test_build_visualization_artifact_skips_expensive_validation_when_disabled(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("SRCVISUAL_PAYLOAD_VALIDATION", "false")
+    monkeypatch.setenv("SRCDIFFVISUAL_PAYLOAD_VALIDATION", "false")
 
     revision_file = RevisionFile(
         unit_id=1,

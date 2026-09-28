@@ -4,11 +4,11 @@ Status: current architecture and completed migration record.
 
 Date: 2026-09-23
 
-Repository: `srcVisual`
+Repository: `srcDiffVisual`
 
 ## Goal
 
-srcVisual uses immutable artifacts and bounded, lazily requested projections
+srcDiffVisual uses immutable artifacts and bounded, lazily requested projections
 instead of its former monolithic response and destructive pruning pipeline.
 
 The source view should behave like a large, aligned GitHub-style diff:
@@ -21,7 +21,7 @@ The source view should behave like a large, aligned GitHub-style diff:
 - large comparisons do not require downloading or rendering every source line,
   tree node, and XML line at once.
 
-srcVisual remains a GUI for srcDiff and srcMove. The final normalized annotated
+srcDiffVisual remains a GUI for srcDiff and srcMove. The final normalized annotated
 XML is the semantic source of truth; source, tree, XML, diff, and move views are
 projections of the same immutable artifact.
 
@@ -36,7 +36,7 @@ projections of the same immutable artifact.
    is expanded and at file-header proxies when a participating file is
    collapsed. The UI does not invent off-screen coordinates.
 5. Artifacts survive worker restarts and Docker container replacement through
-   a dedicated srcVisual storage volume. Retention is inspected and applied
+   a dedicated srcDiffVisual storage volume. Retention is inspected and applied
    explicitly; automatic collection is disabled.
 6. Complete normalized XML is the primary XML view. Filtered XML export is
    deferred until a concrete user or research workflow requires it.
@@ -86,7 +86,7 @@ The migration began with these verified constraints in the legacy system:
   `results.json` classification metadata;
 - retained history XML can contain absolute temporary scratch paths, which
   must not be exposed by artifact XML or manifests;
-- Compose had no persistent writable location owned by srcVisual.
+- Compose had no persistent writable location owned by srcDiffVisual.
 
 ## Phase 0 Baseline
 
@@ -192,7 +192,7 @@ execution. It owns:
 - diagnostics safe to show to the user;
 - the resulting artifact ID after successful publication.
 
-History execution continues to belong to srcMove's versioned CLI. srcVisual
+History execution continues to belong to srcMove's versioned CLI. srcDiffVisual
 does not query srcMove's private database or accept repository paths and shell
 commands from the browser.
 
@@ -213,7 +213,7 @@ An artifact contains:
 - tool, configuration, input, and history provenance;
 - integrity checksums and an artifact schema version.
 
-For history inputs, srcVisual ingests both the final `srcmove.xml` and its
+For history inputs, srcDiffVisual ingests both the final `srcmove.xml` and its
 `results.json` when available. XML-only uploads use explicit unknown values for
 metadata that cannot be reconstructed; they do not fabricate classifications.
 
@@ -233,7 +233,7 @@ the implemented contract.
 
 ## Artifact Storage
 
-Each published artifact is a directory owned by srcVisual:
+Each published artifact is a directory owned by srcDiffVisual:
 
 ```text
 artifacts/<opaque-artifact-id>/
@@ -247,7 +247,7 @@ artifacts/<opaque-artifact-id>/
 ```
 
 `artifact.json` records the schema, provenance, checksums, capabilities, and
-safe display metadata. `index.sqlite` is a srcVisual-owned immutable sidecar;
+safe display metadata. `index.sqlite` is a srcDiffVisual-owned immutable sidecar;
 it does not alter or depend on srcMove's private SQLite schema.
 
 Artifact creation is atomic:
@@ -289,7 +289,7 @@ is not automatically deduplicated. An artifact ID is an identifier, not an
 authorization mechanism.
 
 The deliberate source-file copies support bounded line reads without reparsing
-XML. srcVisual does not copy both srcDiff and srcMove documents when the final
+XML. srcDiffVisual does not copy both srcDiff and srcMove documents when the final
 annotated XML is sufficient.
 
 ## Stable Identity
@@ -480,7 +480,7 @@ silently fall back when the frontend and backend contracts disagree.
 ## Run Execution
 
 Long history comparisons use a small dedicated worker process and a
-srcVisual-owned SQLite run queue. Redis, Celery, WebSockets, and server-side
+srcDiffVisual-owned SQLite run queue. Redis, Celery, WebSockets, and server-side
 view sessions are not required for the local product.
 
 Run records and progress events are durable and shared by all web workers. SSE
@@ -512,7 +512,7 @@ deferred unless measurements demonstrate a usability problem.
 ### Durable run contract
 
 The first Phase 3 slice stores runs in `runs.sqlite3` at the root of the
-existing persistent artifact volume. The database belongs to srcVisual and is
+existing persistent artifact volume. The database belongs to srcDiffVisual and is
 independent of srcMove's repository-local history database. Each history
 visualization run has one opaque `run_id`, one positive srcMove pair number,
 and exactly one of these states:
@@ -530,8 +530,8 @@ queued ----------> failed
 change the run to `cancelled`; the worker must first terminate and reap the
 native process group. Terminal runs cannot transition again.
 
-Run creation is a fingerprinted single-flight operation. srcVisual hashes
-srcMove's versioned `pair_fingerprint` together with the srcVisual artifact
+Run creation is a fingerprinted single-flight operation. srcDiffVisual hashes
+srcMove's versioned `pair_fingerprint` together with the srcDiffVisual artifact
 schema version and artifact-building configuration. It does not inspect
 srcMove's database or recreate srcMove's history identity rules. Matching
 queued or running work returns the existing run with `202` and
@@ -705,7 +705,7 @@ synchronous history compatibility endpoint has been removed.
   are complete.
 - Fingerprinted single-flight creation suppresses duplicate active work.
 - Valid completed artifacts are reused by fingerprint without transferring
-  ownership of `.srcmove` state to srcVisual; failed validation queues a new
+  ownership of `.srcmove` state to srcDiffVisual; failed validation queues a new
   run.
 
 ### Phase 4: complete frontend migration

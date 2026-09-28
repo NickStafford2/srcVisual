@@ -1,13 +1,13 @@
-# srcVisual
+# srcDiffVisual
 
-srcVisual is the visualization companion to `srcMove`, a cross-file move
+srcDiffVisual is the visualization companion to `srcMove`, a cross-file move
 detector developed as a master's thesis project. Move annotations are difficult
-to evaluate by reading XML alone, so srcVisual presents srcDiff structure,
+to evaluate by reading XML alone, so srcDiffVisual presents srcDiff structure,
 source code, and detected moves together in a code-editor-like interface.
 
 ## Current application
 
-srcVisual has a Python/Flask backend and a React frontend. It supports four
+srcDiffVisual has a Python/Flask backend and a React frontend. It supports four
 input workflows:
 
 - load a checked-in example;
@@ -26,7 +26,7 @@ SQLite index.
 The frontend loads bounded projections of that artifact. Its Source view lists
 changed files as collapsible cards, retrieves source only for expanded files,
 and represents omitted ranges as expandable gaps. Source, XML, the structure
-tree, Node Info, and Move Summary share stable artifact-local identities.
+tree, sidebar node inspector, and Move Summary share stable artifact-local identities.
 Selecting a moved fragment or connector opens retained srcMove details;
 connector visibility and move isolation remain separate controls. The XML view
 is loaded only when opened. The application does not infer unavailable
@@ -38,33 +38,33 @@ See [application rules](docs/Rules.md), the
 
 ## Run locally with Docker
 
-On macOS, run srcVisual from the parent workspace directory. Docker builds the
+On macOS, run srcDiffVisual from the parent workspace directory. Docker builds the
 Linux frontend, backend, srcML, srcReader, srcDiff, and srcMove dependencies;
 the host does not need native build tools for those projects.
 
 ```bash
-docker compose -f srcVisual/compose.yaml up --build -d
+docker compose -f srcDiffVisual/compose.yaml up --build -d
 ```
 
 Open <http://127.0.0.1:5000>. The service is bound only to the local machine.
 Inspect its status and logs with:
 
 ```bash
-docker compose -f srcVisual/compose.yaml ps
-docker compose -f srcVisual/compose.yaml logs -f
+docker compose -f srcDiffVisual/compose.yaml ps
+docker compose -f srcDiffVisual/compose.yaml logs -f
 ```
 
 Stop and remove the local container with:
 
 ```bash
-docker compose -f srcVisual/compose.yaml down
+docker compose -f srcDiffVisual/compose.yaml down
 ```
 
 The image contains a compiled snapshot of the sibling source checkouts at build
 time; building it does not edit those checkouts. In the parent workspace's
 evaluation workflow, Compose replaces the packaged srcMove executable with the
 incrementally built Linux `srcMove/build/srcMove` binary in both services and
-one-off containers. Rebuild the full image after changing srcVisual,
+one-off containers. Rebuild the full image after changing srcDiffVisual,
 `srcmove_history` Python code, the Dockerfile, or another native dependency.
 The canonical commands and checksum-based analysis lifecycle are documented in
 the parent workspace's `docs/workspace.md`.
@@ -74,10 +74,10 @@ Notepad++ reference repository as the one preconfigured analysis target. Its
 source worktree is read-only; only its `.git` and `.srcmove` directories are
 writable so the `srcmove-history` CLI can manage its own operation state and
 saved comparison artifacts. Change the volume sources and
-`SRCVISUAL_HISTORY_REPOSITORY` together to use another analyzed repository.
+`SRCDIFFVISUAL_HISTORY_REPOSITORY` together to use another analyzed repository.
 
 Published visualization artifacts are stored in the named
-`srcvisual-artifacts` volume mounted at `/var/lib/srcvisual/artifacts`. They
+`srcdiffvisual-artifacts` volume mounted at `/var/lib/srcdiffvisual/artifacts`. They
 survive container replacement and ordinary `docker compose down`; removing the
 named volume removes them. Durable history run state and ordered progress
 events use `runs.sqlite3` in that same volume.
@@ -86,7 +86,7 @@ Inspect artifact count, disk use, integrity, history-run protection, and a
 dry-run retention plan without deleting data:
 
 ```bash
-docker compose -f srcVisual/compose.yaml run --rm srcvisual artifact-inventory \
+docker compose -f srcDiffVisual/compose.yaml run --rm srcdiffvisual artifact-inventory \
   --max-artifacts 100 --max-bytes 10737418240 --max-age-days 90
 ```
 
@@ -108,7 +108,7 @@ cancellation, and opens the resulting artifact. The synchronous history
 visualization endpoint has been removed.
 
 Run creation derives an internal fingerprint from srcMove's versioned pair
-identity plus srcVisual's artifact schema and analysis configuration. A
+identity plus srcDiffVisual's artifact schema and analysis configuration. A
 matching queued or running request follows the existing run (`202`); a valid
 completed artifact is returned immediately (`200`). The response field
 `reuse` distinguishes `new`, `active-run`, and `artifact`. Missing or corrupt
@@ -132,7 +132,7 @@ The long-term goal is a secure hosted service where users can:
 - upload srcDiff XML and inspect its structured differences
 - upload srcMove-annotated XML and inspect its moves
 - select a GitHub repository and two commits
-- let srcVisual obtain both revisions, run srcDiff and srcMove, and visualize
+- let srcDiffVisual obtain both revisions, run srcDiff and srcMove, and visualize
   the resulting cross-file differences and moves
 
 Public hosting is a future goal, not a current security guarantee. The backend

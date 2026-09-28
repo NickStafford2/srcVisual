@@ -3,7 +3,7 @@
 Status: implemented local workflow.
 
 The History input mode browses an existing `srcmove-history` analysis and
-opens one selected adjacent-commit comparison in srcVisual. It is a local,
+opens one selected adjacent-commit comparison in srcDiffVisual. It is a local,
 Docker-oriented integration for one operator-configured repository, not a
 general filesystem browser or hosted repository-analysis service.
 
@@ -12,9 +12,9 @@ general filesystem browser or hosted repository-analysis service.
 - srcMove owns repository selection, pair numbering, frozen analysis
   configuration and tools, compact move evidence, comparison execution, and
   repository-local state below `.srcmove`.
-- srcVisual owns the durable run queue, progress presentation, immutable
+- srcDiffVisual owns the durable run queue, progress presentation, immutable
   visualization artifacts, and frontend projections.
-- srcVisual uses the versioned `srcmove-history` JSON interface. It does not
+- srcDiffVisual uses the versioned `srcmove-history` JSON interface. It does not
   query srcMove's private SQLite database.
 - Browser requests may select only a positive pair number. They cannot supply
   repository paths, executables, Git revisions, or shell commands.
@@ -42,7 +42,7 @@ delegates the necessary repository-local writes to srcMove and is asynchronous:
 2. The dedicated `history-worker` service claims queued work and asks
    `srcmove-history` to materialize the pair.
 3. The worker confines the returned `srcmove.xml` and optional `results.json`
-   to `.srcmove/comparisons`, then publishes an immutable srcVisual artifact.
+   to `.srcmove/comparisons`, then publishes an immutable srcDiffVisual artifact.
 4. The frontend follows progress through reconnectable server-sent events,
    keeps status polling as the authoritative fallback, supports cancellation,
    and opens the completed artifact.
@@ -50,7 +50,7 @@ delegates the necessary repository-local writes to srcMove and is asynchronous:
 Queued or running work with the same fingerprint is reused. A matching
 completed artifact is reused only after its manifest, checksums, and index
 validate. The fingerprint combines srcMove's versioned pair identity with the
-srcVisual artifact schema and artifact-building configuration.
+srcDiffVisual artifact schema and artifact-building configuration.
 
 ## HTTP surface
 
@@ -70,7 +70,7 @@ standard `Last-Event-ID` header for reconnection.
 
 ## Deliberate limits
 
-- srcVisual does not start or extend a repository-wide history analysis.
+- srcDiffVisual does not start or extend a repository-wide history analysis.
 - Normal history storage retains compact evidence rather than complete XML for
   every pair; selected pairs are regenerated on demand.
 - History execution requires the separately running `history-worker` service.

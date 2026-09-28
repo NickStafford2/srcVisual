@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-import srcvisual.runs.events as events_module
-from srcvisual.runs.events import stream_run_events
-from srcvisual.runs.store import RunStore
+import srcdiffvisual.runs.events as events_module
+from srcdiffvisual.runs.events import stream_run_events
+from srcdiffvisual.runs.store import RunStore
 
 
 def _store(tmp_path: Path) -> RunStore:

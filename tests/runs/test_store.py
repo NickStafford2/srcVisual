@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from srcvisual.runs.store import InvalidRunTransitionError, RunStore
+from srcdiffvisual.runs.store import InvalidRunTransitionError, RunStore
 
 
 def _store(tmp_path: Path) -> RunStore:

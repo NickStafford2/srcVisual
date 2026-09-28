@@ -1,6 +1,6 @@
 # Programming Style
 
-Optimize srcVisual code for clarity and brevity.
+Optimize srcDiffVisual code for clarity and brevity.
 
 Rules:
 

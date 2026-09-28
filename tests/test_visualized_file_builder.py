@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from srcvisual.files.models import RevisionFile
-from srcvisual.workflow._visualized_file_builder import build_visualized_files
+from srcdiffvisual.files.models import RevisionFile
+from srcdiffvisual.workflow._visualized_file_builder import build_visualized_files
 
 
 def test_build_visualized_files_uses_unit_order_when_filenames_repeat() -> None:

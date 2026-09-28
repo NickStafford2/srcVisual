@@ -91,7 +91,6 @@ describe("ArtifactSourcePane", () => {
         inspectedMoveId={null}
         moves={[activeMove]}
         visibleMoveIds={new Set()}
-        onVisibleMoveIdsChange={vi.fn()}
         onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
@@ -219,7 +218,6 @@ describe("ArtifactSourcePane", () => {
         inspectedMoveId={activeMove.move_id}
         moves={[activeMove]}
         visibleMoveIds={new Set(["move-1"])}
-        onVisibleMoveIdsChange={vi.fn()}
         onInspectMove={onInspectMove}
         onFocusChange={vi.fn()}
       />,
@@ -268,7 +266,6 @@ describe("ArtifactSourcePane", () => {
         inspectedMoveId={crossFileMove.move_id}
         moves={[crossFileMove]}
         visibleMoveIds={new Set(["move-1"])}
-        onVisibleMoveIdsChange={vi.fn()}
         onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
@@ -344,7 +341,6 @@ describe("ArtifactSourcePane", () => {
         inspectedMoveId={null}
         moves={[activeMove]}
         visibleMoveIds={new Set([activeMove.move_id])}
-        onVisibleMoveIdsChange={vi.fn()}
         onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,
@@ -361,47 +357,6 @@ describe("ArtifactSourcePane", () => {
     ).toBeInTheDocument();
   });
 
-  it("switches connector visibility without eagerly loading collapsed files", async () => {
-    const user = userEvent.setup();
-    const onVisibleMoveIdsChange = vi.fn();
-    render(
-      <ArtifactSourcePane
-        artifactId="artifact-1"
-        files={[file, secondFile]}
-        selectedFileId="f-1"
-        selectedNodeId={null}
-        active
-        focus="moves"
-        inspectedMoveId={activeMove.move_id}
-        moves={[activeMove]}
-        visibleMoveIds={new Set()}
-        onVisibleMoveIdsChange={onVisibleMoveIdsChange}
-        onInspectMove={vi.fn()}
-        onFocusChange={vi.fn()}
-      />,
-    );
-
-    await screen.findByText("old();");
-    await user.click(screen.getByRole("button", { name: "All" }));
-    const allCall =
-      onVisibleMoveIdsChange.mock.calls[
-        onVisibleMoveIdsChange.mock.calls.length - 1
-      ];
-    expect([...allCall[0]]).toEqual(["move-1"]);
-    expect(fetchArtifactSource).not.toHaveBeenCalledWith(
-      "artifact-1",
-      "f-2",
-      "moves",
-    );
-
-    await user.click(screen.getByRole("button", { name: "None" }));
-    const noneCall =
-      onVisibleMoveIdsChange.mock.calls[
-        onVisibleMoveIdsChange.mock.calls.length - 1
-      ];
-    expect(noneCall[0].size).toBe(0);
-  });
-
   it("isolates inspected move files only after an explicit action", async () => {
     const user = userEvent.setup();
     render(
@@ -415,7 +370,6 @@ describe("ArtifactSourcePane", () => {
         inspectedMoveId={activeMove.move_id}
         moves={[activeMove]}
         visibleMoveIds={new Set()}
-        onVisibleMoveIdsChange={vi.fn()}
         onInspectMove={vi.fn()}
         onFocusChange={vi.fn()}
       />,

@@ -1,9 +1,9 @@
 FROM node:22-bookworm-slim AS frontend-builder
 
 WORKDIR /frontend
-COPY srcVisual/frontend/package.json srcVisual/frontend/package-lock.json ./
+COPY srcDiffVisual/frontend/package.json srcDiffVisual/frontend/package-lock.json ./
 RUN npm ci
-COPY srcVisual/frontend/ ./
+COPY srcDiffVisual/frontend/ ./
 RUN npm run build
 
 
@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y gpg \
 WORKDIR /workspace
 COPY build_srcML.sh build_srcDiff.sh build_srcReader.sh build_srcMove.sh utils.sh ./
 
-# Keep the native projects in separate cache layers. A srcVisual-only edit must
+# Keep the native projects in separate cache layers. A srcDiffVisual-only edit must
 # not force Docker to rebuild the complete srcML toolchain.
 COPY srcML ./srcML
 RUN ./build_srcML.sh --yes /workspace
@@ -82,8 +82,8 @@ RUN python3 -m venv /opt/venv
 
 WORKDIR /app
 
-COPY srcVisual/pyproject.toml srcVisual/poetry.lock ./
-COPY srcVisual/srcvisual /app/srcvisual
+COPY srcDiffVisual/pyproject.toml srcDiffVisual/poetry.lock ./
+COPY srcDiffVisual/srcdiffvisual /app/srcdiffvisual
 
 RUN /opt/venv/bin/pip install --upgrade pip && \
     /opt/venv/bin/pip install .
@@ -96,8 +96,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv/bin:/opt/srcML-install/bin:/opt/srcDiff/bin:/opt/srcMove/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin"
-ENV SRCVISUAL_FRONTEND_DIST="/app/frontend/dist"
-ENV SRCVISUAL_EXAMPLES_DIR="/app/examples"
+ENV SRCDIFFVISUAL_FRONTEND_DIST="/app/frontend/dist"
+ENV SRCDIFFVISUAL_EXAMPLES_DIR="/app/examples"
 ENV PORT=5000
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -112,8 +112,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 WORKDIR /app
 
-COPY srcVisual/gunicorn.conf.py /app/gunicorn.conf.py
-COPY srcVisual/examples /app/examples
+COPY srcDiffVisual/gunicorn.conf.py /app/gunicorn.conf.py
+COPY srcDiffVisual/examples /app/examples
 COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 COPY --from=python-builder /opt/venv /opt/venv
 
@@ -131,4 +131,4 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=4)"]
 
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "srcvisual.web.wsgi:app"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "srcdiffvisual.web.wsgi:app"]

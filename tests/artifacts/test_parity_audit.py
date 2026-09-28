@@ -6,17 +6,17 @@ from typing import Literal
 
 import pytest
 
-from srcvisual.artifacts.models import ArtifactProvenance
-from srcvisual.artifacts.projections import (
+from srcdiffvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.projections import (
     read_artifact_manifest,
     read_artifact_node,
     read_artifact_xml,
     read_source_projection,
     read_tree_projection,
 )
-from srcvisual.artifacts.store import publish_artifact
-from srcvisual.files.models import RevisionFile, VisualizedFile
-from srcvisual.workflow.models import VisualizationPayload
+from srcdiffvisual.artifacts.store import publish_artifact
+from srcdiffvisual.files.models import RevisionFile, VisualizedFile
+from srcdiffvisual.workflow.models import VisualizationPayload
 
 
 @dataclass(frozen=True)

@@ -1,5 +1,5 @@
 [project]
-name = "srcvisual"
+name = "srcdiffvisual"
 version = "0.1.0"
 description = "Visualize srcDiff and srcMove results."
 authors = [{ name = "Nicholas Stafford", email = "ngstafford1@gmail.com" }]
@@ -15,10 +15,10 @@ dependencies = [
 ]
 
 [project.scripts]
-web = "srcvisual.web.app:main"
-history-worker = "srcvisual.runs.worker:main"
-artifact-inventory = "srcvisual.artifacts._lifecycle_cli:main"
-test = "srcvisual.test_runner:main"
+web = "srcdiffvisual.web.app:main"
+history-worker = "srcdiffvisual.runs.worker:main"
+artifact-inventory = "srcdiffvisual.artifacts._lifecycle_cli:main"
+test = "srcdiffvisual.test_runner:main"
 
 
 [build-system]

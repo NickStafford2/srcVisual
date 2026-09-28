@@ -1,6 +1,6 @@
-from srcvisual.srcmove.existing_annotations import build_move_results_from_moved_srcdiff
-from srcvisual.srcmove.move_regions import XmlMoveRegion, classify_xml_move_region_side
-from srcvisual.srcmove.move_result_enrichment import (
+from srcdiffvisual.srcmove.existing_annotations import build_move_results_from_moved_srcdiff
+from srcdiffvisual.srcmove.move_regions import XmlMoveRegion, classify_xml_move_region_side
+from srcdiffvisual.srcmove.move_result_enrichment import (
     build_move_region_paths_by_id,
     merge_producer_move_results,
 )

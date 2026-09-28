@@ -1,4 +1,4 @@
-Use the repository Make targets when developing or debugging `srcVisual`.
+Use the repository Make targets when developing or debugging `srcDiffVisual`.
 They keep the native backend checks and frontend build in reproducible Linux
 containers and provide one stable command surface for humans and agents.
 
@@ -16,7 +16,7 @@ Backend:
 - run one backend example:
   `make test-backend PYTEST_ARGS='tests/test_examples_e2e.py -k blocks_swapped -vv'`
 
-Backend tests run in the packaged `srcvisual:local` image because the complete
+Backend tests run in the packaged `srcdiffvisual:local` image because the complete
 suite invokes `archive_reader`, `srcdiff`, and `srcMove`. Rebuild that image
 with `make image` after dependency, native-tool, or Dockerfile changes. Source
 changes do not require a rebuild because the checkout is bind-mounted into the
@@ -34,14 +34,14 @@ cross-platform check.
 
 Temp files:
 
-- keep temp dirs for inspection: `SRCVISUAL_KEEP_TMP=1`
-- change temp root: `SRCVISUAL_TMP_ROOT=/some/path`
-- default temp root is `srcVisual/temp/`
+- keep temp dirs for inspection: `SRCDIFFVISUAL_KEEP_TMP=1`
+- change temp root: `SRCDIFFVISUAL_TMP_ROOT=/some/path`
+- default temp root is `srcDiffVisual/temp/`
 
 Artifacts:
 
-- change the artifact store: `SRCVISUAL_ARTIFACT_ROOT=/some/path`
-- Compose uses the persistent `srcvisual-artifacts` named volume
+- change the artifact store: `SRCDIFFVISUAL_ARTIFACT_ROOT=/some/path`
+- Compose uses the persistent `srcdiffvisual-artifacts` named volume
 - durable history runs use `runs.sqlite3` at the artifact-store root
 - incomplete staging directories older than 24 hours are removed at startup
 

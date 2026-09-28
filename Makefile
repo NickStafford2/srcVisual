@@ -1,6 +1,6 @@
 DOCKER ?= docker
-BACKEND_IMAGE ?= srcvisual:local
-FRONTEND_CHECK_IMAGE ?= srcvisual-frontend-check:local
+BACKEND_IMAGE ?= srcdiffvisual:local
+FRONTEND_CHECK_IMAGE ?= srcdiffvisual-frontend-check:local
 PYTEST_ARGS ?=
 
 WORKSPACE_ROOT := $(abspath ..)
@@ -11,7 +11,7 @@ BACKEND_RUN = $(DOCKER) run --rm -v "$(CURDIR):/app" -w /app $(BACKEND_IMAGE)
 .PHONY: help image lint test test-backend test-backend-unit test-frontend build-frontend
 
 help:
-	@echo "srcVisual development targets"
+	@echo "srcDiffVisual development targets"
 	@echo "  make test               Run every required check"
 	@echo "  make lint               Run backend lint"
 	@echo "  make test-backend       Run backend tests; pass PYTEST_ARGS='tests/...' to focus"
@@ -21,10 +21,10 @@ help:
 	@echo "  make image              Rebuild the packaged backend and native-tool image"
 
 image:
-	$(DOCKER) compose build srcvisual
+	$(DOCKER) compose build srcdiffvisual
 
 lint:
-	$(BACKEND_RUN) /opt/venv/bin/ruff check srcvisual tests scripts
+	$(BACKEND_RUN) /opt/venv/bin/ruff check srcdiffvisual tests scripts
 
 test: lint test-backend test-frontend
 

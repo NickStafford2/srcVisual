@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 import time
 from typing import Any, Callable
 
-from srcvisual.artifacts.projections import (
+from srcdiffvisual.artifacts.projections import (
     FOCUS_PROFILES,
     MAX_TREE_NODES,
     FocusProfile,
@@ -16,7 +16,7 @@ from srcvisual.artifacts.projections import (
     read_source_projection,
     read_tree_projection,
 )
-from srcvisual.workflow.payload import build_visualization_artifact
+from srcdiffvisual.workflow.payload import build_visualization_artifact
 
 
 def main() -> None:
@@ -36,7 +36,7 @@ def main() -> None:
             tree_node_limit=_arguments.tree_node_limit,
         )
     else:
-        with TemporaryDirectory(prefix="srcvisual-measure-") as _temporary_root:
+        with TemporaryDirectory(prefix="srcdiffvisual-measure-") as _temporary_root:
             _report = measure_artifact(
                 input_path=_input_path,
                 payload=_payload,
