@@ -1,4 +1,4 @@
-export type HighlightKind = "plain" | "delete" | "insert" | "move";
+export type HighlightKind = "plain" | "common" | "delete" | "insert" | "move";
 
 export interface SourceCodeSpan {
   start_line: number;

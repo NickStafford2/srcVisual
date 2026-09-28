@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
+  ArtifactDiffKind,
   ArtifactFileSummary,
   ArtifactFocusProfile,
   ArtifactMoveSummary,
@@ -23,6 +24,7 @@ type Props = {
   inspectedMoveId: string | null;
   moves: ArtifactMoveSummary[];
   visibleMoveIds: ReadonlySet<string>;
+  visibleDiffKinds?: ReadonlySet<ArtifactDiffKind>;
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   visibleCorrespondences?: Pair[];
   onInspectCorrespondence?: (
@@ -42,6 +44,7 @@ export function ArtifactSourcePane({
   inspectedMoveId,
   moves,
   visibleMoveIds,
+  visibleDiffKinds = DEFAULT_VISIBLE_DIFF_KINDS,
   onInspectMove,
   onFocusChange,
   visibleCorrespondences = EMPTY_PAIRS,
@@ -209,6 +212,7 @@ export function ArtifactSourcePane({
                 focus={focus}
                 expanded={expandedFileIds.has(file.file_id)}
                 visibleMoves={_visibleMoves}
+                visibleDiffKinds={visibleDiffKinds}
                 selectedNodeId={selectedNodeId}
                 active={active}
                 onInspectMove={inspectMove}
@@ -236,3 +240,7 @@ function moveFileIds(move: ArtifactMoveSummary): string[] {
 
 const EMPTY_PAIRS: Pair[] = [];
 const NO_INSPECT = () => {};
+const DEFAULT_VISIBLE_DIFF_KINDS = new Set<ArtifactDiffKind>([
+  "delete",
+  "insert",
+]);

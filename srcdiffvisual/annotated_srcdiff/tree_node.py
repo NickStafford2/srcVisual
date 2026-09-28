@@ -6,7 +6,7 @@ from typing import Literal, TypedDict
 from srcdiffvisual.annotated_srcdiff.attributes import AllAttributes, AllAttributesDict
 from srcdiffvisual.core.source_span import SourceSpan
 
-TreeNodeKind = Literal["plain", "insert", "delete", "move"]
+TreeNodeKind = Literal["plain", "common", "insert", "delete", "move"]
 
 
 class SpanDict(TypedDict):

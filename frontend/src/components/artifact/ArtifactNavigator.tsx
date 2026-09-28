@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { fetchArtifactNodeChildren, fetchArtifactTree } from "../../api";
 import type {
+  ArtifactDiffKind,
   ArtifactFocusProfile,
   ArtifactManifest,
   ArtifactMoveSummary,
@@ -14,6 +15,7 @@ type Props = {
   selectedFileId: string;
   inspectedMoveId: string | null;
   visibleMoveIds: ReadonlySet<string>;
+  visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
   selectedNodeId: string | null;
   selectedNode: ArtifactTreeNode | null;
   nodeLoading: boolean;
@@ -22,6 +24,8 @@ type Props = {
   onSelectFile: (fileId: string) => void;
   onToggleMove: (move: ArtifactMoveSummary) => void;
   onVisibleMoveIdsChange: (moveIds: Set<string>) => void;
+  onToggleDiffKind: (kind: ArtifactDiffKind) => void;
+  onVisibleDiffKindsChange: (kinds: Set<ArtifactDiffKind>) => void;
   onSelectNode: (node: ArtifactTreeNode) => void;
   onClearNode: () => void;
   onRevealNode: () => void;
@@ -33,6 +37,7 @@ export function ArtifactNavigator({
   selectedFileId,
   inspectedMoveId,
   visibleMoveIds,
+  visibleDiffKinds,
   selectedNodeId,
   selectedNode,
   nodeLoading,
@@ -41,6 +46,8 @@ export function ArtifactNavigator({
   onSelectFile,
   onToggleMove,
   onVisibleMoveIdsChange,
+  onToggleDiffKind,
+  onVisibleDiffKindsChange,
   onSelectNode,
   onClearNode,
   onRevealNode,
@@ -102,6 +109,66 @@ export function ArtifactNavigator({
               No matching files.
             </p>
           ) : null}
+        </div>
+      </div>
+
+      <div className="shrink-0 border-b border-white/10">
+        <h2 className="px-4 pt-3 text-sm font-semibold text-slate-200">
+          srcDiff
+        </h2>
+        <div className="p-4 pt-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+              Region highlighting
+            </p>
+            <span className="text-[10px] text-slate-600">
+              {visibleDiffKinds.size}/3 shown
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Highlight only; source remains visible.
+          </p>
+          <div
+            role="group"
+            aria-label="srcDiff region highlighting"
+            className="mt-3 grid grid-cols-3 gap-1"
+          >
+            {DIFF_KIND_OPTIONS.map(({ kind, label, classes }) => (
+              <button
+                key={kind}
+                type="button"
+                aria-pressed={visibleDiffKinds.has(kind)}
+                onClick={() => onToggleDiffKind(kind)}
+                className={`rounded border px-2 py-1.5 text-xs transition ${classes} ${
+                  visibleDiffKinds.has(kind)
+                    ? "opacity-100"
+                    : "bg-slate-950 text-slate-500 opacity-60"
+                }`}
+              >
+                <span aria-hidden="true" className="mr-1">
+                  {visibleDiffKinds.has(kind) ? "●" : "○"}
+                </span>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2 text-[11px]">
+            <button
+              type="button"
+              onClick={() => onVisibleDiffKindsChange(new Set(ALL_DIFF_KINDS))}
+              className="text-slate-400 hover:text-white"
+            >
+              All diff regions
+            </button>
+            <span className="text-slate-700">·</span>
+            <button
+              type="button"
+              onClick={() => onVisibleDiffKindsChange(new Set())}
+              className="text-slate-400 hover:text-white"
+            >
+              Clear diff highlights
+            </button>
+          </div>
         </div>
       </div>
 
@@ -225,6 +292,30 @@ export function ArtifactNavigator({
     </section>
   );
 }
+
+const ALL_DIFF_KINDS: ArtifactDiffKind[] = ["common", "delete", "insert"];
+
+const DIFF_KIND_OPTIONS: {
+  kind: ArtifactDiffKind;
+  label: string;
+  classes: string;
+}[] = [
+  {
+    kind: "common",
+    label: "diff:common",
+    classes: "border-diff-plain/40 bg-diff-plain/20 text-slate-200",
+  },
+  {
+    kind: "delete",
+    label: "diff:delete",
+    classes: "border-diff-delete/50 bg-diff-delete/20 text-red-200",
+  },
+  {
+    kind: "insert",
+    label: "diff:insert",
+    classes: "border-diff-insert/50 bg-diff-insert/20 text-green-200",
+  },
+];
 
 function ArtifactTreeBranch({
   artifactId,

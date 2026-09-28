@@ -19,10 +19,13 @@ import { fetchArtifactNode } from "./api";
 import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
 import { BigMoveBenchCaseBar } from "./components/BigMoveBenchCaseBar";
 import {
+  type ArtifactDiffKind,
   type ArtifactFocusProfile,
   type ArtifactMoveSummary,
   type ArtifactTreeNode,
 } from "./types";
+
+const defaultVisibleDiffKinds = new Set<ArtifactDiffKind>(["delete", "insert"]);
 
 type MainTabId =
   | "input"
@@ -73,6 +76,9 @@ export default function App() {
   );
   const [artifactFocus, setArtifactFocus] =
     useState<ArtifactFocusProfile>("changes-and-moves");
+  const [visibleDiffKinds, setVisibleDiffKinds] = useState<
+    Set<ArtifactDiffKind>
+  >(() => new Set(defaultVisibleDiffKinds));
 
   const hasData = Boolean(artifact);
   const sidebarWidthClass = hasData ? "lg:w-[360px]" : "lg:w-[108px]";
@@ -111,6 +117,7 @@ export default function App() {
       setSelectedArtifactNode(null);
       setArtifactNodeError(null);
       setArtifactFocus("changes-and-moves");
+      setVisibleDiffKinds(new Set(defaultVisibleDiffKinds));
     }
   }, [artifact]);
 
@@ -169,6 +176,15 @@ export default function App() {
       const next = new Set(current);
       if (next.has(move.move_id)) next.delete(move.move_id);
       else next.add(move.move_id);
+      return next;
+    });
+  }
+
+  function toggleDiffKind(kind: ArtifactDiffKind) {
+    setVisibleDiffKinds((current) => {
+      const next = new Set(current);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
       return next;
     });
   }
@@ -232,6 +248,7 @@ export default function App() {
                 selectedFileId={selectedArtifactFileId}
                 inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                 visibleMoveIds={visibleArtifactMoveIds}
+                visibleDiffKinds={visibleDiffKinds}
                 selectedNodeId={selectedArtifactNodeId}
                 selectedNode={selectedArtifactNode}
                 nodeLoading={artifactNodeLoading}
@@ -240,6 +257,8 @@ export default function App() {
                 onSelectFile={selectArtifactFile}
                 onToggleMove={toggleArtifactMove}
                 onVisibleMoveIdsChange={setVisibleArtifactMoveIds}
+                onToggleDiffKind={toggleDiffKind}
+                onVisibleDiffKindsChange={setVisibleDiffKinds}
                 onSelectNode={selectArtifactNode}
                 onClearNode={clearArtifactNodeSelection}
                 onRevealNode={() => setActiveMainTab("source-code")}
@@ -301,6 +320,7 @@ export default function App() {
                         inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
                         moves={artifact.moves.items}
                         visibleMoveIds={visibleArtifactMoveIds}
+                        visibleDiffKinds={visibleDiffKinds}
                         onInspectMove={inspectArtifactMove}
                         onFocusChange={setArtifactFocus}
                       />
@@ -311,6 +331,7 @@ export default function App() {
                         artifactId={artifact.artifact_id}
                         active={activeMainTab === "xml-pane"}
                         selectedNode={selectedArtifactNode}
+                        visibleDiffKinds={visibleDiffKinds}
                         onSelectNodeId={selectArtifactNodeById}
                       />
                     </TabPanel>

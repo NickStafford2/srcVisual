@@ -7,6 +7,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { fetchArtifactSource } from "../../api";
 import type { SourceRevision } from "../../srcdiff/lineLinks";
 import type {
+  ArtifactDiffKind,
   ArtifactFileSummary,
   ArtifactFocusProfile,
   ArtifactMoveSummary,
@@ -26,6 +27,7 @@ type Props = {
   focus: ArtifactFocusProfile;
   expanded: boolean;
   visibleMoves: ArtifactMoveSummary[];
+  visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
   selectedNodeId: string | null;
   active: boolean;
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
@@ -40,6 +42,7 @@ export function ArtifactSourceFile({
   focus,
   expanded,
   visibleMoves,
+  visibleDiffKinds,
   selectedNodeId,
   active,
   onInspectMove,
@@ -326,6 +329,7 @@ export function ArtifactSourceFile({
                       line={row.left}
                       revision="revision-0"
                       visibleMoveIds={_visibleMoveIds}
+                      visibleDiffKinds={visibleDiffKinds}
                       selectedNodeId={selectedNodeId}
                       onInspectMove={onInspectMove}
                       registerMoveSegment={registerMoveSegment}
@@ -336,6 +340,7 @@ export function ArtifactSourceFile({
                       line={row.right}
                       revision="revision-1"
                       visibleMoveIds={_visibleMoveIds}
+                      visibleDiffKinds={visibleDiffKinds}
                       selectedNodeId={selectedNodeId}
                       onInspectMove={onInspectMove}
                       registerMoveSegment={registerMoveSegment}
@@ -363,6 +368,7 @@ function SourceCell({
   line,
   revision,
   visibleMoveIds,
+  visibleDiffKinds,
   selectedNodeId,
   onInspectMove,
   registerMoveSegment,
@@ -372,6 +378,7 @@ function SourceCell({
   line: ArtifactSourceLine | null;
   revision: SourceRevision;
   visibleMoveIds: ReadonlySet<string>;
+  visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
   selectedNodeId: string | null;
   onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
   registerMoveSegment: RegisterMoveSegment;
@@ -445,6 +452,7 @@ function SourceCell({
               revision={revision}
               segment={segment}
               visibleMoveIds={visibleMoveIds}
+              visibleDiffKinds={visibleDiffKinds}
               selected={
                 selectedNodeId !== null && segment.nodeId === selectedNodeId
               }

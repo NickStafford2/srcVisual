@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
+import type { ArtifactDiffKind } from "../../../types";
 import { getSourceSegmentClasses } from "../segmentStyles";
 import type {
   RegisterMoveSegment,
@@ -14,6 +15,7 @@ type CodeSegmentProps = {
   registerMoveSegment?: RegisterMoveSegment;
   unregisterMoveSegment?: UnregisterMoveSegment;
   visibleMoveIds?: ReadonlySet<string>;
+  visibleDiffKinds?: ReadonlySet<ArtifactDiffKind>;
   onMoveInspect?: (moveId: string, position: { x: number; y: number }) => void;
   selected?: boolean;
 };
@@ -24,6 +26,7 @@ export function CodeSegment({
   registerMoveSegment,
   unregisterMoveSegment,
   visibleMoveIds,
+  visibleDiffKinds,
   onMoveInspect,
   selected = false,
 }: CodeSegmentProps) {
@@ -40,9 +43,16 @@ export function CodeSegment({
       ? "visible"
       : "inactive";
 
-  const text = segment.highlighted
-    ? renderVisibleWhitespace(segment.text)
-    : segment.text;
+  const diffKind = sourceDiffKind(segment.kind);
+  const isDiffHighlightVisible =
+    diffKind !== null &&
+    (visibleDiffKinds === undefined || visibleDiffKinds.has(diffKind));
+  const isVisuallyHighlighted = isMoveHighlight || isDiffHighlightVisible;
+
+  const text =
+    segment.highlighted && isVisuallyHighlighted
+      ? renderVisibleWhitespace(segment.text)
+      : segment.text;
 
   useEffect(() => {
     if (!registersMove || !segment.moveId || !ref.current) {
@@ -81,11 +91,12 @@ export function CodeSegment({
   if (!isMoveHighlight) {
     return (
       <span
-        data-highlighted-segment={segment.highlighted ? "true" : "false"}
+        data-highlighted-segment={isVisuallyHighlighted ? "true" : "false"}
         data-highlight-kind={segment.kind}
+        data-diff-kind={diffKind ?? undefined}
         data-node-id={segment.nodeId ?? undefined}
         className={[
-          getSourceSegmentClasses(segment.kind, segment.highlighted),
+          getSourceSegmentClasses(segment.kind, isVisuallyHighlighted),
           selected
             ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"
             : "",
@@ -138,4 +149,11 @@ export function CodeSegment({
       {text}
     </span>
   );
+}
+
+function sourceDiffKind(
+  kind: ViewerLineSegment["kind"],
+): ArtifactDiffKind | null {
+  if (kind === "common" || kind === "delete" || kind === "insert") return kind;
+  return null;
 }

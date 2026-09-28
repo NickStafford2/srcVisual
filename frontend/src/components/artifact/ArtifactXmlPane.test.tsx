@@ -48,3 +48,42 @@ it("loads semantic XML anchors lazily and selects them by stable ID", async () =
   expect(onSelectNodeId).toHaveBeenCalledWith("f-one:n00000001");
   expect(fetchArtifactXml).toHaveBeenCalledWith("artifact-1");
 });
+
+it("applies srcDiff visibility filters to XML anchors", async () => {
+  vi.mocked(fetchArtifactXml).mockResolvedValue({
+    schema_version: 1,
+    artifact_id: "artifact-2",
+    xml: "common insert",
+    anchors: [
+      {
+        node_id: "f-one:n00000001",
+        kind: "common",
+        move_id: null,
+        span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
+      },
+      {
+        node_id: "f-one:n00000002",
+        kind: "insert",
+        move_id: null,
+        span: { start_line: 1, start_col: 8, end_line: 1, end_col: 13 },
+      },
+    ],
+  });
+
+  const { container } = render(
+    <ArtifactXmlPane
+      artifactId="artifact-2"
+      active
+      selectedNode={null}
+      visibleDiffKinds={new Set(["common"])}
+      onSelectNodeId={vi.fn()}
+    />,
+  );
+
+  await screen.findByText("common");
+  expect(container.querySelector('[data-highlight-kind="common"]')).toHaveClass(
+    "bg-diff-plain/25",
+  );
+  expect(container.querySelector('[data-highlight-kind="insert"]')).toBeNull();
+  expect(screen.getByText("insert")).not.toHaveClass("bg-diff-insert/25");
+});

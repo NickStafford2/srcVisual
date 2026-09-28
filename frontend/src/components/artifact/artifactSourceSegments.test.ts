@@ -101,14 +101,54 @@ describe("artifact source segments", () => {
       ],
     };
 
-    expect(buildArtifactLineSegments(_line).map((_segment) => [
-      _segment.text,
-      _segment.kind,
-      _segment.nodeId,
-    ])).toEqual([
+    expect(
+      buildArtifactLineSegments(_line).map((_segment) => [
+        _segment.text,
+        _segment.kind,
+        _segment.nodeId,
+      ]),
+    ).toEqual([
       ["before ", "delete", "f-1:n00000001"],
       ["moved", "move", "f-1:n00000002"],
       [" after", "delete", "f-1:n00000001"],
+    ]);
+  });
+
+  it("uses the nearest nested boundary for common inside an insert", () => {
+    const _line: ArtifactSourceLine = {
+      line_number: 1,
+      text: "outside shared removed",
+      anchors: [
+        {
+          node_id: "f-1:n00000000",
+          kind: "insert",
+          move_id: null,
+          span: { start_line: 1, start_col: 1, end_line: 1, end_col: 22 },
+        },
+        {
+          node_id: "f-1:n00000001",
+          kind: "common",
+          move_id: null,
+          span: { start_line: 1, start_col: 9, end_line: 1, end_col: 22 },
+        },
+        {
+          node_id: "f-1:n00000002",
+          kind: "delete",
+          move_id: null,
+          span: { start_line: 1, start_col: 16, end_line: 1, end_col: 22 },
+        },
+      ],
+    };
+
+    expect(
+      buildArtifactLineSegments(_line).map((_segment) => [
+        _segment.text,
+        _segment.kind,
+      ]),
+    ).toEqual([
+      ["outside ", "insert"],
+      ["shared ", "common"],
+      ["removed", "delete"],
     ]);
   });
 });

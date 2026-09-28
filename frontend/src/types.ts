@@ -6,6 +6,8 @@ export type ArtifactFocusProfile =
   | "changes"
   | "complete-file";
 
+export type ArtifactDiffKind = "common" | "delete" | "insert";
+
 export interface ArtifactFileSummary {
   file_id: string;
   root_node_id: string | null;
@@ -77,7 +79,7 @@ export interface ArtifactManifest {
 
 export interface ArtifactXmlAnchor {
   node_id: string;
-  kind: "delete" | "insert" | "move";
+  kind: "common" | "delete" | "insert" | "move";
   move_id: string | null;
   span: SourceCodeSpan;
 }
@@ -94,7 +96,7 @@ export interface ArtifactSourceLine {
   text: string;
   anchors: {
     node_id: string;
-    kind: "plain" | "delete" | "insert" | "move";
+    kind: "common" | "delete" | "insert" | "move";
     move_id: string | null;
     span: SourceCodeSpan;
   }[];
@@ -146,7 +148,7 @@ export interface ArtifactTreeNode {
   path: string;
   tag: string;
   label: string;
-  kind: "plain" | "delete" | "insert" | "move";
+  kind: "plain" | "common" | "delete" | "insert" | "move";
   move_id: string | null;
   srcdiff_attributes: Record<string, unknown>;
   xml_span: SourceCodeSpan | null;

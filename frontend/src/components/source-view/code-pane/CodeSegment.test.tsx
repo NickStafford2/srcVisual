@@ -57,3 +57,55 @@ it("uses explicit amber states for inactive, visible, and selected endpoints", (
   expect(_move).toHaveClass("ring-diff-move-1/70");
   expect(_move).not.toHaveClass("text-sky-100");
 });
+
+it("filters srcDiff highlighting while leaving source text visible", () => {
+  const _deleteSegment: ViewerLineSegment = {
+    text: "removed();",
+    kind: "delete",
+    highlighted: true,
+  };
+  const { container, rerender } = render(
+    <CodeSegment
+      revision="revision-0"
+      segment={_deleteSegment}
+      visibleDiffKinds={new Set(["delete"])}
+    />,
+  );
+
+  let _segment = container.querySelector("[data-diff-kind='delete']");
+  expect(_segment).toHaveTextContent("removed();");
+  expect(_segment).toHaveClass("bg-diff-delete/25");
+  expect(_segment).toHaveAttribute("data-highlighted-segment", "true");
+
+  rerender(
+    <CodeSegment
+      revision="revision-0"
+      segment={_deleteSegment}
+      visibleDiffKinds={new Set()}
+    />,
+  );
+  _segment = container.querySelector("[data-diff-kind='delete']");
+  expect(_segment).toHaveTextContent("removed();");
+  expect(_segment).not.toHaveClass("bg-diff-delete/25");
+  expect(_segment).toHaveAttribute("data-highlighted-segment", "false");
+});
+
+it("can highlight common source independently", () => {
+  const _commonSegment: ViewerLineSegment = {
+    text: "unchanged();",
+    kind: "common",
+    highlighted: true,
+  };
+  const { container } = render(
+    <CodeSegment
+      revision="revision-1"
+      segment={_commonSegment}
+      visibleDiffKinds={new Set(["common"])}
+    />,
+  );
+
+  const _segment = container.querySelector("[data-diff-kind='common']");
+  expect(_segment).toHaveTextContent("unchanged();");
+  expect(_segment).toHaveClass("bg-diff-plain/25");
+  expect(_segment).toHaveAttribute("data-highlighted-segment", "true");
+});

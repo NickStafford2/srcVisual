@@ -45,7 +45,7 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
 
     payload = response.get_json()
     assert isinstance(payload, dict)
-    assert payload["schema_version"] == 2
+    assert payload["schema_version"] == 3
     assert payload["projection_schema_version"] == 1
     assert isinstance(payload["artifact_id"], str)
     assert isinstance(payload["files"], list)
@@ -65,7 +65,7 @@ def test_artifact_interface_serves_real_bounded_projections(
 
     assert response.status_code == 200
     manifest = response.get_json()
-    assert manifest["schema_version"] == 2
+    assert manifest["schema_version"] == 3
     assert manifest["projection_schema_version"] == 1
     assert manifest["focus_profiles"] == [
         "changes-and-moves",
@@ -113,6 +113,49 @@ def test_artifact_interface_serves_real_bounded_projections(
     assert xml.status_code == 200
     assert "mv:id" in xml.get_json()["xml"]
     assert_artifact_projection_identities(client, manifest)
+
+
+def test_nested_insert_example_projects_explicit_common_regions(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("SRCDIFFVISUAL_ARTIFACT_ROOT", str(tmp_path))
+    client = create_app().test_client()
+    example_path = EXAMPLES_DIR / "e2e_generated_nested_insert_diff.xml"
+
+    response = client.post(
+        "/api/visualize",
+        data={"srcdiff_xml": example_path.read_text(encoding="utf-8")},
+    )
+
+    assert response.status_code == 200
+    manifest = response.get_json()
+    artifact_id = manifest["artifact_id"]
+    file_id = manifest["files"][0]["file_id"]
+
+    source_response = client.get(
+        f"/api/artifacts/{artifact_id}/files/{file_id}/source"
+        "?focus=changes-and-moves&context=0"
+    )
+    assert source_response.status_code == 200
+    source_common_node_ids = {
+        anchor["node_id"]
+        for block in source_response.get_json()["blocks"]
+        for row in block.get("rows", [])
+        for line in (row["left"], row["right"])
+        if line is not None
+        for anchor in line["anchors"]
+        if anchor["kind"] == "common"
+    }
+    assert source_common_node_ids
+
+    xml_response = client.get(f"/api/artifacts/{artifact_id}/xml")
+    assert xml_response.status_code == 200
+    xml_common_node_ids = {
+        anchor["node_id"]
+        for anchor in xml_response.get_json()["anchors"]
+        if anchor["kind"] == "common"
+    }
+    assert xml_common_node_ids == source_common_node_ids
 
 
 def test_blocks_swapped_example_accepts_single_root_artifact_inputs(

@@ -80,21 +80,20 @@ function buildHighlightedSegments(
   lineText: string,
   lineHighlights: LineHighlight[],
 ): ViewerLineSegment[] {
-  const slices = lineHighlights
-    .map((highlight) => {
-      const { startIndex, endIndex } = sourceSpanToLineSlice(
-        lineText,
-        highlight.span,
-      );
+  const slices = lineHighlights.map((highlight) => {
+    const { startIndex, endIndex } = sourceSpanToLineSlice(
+      lineText,
+      highlight.span,
+    );
 
-      return {
-        nodeId: highlight.nodeId,
-        moveId: highlight.moveId ?? null,
-        kind: highlight.kind,
-        startIndex,
-        endIndex,
-      };
-    });
+    return {
+      nodeId: highlight.nodeId,
+      moveId: highlight.moveId ?? null,
+      kind: highlight.kind,
+      startIndex,
+      endIndex,
+    };
+  });
 
   if (lineText.length === 0) {
     const highlight = preferredHighlight(slices);
@@ -159,7 +158,7 @@ function segmentForSlice(
 
 function highlightPriority(kind: HighlightKind) {
   if (kind === "move") return 2;
-  if (kind === "insert" || kind === "delete") return 1;
+  if (kind === "common" || kind === "insert" || kind === "delete") return 1;
   return 0;
 }
 

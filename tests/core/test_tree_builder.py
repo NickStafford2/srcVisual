@@ -221,6 +221,40 @@ def test_build_tree_index_maps_insert_span_to_revision_1_span_only() -> None:
     }
 
 
+def test_build_tree_index_preserves_explicit_common_as_its_own_kind() -> None:
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<unit xmlns="http://www.srcML.org/srcML/src"
+      xmlns:diff="http://www.srcML.org/srcDiff"
+      xmlns:pos="http://www.srcML.org/srcML/position">
+  <unit filename="example.cpp">
+    <diff:common pos:start="4:2|14:3" pos:end="4:8|14:9">
+      <expr><name>shared</name></expr>
+    </diff:common>
+  </unit>
+</unit>
+"""
+
+    tree_by_unit, has_position_data = build_tree_index(xml)
+
+    common_node = tree_by_unit[1]["children"][0]
+
+    assert has_position_data is True
+    assert common_node["tag"] == "diff:common"
+    assert common_node["kind"] == "common"
+    assert common_node["revision_0_span"] == {
+        "start_line": 4,
+        "start_col": 2,
+        "end_line": 4,
+        "end_col": 8,
+    }
+    assert common_node["revision_1_span"] == {
+        "start_line": 14,
+        "start_col": 3,
+        "end_line": 14,
+        "end_col": 9,
+    }
+
+
 def test_build_tree_index_does_not_merge_revision_1_into_delete_nodes() -> None:
     xml = """<?xml version="1.0" encoding="UTF-8"?>
 <unit xmlns="http://www.srcML.org/srcML/src"

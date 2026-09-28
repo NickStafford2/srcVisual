@@ -91,7 +91,7 @@ def validate_tree_payload_node(node: dict[str, object]) -> None:
 
     assert isinstance(node["tag"], str)
     assert isinstance(node["label"], str)
-    assert node["kind"] in {"plain", "insert", "delete", "move"}
+    assert node["kind"] in {"plain", "common", "insert", "delete", "move"}
     assert node["move_id"] is None or isinstance(node["move_id"], str)
     assert isinstance(node["srcdiff_attributes"], dict)
 

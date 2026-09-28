@@ -25,8 +25,11 @@ SQLite index.
 
 The frontend loads bounded projections of that artifact. Its Source view lists
 changed files as collapsible cards, retrieves source only for expanded files,
-and represents omitted ranges as expandable gaps. Source, XML, the structure
-tree, sidebar node inspector, and Move Summary share stable artifact-local identities.
+and represents omitted ranges as expandable gaps. A dedicated srcDiff sidebar
+control independently highlights explicit `diff:common`, `diff:delete`, and
+`diff:insert` source regions; unwrapped common source remains neutral. Move
+highlighting and connectors remain a separate layer. Source, XML, the structure tree,
+sidebar node inspector, and Move Summary share stable artifact-local identities.
 Selecting a moved fragment or connector opens retained srcMove details;
 connector visibility and move isolation remain separate controls. The XML view
 is loaded only when opened. The application does not infer unavailable

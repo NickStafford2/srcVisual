@@ -62,6 +62,39 @@ describe("buildSourceView", () => {
       expect.objectContaining({ text: "</insert>", kind: "insert" }),
     ]);
   });
+
+  it("uses the nearest nested diff boundary for common and insert regions", () => {
+    const lines = buildSourceView("outer common nested tail", [
+      {
+        nodeId: "outer-insert",
+        kind: "insert",
+        span: { start_line: 1, start_col: 1, end_line: 1, end_col: 24 },
+      },
+      {
+        nodeId: "nested-common",
+        kind: "common",
+        span: { start_line: 1, start_col: 7, end_line: 1, end_col: 19 },
+      },
+      {
+        nodeId: "inner-insert",
+        kind: "insert",
+        span: { start_line: 1, start_col: 14, end_line: 1, end_col: 19 },
+      },
+    ]);
+
+    expect(
+      lines[0].segments.map((segment) => [
+        segment.text,
+        segment.kind,
+        segment.nodeId,
+      ]),
+    ).toEqual([
+      ["outer ", "insert", "outer-insert"],
+      ["common ", "common", "nested-common"],
+      ["nested", "insert", "inner-insert"],
+      [" tail", "insert", "outer-insert"],
+    ]);
+  });
 });
 
 function getHighlightedLineNumbers(

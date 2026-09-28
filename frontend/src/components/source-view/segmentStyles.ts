@@ -16,10 +16,12 @@ export function getSourceSegmentClasses(
       return "rounded-md bg-diff-delete/25 px-0.5";
     case "insert":
       return "rounded-md bg-diff-insert/25 px-0.5";
+    case "common":
+      return "rounded-md bg-diff-plain/25 px-0.5";
     case "move":
       return getMoveSegmentClasses(moveState);
     default:
-      return "rounded-md bg-diff-plain/25 px-0.5";
+      return "";
   }
 }
 

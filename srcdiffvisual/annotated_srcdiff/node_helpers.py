@@ -9,6 +9,9 @@ from srcdiffvisual.srcdiff.position_spans import parse_position_spans
 
 
 def get_current_diff_kind(tag: str) -> str | None:
+    if tag == "diff:common":
+        return "common"
+
     if tag == "diff:delete":
         return "delete"
 
@@ -25,6 +28,9 @@ def get_current_kind(
 ) -> TreeNodeKind:
     if move_id:
         return "move"
+
+    if diff_kind == "common":
+        return "common"
 
     if diff_kind == "delete":
         return "delete"
@@ -61,7 +67,8 @@ def spans_for_element(
         return None, spans[0]
 
     assert len(spans) in {1, 2}, (
-        f"Expected one or two position spans for plain/move node; got {len(spans)}."
+        "Expected one or two position spans for plain/common/move node; "
+        f"got {len(spans)}."
     )
 
     if len(spans) == 1:

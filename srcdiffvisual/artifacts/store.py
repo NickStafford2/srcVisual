@@ -22,7 +22,7 @@ from srcdiffvisual.artifacts.models import (
 from srcdiffvisual.files.models import RevisionFile, VisualizedFile
 from srcdiffvisual.workflow.models import VisualizationPayload
 
-ARTIFACT_SCHEMA_VERSION = 2
+ARTIFACT_SCHEMA_VERSION = 3
 DEFAULT_ARTIFACT_ROOT = Path("/tmp/srcdiffvisual-artifacts")
 
 

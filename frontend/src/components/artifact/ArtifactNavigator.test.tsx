@@ -101,6 +101,8 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   const onSelectFile = vi.fn();
   const onToggleMove = vi.fn();
   const onVisibleMoveIdsChange = vi.fn();
+  const onToggleDiffKind = vi.fn();
+  const onVisibleDiffKindsChange = vi.fn();
   const onSelectNode = vi.fn();
   render(
     <ArtifactNavigator
@@ -108,6 +110,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       selectedFileId="f-one"
       inspectedMoveId="move-1"
       visibleMoveIds={new Set(["move-1"])}
+      visibleDiffKinds={new Set(["delete", "insert"])}
       selectedNodeId={null}
       selectedNode={null}
       nodeLoading={false}
@@ -116,6 +119,8 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       onSelectFile={onSelectFile}
       onToggleMove={onToggleMove}
       onVisibleMoveIdsChange={onVisibleMoveIdsChange}
+      onToggleDiffKind={onToggleDiffKind}
+      onVisibleDiffKindsChange={onVisibleDiffKindsChange}
       onSelectNode={onSelectNode}
       onClearNode={vi.fn()}
       onRevealNode={vi.fn()}
@@ -155,6 +160,21 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
   fireEvent.click(screen.getByRole("button", { name: "Current only" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
+
+  expect(screen.getByRole("button", { name: "diff:common" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await user.click(screen.getByRole("button", { name: "diff:common" }));
+  expect(onToggleDiffKind).toHaveBeenCalledWith("common");
+  fireEvent.click(screen.getByRole("button", { name: "All diff regions" }));
+  expect(onVisibleDiffKindsChange).toHaveBeenLastCalledWith(
+    new Set(["common", "delete", "insert"]),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear diff highlights" }),
+  );
+  expect(onVisibleDiffKindsChange).toHaveBeenLastCalledWith(new Set());
 
   await user.type(
     screen.getByRole("searchbox", { name: "Filter artifact files" }),

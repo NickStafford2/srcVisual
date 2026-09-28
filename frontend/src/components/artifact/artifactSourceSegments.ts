@@ -78,7 +78,7 @@ function segmentForRange(
 
 function anchorPriority(kind: ArtifactSourceLine["anchors"][number]["kind"]) {
   if (kind === "move") return 2;
-  if (kind === "insert" || kind === "delete") return 1;
+  if (kind === "common" || kind === "insert" || kind === "delete") return 1;
   return 0;
 }
 
