@@ -179,6 +179,16 @@ describe("ArtifactSourcePane", () => {
     expect(await screen.findByText("old();")).toBeInTheDocument();
     expect(screen.getByText("old();")).not.toHaveClass("underline");
     expect(screen.getByText("new();")).not.toHaveClass("underline");
+    expect(screen.getByText("Original")).toBeInTheDocument();
+    expect(screen.getByText("Modified")).toBeInTheDocument();
+    expect(screen.getByLabelText("Original source")).toHaveClass(
+      "min-w-0",
+      "overflow-x-auto",
+    );
+    expect(screen.getByLabelText("Modified source")).toHaveClass(
+      "min-w-0",
+      "overflow-x-auto",
+    );
     expect(fetchArtifactSource).toHaveBeenCalledWith(
       "artifact-1",
       "f-1",

@@ -244,11 +244,11 @@ export function ArtifactSourceFile({
         {expanded ? (
           <div className="grid grid-cols-2 border-t border-white/10 text-[11px] text-slate-400">
             <div className="border-r border-white/10 px-3 py-1.5 break-all">
-              <strong className="text-slate-200">Before</strong> ·{" "}
+              <strong className="text-slate-200">Original</strong> ·{" "}
               {file.revision_0_filename || "File absent"}
             </div>
             <div className="px-3 py-1.5 break-all">
-              <strong className="text-slate-200">After</strong> ·{" "}
+              <strong className="text-slate-200">Modified</strong> ·{" "}
               {file.revision_1_filename || "File absent"}
             </div>
           </div>
@@ -310,55 +310,35 @@ export function ArtifactSourceFile({
         <p className="p-3 text-sm text-rose-300">{error}</p>
       ) : null}
       {expanded && projection ? (
-        <div className="overflow-auto bg-black font-mono text-xs">
-          {projection.blocks.map((block) =>
-            block.type === "gap" ? (
-              <button
-                key={block.block_id}
-                type="button"
-                onClick={() => void showGap(block)}
-                className="block w-full border-y border-sky-400/20 bg-neutral-950 px-3 py-2 text-left text-sky-300 hover:bg-slate-900"
-              >
-                Show {block.left.line_count} left / {block.right.line_count}{" "}
-                right hidden lines
-              </button>
-            ) : (
-              <div key={block.block_id}>
-                {block.rows.map((row, index) => (
-                  <div
-                    key={`${block.block_id}-${index}`}
-                    data-source-row-kind={row.kind}
-                    className="grid grid-cols-2 border-b border-white/5 bg-black"
-                  >
-                    <SourceCell
-                      correspondenceEndpoints={renderedCorrespondences}
-                      line={row.left}
-                      revision="revision-0"
-                      visibleMoveIds={_visibleMoveIds}
-                      visibleDiffKinds={visibleDiffKinds}
-                      selectedNodeId={selectedNodeId}
-                      onInspectMove={onInspectMove}
-                      registerMoveSegment={registerMoveSegment}
-                      unregisterMoveSegment={unregisterMoveSegment}
-                    />
-                    <SourceCell
-                      correspondenceEndpoints={renderedCorrespondences}
-                      line={row.right}
-                      revision="revision-1"
-                      visibleMoveIds={_visibleMoveIds}
-                      visibleDiffKinds={visibleDiffKinds}
-                      selectedNodeId={selectedNodeId}
-                      onInspectMove={onInspectMove}
-                      registerMoveSegment={registerMoveSegment}
-                      unregisterMoveSegment={unregisterMoveSegment}
-                    />
-                  </div>
-                ))}
-              </div>
-            ),
-          )}
+        <div className="grid min-w-0 grid-cols-2 overflow-x-hidden bg-black font-mono text-xs">
+          <SourceRevisionPane
+            label="Original source"
+            revision="revision-0"
+            projection={projection}
+            correspondenceEndpoints={renderedCorrespondences}
+            visibleMoveIds={_visibleMoveIds}
+            visibleDiffKinds={visibleDiffKinds}
+            selectedNodeId={selectedNodeId}
+            onInspectMove={onInspectMove}
+            registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
+            showGap={showGap}
+          />
+          <SourceRevisionPane
+            label="Modified source"
+            revision="revision-1"
+            projection={projection}
+            correspondenceEndpoints={renderedCorrespondences}
+            visibleMoveIds={_visibleMoveIds}
+            visibleDiffKinds={visibleDiffKinds}
+            selectedNodeId={selectedNodeId}
+            onInspectMove={onInspectMove}
+            registerMoveSegment={registerMoveSegment}
+            unregisterMoveSegment={unregisterMoveSegment}
+            showGap={showGap}
+          />
           {projection.truncated ? (
-            <p className="px-3 py-2 text-amber-300">
+            <p className="col-span-2 px-3 py-2 text-amber-300">
               This projection reached the 2,000-row response bound. Expand a gap
               to inspect another range.
             </p>
@@ -369,9 +349,83 @@ export function ArtifactSourceFile({
   );
 }
 
+function SourceRevisionPane({
+  label,
+  revision,
+  projection,
+  correspondenceEndpoints,
+  visibleMoveIds,
+  visibleDiffKinds,
+  selectedNodeId,
+  onInspectMove,
+  registerMoveSegment,
+  unregisterMoveSegment,
+  showGap,
+}: {
+  label: string;
+  revision: SourceRevision;
+  projection: ArtifactSourceProjection;
+  correspondenceEndpoints: CorrespondenceEndpoint[];
+  visibleMoveIds: ReadonlySet<string>;
+  visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
+  selectedNodeId: string | null;
+  onInspectMove: (moveId: string, position: { x: number; y: number }) => void;
+  registerMoveSegment: RegisterMoveSegment;
+  unregisterMoveSegment: UnregisterMoveSegment;
+  showGap: (
+    block: Extract<
+      ArtifactSourceProjection["blocks"][number],
+      { type: "gap" }
+    >,
+  ) => Promise<void>;
+}) {
+  const side = revision === "revision-0" ? "left" : "right";
+
+  return (
+    <div
+      aria-label={label}
+      className="min-w-0 overflow-x-auto border-r border-white/10"
+    >
+      <div className="w-max min-w-full">
+        {projection.blocks.map((block) =>
+          block.type === "gap" ? (
+            <button
+              key={block.block_id}
+              type="button"
+              onClick={() => void showGap(block)}
+              className="block h-9 min-w-full border-y border-sky-400/20 bg-neutral-950 px-3 text-left text-sky-300 hover:bg-slate-900"
+            >
+              Show {block[side].line_count} {side} hidden lines
+            </button>
+          ) : (
+            <div key={block.block_id}>
+              {block.rows.map((row, index) => (
+                <SourceCell
+                  key={`${block.block_id}-${index}`}
+                  correspondenceEndpoints={correspondenceEndpoints}
+                  line={row[side]}
+                  rowKind={row.kind}
+                  revision={revision}
+                  visibleMoveIds={visibleMoveIds}
+                  visibleDiffKinds={visibleDiffKinds}
+                  selectedNodeId={selectedNodeId}
+                  onInspectMove={onInspectMove}
+                  registerMoveSegment={registerMoveSegment}
+                  unregisterMoveSegment={unregisterMoveSegment}
+                />
+              ))}
+            </div>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SourceCell({
   correspondenceEndpoints,
   line,
+  rowKind,
   revision,
   visibleMoveIds,
   visibleDiffKinds,
@@ -382,6 +436,7 @@ function SourceCell({
 }: {
   correspondenceEndpoints: CorrespondenceEndpoint[];
   line: ArtifactSourceLine | null;
+  rowKind: string;
   revision: SourceRevision;
   visibleMoveIds: ReadonlySet<string>;
   visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
@@ -444,8 +499,11 @@ function SourceCell({
   });
 
   return (
-    <div className="grid min-h-7 grid-cols-[3.5rem_1fr] border-r border-white/10">
-      <span className="px-2 py-1 text-right text-slate-600 select-none">
+    <div
+      data-source-row-kind={rowKind}
+      className="flex min-h-7 min-w-full border-b border-white/5 bg-black"
+    >
+      <span className="sticky left-0 z-10 w-14 shrink-0 bg-black px-2 py-1 text-right text-slate-600 select-none">
         {line?.line_number ?? ""}
       </span>
       <code className="px-2 py-1 whitespace-pre text-slate-200">
