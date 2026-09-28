@@ -180,7 +180,13 @@ export default function App() {
   return (
     <main className="bg-site-bg flex h-screen flex-col text-slate-100">
       <div className="mx-auto flex h-full w-full max-w-[2220px] flex-col">
-        <AppHeader />
+        <AppHeader
+          artifact={artifact}
+          context={srcDiffData.comparisonContext}
+          view={mainTabs.find((tab) => tab.id === activeMainTab)?.label ?? "Input"}
+          focus={artifactFocus}
+          visibleMoveCount={visibleArtifactMoveIds.size}
+        />
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:items-stretch">
           <aside

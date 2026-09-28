@@ -6,7 +6,7 @@ import {
   fetchHistoryStatus,
   visualizeHistoryPair,
 } from "../api";
-import type { ArtifactManifest } from "../types";
+import type { ArtifactManifest, ComparisonContext } from "../types";
 import type {
   HistoryPairDetail,
   HistoryPairListItem,
@@ -18,7 +18,10 @@ import type {
 
 export function useHistoryData(
   enabled: boolean,
-  onVisualization: (payload: ArtifactManifest) => void,
+  onVisualization: (
+    payload: ArtifactManifest,
+    context?: ComparisonContext,
+  ) => void,
 ) {
   const [status, setStatus] = useState<HistoryStatusDocument | null>(null);
   const [pairs, setPairs] = useState<HistoryPairListItem[]>([]);
@@ -112,7 +115,18 @@ export function useHistoryData(
           );
         },
       });
-      onVisualization(payload);
+      onVisualization(payload, {
+        mode: "history",
+        label: `${status?.analysis.repository ?? "Repository"} · Pair ${pairNumber}`,
+        before:
+          selectedPair?.number === pairNumber
+            ? selectedPair.old_commit
+            : undefined,
+        after:
+          selectedPair?.number === pairNumber
+            ? selectedPair.new_commit
+            : undefined,
+      });
     } catch (loadError) {
       setError(
         errorMessage(

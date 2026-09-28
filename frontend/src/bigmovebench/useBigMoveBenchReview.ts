@@ -1,10 +1,13 @@
 import { useState } from "react";
-import type { ArtifactManifest } from "../types";
+import type { ArtifactManifest, ComparisonContext } from "../types";
 import { importBigMoveBenchReview, visualizeBigMoveBenchCase } from "./api";
 import type { BigMoveBenchReviewManifest } from "./types";
 
 export function useBigMoveBenchReview(
-  acceptVisualization: (payload: ArtifactManifest) => void,
+  acceptVisualization: (
+    payload: ArtifactManifest,
+    context?: ComparisonContext,
+  ) => void,
 ) {
   const [selectedBundle, setSelectedBundle] = useState<File | null>(null);
   const [manifest, setManifest] = useState<BigMoveBenchReviewManifest | null>(
@@ -42,7 +45,10 @@ export function useBigMoveBenchReview(
         ordinal,
       );
       setActiveOrdinal(ordinal);
-      acceptVisualization(artifact);
+      acceptVisualization(artifact, {
+        mode: "benchmark",
+        label: `BigMoveBench · Review ${manifest.review_id} · Case ${ordinal}`,
+      });
     } catch (reason) {
       setError(
         reason instanceof Error

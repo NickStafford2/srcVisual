@@ -223,7 +223,7 @@ describe("ArtifactSourcePane", () => {
       />,
     );
 
-    await screen.findByText("before", { exact: false });
+    await screen.findAllByText("before", { exact: false, selector: "code span" });
     const moveSegments = document.querySelectorAll(
       '[data-highlight-kind="move"][data-move-id="move-1"]',
     );

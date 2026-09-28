@@ -7,7 +7,7 @@ import {
   visualizeSrcDiff,
 } from "../api";
 import type { VisualizationProgressEvent } from "../api";
-import type { ArtifactManifest } from "../types";
+import type { ArtifactManifest, ComparisonContext } from "../types";
 
 export type InputMode =
   | "history"
@@ -29,6 +29,8 @@ export function useSrcDiffData() {
     string | null
   >(null);
   const [data, setData] = useState<ArtifactManifest | null>(null);
+  const [comparisonContext, setComparisonContext] =
+    useState<ComparisonContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressMessage, setProgressMessage] = useState<string | null>(null);
@@ -163,9 +165,19 @@ export function useSrcDiffData() {
     try {
       const payload = await visualizeSrcDiff(formData);
       setData(payload);
+      setComparisonContext({
+        mode: inputMode,
+        label:
+          inputMode === "examples"
+            ? (loadedExampleFilename ?? payload.source_filename)
+            : inputMode === "upload"
+              ? selectedUpload!.name
+              : "Pasted XML",
+      });
       setProgressMessage("Visualization complete.");
     } catch (submissionError) {
       setData(null);
+      setComparisonContext(null);
       const message =
         submissionError instanceof Error
           ? submissionError.message
@@ -178,8 +190,12 @@ export function useSrcDiffData() {
     }
   }
 
-  function acceptVisualization(payload: ArtifactManifest) {
+  function acceptVisualization(
+    payload: ArtifactManifest,
+    context?: ComparisonContext,
+  ) {
     setData(payload);
+    setComparisonContext(context ?? null);
     setError(null);
     setProgressMessage("Visualization complete.");
   }
@@ -190,6 +206,7 @@ export function useSrcDiffData() {
     xmlInput,
     loadedExampleFilename,
     data,
+    comparisonContext,
     isLoading,
     error,
     progressMessage,

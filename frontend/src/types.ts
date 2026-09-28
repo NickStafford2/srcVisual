@@ -45,11 +45,28 @@ export interface ArtifactMoveProjection {
   move: ArtifactMoveRecord;
 }
 
+export interface ComparisonContext {
+  mode: "examples" | "paste" | "upload" | "history" | "benchmark";
+  label: string;
+  before?: string;
+  after?: string;
+}
+
 export interface ArtifactManifest {
   schema_version: number;
   projection_schema_version: 1;
   artifact_id: string;
   source_filename: string;
+  provenance?: {
+    origin: "upload" | "history";
+    history_pair: number | null;
+    move_results_source: "generated" | "provided" | "reconstructed";
+  };
+  tools?: {
+    identity_status: "producer-not-observed" | "observed-runtime-binaries";
+    srcdiff_sha256: string | null;
+    srcmove_sha256: string | null;
+  };
   has_position_data: boolean;
   file_count: number;
   node_count: number;

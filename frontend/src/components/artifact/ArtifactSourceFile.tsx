@@ -190,6 +190,18 @@ export function ArtifactSourceFile({
             </button>
           ) : null}
         </div>
+        {expanded ? (
+          <div className="grid grid-cols-2 border-t border-white/10 text-[11px] text-slate-400">
+            <div className="border-r border-white/10 px-3 py-1.5 break-all">
+              <strong className="text-slate-200">Before</strong> ·{" "}
+              {file.revision_0_filename || "File absent"}
+            </div>
+            <div className="px-3 py-1.5 break-all">
+              <strong className="text-slate-200">After</strong> ·{" "}
+              {file.revision_1_filename || "File absent"}
+            </div>
+          </div>
+        ) : null}
         {_hasEndpointProxies ? (
           <div className="grid grid-cols-2 border-t border-white/5">
             <div className="space-y-1 px-3 py-1.5 text-xs text-slate-500">

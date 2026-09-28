@@ -246,6 +246,8 @@ describe("repository history browser", () => {
     expect(fetch).toHaveBeenCalledWith("/api/history/pairs/1/runs", {
       method: "POST",
     });
+    expect(screen.getByText(`${statusDocument.analysis.repository} · Pair 1`)).toBeInTheDocument();
+    expect(screen.getByText(`Before ${pairItem.old_commit.slice(0, 10)} → After ${pairItem.new_commit.slice(0, 10)}`)).toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalledWith(
       "/api/history/pairs/1/visualize",
       expect.anything(),

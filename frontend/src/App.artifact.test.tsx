@@ -214,6 +214,13 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
 
   await user.click(screen.getByRole("tab", { name: "Source" }));
   expect(await screen.findByText("1 changed file")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("tab", { name: "Input" }));
+  await user.click(screen.getByRole("tab", { name: /Custom XML/ }));
+  await user.clear(screen.getByPlaceholderText("Paste srcDiff XML here"));
+  await user.type(screen.getByPlaceholderText("Paste srcDiff XML here"), "<unit />");
+  expect(screen.getByText("e2e_generated_example.xml", { selector: "header p" })).toBeInTheDocument();
+  expect(screen.getByText("Example · Development")).toBeInTheDocument();
 });
 
 function jsonResponse(payload: unknown): Response {

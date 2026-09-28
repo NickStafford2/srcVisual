@@ -870,3 +870,25 @@ Automatic collection is not enabled.
 - Existing archive-style and single-root inputs remain supported.
 - srcMove remains the sole owner of history comparison semantics and
   repository-local `.srcmove` state.
+
+### Screenshot context and viewer identity
+
+The persistent header identifies the loaded example, upload, pasted XML,
+repository pair, or benchmark case alongside the active view, source focus,
+connector visibility, and artifact ID. Context is captured when the comparison
+loads; editing another input does not relabel the loaded result. History
+comparisons display before/after commit IDs when the selected pair supplies
+them. Expanded source cards explicitly label the Before and After columns.
+
+Version details expose the artifact's recorded runtime srcMove/srcDiff SHA-256
+values only when its tool identity status is `observed-runtime-binaries`.
+Unavailable producer identities remain unknown, particularly for imported and
+history results. These checksums must not be substituted with installed tools.
+Recorded runtime srcDiff identity does not prove it produced imported XML.
+
+The viewer label identifies the frontend with a SHA-256 over its source,
+public assets, HTML, dependency lockfile, package metadata, TypeScript/Vite
+configuration and fingerprint implementation. This includes local edits and
+updates during development. It is a frontend source fingerprint, not a Git
+revision, backend version, or emitted-bundle checksum. The Details control
+exposes full hashes and comparison context with a Copy details action.
