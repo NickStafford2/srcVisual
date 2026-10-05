@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MOVE_MATCH_KINDS, moveKindLabel } from "../../moveKinds";
 
 export type SourceLocation = {
   file_id: string | null;
@@ -199,12 +200,13 @@ export function ArtifactCorrespondences({
           {sidebar ? (
             <>
               <p className="text-xs">
-                Type-1{" "}
-                <span style={{ color: correspondenceColor("type1") }}>●</span> ·
-                Type-2{" "}
-                <span style={{ color: correspondenceColor("type2") }}>●</span> ·
-                Type-3{" "}
-                <span style={{ color: correspondenceColor("type3") }}>●</span>
+                {MOVE_MATCH_KINDS.map((matchKind, index) => (
+                  <span key={matchKind}>
+                    {index > 0 ? " · " : ""}
+                    {moveKindLabel(matchKind)}{" "}
+                    <span style={{ color: correspondenceColor(matchKind) }}>●</span>
+                  </span>
+                ))}
               </p>
               <div
                 role="group"
@@ -480,7 +482,7 @@ export function CorrespondenceRecord({ detail }: { detail: Detail }) {
 export function correspondenceColor(kind: string) {
   return (
     (
-      { type1: "#a78bfa", type2: "#34d399", type3: "#fb7185" } as Record<
+      { type1: "#a78bfa", type2b: "#38bdf8", type2c: "#34d399", type3: "#fb7185" } as Record<
         string,
         string
       >

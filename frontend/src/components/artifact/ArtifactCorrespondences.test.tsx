@@ -1,10 +1,10 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
-import { ArtifactCorrespondences } from "./ArtifactCorrespondences";
+import { ArtifactCorrespondences, correspondenceColor } from "./ArtifactCorrespondences";
 const pair = {
   id: 3,
-  kind: "type2",
+  kind: "type2c",
   classification: "stationary",
   outcome: "not_move",
   reason: "same_interval",
@@ -20,7 +20,7 @@ const page = {
   matched: 1,
   next_offset: null,
   filters: {
-    kinds: ["type2"],
+    kinds: ["type2c"],
     classifications: ["stationary"],
     outcomes: ["not_move"],
   },
@@ -120,6 +120,9 @@ it("starts sidebar highlighting at None and enables only the current page", asyn
     />,
   );
   await screen.findByRole("button", { name: "All on page" });
+  expect(screen.getByText(/Type 2b/)).toBeInTheDocument();
+  expect(screen.getByText(/Type 2c/)).toBeInTheDocument();
+  expect(screen.getByText(/TYPE2C/)).toHaveStyle({ color: "#34d399" });
   expect(screen.getByRole("button", { name: "None" })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -128,4 +131,9 @@ it("starts sidebar highlighting at None and enables only the current page", asyn
   expect(change).toHaveBeenLastCalledWith([pair]);
   await user.click(screen.getByRole("button", { name: "None" }));
   expect(change).toHaveBeenLastCalledWith([]);
+});
+
+it("uses separate correspondence colors for blind and consistent Type 2 matches", () => {
+  expect(correspondenceColor("type2b")).toBe("#38bdf8");
+  expect(correspondenceColor("type2c")).toBe("#34d399");
 });

@@ -104,7 +104,7 @@ describe("ArtifactSourcePane", () => {
       };
       const pair: Pair = {
         id: 0,
-        kind: "type2",
+        kind: "type2c",
         classification: "stationary",
         outcome: "not_move",
         reason: "same_interval",

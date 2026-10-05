@@ -6,7 +6,7 @@ import type { Pair } from "./ArtifactCorrespondences";
 afterEach(cleanup);
 it("uses type colors, corner routes and clickable swatches below moves", async () => {
   const user = userEvent.setup();
-  const pair = { id: 2, kind: "type2" } as Pair;
+  const pair = { id: 2, kind: "type2c" } as Pair;
   const inspect = vi.fn();
   const { container } = render(
     <CorrespondenceOverlay

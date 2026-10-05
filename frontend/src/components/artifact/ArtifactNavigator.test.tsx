@@ -67,7 +67,7 @@ const manifest: ArtifactManifest = {
     },
   ],
   moves: {
-    move_count: 3,
+    move_count: 4,
     items: [
       {
         move_id: "move-1",
@@ -77,7 +77,7 @@ const manifest: ArtifactManifest = {
       },
       {
         move_id: "move-2",
-        match_kind: "type2",
+        match_kind: "type2c",
         from_node_ids: ["f-one:n00000002"],
         to_node_ids: ["f-two:n00000002"],
       },
@@ -86,6 +86,12 @@ const manifest: ArtifactManifest = {
         match_kind: "type3",
         from_node_ids: ["f-one:n00000003"],
         to_node_ids: ["f-two:n00000003"],
+      },
+      {
+        move_id: "move-2b",
+        match_kind: "type2b",
+        from_node_ids: ["f-one:n00000004"],
+        to_node_ids: ["f-two:n00000004"],
       },
     ],
   },
@@ -219,15 +225,19 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
   fireEvent.click(screen.getByRole("button", { name: "All" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
-    new Set(["move-1", "move-2", "move-3"]),
+    new Set(["move-1", "move-2", "move-3", "move-2b"]),
   );
   fireEvent.click(screen.getByRole("button", { name: "Current only" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
   fireEvent.click(screen.getByRole("button", { name: "Type 1 (1 move)" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
-  fireEvent.click(screen.getByRole("button", { name: "Type 2 (1 move)" }));
+  fireEvent.click(screen.getByRole("button", { name: "Type 2c (1 move)" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
     new Set(["move-1", "move-2"]),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Type 2b (1 move)" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
+    new Set(["move-1", "move-2b"]),
   );
   fireEvent.click(screen.getByRole("button", { name: "Type 3 (1 move)" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(

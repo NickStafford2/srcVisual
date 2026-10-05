@@ -1,4 +1,5 @@
 import type { SourceCodeSpan } from "./srcdiff/types";
+import type { MoveMatchKind } from "./moveKinds";
 
 export type ArtifactFocusProfile =
   | "changes-and-moves"
@@ -28,7 +29,7 @@ export interface ArtifactMoveSummary {
 
 export interface ArtifactMoveRecord {
   move_id: string;
-  match_kind?: "type1" | "type2" | "type3";
+  match_kind?: MoveMatchKind;
   confidence_milli?: number;
   selection_utility?: number;
   matched_units?: number;

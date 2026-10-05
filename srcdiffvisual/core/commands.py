@@ -13,7 +13,7 @@ class CommandResult:
     stderr: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class BackendCommandError(Exception):
     argv: tuple[str, ...]
     returncode: int | None

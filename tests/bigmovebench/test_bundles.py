@@ -26,7 +26,12 @@ def _bundle() -> bytes:
         "case_id": "case-one",
         "outcome": "srcmove_miss",
         "diagnosis": {"stage": "verification", "reason": "below_threshold"},
-        "results": {"move_count": 0, "moves": [], "diagnostics": {}},
+        "results": {
+            "move_count": 0,
+            "moves": [],
+            "match_kinds": {"type1": 0, "type2b": 0, "type2c": 0, "type3": 0},
+            "diagnostics": {"type2b_groups": []},
+        },
     }
     _manifest = {
         "schema_version": 1,
@@ -94,8 +99,14 @@ def test_review_routes_import_inspect_and_visualize(
     assert _case_response.get_json()["case_id"] == "case-one"
 
     _published = PublishedArtifact("artifact-one", tmp_path, {})
+    _build_arguments = []
+
+    def _publish(**_kwargs):
+        _build_arguments.append(_kwargs)
+        return _published
+
     monkeypatch.setattr(
-        routes_module, "build_visualization_artifact", lambda **_kwargs: _published
+        routes_module, "build_visualization_artifact", _publish
     )
     monkeypatch.setattr(
         routes_module,
@@ -111,6 +122,10 @@ def test_review_routes_import_inspect_and_visualize(
     )
     assert _visualize.status_code == 200
     assert _visualize.get_json()["artifact_id"] == "artifact-one"
+    assert (
+        _build_arguments[0]["producer_move_results"]
+        == _case_response.get_json()["results"]
+    )
 
 
 def test_invalid_bundle_is_rejected_without_publication(tmp_path: Path) -> None:

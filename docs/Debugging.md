@@ -22,6 +22,18 @@ with `make image` after dependency, native-tool, or Dockerfile changes. Source
 changes do not require a rebuild because the checkout is bind-mounted into the
 test container.
 
+Compose mounts the workspace `srcMove/build/srcMove` executable. Rebuilding
+srcMove can replace the file while a running container retains its old mount.
+If srcMove fails to launch or the header reports an unknown version, refresh
+both service mounts from the workspace root:
+
+```bash
+docker compose -f srcDiffVisual/compose.yaml -f srcDiffVisual/compose.dev.yaml \
+  up -d --no-build --force-recreate srcdiffvisual history-worker
+```
+
+This preserves the named artifact volume.
+
 Frontend:
 
 - start Docker hot reload: `make dev` (see [local development](../README.md#run-locally-with-docker))

@@ -931,11 +931,23 @@ The Source sidebar groups move and correspondence controls under **srcMove**.
 Correspondences default to None. The diagnostic filters also apply to the
 sidebar list; **All on page** enables that page's pairs without drawing an
 unbounded result set. Filters do not clear already enabled pairs; None clears
-all of them. Type-1 is violet, Type-2 green, and Type-3 rose; these colors express
+all of them. Type-1 is violet, Type-2b sky blue, Type-2c green, and Type-3 rose; these colors express
 match type, not confidence. Dashed correspondence boxes and offset corner
 connectors render below the amber move overlay. Source swatches and connectors
 open a recolored version of the shared draggable details popup, with the same
 explicit Close behavior as move details.
+
+Move visibility controls enumerate `type1`, `type2b`, `type2c`, and `type3`
+separately. Type-2c is srcMove's consistent identifier normalization category,
+formerly emitted as `type2`; there is no legacy-label translation. Producer
+results retain their category and summary fields unchanged, including benchmark
+review imports. XML alone has no move-category attribute, so XML-only moves
+remain unclassified. Current srcMove selects Type-1, Type-2c, and Type-3 moves;
+Type-2b controls accept supplied results but are empty for current native runs.
+The observation-only `diagnostics.type2b_groups` collection is retained as
+producer metadata; it does not populate selected moves or the pair inspector.
+See [srcMove's architecture](../../srcMove/doc/architecture.md#observation-only-type-2b-retrieval)
+for its group semantics.
 
 New diagnostic runs resolve candidate XPaths against the exact pre-annotation
 input. The mapper requires a unique endpoint, exact candidate text, and identical

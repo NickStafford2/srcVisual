@@ -29,6 +29,7 @@ from srcdiffvisual.artifacts.store import (
     validate_artifact,
 )
 from srcdiffvisual.workflow.payload import build_visualization_artifact
+from srcdiffvisual.core.commands import BackendCommandError
 from srcdiffvisual.history.client import (
     HistoryConfigurationError,
     HistoryResponseError,
@@ -434,6 +435,11 @@ def visualize() -> tuple[dict[str, object], int]:
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             artifact_id=published.artifact_id,
         )
+    except BackendCommandError as exc:
+        _message = exc.user_message()
+        if progress_token is not None:
+            progress_broker.publish_error(progress_token, _message)
+        return {"error": _message}, 500
     except ValueError as exc:
         if progress_token is not None:
             progress_broker.publish_error(progress_token, str(exc))

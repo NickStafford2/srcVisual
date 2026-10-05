@@ -7,6 +7,28 @@ import srcdiffvisual.web._routes as routes_module
 from srcdiffvisual.artifacts.models import PublishedArtifact
 from srcdiffvisual.runs.store import RunStore, get_run_database_path
 from srcdiffvisual.web.app import create_app
+from srcdiffvisual.core.commands import run_command
+from srcdiffvisual.workflow._tempfiles import managed_tmpdir
+
+
+def test_visualize_reports_command_failure_after_tempdir_cleanup(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("SRCDIFFVISUAL_TMP_ROOT", str(tmp_path))
+
+    def _missing_command(**_kwargs):
+        with managed_tmpdir():
+            run_command(["srcdiffvisual-missing-test-command"])
+
+    monkeypatch.setattr(routes_module, "build_visualization_artifact", _missing_command)
+    _response = create_app().test_client().post(
+        "/api/visualize", data={"srcdiff_xml": "<unit/>"}
+    )
+    assert _response.status_code == 500
+    assert _response.get_json() == {
+        "error": "Required command not found on PATH: srcdiffvisual-missing-test-command"
+    }
+    assert not list(tmp_path.glob("srcdiffvisual-*"))
 
 
 def test_visualize_events_requires_token() -> None:

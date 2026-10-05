@@ -14,6 +14,7 @@ import type {
   ArtifactTreeNode,
 } from "../../types";
 import { ArtifactNodeInfo } from "./ArtifactNodeInfo";
+import { MOVE_MATCH_KINDS, moveKindLabel, type MoveMatchKind } from "../../moveKinds";
 
 type Props = {
   correspondenceControls?: ReactNode;
@@ -70,9 +71,7 @@ export function ArtifactNavigator({
     file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
   );
   const currentMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
-  const moveTypes = ["type1", "type2", "type3"] as const;
-
-  function toggleMoveType(matchKind: (typeof moveTypes)[number]) {
+  function toggleMoveType(matchKind: MoveMatchKind) {
     const movesOfType = manifest.moves.items.filter(
       (move) => move.match_kind === matchKind,
     );
@@ -357,9 +356,9 @@ export function ArtifactNavigator({
             <div
               role="group"
               aria-label="Move type visibility"
-              className="mt-2 grid grid-cols-3 gap-1 text-xs"
+              className="mt-2 grid grid-cols-2 gap-1 text-xs"
             >
-              {moveTypes.map((matchKind, index) => {
+              {MOVE_MATCH_KINDS.map((matchKind) => {
                 const movesOfType = manifest.moves.items.filter(
                   (move) => move.match_kind === matchKind,
                 );
@@ -374,13 +373,13 @@ export function ArtifactNavigator({
                     type="button"
                     disabled={movesOfType.length === 0}
                     aria-pressed={allVisible}
-                    aria-label={`Type ${index + 1} (${movesOfType.length} ${
+                    aria-label={`${moveKindLabel(matchKind)} (${movesOfType.length} ${
                       movesOfType.length === 1 ? "move" : "moves"
                     })`}
                     onClick={() => toggleMoveType(matchKind)}
                     className="border-diff-move-1/25 hover:border-diff-move-1/50 aria-pressed:border-diff-move-1/70 aria-pressed:bg-diff-move-1/20 rounded border bg-slate-950 px-2 py-1.5 text-amber-100/70 disabled:opacity-35 aria-pressed:text-amber-200"
                   >
-                    Type {index + 1}
+                    {moveKindLabel(matchKind)}
                     <span
                       aria-hidden="true"
                       className="ml-1 text-[10px] opacity-60"
