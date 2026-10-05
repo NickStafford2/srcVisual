@@ -96,6 +96,7 @@ export async function fetchHistoryPairs(
   repositoryId: string,
   selection: HistorySelection,
   after?: number,
+  signal?: AbortSignal,
 ): Promise<HistoryPairPageDocument> {
   const parameters = new URLSearchParams({
     repository: repositoryId,
@@ -105,6 +106,7 @@ export async function fetchHistoryPairs(
   if (after !== undefined) parameters.set("after", String(after));
   const payload = await fetchJson(
     `/api/history/pairs?${parameters.toString()}`,
+    signal,
   );
   if (
     payload.schema_version !== 2 ||
@@ -242,8 +244,8 @@ async function fetchArtifactManifest(
   return payload;
 }
 
-async function fetchJson(url: string): Promise<Record<string, unknown>> {
-  const response = await fetch(url);
+async function fetchJson(url: string, signal?: AbortSignal): Promise<Record<string, unknown>> {
+  const response = await (signal ? fetch(url, { signal }) : fetch(url));
   const payload = (await response.json()) as Record<string, unknown> & {
     error?: string;
   };

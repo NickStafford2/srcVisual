@@ -84,6 +84,23 @@ checksums. A snapshot made after reviewing pairs includes their verified XML;
 one made before review contains compact observations only. Review judgments
 remain separate from detector output.
 
+## Historical move activity
+
+The history browser plots detected moves per saved commit pair, oldest to
+newest, independently of the pair-list filter and pagination. It loads all
+pages of the existing `list` interface, bounded by the coverage captured at
+load time, and refreshes after an extension completes or on manual refresh.
+Switching repositories clears the series and cancels its pending requests.
+No srcMove execution or XML regeneration is needed to draw the graph.
+
+Successful zero-move comparisons remain zero. Failed comparisons and outcomes
+with no analyzable changes appear as separate markers below the axis and break
+the count line. The optional trailing mean uses a full window of 5, 10, or 25
+consecutive successfully compared pairs; missing, failed, and no-source pairs
+break the mean. Points can be clicked or activated with Enter/Space to inspect
+pair evidence. This is exploratory detector activity, not a validated clustering
+result or an immutable thesis figure; use evidence snapshots for final claims.
+
 ## HTTP surface
 
 ```text

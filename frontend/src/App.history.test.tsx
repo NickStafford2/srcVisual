@@ -141,6 +141,16 @@ describe("repository history browser", () => {
             pairs: { items: [], next_after: null },
           });
         }
+        if (url.startsWith("/api/history/pairs?") && url.includes("selection=all")) {
+          const parameters = new URL(url, "http://localhost").searchParams;
+          return jsonResponse({ schema_version: 2, analysis: statusDocument.analysis,
+            pairs: parameters.get("repository") === "sqlite" ? { items: [], next_after: null } : parameters.has("after") ? {
+              items: [{ ...pairItem, number: 3, distance_from_newest: 2, status: "export_failed", move_count: 0 }], next_after: null,
+            } : {
+              items: [pairItem, { ...pairItem, number: 2, distance_from_newest: 1, move_count: 0 }], next_after: 1,
+            },
+          });
+        }
         if (url === "/api/history/pairs/1?repository=notepadpp") {
           return jsonResponse({
             schema_version: 2,
@@ -224,6 +234,21 @@ describe("repository history browser", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it("plots every saved page independently of the moves filter and opens pair evidence", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: /^History/ }));
+    const graph = await screen.findByRole("region", { name: "Historical move activity" });
+    await within(graph).findByRole("button", { name: "Pair 2: 0 detected moves" });
+    expect(within(graph).getByRole("button", { name: "Pair 3: export failed" })).toBeInTheDocument();
+    expect(within(graph).getByText("3 saved comparisons")).toBeInTheDocument();
+    await user.click(within(graph).getByRole("button", { name: "Pair 1: 2 detected moves" }));
+    expect(await screen.findByRole("region", { name: "Commit pair 1 details" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Repository" }), "sqlite");
+    await within(graph).findByText("No saved comparisons to plot yet.");
+    expect(within(graph).queryByRole("button", { name: "Pair 1: 2 detected moves" })).not.toBeInTheDocument();
   });
 
   it("queues an increment and disables duplicate requests", async () => {

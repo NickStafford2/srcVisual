@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HistoryActivityChart } from "../../history/HistoryActivityChart";
 import {
   CONTENT_RELATIONSHIPS,
   contentRelationshipLabel,
@@ -97,6 +98,7 @@ export function HistoryInput(props: HistoryInputProps) {
       ) : null}
 
       {status ? <HistorySummary status={status} /> : null}
+      <HistoryActivityChart series={props.series} isLoading={props.isLoadingSeries} error={props.seriesError} selectedPair={selectedPair?.number ?? null} onSelect={number => void selectPair(number)} />
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 p-3">
         <label className="text-sm text-slate-300">Additional comparisons
           <input aria-label="Additional comparisons" type="number" min={1} max={1000} value={increment} onChange={(event) => setIncrement(Number(event.target.value))} className="ml-2 w-24 rounded border border-white/20 bg-slate-950 p-2" />

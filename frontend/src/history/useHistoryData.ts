@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useHistorySeries } from "./useHistorySeries";
 import {
   cancelHistoryRun,
   fetchHistoryPair,
@@ -49,6 +50,15 @@ export function useHistoryData(
   const [extension, setExtension] = useState<HistoryExtension | null>(null);
   const [isExtending, setIsExtending] = useState(false);
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
+
+  const seriesIdentity = status ? JSON.stringify([selectedRepositoryId, status.analysis, status.history.newest_commit, status.definition, refreshKey]) : null;
+  const seriesCoverage = status && status.state !== "running" && !["queued", "running"].includes(extension?.state ?? "") ? status.coverage.durable_commit_pairs : null;
+  // During an extension, retain the initially captured range until it finishes.
+  const seriesRequest = useMemo(() => status && seriesIdentity !== null ? {
+    identity: seriesIdentity,
+    covered: status.coverage.durable_commit_pairs,
+  } : null, [seriesIdentity, seriesCoverage]);
+  const historySeries = useHistorySeries(enabled ? selectedRepositoryId : "", seriesRequest);
 
   useEffect(() => {
     if (!enabled || !selectedRepositoryId) return;
@@ -270,6 +280,7 @@ export function useHistoryData(
   }
 
   return {
+    ...historySeries,
     extension,
     isExtending,
     isSavingSnapshot,
