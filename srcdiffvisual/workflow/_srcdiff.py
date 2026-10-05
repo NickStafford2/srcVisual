@@ -30,10 +30,11 @@ def build_moved_srcdiff_xml(
     include_skipped_tags: bool,
     progress: ProgressCallback | None = None,
     diagnostics: bool = False,
+    use_retained_annotations: bool = False,
 ) -> tuple[str, dict[str, Any], bool]:
     uploaded_srcdiff_xml = input_path.read_text(encoding="utf-8")
 
-    if has_srcmove_annotations(uploaded_srcdiff_xml):
+    if use_retained_annotations or has_srcmove_annotations(uploaded_srcdiff_xml):
         if diagnostics:
             raise ValueError(
                 "Correspondence diagnostics require srcDiff XML before srcMove annotations. Use an unannotated example or upload."

@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { readBenchmark } from "../../bigmovebench/browserApi";
+import {
+  readBenchmark,
+  visualizeSavedBenchmarkCase,
+} from "../../bigmovebench/browserApi";
+import type { ArtifactManifest, ComparisonContext } from "../../types";
 import type {
   BenchmarkRun,
   BenchmarkRuns,
@@ -31,7 +35,14 @@ const control =
   "rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-slate-200";
 const button = `${control} hover:bg-white/10 disabled:opacity-40`;
 
-export function SavedBenchmarkBrowser() {
+export function SavedBenchmarkBrowser({
+  acceptVisualization,
+}: {
+  acceptVisualization?: (
+    artifact: ArtifactManifest,
+    context?: ComparisonContext,
+  ) => void;
+}) {
   const [runs, setRuns] = useState<BenchmarkRuns | null>(null);
   const [runId, setRunId] = useState("");
   const [run, setRun] = useState<BenchmarkRun | null>(null);
@@ -50,6 +61,33 @@ export function SavedBenchmarkBrowser() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [opening, setOpening] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+
+  async function openSource() {
+    if (!detail || !acceptVisualization || opening) return;
+    setOpening(true);
+    setOpenError(null);
+    try {
+      const artifact = await visualizeSavedBenchmarkCase(
+        runId,
+        detail.case.category,
+        detail.case.case_id,
+      );
+      acceptVisualization(artifact, {
+        mode: "benchmark",
+        label: `BigMoveBench · ${categoryLabel(detail.case.category)} · Case ${detail.case.ordinal} · ${outcomeLabel(detail.case.outcome)} · Run ${runId}`,
+      });
+    } catch (reason) {
+      setOpenError(
+        reason instanceof Error
+          ? reason.message
+          : "Unable to open Source view.",
+      );
+    } finally {
+      setOpening(false);
+    }
+  }
 
   useEffect(() => {
     let current = true;
@@ -128,6 +166,7 @@ export function SavedBenchmarkBrowser() {
   useEffect(() => {
     setDetail(null);
     setDetailError(null);
+    setOpenError(null);
     if (!selected || !runId) return;
     let current = true;
     void readBenchmark<BenchmarkCaseDetail>(
@@ -480,7 +519,33 @@ export function SavedBenchmarkBrowser() {
           {selected && !detail && !detailError ? (
             <p role="status">Loading fragments and recorded evidence…</p>
           ) : null}
-          {detail ? <CaseEvidence detail={detail} basis={basis} /> : null}
+          {detail ? (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className={button}
+                  disabled={
+                    opening || !detail.results_available || !acceptVisualization
+                  }
+                  onClick={() => void openSource()}
+                >
+                  {opening ? "Opening Source view…" : "Open in Source view"}
+                </button>
+                <p className="text-xs text-slate-400">
+                  {detail.results_available
+                    ? "Uses the recorded move results. Return to Input to continue browsing."
+                    : "Source view requires a completed recorded srcMove result."}
+                </p>
+                {openError ? (
+                  <p role="alert" className="text-rose-300">
+                    {openError}
+                  </p>
+                ) : null}
+              </div>
+              <CaseEvidence detail={detail} basis={basis} />
+            </>
+          ) : null}
         </>
       ) : null}
     </section>

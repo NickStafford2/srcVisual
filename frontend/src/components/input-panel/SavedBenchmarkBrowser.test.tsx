@@ -7,10 +7,17 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { readBenchmark } from "../../bigmovebench/browserApi";
+import {
+  readBenchmark,
+  visualizeSavedBenchmarkCase,
+} from "../../bigmovebench/browserApi";
+import type { ArtifactManifest } from "../../types";
 import { SavedBenchmarkBrowser } from "./SavedBenchmarkBrowser";
 
-vi.mock("../../bigmovebench/browserApi", () => ({ readBenchmark: vi.fn() }));
+vi.mock("../../bigmovebench/browserApi", () => ({
+  readBenchmark: vi.fn(),
+  visualizeSavedBenchmarkCase: vi.fn(),
+}));
 
 const caseRecord = {
   category: "type2b",
@@ -103,6 +110,7 @@ const detail = {
 
 beforeEach(() => {
   vi.mocked(readBenchmark).mockReset();
+  vi.mocked(visualizeSavedBenchmarkCase).mockReset();
   vi.mocked(readBenchmark).mockImplementation(async (path) => {
     if (path === "")
       return { schema_version: 1, items: [run], default_run_id: "saved-run" };
@@ -119,6 +127,46 @@ beforeEach(() => {
   });
 });
 afterEach(cleanup);
+
+it("opens the selected saved case in Source view and reports publication errors", async () => {
+  const user = userEvent.setup();
+  const accept = vi.fn();
+  const artifact = {
+    artifact_id: "published",
+    projection_schema_version: 1,
+  } as ArtifactManifest;
+  vi.mocked(visualizeSavedBenchmarkCase)
+    .mockRejectedValueOnce(new Error("Retained XML checksum differs."))
+    .mockResolvedValueOnce(artifact);
+  render(<SavedBenchmarkBrowser acceptVisualization={accept} />);
+  await user.click(
+    await screen.findByRole("button", { name: "Inspect Type 2b case 1" }),
+  );
+  const open = await screen.findByRole("button", {
+    name: "Open in Source view",
+  });
+  await user.click(open);
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Retained XML checksum differs.",
+  );
+  expect(accept).not.toHaveBeenCalled();
+  await user.click(open);
+  await waitFor(() =>
+    expect(accept).toHaveBeenCalledWith(
+      artifact,
+      expect.objectContaining({
+        mode: "benchmark",
+        label: expect.stringContaining("Type 2b · Case 1"),
+      }),
+    ),
+  );
+  expect(visualizeSavedBenchmarkCase).toHaveBeenLastCalledWith(
+    "saved-run",
+    "type2b",
+    "case-one",
+  );
+  expect(screen.getByLabelText("Benchmark run")).toHaveValue("saved-run");
+});
 
 it("selects the saved run, filters cases and opens exact fragments and reported moves", async () => {
   const user = userEvent.setup();

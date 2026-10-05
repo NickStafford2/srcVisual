@@ -13,6 +13,7 @@ export function BigMoveBenchInput({
   setSelectedBundle,
   importBundle,
   visualizeCase,
+  acceptVisualization,
 }: ReturnTypeOfUseBigMoveBenchReview) {
   const [filter, setFilter] = useState<OutcomeFilter>("review");
   const cases = useMemo(
@@ -27,7 +28,7 @@ export function BigMoveBenchInput({
 
   return (
     <>
-      <SavedBenchmarkBrowser />
+      <SavedBenchmarkBrowser acceptVisualization={acceptVisualization} />
       <details className="rounded-xl border border-white/10 p-3 text-slate-400">
         <summary className="cursor-pointer text-sm">
           Import a portable review ZIP

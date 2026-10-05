@@ -13,7 +13,7 @@ def normalize_annotated_xml(
     *,
     provenance: ArtifactProvenance,
 ) -> str:
-    if provenance.origin != "history":
+    if provenance.origin not in {"history", "benchmark"}:
         return annotated_xml
 
     _root_match = _ROOT_UNIT_PATTERN.search(annotated_xml)

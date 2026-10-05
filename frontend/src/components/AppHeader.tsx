@@ -45,7 +45,8 @@ export function AppHeader({
     return () => hot.off("viewer-identity", update);
   }, []);
   const observed =
-    artifact?.tools?.identity_status === "observed-runtime-binaries";
+    artifact?.tools?.identity_status === "observed-runtime-binaries" ||
+    artifact?.tools?.identity_status === "recorded-benchmark-binaries";
   const srcmove = observed ? artifact?.tools?.srcmove_sha256 : null;
   const srcdiff = observed ? artifact?.tools?.srcdiff_sha256 : null;
   const label =

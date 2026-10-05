@@ -61,12 +61,16 @@ export interface ArtifactManifest {
   artifact_id: string;
   source_filename: string;
   provenance?: {
-    origin: "upload" | "history";
+    origin: "upload" | "history" | "benchmark";
     history_pair: number | null;
     move_results_source: "generated" | "provided" | "reconstructed";
+    benchmark_case?: Record<string, unknown>;
   };
   tools?: {
-    identity_status: "producer-not-observed" | "observed-runtime-binaries";
+    identity_status:
+      | "producer-not-observed"
+      | "observed-runtime-binaries"
+      | "recorded-benchmark-binaries";
     srcdiff_sha256: string | null;
     srcmove_sha256: string | null;
   };

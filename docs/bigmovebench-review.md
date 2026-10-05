@@ -20,8 +20,19 @@ complete fragment can contain reported smaller moves. Negative cases do not have
 a positive complete-fragment detection score.
 
 This browser reads retained evidence without rerunning srcDiff, srcMove, or the
-benchmark. It does not create annotated XML or open saved cases in the full Source
-view; that remains available through the portable review workflow below.
+benchmark. Select **Open in Source view** in a case's evidence panel to inspect
+the generated source and destination files with move highlighting and connectors.
+The same artifact supplies the XML, Move Summary, and node views. Return to
+**Input** to continue with the current filters, page, and selected case.
+
+Source view reconstructs move annotations from the retained positioned srcDiff
+input and scored move paths/texts. It verifies the input checksum and validates
+every annotation against the recorded result. This also preserves zero-move
+results. Cases without completed move results remain available in the evidence
+panel but cannot open Source view. Missing or mismatched retained artifacts produce
+an explicit error. The viewer publishes its own immutable artifact, preserving
+the benchmark case/attempt identity and recorded tool hashes. Generated Java
+wrappers are visible in Source view; the evidence panel shows exact fragments.
 
 ## Local data and interface
 
@@ -41,12 +52,15 @@ The versioned JSON interface is owned by srcMove; srcDiffVisual adapts it throug
 - `GET /api/bigmovebench/runs/<run_id>`
 - `GET /api/bigmovebench/runs/<run_id>/cases`
 - `GET /api/bigmovebench/runs/<run_id>/cases/<category>/<case_id>`
+- `POST /api/bigmovebench/runs/<run_id>/cases/<category>/<case_id>/visualize`
 
 The case-list endpoint accepts `category`, `outcome`, `basis` (`original` or
 `reviewed`), `query`, `offset`, and `limit` (1–100). Responses use schema version 1.
 Only completed thesis runs are listed. The reader uses the latest terminal
-attempt in each execution journal, including committed WAL pages, and does not
-write benchmark data. Clients provide identities rather than filesystem paths.
+attempt in each execution journal, including committed WAL pages, through a
+temporary snapshot so SQLite needs no writable sidecars in the benchmark
+directory. It does not write benchmark data. Clients provide identities rather
+than filesystem paths. Visualization returns the normal artifact manifest.
 
 ## Portable Type-3 review
 

@@ -281,7 +281,9 @@ export default function App() {
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
             <div className="flex min-h-0 flex-1 flex-col gap-4">
-              <BigMoveBenchCaseBar {...benchmarkData} />
+              {artifact?.provenance?.origin !== "benchmark" ? (
+                <BigMoveBenchCaseBar {...benchmarkData} />
+              ) : null}
               <Tabs
                 tabs={mainTabs}
                 activeTabId={activeMainTab}

@@ -709,6 +709,12 @@ def _build_fingerprint(
 def _build_tool_provenance(
     provenance: ArtifactProvenance,
 ) -> dict[str, object]:
+    if provenance.producer_tool_sha256 is not None:
+        return {
+            "identity_status": "recorded-benchmark-binaries",
+            "srcdiff_sha256": provenance.producer_tool_sha256.get("srcdiff"),
+            "srcmove_sha256": provenance.producer_tool_sha256.get("srcmove"),
+        }
     if provenance.move_results_source != "generated":
         return {
             "identity_status": "producer-not-observed",

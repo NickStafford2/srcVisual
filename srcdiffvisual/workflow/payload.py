@@ -146,6 +146,7 @@ def _build_canonical_payload(
         moved_srcdiff_xml, move_results, _generated_move_results = (
             build_moved_srcdiff_xml(
                 input_path=input_path,
+                use_retained_annotations=producer_move_results is not None,
                 revision_0_dir=revision_0_dir,
                 revision_1_dir=revision_1_dir,
                 revision_0_input=extracted_layout.revision_0_input,
@@ -318,6 +319,8 @@ def _build_canonical_payload(
         origin=provenance.origin,
         history_pair=provenance.history_pair,
         move_results_source=_move_results_source,
+        benchmark_case=provenance.benchmark_case,
+        producer_tool_sha256=provenance.producer_tool_sha256,
     )
     return _canonical_payload, _effective_provenance
 
