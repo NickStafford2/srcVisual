@@ -98,6 +98,7 @@ ENV PATH="/opt/venv/bin:/opt/srcML-install/bin:/opt/srcDiff/bin:/opt/srcMove/bin
 ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin"
 ENV SRCDIFFVISUAL_FRONTEND_DIST="/app/frontend/dist"
 ENV SRCDIFFVISUAL_EXAMPLES_DIR="/app/examples"
+ENV PYTHONPATH="/opt/bigmovebench"
 ENV PORT=5000
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -116,6 +117,7 @@ COPY srcDiffVisual/gunicorn.conf.py /app/gunicorn.conf.py
 COPY srcDiffVisual/examples /app/examples
 COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 COPY --from=python-builder /opt/venv /opt/venv
+COPY srcMove/bigMoveBench/browser /opt/bigmovebench/bigMoveBench/browser
 
 COPY --from=native-builder /workspace/srcML-install /opt/srcML-install
 COPY --from=native-builder /workspace/srcDiff/build/bin /opt/srcDiff/bin

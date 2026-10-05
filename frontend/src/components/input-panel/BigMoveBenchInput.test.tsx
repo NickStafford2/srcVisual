@@ -4,6 +4,10 @@ import { expect, it, vi } from "vitest";
 import type { BigMoveBenchReviewManifest } from "../../bigmovebench/types";
 import { BigMoveBenchInput } from "./BigMoveBenchInput";
 
+vi.mock("./SavedBenchmarkBrowser", () => ({
+  SavedBenchmarkBrowser: () => null,
+}));
+
 const manifest: BigMoveBenchReviewManifest = {
   schema_version: 1,
   review_id: "bmb-review-sha256-test",
@@ -49,6 +53,7 @@ it("filters review cases and opens the selected visualization", async () => {
     />,
   );
 
+  await user.click(screen.getByText("Import a portable review ZIP"));
   expect(screen.getByText("verification: below_threshold")).toBeVisible();
   expect(
     screen.queryByText("selected: expected_type3_move_selected"),

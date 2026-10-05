@@ -12,7 +12,7 @@ input workflows:
 
 - load a checked-in example;
 - paste or upload srcDiff XML;
-- import a deterministic BigMoveBench Type-3 review ZIP; or
+- browse saved BigMoveBench runs, fragments, and reported moves, or import a portable review ZIP; or
 - browse configured `srcmove-history` analyses and regenerate a selected pair
   with that analysis's admitted tools.
 

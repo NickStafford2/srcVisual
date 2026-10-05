@@ -11,6 +11,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from srcdiffvisual.artifacts.store import cleanup_stale_staging, get_artifact_root
 from srcdiffvisual.bigmovebench.routes import bigmovebench_api
+from srcdiffvisual.bigmovebench.browser_routes import benchmark_browser_api
 from srcdiffvisual.core.commands import get_command_timeout_seconds
 from srcdiffvisual.history.repositories import get_history_repository_registry
 from srcdiffvisual.runs.store import RunStore, get_run_database_path
@@ -35,6 +36,7 @@ def create_app() -> Flask:
     app.config["RUN_STORE"].initialize()
     app.register_blueprint(api, url_prefix="/api")
     app.register_blueprint(bigmovebench_api, url_prefix="/api")
+    app.register_blueprint(benchmark_browser_api, url_prefix="/api")
     register_frontend_routes(app, get_frontend_dist())
 
     @app.errorhandler(RequestEntityTooLarge)

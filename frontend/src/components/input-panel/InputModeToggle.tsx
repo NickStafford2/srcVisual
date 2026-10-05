@@ -19,7 +19,7 @@ const OPTIONS: ReadonlyArray<{
   {
     mode: "benchmark",
     label: "BigMoveBench",
-    description: "Review passed and missed Type-3 benchmark cases.",
+    description: "Browse benchmark runs, fragments, and recorded moves.",
   },
   {
     mode: "examples",
