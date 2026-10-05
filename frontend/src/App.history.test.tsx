@@ -37,7 +37,7 @@ class MockEventSource {
 }
 
 const statusDocument = {
-  schema_version: 2,
+  schema_version: 3,
   analysis: {
     name: "notepadpp",
     repository: "/history/repository",
@@ -60,7 +60,7 @@ const statusDocument = {
     detections: 336,
     source_destination_pairings: 340,
     annotated_regions: 683,
-    by_match_type: { type1: 123 },
+    by_content_relationship: { type1: 123 },
   },
   history: {
     newest_commit: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -123,7 +123,7 @@ describe("repository history browser", () => {
           "/api/history/pairs?repository=notepadpp&selection=moves&limit=50"
         ) {
           return jsonResponse({
-            schema_version: 1,
+            schema_version: 2,
             analysis: statusDocument.analysis,
             pairs: { items: [pairItem], next_after: null },
           });
@@ -133,14 +133,14 @@ describe("repository history browser", () => {
           "/api/history/pairs?repository=sqlite&selection=moves&limit=50"
         ) {
           return jsonResponse({
-            schema_version: 1,
+            schema_version: 2,
             analysis: { ...statusDocument.analysis, name: "sqlite" },
             pairs: { items: [], next_after: null },
           });
         }
         if (url === "/api/history/pairs/1?repository=notepadpp") {
           return jsonResponse({
-            schema_version: 1,
+            schema_version: 2,
             analysis: statusDocument.analysis,
             pair: {
               ...pairItem,
@@ -152,12 +152,12 @@ describe("repository history browser", () => {
               results_observation: {},
               moves: [
                 {
-                  match_kind: "type1",
+                  content_relationship: "type1",
                   from_xpaths: ["/src:unit[1]/diff:delete[1]"],
                   to_xpaths: ["/src:unit[1]/diff:insert[1]"],
                 },
                 {
-                  match_kind: "type3",
+                  content_relationship: "type3",
                   from_xpaths: ["/src:unit[2]/diff:delete[1]"],
                   to_xpaths: ["/src:unit[2]/diff:insert[1]"],
                 },
@@ -196,8 +196,8 @@ describe("repository history browser", () => {
         }
         if (url === `/api/artifacts/${"a".repeat(32)}`) {
           return jsonResponse({
-            schema_version: 2,
-            projection_schema_version: 1,
+            schema_version: 4,
+            projection_schema_version: 2,
             artifact_id: "a".repeat(32),
             source_filename: "history-pair-1.srcmove.xml",
             has_position_data: false,

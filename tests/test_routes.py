@@ -99,8 +99,8 @@ def test_artifact_move_endpoint_forwards_srcmove_identity(
     def fake_read_artifact_move(**kwargs):
         captured.update(kwargs)
         return {
-            "schema_version": 1,
-            "move": {"move_id": kwargs["move_id"], "match_kind": "type1"},
+            "schema_version": 2,
+            "move": {"move_id": kwargs["move_id"], "content_relationship": "type1"},
         }
 
     monkeypatch.setattr(routes_module, "read_artifact_move", fake_read_artifact_move)
@@ -113,7 +113,7 @@ def test_artifact_move_endpoint_forwards_srcmove_identity(
     assert response.status_code == 200
     assert captured["artifact_id"] == artifact_id
     assert captured["move_id"] == "move-1"
-    assert response.get_json()["move"]["match_kind"] == "type1"
+    assert response.get_json()["move"]["content_relationship"] == "type1"
 
 
 def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> None:
@@ -134,7 +134,7 @@ def test_visualize_can_return_artifact_manifest(monkeypatch, tmp_path: Path) -> 
         "read_artifact_manifest",
         lambda **kwargs: {
             "artifact_id": artifact_id,
-            "projection_schema_version": 1,
+            "projection_schema_version": 2,
         },
     )
 
@@ -233,7 +233,7 @@ def test_history_repository_registry_selects_an_allowed_repository(
         routes_module,
         "read_history_status",
         lambda repository: captured.append(repository)
-        or {"schema_version": 2, "analysis": {"name": repository.name}},
+        or {"schema_version": 3, "analysis": {"name": repository.name}, "moves": {"by_content_relationship": {}}},
     )
     client = create_app().test_client()
 
@@ -265,8 +265,9 @@ def test_history_status_returns_cli_document(
         routes_module,
         "read_history_status",
         lambda repository: {
-            "schema_version": 2,
+            "schema_version": 3,
             "analysis": {"name": "notepadpp"},
+            "moves": {"by_content_relationship": {}},
             "state": "target_reached",
         },
     )
@@ -288,7 +289,7 @@ def test_history_pairs_validates_and_forwards_query(
     def fake_read_history_pairs(repository, **kwargs):
         captured.update(kwargs)
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "pairs": {"items": [], "next_after": None},
         }
 
@@ -324,7 +325,7 @@ def test_history_pair_returns_compact_evidence(
         routes_module,
         "read_history_pair",
         lambda repository, pair_number: {
-            "schema_version": 1,
+            "schema_version": 2,
             "pair": {"number": pair_number, "moves": []},
         },
     )

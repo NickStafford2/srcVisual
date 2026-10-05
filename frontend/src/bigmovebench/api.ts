@@ -1,3 +1,4 @@
+import { assertClassificationContract } from "../contentRelationships";
 import type { ArtifactManifest } from "../types";
 import type { BigMoveBenchReviewManifest } from "./types";
 
@@ -13,6 +14,7 @@ export async function importBigMoveBenchReview(
   const payload: unknown = await response.json();
   if (!response.ok) throw new Error(responseError(payload));
   assertReviewManifest(payload);
+  assertClassificationContract(payload);
   return payload;
 }
 
@@ -29,11 +31,13 @@ export async function visualizeBigMoveBenchCase(
   if (
     typeof payload !== "object" ||
     payload === null ||
-    (payload as Partial<ArtifactManifest>).projection_schema_version !== 1 ||
+    (payload as Partial<ArtifactManifest>).schema_version !== 4 ||
+    (payload as Partial<ArtifactManifest>).projection_schema_version !== 2 ||
     typeof (payload as Partial<ArtifactManifest>).artifact_id !== "string"
   ) {
     throw new Error("Backend returned an unsupported visualization artifact.");
   }
+  assertClassificationContract(payload);
   return payload as ArtifactManifest;
 }
 
@@ -43,7 +47,7 @@ function assertReviewManifest(
   if (
     typeof payload !== "object" ||
     payload === null ||
-    (payload as Partial<BigMoveBenchReviewManifest>).schema_version !== 1 ||
+    (payload as Partial<BigMoveBenchReviewManifest>).schema_version !== 2 ||
     typeof (payload as Partial<BigMoveBenchReviewManifest>).review_id !==
       "string" ||
     !Array.isArray((payload as Partial<BigMoveBenchReviewManifest>).cases)

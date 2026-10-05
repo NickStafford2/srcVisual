@@ -136,11 +136,12 @@ def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
         "moves": [
             {
                 "move_id": "srcmove",
-                "match_kind": "type3",
+                "content_relationship": "type3",
                 "from_xpaths": ["srcmove-from"],
             }
         ],
-        "match_kinds": {"type3": 1},
+        "results_schema_version": 2,
+        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
     }
 
     _merged = merge_producer_move_results(
@@ -151,7 +152,8 @@ def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
     assert _merged["move_count"] == 2
     assert _merged["producer_metadata"] == {
         "move_count": 1,
-        "match_kinds": {"type3": 1},
+        "results_schema_version": 2,
+        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
     }
     assert _merged["moves"] == [
         {
@@ -162,7 +164,7 @@ def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
         {
             "move_id": "srcmove",
             "from_xpaths": ["srcmove-from"],
-            "match_kind": "type3",
+            "content_relationship": "type3",
             "result_provenance": "producer-results",
         },
     ]

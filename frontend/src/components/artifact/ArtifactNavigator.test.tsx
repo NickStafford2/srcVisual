@@ -36,8 +36,8 @@ const root: ArtifactTreeNode = {
 };
 
 const manifest: ArtifactManifest = {
-  schema_version: 2,
-  projection_schema_version: 1,
+  schema_version: 4,
+  projection_schema_version: 2,
   artifact_id: "artifact-1",
   source_filename: "comparison.xml",
   has_position_data: true,
@@ -71,27 +71,21 @@ const manifest: ArtifactManifest = {
     items: [
       {
         move_id: "move-1",
-        match_kind: "type1",
+        content_relationship: "type1",
         from_node_ids: ["f-one:n00000001"],
         to_node_ids: ["f-two:n00000001"],
       },
       {
         move_id: "move-2",
-        match_kind: "type2c",
+        content_relationship: "type2c",
         from_node_ids: ["f-one:n00000002"],
         to_node_ids: ["f-two:n00000002"],
       },
       {
         move_id: "move-3",
-        match_kind: "type3",
+        content_relationship: "type3",
         from_node_ids: ["f-one:n00000003"],
         to_node_ids: ["f-two:n00000003"],
-      },
-      {
-        move_id: "move-2b",
-        match_kind: "type2b",
-        from_node_ids: ["f-one:n00000004"],
-        to_node_ids: ["f-two:n00000004"],
       },
     ],
   },
@@ -225,7 +219,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
   fireEvent.click(screen.getByRole("button", { name: "All" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
-    new Set(["move-1", "move-2", "move-3", "move-2b"]),
+    new Set(["move-1", "move-2", "move-3"]),
   );
   fireEvent.click(screen.getByRole("button", { name: "Current only" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
@@ -235,10 +229,7 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
     new Set(["move-1", "move-2"]),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Type 2b (1 move)" }));
-  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
-    new Set(["move-1", "move-2b"]),
-  );
+  expect(screen.queryByRole("button", { name: /Type 2b/ })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Type 3 (1 move)" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
     new Set(["move-1", "move-3"]),

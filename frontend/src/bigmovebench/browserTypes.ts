@@ -8,12 +8,12 @@ export interface BenchmarkRunItem {
   experiment_id: string;
 }
 export interface BenchmarkRuns {
-  schema_version: 1;
+  schema_version: 2;
   items: BenchmarkRunItem[];
   default_run_id: string | null;
 }
 export interface BenchmarkRun extends BenchmarkRunItem {
-  schema_version: 1;
+  schema_version: 2;
   tool_sha256: Record<string, string>;
   member_summaries: {
     pair_set: string;
@@ -26,9 +26,9 @@ export interface BenchmarkCase {
   case_id: string;
   ordinal: number;
   case_kind: string;
-  expected_match_kind: string;
-  reviewed_expected_match_kind: string;
-  observed_match_kind: string | null;
+  expected_content_relationship: string;
+  reviewed_expected_content_relationship: string;
+  observed_content_relationship: string | null;
   outcome: string;
   reviewed_outcome: string;
   complete_fragment_detected: boolean | null;
@@ -44,7 +44,7 @@ export interface BenchmarkCase {
   attempt_ordinal: number | null;
 }
 export interface BenchmarkCases {
-  schema_version: 1;
+  schema_version: 2;
   run_id: string;
   items: BenchmarkCase[];
   total: number;
@@ -54,7 +54,7 @@ export interface BenchmarkCases {
   filters: { categories: string[]; outcomes: string[] };
 }
 export interface BenchmarkCaseDetail {
-  schema_version: 1;
+  schema_version: 2;
   run_id: string;
   case: BenchmarkCase;
   original: { sha256: string; text: string | null; reason: string | null };
@@ -65,12 +65,12 @@ export interface BenchmarkCaseDetail {
   label_correction: {
     id: string;
     reason: string;
-    reviewed_match_kind: string;
+    reviewed_content_relationship: string;
   } | null;
   semantic_details: Record<string, unknown>;
   text_validation: Record<string, unknown>;
   moves: ArtifactMoveRecord[];
-  match_kinds: Record<string, number>;
+  content_relationships: Record<string, number>;
   diagnostics: Record<string, unknown> | null;
   results_available: boolean;
   tool_sha256: Record<string, string>;

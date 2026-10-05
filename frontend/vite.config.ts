@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Bound jsdom workers for repeatable checks in the shared Docker environment.
+    maxWorkers: 4,
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
   },

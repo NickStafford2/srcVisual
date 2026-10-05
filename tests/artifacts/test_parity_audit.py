@@ -322,7 +322,7 @@ def _publish_case(artifact_root: Path, case: _ParityCase):
             "moves": [
                 {
                     "move_id": "move-1",
-                    "match_kind": "type1",
+                    "content_relationship": "type1",
                     "from_node_ids": _from_paths,
                     "to_node_ids": _to_paths,
                 }

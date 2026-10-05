@@ -17,7 +17,7 @@ def _source(archive, zero):
         _xml = f'<unit xmlns="http://www.srcML.org/srcML/src" url="/tmp/original|/tmp/modified">{_xml}</unit>'
     _results = build_move_results_from_moved_srcdiff(moved_srcdiff_xml=_xml, include_skipped_tags=True)
     for _move in _results["moves"]:
-        _move["match_kind"] = "type2c"
+        _move["content_relationship"] = "type2c"
     _root = ET.fromstring(_xml)
     for _element in _root.iter():
         for _key in list(_element.attrib):
@@ -25,7 +25,9 @@ def _source(archive, zero):
                 del _element.attrib[_key]
     if zero:
         _results = {"move_count": 0, "moves": []}
-    return {"schema_version": 1, "srcdiff_xml": ET.tostring(_root, encoding="unicode"),
+    _results["results_schema_version"] = 2
+    _results["content_relationships"] = {"type1": 0, "type2c": 0 if zero else len(_results["moves"]), "type3": 0}
+    return {"schema_version": 2, "srcdiff_xml": ET.tostring(_root, encoding="unicode"),
             "results": _results, "case": {"category": "type2c", "ordinal": 1, "attempt_id": "retained-attempt", "outcome": "srcmove_miss" if zero else "oracle_pass"},
             "tool_sha256": {"srcdiff": "d" * 64, "srcmove": "e" * 64}}
 
@@ -48,7 +50,7 @@ def test_saved_case_opens_canonical_artifact_without_detector(monkeypatch, tmp_p
     _artifact = _response.get_json()
     assert _artifact["moves"]["move_count"] == (0 if zero else 1)
     if not zero:
-        assert _artifact["moves"]["items"][0]["match_kind"] == "type2c"
+        assert _artifact["moves"]["items"][0]["content_relationship"] == "type2c"
     assert _artifact["provenance"]["benchmark_case"]["attempt_id"] == "retained-attempt"
     assert _artifact["tools"]["identity_status"] == "recorded-benchmark-binaries"
     assert _artifact["tools"]["srcmove_sha256"] == "e" * 64

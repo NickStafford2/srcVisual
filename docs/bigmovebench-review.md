@@ -17,7 +17,11 @@ The **Outcome basis** control keeps original benchmark outcomes separate from
 reviewed outcomes and label corrections. A classification disagreement can still
 mean that the complete expected fragment was detected. Conversely, a missed
 complete fragment can contain reported smaller moves. Negative cases do not have
-a positive complete-fragment detection score.
+a positive complete-fragment detection score. A completely detected blind-only
+Type-2b expectation reported as Type-3 is a classification disagreement, not a
+detection miss. Type-2b remains a benchmark expectation, never a manufactured
+detector prediction. Classification does not establish continuity, relocation,
+or computational equivalence.
 
 This browser reads retained evidence without rerunning srcDiff, srcMove, or the
 benchmark. Select **Open in Source view** in a case's evidence panel to inspect
@@ -55,7 +59,7 @@ The versioned JSON interface is owned by srcMove; srcDiffVisual adapts it throug
 - `POST /api/bigmovebench/runs/<run_id>/cases/<category>/<case_id>/visualize`
 
 The case-list endpoint accepts `category`, `outcome`, `basis` (`original` or
-`reviewed`), `query`, `offset`, and `limit` (1–100). Responses use schema version 1.
+`reviewed`), `query`, `offset`, and `limit` (1–100). Responses use schema version 2.
 Only completed thesis runs are listed. The reader uses the latest terminal
 attempt in each execution journal, including committed WAL pages, through a
 temporary snapshot so SQLite needs no writable sidecars in the benchmark
@@ -71,7 +75,7 @@ XML, structure, node, and move views. Previous and next controls remain visible
 while a case is open.
 
 The portable ZIP contains a versioned
-manifest and one directory per case with:
+schema-2 manifest and schema-2 review records, and one directory per case with:
 
 - the expected original and modified Java fragments;
 - the exact srcDiff XML evaluated by the benchmark;
@@ -95,3 +99,19 @@ make -C srcMove bigmovebench-suite \
 
 The run directory also contains `type3-review.jsonl` for streaming analysis and
 `type3-review.md` for a printable review outside srcDiffVisual.
+
+## Regeneration after the reporting change
+
+Browser fields are `expected_content_relationship`,
+`reviewed_expected_content_relationship`, `observed_content_relationship`,
+`reviewed_content_relationship`, and `content_relationships`. Oracle observations
+use `_oracle_observed_content_relationship`; nested corrections retain reviewed
+judgments separately. Legacy fields/labels are rejected without translation.
+
+Rebuild the packaged application. Publish new benchmark-case collections and
+execution journals (both schema 2) from existing source data/selections, run the
+current detector, and export new schema-2 review ZIPs. Preserve incompatible
+cached runs and old ZIPs in their original locations; no migration or overwrite
+is performed by the viewer. Source view publishes artifact schema 4 with manifest
+and move projection schema 2. Retained results are evidence from their original
+implementation and are not results of this update.

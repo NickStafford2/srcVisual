@@ -85,10 +85,13 @@ def test_validate_artifact_checks_integrity_without_loading_payload(tmp_path) ->
         provenance=ArtifactProvenance(origin="upload"),
     )
 
-    assert validate_artifact(
-        artifact_root=tmp_path,
-        artifact_id=_published.artifact_id,
-    ) is None
+    assert (
+        validate_artifact(
+            artifact_root=tmp_path,
+            artifact_id=_published.artifact_id,
+        )
+        is None
+    )
 
     (_published.path / "annotated.xml").write_text("tampered", encoding="utf-8")
     with pytest.raises(ArtifactIntegrityError, match="checksum mismatch"):
@@ -201,3 +204,70 @@ def build_payload() -> VisualizationPayload:
         has_position_data=False,
         files=(VisualizedFile(revision_file=_revision_file, tree=_tree),),
     )
+
+
+def test_incompatible_artifact_is_preserved_and_excluded_from_collection(tmp_path):
+    import json
+    from datetime import datetime, timezone
+    from srcdiffvisual.artifacts.lifecycle import (
+        inventory_artifacts,
+        plan_artifact_collection,
+        ArtifactRetentionPolicy,
+    )
+    from srcdiffvisual.artifacts.store import ArtifactCompatibilityError
+    from srcdiffvisual.artifacts.projections import read_artifact_manifest
+
+    _published = publish_artifact(
+        artifact_root=tmp_path,
+        canonical_payload=build_payload(),
+        input_payload=b"input",
+        provenance=ArtifactProvenance(origin="upload"),
+    )
+    _manifest_path = _published.path / "artifact.json"
+    _manifest = json.loads(_manifest_path.read_text())
+    _manifest["schema_version"] = 3
+    _manifest_path.write_text(json.dumps(_manifest))
+    _before = {
+        str(_path.relative_to(_published.path)): _path.read_bytes()
+        for _path in _published.path.rglob("*")
+        if _path.is_file()
+    }
+    for _read in (read_artifact, validate_artifact, read_artifact_manifest):
+        with pytest.raises(ArtifactCompatibilityError, match="regenerate"):
+            _read(artifact_root=tmp_path, artifact_id=_published.artifact_id)
+    assert _before == {
+        str(_path.relative_to(_published.path)): _path.read_bytes()
+        for _path in _published.path.rglob("*")
+        if _path.is_file()
+    }
+    _inventory = inventory_artifacts(artifact_root=tmp_path)
+    assert _inventory.to_dict()["incompatible_count"] == 1
+    _plan = plan_artifact_collection(
+        inventory=_inventory,
+        policy=ArtifactRetentionPolicy(max_artifacts=0),
+        now=datetime.now(timezone.utc),
+    )
+    assert _plan.candidates == ()
+
+
+@pytest.mark.parametrize(
+    "results",
+    [
+        {"moves": [], "results_schema_version": 1},
+        {"moves": [], "producer_metadata": {"match_kinds": {"type2": 1}}},
+    ],
+)
+def test_publication_rejects_legacy_results_before_writing(tmp_path, results):
+    from dataclasses import replace
+
+    _payload = replace(build_payload(), move_results=results)
+    with pytest.raises(
+        (ValueError, ArtifactIntegrityError), match="(Unsupported|legacy)"
+    ):
+        publish_artifact(
+            artifact_root=tmp_path,
+            canonical_payload=_payload,
+            input_payload=b"input",
+            provenance=ArtifactProvenance(origin="upload"),
+        )
+    assert list(tmp_path.iterdir()) == []

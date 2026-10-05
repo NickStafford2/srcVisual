@@ -457,7 +457,7 @@ It does not expose filesystem paths.
 
 The move-detail projection lazily returns the retained srcMove record for one
 move without reclassifying it or deriving missing evidence. Producer fields
-such as `match_kind`, `confidence_milli`, `selection_utility`,
+such as `content_relationship`, `confidence_milli`, `selection_utility`,
 `matched_units`, and `selection_reason` remain absent when an artifact was
 reconstructed from XML annotations alone. The Source view opens this projection
 in a draggable detail window when a moved fragment or connector is selected.
@@ -657,8 +657,8 @@ Status: complete.
 - Keep the legacy interface available as a temporary fallback. (Retired after
   parity was demonstrated.)
 
-The implemented projection contract uses schema version 1 over artifact schema
-version 2. Artifact creation now returns the manifest directly. Source
+The manifest and move projection contracts use schema version 2 over artifact
+schema version 4. Other bounded projections retain schema version 1. Artifact creation now returns the manifest directly. Source
 responses are capped at 2,000 aligned rows, tree responses at 500 nodes, and
 child pages at 100 nodes. Expanded source ranges remain browser state and are
 sent as explicit repeated revision-aware ranges; the server returns their
@@ -910,7 +910,7 @@ The Correspondences tab lazily reads retained diagnostics schema 4 from the
 artifact's producer results. It lists classified correspondence records, including
 nonmoves and verified Type-3 selection losers, not every possible candidate pair.
 Type-3 classifications are observational and do not govern selection. The list
-filters by filename/construct/reason, match type, classification and selection
+filters by filename/construct/reason, correspondence kind, location classification and selection
 outcome; each page contains at most 50 records in the UI (100 via the API).
 Selecting a pair retrieves its original candidate text, filenames, XPaths and
 recorded classification/context. Candidate snippets are independent of the source
@@ -932,18 +932,29 @@ Correspondences default to None. The diagnostic filters also apply to the
 sidebar list; **All on page** enables that page's pairs without drawing an
 unbounded result set. Filters do not clear already enabled pairs; None clears
 all of them. Type-1 is violet, Type-2b sky blue, Type-2c green, and Type-3 rose; these colors express
-match type, not confidence. Dashed correspondence boxes and offset corner
+diagnostic correspondence kind, not confidence. Dashed correspondence boxes and offset corner
 connectors render below the amber move overlay. Source swatches and connectors
 open a recolored version of the shared draggable details popup, with the same
 explicit Close behavior as move details.
 
-Move visibility controls enumerate `type1`, `type2b`, `type2c`, and `type3`
-separately. Type-2c is srcMove's consistent identifier normalization category,
-formerly emitted as `type2`; there is no legacy-label translation. Producer
-results retain their category and summary fields unchanged, including benchmark
-review imports. XML alone has no move-category attribute, so XML-only moves
-remain unclassified. Current srcMove selects Type-1, Type-2c, and Type-3 moves;
-Type-2b controls accept supplied results but are empty for current native runs.
+Move visibility controls enumerate detector predictions `type1`, `type2c`, and
+`type3`. `moves[].content_relationship` predicts endpoint contents; it does not
+establish continuity, relocation, or computational equivalence. Summary
+`content_relationships` counts reported groups. Results schema 2 is required
+for producer JSON, with all three count keys and a classification on every
+reported move. Legacy fields and labels are rejected, including nested review
+metadata. XML has no classification attribute: `mv:id`, `mv:from`, and `mv:to`
+continue to identify groups and partners. XML-only moves remain explicitly
+unclassified. Diagnostic `correspondence_kind` is comparison evidence and may
+include Type-2b; it is distinct from a reported content classification.
+
+Artifact schema 4 and manifest/move projection schema 2 replace incompatible
+saved artifacts. Inventory marks these artifacts `incompatible` rather than
+corrupt; reads do not quarantine them, and collection excludes them. Preserve older artifacts and regenerate new artifacts from
+source XML/current schema-2 results. Completed history runs referring to old
+artifacts cannot be reused. Do not relabel retained evidence as new results.
+Rebuild the packaged application and history worker before using these contracts.
+
 The observation-only `diagnostics.type2b_groups` collection is retained as
 producer metadata; it does not populate selected moves or the pair inspector.
 See [srcMove's architecture](../../srcMove/doc/architecture.md#observation-only-type-2b-retrieval)

@@ -10,6 +10,7 @@ import zlib
 from srcdiffvisual.artifacts.store import (
     ARTIFACT_SCHEMA_VERSION,
     ArtifactIntegrityError,
+    ArtifactCompatibilityError,
     _connect_readonly,
     _read_manifest,
     _resolve_artifact_path,
@@ -33,7 +34,7 @@ def read_artifact_manifest(*, artifact_root: Path, artifact_id: str) -> dict[str
     del artifact_path
     return {
         **manifest,
-        "projection_schema_version": 1,
+        "projection_schema_version": 2,
         "focus_profiles": list(FOCUS_PROFILES),
     }
 
@@ -71,7 +72,7 @@ def read_artifact_move(
         else move_results.get("results_schema_version")
     )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_id": artifact_id,
         "results_schema_version": results_schema_version,
         "move": move,
@@ -370,7 +371,7 @@ def _open_artifact(
     artifact_path = _resolve_artifact_path(artifact_root, artifact_id)
     manifest = _read_manifest(artifact_path)
     if manifest.get("schema_version") != ARTIFACT_SCHEMA_VERSION:
-        raise ArtifactIntegrityError("Unsupported artifact schema version.")
+        raise ArtifactCompatibilityError("Unsupported artifact schema version. Preserve the old artifact and regenerate it with current tools.")
     if manifest.get("artifact_id") != artifact_id:
         raise ArtifactIntegrityError("Artifact id does not match its directory.")
     return artifact_path, manifest

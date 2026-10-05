@@ -1,3 +1,7 @@
+import {
+  assertClassificationContract,
+  assertDetectorMove,
+} from "./contentRelationships";
 import type {
   ArtifactDiffTreeProjection,
   ArtifactFocusProfile,
@@ -74,9 +78,17 @@ export async function fetchHistoryStatus(
   const payload = await fetchJson(
     `/api/history/status?repository=${encodeURIComponent(repositoryId)}`,
   );
-  if (payload.schema_version !== 2 || typeof payload.analysis !== "object") {
+  if (payload.schema_version !== 3 || typeof payload.analysis !== "object") {
     throw new Error("Backend returned an unsupported history status document.");
   }
+  assertClassificationContract(payload);
+  const moves = payload.moves as
+    | { by_content_relationship?: unknown }
+    | undefined;
+  if (!moves?.by_content_relationship)
+    throw new Error(
+      "History status requires moves.by_content_relationship. Start a fresh analysis.",
+    );
   return payload as unknown as HistoryStatusDocument;
 }
 
@@ -95,7 +107,7 @@ export async function fetchHistoryPairs(
     `/api/history/pairs?${parameters.toString()}`,
   );
   if (
-    payload.schema_version !== 1 ||
+    payload.schema_version !== 2 ||
     typeof payload.pairs !== "object" ||
     payload.pairs === null ||
     !Array.isArray((payload.pairs as { items?: unknown }).items)
@@ -112,9 +124,14 @@ export async function fetchHistoryPair(
   const payload = await fetchJson(
     `/api/history/pairs/${pairNumber}?repository=${encodeURIComponent(repositoryId)}`,
   );
-  if (payload.schema_version !== 1 || typeof payload.pair !== "object") {
+  if (payload.schema_version !== 2 || typeof payload.pair !== "object") {
     throw new Error("Backend returned unsupported history pair evidence.");
   }
+  assertClassificationContract(payload);
+  const pair = payload.pair as { moves?: unknown[] };
+  if (!Array.isArray(pair.moves))
+    throw new Error("History pair requires move evidence.");
+  pair.moves.forEach((move) => assertDetectorMove(move));
   return payload as unknown as HistoryPairDocument;
 }
 
@@ -278,13 +295,18 @@ function assertArtifactManifest(
   }
   const manifest = payload as Partial<ArtifactManifest>;
   if (
-    manifest.projection_schema_version !== 1 ||
+    manifest.schema_version !== 4 ||
+    manifest.projection_schema_version !== 2 ||
     typeof manifest.artifact_id !== "string" ||
     !Array.isArray(manifest.files) ||
     !Array.isArray(manifest.focus_profiles)
   ) {
-    throw new Error("Backend returned an unsupported artifact manifest.");
+    throw new Error(
+      "Backend returned an unsupported artifact manifest. Preserve old artifacts and regenerate them.",
+    );
   }
+  assertClassificationContract(manifest);
+  manifest.moves?.items.forEach((move) => assertDetectorMove(move, true));
 }
 
 function isHistoryRunCreationDocument(
@@ -375,7 +397,7 @@ export async function fetchArtifactMove(
     `/api/artifacts/${artifactId}/moves/${encodeURIComponent(moveId)}`,
   );
   if (
-    payload.schema_version !== 1 ||
+    payload.schema_version !== 2 ||
     typeof payload.move !== "object" ||
     payload.move === null
   ) {
@@ -383,6 +405,7 @@ export async function fetchArtifactMove(
       "Backend returned an unsupported artifact move projection.",
     );
   }
+  assertDetectorMove(payload.move, true);
   return payload as unknown as ArtifactMoveProjection;
 }
 

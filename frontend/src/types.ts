@@ -1,5 +1,5 @@
 import type { SourceCodeSpan } from "./srcdiff/types";
-import type { MoveMatchKind } from "./moveKinds";
+import type { ContentRelationship } from "./contentRelationshipKinds";
 
 export type ArtifactFocusProfile =
   | "changes-and-moves"
@@ -22,14 +22,14 @@ export interface ArtifactFileSummary {
 
 export interface ArtifactMoveSummary {
   move_id: string;
-  match_kind: string | null;
+  content_relationship: ContentRelationship | null;
   from_node_ids: string[];
   to_node_ids: string[];
 }
 
 export interface ArtifactMoveRecord {
   move_id: string;
-  match_kind?: MoveMatchKind;
+  content_relationship?: ContentRelationship;
   confidence_milli?: number;
   selection_utility?: number;
   matched_units?: number;
@@ -42,7 +42,7 @@ export interface ArtifactMoveRecord {
 }
 
 export interface ArtifactMoveProjection {
-  schema_version: 1;
+  schema_version: 2;
   artifact_id: string;
   results_schema_version: number | null;
   move: ArtifactMoveRecord;
@@ -57,7 +57,7 @@ export interface ComparisonContext {
 
 export interface ArtifactManifest {
   schema_version: number;
-  projection_schema_version: 1;
+  projection_schema_version: 2;
   artifact_id: string;
   source_filename: string;
   provenance?: {

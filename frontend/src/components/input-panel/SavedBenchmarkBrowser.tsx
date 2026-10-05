@@ -21,7 +21,7 @@ const outcomeLabel = (value: string) =>
   (
     ({
       oracle_pass: "Expected result",
-      wrong_classification: "Different classification",
+      wrong_classification: "Classification disagreement",
       srcmove_miss: "Missed fragment",
       srcmove_false_positive: "Whole-fragment false positive",
       srcdiff_semantic_ineligible: "Rejected by srcDiff",
@@ -448,13 +448,13 @@ export function SavedBenchmarkBrowser({
                             ? "Reject whole fragment"
                             : categoryLabel(
                                 basis === "reviewed"
-                                  ? item.reviewed_expected_match_kind
-                                  : item.expected_match_kind,
+                                  ? item.reviewed_expected_content_relationship
+                                  : item.expected_content_relationship,
                               )}
                           {item.label_correction_id ? " *" : ""}
                         </td>
                         <td className="p-3">
-                          {categoryLabel(item.observed_match_kind)}
+                          {categoryLabel(item.observed_content_relationship)}
                         </td>
                         <td className="p-3">
                           {item.complete_fragment_detected === null
@@ -570,19 +570,20 @@ function CaseEvidence({
         <h3 className="text-lg font-semibold text-violet-100">
           {categoryLabel(detail.case.category)} · Case {detail.case.ordinal}
         </h3>
-        <p className="mt-1 break-all text-xs text-slate-500">
+        <p className="mt-1 text-xs break-all text-slate-500">
           {detail.case.case_id}
         </p>
         <p className="mt-2 text-sm">
-          Expected{" "}
+          Expected content relationship{" "}
           {detail.case.case_kind === "known_false_positive"
             ? "whole-fragment rejection"
             : categoryLabel(
                 basis === "reviewed"
-                  ? detail.case.reviewed_expected_match_kind
-                  : detail.case.expected_match_kind,
+                  ? detail.case.reviewed_expected_content_relationship
+                  : detail.case.expected_content_relationship,
               )}{" "}
-          · observed {categoryLabel(detail.case.observed_match_kind)} ·{" "}
+          · predicted {categoryLabel(detail.case.observed_content_relationship)}{" "}
+          ·{" "}
           {outcomeLabel(
             basis === "reviewed"
               ? detail.case.reviewed_outcome
@@ -612,7 +613,7 @@ function CaseEvidence({
                 {detail[side].text}
               </pre>
             )}
-            <p className="break-all border-t border-white/10 p-3 text-[10px] text-slate-500">
+            <p className="border-t border-white/10 p-3 text-[10px] break-all text-slate-500">
               SHA-256 {detail[side].sha256}
             </p>
           </section>
@@ -625,6 +626,12 @@ function CaseEvidence({
           {detail.expected_ranges.from.join("–")} · destination lines{" "}
           {detail.expected_ranges.to.join("–")}. These ranges include the
           synthetic wrapper offset.
+        </p>
+        <p className="text-xs text-slate-400">
+          Content classification does not establish continuity, relocation, or
+          computational equivalence. A completely detected Type-2b expectation
+          predicted as Type-3 is a classification disagreement, not a detection
+          miss.
         </p>
         {failures.length ? (
           <ul className="mt-2 list-inside list-disc text-amber-200">
@@ -658,7 +665,8 @@ function CaseEvidence({
             className="mt-2 rounded-xl border border-white/10 bg-slate-950 p-3"
           >
             <summary className="cursor-pointer text-sm text-violet-200">
-              {move.move_id} · {categoryLabel(move.match_kind ?? null)}
+              {move.move_id} ·{" "}
+              {categoryLabel(move.content_relationship ?? null)}
             </summary>
             <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-2">
               {(["from", "to"] as const).map((side) => (
@@ -674,7 +682,7 @@ function CaseEvidence({
                       {text}
                     </pre>
                   ))}
-                  <p className="mt-2 break-all text-[10px] text-slate-500">
+                  <p className="mt-2 text-[10px] break-all text-slate-500">
                     {(move[`${side}_xpaths`] ?? []).join("\n")}
                   </p>
                 </div>

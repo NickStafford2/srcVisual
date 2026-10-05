@@ -215,6 +215,7 @@ def _build_canonical_payload(
                 moved_srcdiff_xml=moved_srcdiff_xml,
                 move_results=move_results,
                 include_skipped_tags=True,
+                require_producer_contract=False,
             )
         else:
             notify_progress(

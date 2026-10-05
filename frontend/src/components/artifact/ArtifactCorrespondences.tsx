@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { MOVE_MATCH_KINDS, moveKindLabel } from "../../moveKinds";
 
 export type SourceLocation = {
   file_id: string | null;
@@ -178,7 +177,7 @@ export function ArtifactCorrespondences({
         </h2>
         <p className="mt-1 text-xs text-slate-400">
           {sidebar
-            ? "Colors indicate match type. Click a source swatch or connector for details."
+            ? "Colors indicate diagnostic correspondence kind. Click a source swatch or connector for details."
             : "Inspect recorded relationships, including pairs not selected as moves. This is not an exhaustive trace of every candidate considered. Type-3 classifications are observations; they do not control move selection."}
         </p>
       </div>
@@ -200,13 +199,21 @@ export function ArtifactCorrespondences({
           {sidebar ? (
             <>
               <p className="text-xs">
-                {MOVE_MATCH_KINDS.map((matchKind, index) => (
-                  <span key={matchKind}>
-                    {index > 0 ? " · " : ""}
-                    {moveKindLabel(matchKind)}{" "}
-                    <span style={{ color: correspondenceColor(matchKind) }}>●</span>
-                  </span>
-                ))}
+                {["type1", "type2b", "type2c", "type3"].map(
+                  (correspondenceKind, index) => (
+                    <span key={correspondenceKind}>
+                      {index > 0 ? " · " : ""}
+                      {`Type ${correspondenceKind.slice(4)}`}{" "}
+                      <span
+                        style={{
+                          color: correspondenceColor(correspondenceKind),
+                        }}
+                      >
+                        ●
+                      </span>
+                    </span>
+                  ),
+                )}
               </p>
               <div
                 role="group"
@@ -259,7 +266,7 @@ export function ArtifactCorrespondences({
             </label>
             {(
               [
-                ["Match type", kind, setKind, page.filters.kinds],
+                ["Correspondence kind", kind, setKind, page.filters.kinds],
                 [
                   "Classification",
                   classification,
@@ -482,10 +489,12 @@ export function CorrespondenceRecord({ detail }: { detail: Detail }) {
 export function correspondenceColor(kind: string) {
   return (
     (
-      { type1: "#a78bfa", type2b: "#38bdf8", type2c: "#34d399", type3: "#fb7185" } as Record<
-        string,
-        string
-      >
+      {
+        type1: "#a78bfa",
+        type2b: "#38bdf8",
+        type2c: "#34d399",
+        type3: "#fb7185",
+      } as Record<string, string>
     )[kind.toLowerCase().replace(/[-_]/g, "")] ?? "#94a3b8"
   );
 }

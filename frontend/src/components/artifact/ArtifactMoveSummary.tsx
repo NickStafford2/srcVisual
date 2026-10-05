@@ -26,7 +26,8 @@ export function ArtifactMoveSummary({
           {moves.length} detected move{moves.length === 1 ? "" : "s"}
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          Inspect a move or open either tagged endpoint in Source.
+          Inspect a move or open either tagged endpoint in Source. Content relationship
+          badges are predictions, not evidence of continuity, relocation, or computational equivalence.
         </p>
       </header>
 
@@ -58,7 +59,7 @@ export function ArtifactMoveSummary({
                   {move.move_id}
                 </span>
                 <span className="text-xs text-slate-400">
-                  {move.match_kind ?? "unclassified"}
+                  {move.content_relationship ?? "unclassified"}
                 </span>
               </button>
 

@@ -11,9 +11,13 @@ import shutil
 import stat
 from typing import Callable, Literal
 
-from srcdiffvisual.artifacts.store import ArtifactIntegrityError, check_artifact_integrity
+from srcdiffvisual.artifacts.store import (
+    ArtifactCompatibilityError,
+    ArtifactIntegrityError,
+    check_artifact_integrity,
+)
 
-ArtifactIntegrityStatus = Literal["valid", "corrupt"]
+ArtifactIntegrityStatus = Literal["valid", "corrupt", "incompatible"]
 
 
 class StaleCollectionPlanError(RuntimeError):
@@ -55,8 +59,9 @@ class ArtifactInventory:
             "artifact_count": len(self.items),
             "total_bytes": self.total_bytes,
             "valid_count": sum(_item.integrity == "valid" for _item in self.items),
-            "corrupt_count": sum(
-                _item.integrity == "corrupt" for _item in self.items
+            "corrupt_count": sum(_item.integrity == "corrupt" for _item in self.items),
+            "incompatible_count": sum(
+                _item.integrity == "incompatible" for _item in self.items
             ),
             "protected_count": sum(_item.protected for _item in self.items),
             "items": [_item.to_dict() for _item in self.items],
@@ -239,7 +244,7 @@ def plan_artifact_collection(
         and (policy.max_bytes is None or _remaining_bytes <= policy.max_bytes)
         and all(
             _item.protected
-            or _item.integrity == "corrupt"
+            or _item.integrity in {"corrupt", "incompatible"}
             or policy.max_age_seconds is None
             or _item.created_at is None
             or _item.created_at > _now - timedelta(seconds=policy.max_age_seconds)
@@ -268,7 +273,9 @@ def apply_artifact_collection(
     if len(expected_plan_id) != 64 or any(
         _character not in "0123456789abcdef" for _character in expected_plan_id
     ):
-        raise ValueError("Expected plan ID must be a 64-character lowercase hex string.")
+        raise ValueError(
+            "Expected plan ID must be a 64-character lowercase hex string."
+        )
 
     artifact_root.mkdir(parents=True, exist_ok=True)
     _lock_path = artifact_root / ".collection.lock"
@@ -320,6 +327,15 @@ def _inventory_item(
             artifact_id=artifact_path.name,
         )
         _created_at = _read_created_at(artifact_path)
+    except ArtifactCompatibilityError as _error:
+        return ArtifactInventoryItem(
+            artifact_id=artifact_path.name,
+            size_bytes=_size_bytes,
+            created_at=None,
+            integrity="incompatible",
+            diagnostic=str(_error),
+            protected=protected,
+        )
     except (ArtifactIntegrityError, OSError, ValueError) as _error:
         return ArtifactInventoryItem(
             artifact_id=artifact_path.name,
@@ -349,7 +365,9 @@ def _read_created_at(artifact_path: Path) -> datetime:
     try:
         _created_at = datetime.fromisoformat(_raw_created_at)
     except ValueError as _error:
-        raise ValueError("Artifact manifest has an invalid creation timestamp.") from _error
+        raise ValueError(
+            "Artifact manifest has an invalid creation timestamp."
+        ) from _error
     if _created_at.tzinfo is None:
         raise ValueError("Artifact creation timestamp must include a timezone.")
     return _created_at.astimezone(timezone.utc)

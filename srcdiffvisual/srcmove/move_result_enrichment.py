@@ -4,6 +4,7 @@ from typing import Any
 
 from srcdiffvisual.srcmove.srcmove_results import (
     build_filename_to_unit_index,
+    validate_producer_results,
     parse_srcmove_result_moves,
 )
 from srcdiffvisual.srcmove.move_regions import (
@@ -64,6 +65,7 @@ def merge_producer_move_results(
     reconstructed_results: dict[str, Any],
     producer_results: dict[str, Any],
 ) -> dict[str, Any]:
+    validate_producer_results(producer_results)
     _reconstructed_moves = reconstructed_results.get("moves")
     _producer_moves = producer_results.get("moves")
     assert isinstance(_reconstructed_moves, list), (

@@ -21,20 +21,21 @@ def _bundle() -> bytes:
         "review": "review.json",
     }
     _review = {
-        "schema_version": 1,
+        "schema_version": 2,
         "ordinal": 1,
         "case_id": "case-one",
         "outcome": "srcmove_miss",
         "diagnosis": {"stage": "verification", "reason": "below_threshold"},
         "results": {
+            "results_schema_version": 2,
             "move_count": 0,
             "moves": [],
-            "match_kinds": {"type1": 0, "type2b": 0, "type2c": 0, "type3": 0},
+            "content_relationships": {"type1": 0, "type2c": 0, "type3": 0},
             "diagnostics": {"type2b_groups": []},
         },
     }
     _manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "case_count": 1,
         "cases": [
             {
@@ -112,8 +113,8 @@ def test_review_routes_import_inspect_and_visualize(
         routes_module,
         "read_artifact_manifest",
         lambda **_kwargs: {
-            "schema_version": 2,
-            "projection_schema_version": 1,
+            "schema_version": 4,
+            "projection_schema_version": 2,
             "artifact_id": "artifact-one",
         },
     )

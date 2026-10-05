@@ -10,6 +10,11 @@ from typing import Any
 from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
 
 from srcdiffvisual.core.commands import BackendCommandError, run_command
+from srcdiffvisual.srcmove.srcmove_results import (
+    CONTENT_RELATIONSHIPS,
+    validate_classification_fields,
+    validate_producer_results,
+)
 
 
 DEFAULT_HISTORY_COMMAND = "srcmove-history"
@@ -28,7 +33,9 @@ def get_history_repository() -> Path | None:
     if not _raw_repository:
         return None
     if "\0" in _raw_repository:
-        raise ValueError("SRCDIFFVISUAL_HISTORY_REPOSITORY contains an invalid null byte.")
+        raise ValueError(
+            "SRCDIFFVISUAL_HISTORY_REPOSITORY contains an invalid null byte."
+        )
     return Path(_raw_repository).expanduser().absolute()
 
 
@@ -36,7 +43,7 @@ def read_history_status(repository: Path) -> dict[str, Any]:
     return _run_json_command(
         repository,
         ("status", "--format", "json"),
-        expected_schema_version=2,
+        expected_schema_version=3,
     )
 
 
@@ -72,7 +79,7 @@ def read_history_pairs(
     return _run_json_command(
         repository,
         arguments,
-        expected_schema_version=1,
+        expected_schema_version=2,
     )
 
 
@@ -86,7 +93,7 @@ def read_history_pair(repository: Path, pair_number: int) -> dict[str, Any]:
     return _run_json_command(
         repository,
         ("show", str(pair_number), "--format", "json"),
-        expected_schema_version=1,
+        expected_schema_version=2,
     )
 
 
@@ -102,13 +109,12 @@ def build_history_artifact_fingerprint(
     _document = read_history_pair(repository, pair_number)
     _pair = _document.get("pair")
     if not isinstance(_pair, dict):
-        raise HistoryResponseError(
-            "srcmove-history pair response is missing `pair`."
-        )
+        raise HistoryResponseError("srcmove-history pair response is missing `pair`.")
     _pair_fingerprint = _pair.get("pair_fingerprint")
-    if not isinstance(_pair_fingerprint, str) or len(_pair_fingerprint) != 64 or any(
-        _character not in "0123456789abcdef"
-        for _character in _pair_fingerprint
+    if (
+        not isinstance(_pair_fingerprint, str)
+        or len(_pair_fingerprint) != 64
+        or any(_character not in "0123456789abcdef" for _character in _pair_fingerprint)
     ):
         raise HistoryResponseError(
             "srcmove-history pair response has an invalid `pair_fingerprint`."
@@ -161,7 +167,7 @@ def materialize_history_pair(repository: Path, pair_number: int) -> Path:
             "--format",
             "json",
         ),
-        expected_schema_version=1,
+        expected_schema_version=2,
     )
     comparison = document.get("comparison")
     if not isinstance(comparison, dict):
@@ -214,6 +220,10 @@ def read_materialized_move_results(artifact: Path) -> dict[str, Any] | None:
         raise HistoryResponseError(
             "Retained srcMove results.json must contain an object."
         )
+    try:
+        validate_producer_results(_document)
+    except ValueError as _error:
+        raise HistoryResponseError(str(_error)) from _error
     return _document
 
 
@@ -248,8 +258,34 @@ def _run_json_command(
         raise HistoryResponseError(
             "Unsupported srcmove-history JSON schema: "
             f"expected {expected_schema_version}, "
-            f"received {document.get('schema_version')!r}."
+            f"received {document.get('schema_version')!r}. Rebuild the application and start a fresh history analysis; preserve old analysis directories."
         )
+    try:
+        validate_classification_fields(document)
+        if arguments[0] == "status":
+            _moves = document.get("moves")
+            if not isinstance(_moves, dict) or not isinstance(
+                _moves.get("by_content_relationship"), dict
+            ):
+                raise ValueError(
+                    "History status requires moves.by_content_relationship; start a fresh analysis."
+                )
+        if arguments[0] == "show":
+            _pair = document.get("pair")
+            if not isinstance(_pair, dict) or not isinstance(_pair.get("moves"), list):
+                raise ValueError(
+                    "History pair requires classified move evidence; start a fresh analysis."
+                )
+            for _move in _pair["moves"]:
+                if (
+                    not isinstance(_move, dict)
+                    or _move.get("content_relationship") not in CONTENT_RELATIONSHIPS
+                ):
+                    raise ValueError(
+                        "History move requires a current detector content_relationship; start a fresh analysis."
+                    )
+    except ValueError as _error:
+        raise HistoryResponseError(str(_error)) from _error
     return document
 
 

@@ -139,7 +139,7 @@ def test_diagnostic_run_passes_flag_and_rejects_existing_moves(monkeypatch, tmp_
         _calls.append(args)
         (tmp_path / "moved.srcdiff.xml").write_text("<unit />")
         (tmp_path / "results.json").write_text(
-            '{"moves": [], "diagnostics": {"schema_version": 4}}'
+            '{"results_schema_version": 2, "content_relationships": {"type1": 0, "type2c": 0, "type3": 0}, "moves": [], "diagnostics": {"schema_version": 4}}'
         )
 
     monkeypatch.setattr("srcdiffvisual.srcmove.runner.run_command", _fake_run)

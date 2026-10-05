@@ -14,7 +14,11 @@ import type {
   ArtifactTreeNode,
 } from "../../types";
 import { ArtifactNodeInfo } from "./ArtifactNodeInfo";
-import { MOVE_MATCH_KINDS, moveKindLabel, type MoveMatchKind } from "../../moveKinds";
+import {
+  CONTENT_RELATIONSHIPS,
+  contentRelationshipLabel,
+  type ContentRelationship,
+} from "../../contentRelationshipKinds";
 
 type Props = {
   correspondenceControls?: ReactNode;
@@ -71,17 +75,17 @@ export function ArtifactNavigator({
     file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
   );
   const currentMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
-  function toggleMoveType(matchKind: MoveMatchKind) {
-    const movesOfType = manifest.moves.items.filter(
-      (move) => move.match_kind === matchKind,
+  function toggleContentRelationship(contentRelationship: ContentRelationship) {
+    const movesOfRelationship = manifest.moves.items.filter(
+      (move) => move.content_relationship === contentRelationship,
     );
-    if (movesOfType.length === 0) return;
+    if (movesOfRelationship.length === 0) return;
 
-    const allVisible = movesOfType.every((move) =>
+    const allVisible = movesOfRelationship.every((move) =>
       visibleMoveIds.has(move.move_id),
     );
     const next = new Set(visibleMoveIds);
-    for (const move of movesOfType) {
+    for (const move of movesOfRelationship) {
       if (allVisible) next.delete(move.move_id);
       else next.add(move.move_id);
     }
@@ -355,36 +359,38 @@ export function ArtifactNavigator({
             </div>
             <div
               role="group"
-              aria-label="Move type visibility"
+              aria-label="Content relationship visibility"
               className="mt-2 grid grid-cols-2 gap-1 text-xs"
             >
-              {MOVE_MATCH_KINDS.map((matchKind) => {
-                const movesOfType = manifest.moves.items.filter(
-                  (move) => move.match_kind === matchKind,
+              {CONTENT_RELATIONSHIPS.map((contentRelationship) => {
+                const movesOfRelationship = manifest.moves.items.filter(
+                  (move) => move.content_relationship === contentRelationship,
                 );
                 const allVisible =
-                  movesOfType.length > 0 &&
-                  movesOfType.every((move) =>
+                  movesOfRelationship.length > 0 &&
+                  movesOfRelationship.every((move) =>
                     visibleMoveIds.has(move.move_id),
                   );
                 return (
                   <button
-                    key={matchKind}
+                    key={contentRelationship}
                     type="button"
-                    disabled={movesOfType.length === 0}
+                    disabled={movesOfRelationship.length === 0}
                     aria-pressed={allVisible}
-                    aria-label={`${moveKindLabel(matchKind)} (${movesOfType.length} ${
-                      movesOfType.length === 1 ? "move" : "moves"
+                    aria-label={`${contentRelationshipLabel(contentRelationship)} (${movesOfRelationship.length} ${
+                      movesOfRelationship.length === 1 ? "move" : "moves"
                     })`}
-                    onClick={() => toggleMoveType(matchKind)}
+                    onClick={() =>
+                      toggleContentRelationship(contentRelationship)
+                    }
                     className="border-diff-move-1/25 hover:border-diff-move-1/50 aria-pressed:border-diff-move-1/70 aria-pressed:bg-diff-move-1/20 rounded border bg-slate-950 px-2 py-1.5 text-amber-100/70 disabled:opacity-35 aria-pressed:text-amber-200"
                   >
-                    {moveKindLabel(matchKind)}
+                    {contentRelationshipLabel(contentRelationship)}
                     <span
                       aria-hidden="true"
                       className="ml-1 text-[10px] opacity-60"
                     >
-                      ({movesOfType.length})
+                      ({movesOfRelationship.length})
                     </span>
                   </button>
                 );

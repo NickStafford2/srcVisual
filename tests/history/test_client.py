@@ -37,7 +37,7 @@ def test_read_status_uses_versioned_json_command(
     def fake_run_command(argv: list[str]) -> CommandResult:
         captured.extend(argv)
         return CommandResult(
-            stdout=json.dumps({"schema_version": 2, "state": "idle"}),
+            stdout=json.dumps({"schema_version": 3, "state": "idle", "moves": {"by_content_relationship": {}}}),
             stderr="",
         )
 
@@ -66,7 +66,7 @@ def test_read_pairs_builds_bounded_filter_and_cursor_command(
     def fake_run_command(argv: list[str]) -> CommandResult:
         captured.extend(argv)
         return CommandResult(
-            stdout=json.dumps({"schema_version": 1, "pairs": {"items": []}}),
+            stdout=json.dumps({"schema_version": 2, "pairs": {"items": []}}),
             stderr="",
         )
 
@@ -120,7 +120,7 @@ def test_history_artifact_fingerprint_binds_srcmove_identity_and_analysis_contra
         history_client,
         "read_history_pair",
         lambda repository_path, pair_number: {
-            "schema_version": 1,
+            "schema_version": 2,
             "pair": {"pair_fingerprint": "a" * 64},
         },
     )
@@ -162,7 +162,7 @@ def test_history_artifact_fingerprint_rejects_invalid_srcmove_identity(
         history_client,
         "read_history_pair",
         lambda repository_path, pair_number: {
-            "schema_version": 1,
+            "schema_version": 2,
             "pair": {"pair_fingerprint": "not-a-fingerprint"},
         },
     )
@@ -199,7 +199,7 @@ def test_materialize_pair_returns_confined_srcmove_artifact(
         return CommandResult(
             stdout=json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "comparison": {
                         "status": "completed",
                         "saved_paths": [str(artifact)],
@@ -236,7 +236,7 @@ def test_materialize_pair_rejects_artifact_outside_analysis(
         lambda argv: CommandResult(
             stdout=json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "comparison": {
                         "status": "completed",
                         "saved_paths": [str(artifact)],
@@ -257,8 +257,10 @@ def test_read_materialized_move_results_preserves_producer_metadata(
     _artifact = tmp_path / "srcmove.xml"
     _artifact.touch()
     _results = {
+        "results_schema_version": 2,
+        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
         "move_count": 1,
-        "moves": [{"move_id": "move-1", "match_kind": "type3"}],
+        "moves": [{"move_id": "move-1", "content_relationship": "type3"}],
         "group_kinds": {"move_1_to_1": 1},
     }
     (_artifact.with_name("results.json")).write_text(

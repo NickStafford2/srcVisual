@@ -35,6 +35,13 @@ The backend uses these public srcMove operations:
 - `compare --pair PAIR --save all --format json` to regenerate complete XML
   with the analysis's admitted tool copies.
 
+Status responses use schema 3 and `moves.by_content_relationship`. Pair list,
+pair detail, and comparison responses use schema 2. The srcMove history database
+is schema 7; srcDiffVisual delegates database admission to the CLI. Rebuild the
+application/history worker and start a fresh analysis with current tools; preserve
+older `.srcmove` directories as evidence. Do not resume incompatible analyses.
+Compact move evidence uses `content_relationship`; results.json requires schema 2.
+
 The status, list, and detail browsing operations are read-only. Visualization
 delegates the necessary repository-local writes to srcMove and is asynchronous:
 

@@ -23,7 +23,7 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
     )
     xml = read_artifact_xml(artifact_root=tmp_path, artifact_id=published.artifact_id)
 
-    assert manifest["projection_schema_version"] == 1
+    assert manifest["projection_schema_version"] == 2
     assert manifest["focus_profiles"] == [
         "changes-and-moves",
         "moves",
@@ -85,12 +85,12 @@ def test_move_projection_returns_record_without_interpreting_it(tmp_path) -> Non
     )
 
     assert projection == {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_id": published.artifact_id,
-        "results_schema_version": 1,
+        "results_schema_version": 2,
         "move": {
             "move_id": "move-1",
-            "match_kind": "type1",
+            "content_relationship": "type1",
             "confidence_milli": 1000,
             "selection_utility": 8000,
             "matched_units": 8,
@@ -418,7 +418,7 @@ def _publish_fixture(tmp_path, diagnostics=None):
             "moves": [
                 {
                     "move_id": "move-1",
-                    "match_kind": "type1",
+                    "content_relationship": "type1",
                     "confidence_milli": 1000,
                     "selection_utility": 8000,
                     "matched_units": 8,
@@ -432,7 +432,7 @@ def _publish_fixture(tmp_path, diagnostics=None):
                 }
             ],
             "producer_metadata": {
-                "results_schema_version": 1,
+                "results_schema_version": 2,
                 **({"diagnostics": diagnostics} if diagnostics is not None else {}),
             },
         },

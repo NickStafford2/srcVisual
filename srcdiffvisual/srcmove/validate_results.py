@@ -9,6 +9,7 @@ from srcdiffvisual.srcmove.move_regions import (
 )
 from srcdiffvisual.srcmove.srcmove_results import (
     SrcMoveResultMove,
+    validate_producer_results,
     build_filename_to_unit_index,
     parse_srcmove_result_moves,
 )
@@ -20,7 +21,10 @@ def validate_srcmove_results_match_xml(
     move_results: dict[str, Any],
     include_skipped_tags: bool,
     allow_additional_xml_moves: bool = False,
+    require_producer_contract: bool = True,
 ) -> None:
+    if require_producer_contract:
+        validate_producer_results(move_results)
     _filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
     _result_moves = parse_srcmove_result_moves(
         move_results,

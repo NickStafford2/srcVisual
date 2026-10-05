@@ -1,3 +1,7 @@
+import {
+  CONTENT_RELATIONSHIPS,
+  contentRelationshipLabel,
+} from "../../contentRelationshipKinds";
 import type { ReturnTypeOfUseHistoryData } from "./historyInputTypes";
 
 type HistoryInputProps = ReturnTypeOfUseHistoryData;
@@ -156,6 +160,16 @@ function HistorySummary({ status }: { status: HistoryInputProps["status"] }) {
           <div className="text-xs text-slate-400">{label}</div>
         </div>
       ))}
+      <p
+        className="col-span-full text-xs text-slate-400"
+        aria-label="Content relationship predictions"
+      >
+        Predicted contents:{" "}
+        {CONTENT_RELATIONSHIPS.map(
+          (relationship) =>
+            `${contentRelationshipLabel(relationship)}: ${status.moves.by_content_relationship[relationship] ?? 0}`,
+        ).join(" · ")}
+      </p>
     </div>
   );
 }
@@ -342,7 +356,7 @@ function HistoryPairDetails({
             className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
           >
             <p className="text-xs font-semibold text-amber-200">
-              Move {index + 1} · {move.match_kind ?? "unknown"}
+              Move {index + 1} · {move.content_relationship ?? "unknown"}
             </p>
             <MovePaths label="From" paths={move.from_xpaths ?? []} />
             <MovePaths label="To" paths={move.to_xpaths ?? []} />

@@ -24,9 +24,9 @@ const caseRecord = {
   case_id: "case-one",
   ordinal: 1,
   case_kind: "positive",
-  expected_match_kind: "type2b",
-  reviewed_expected_match_kind: "type2b",
-  observed_match_kind: "type3",
+  expected_content_relationship: "type2b",
+  reviewed_expected_content_relationship: "type2b",
+  observed_content_relationship: "type3",
   outcome: "wrong_classification",
   reviewed_outcome: "wrong_classification",
   complete_fragment_detected: true,
@@ -41,7 +41,7 @@ const caseRecord = {
   attempt_ordinal: 0,
 };
 const page = {
-  schema_version: 1,
+  schema_version: 2,
   run_id: "saved-run",
   items: [caseRecord],
   total: 5598,
@@ -54,7 +54,7 @@ const page = {
   },
 };
 const run = {
-  schema_version: 1,
+  schema_version: 2,
   run_id: "saved-run",
   selected: 5598,
   completed_at: "2026-10-05T06:50:28Z",
@@ -74,7 +74,7 @@ const run = {
   ],
 };
 const detail = {
-  schema_version: 1,
+  schema_version: 2,
   run_id: "saved-run",
   case: caseRecord,
   original: {
@@ -88,15 +88,15 @@ const detail = {
     reason: null,
   },
   expected_ranges: { from: [3, 4], to: [3, 4] },
-  failures: ["match_kind: expected type2b, got type3"],
-  reviewed_failures: ["match_kind: expected type2b, got type3"],
+  failures: ["content_relationship: expected type2b, got type3"],
+  reviewed_failures: ["content_relationship: expected type2b, got type3"],
   label_correction: null,
   semantic_details: {},
   text_validation: {},
   moves: [
     {
       move_id: "move-one",
-      match_kind: "type3",
+      content_relationship: "type3",
       from_raw_texts: ["a();"],
       to_raw_texts: ["b();"],
       from_xpaths: ["/original"],
@@ -113,7 +113,7 @@ beforeEach(() => {
   vi.mocked(visualizeSavedBenchmarkCase).mockReset();
   vi.mocked(readBenchmark).mockImplementation(async (path) => {
     if (path === "")
-      return { schema_version: 1, items: [run], default_run_id: "saved-run" };
+      return { schema_version: 2, items: [run], default_run_id: "saved-run" };
     if (path === "/saved-run") return run;
     if (path === "/saved-run/cases/type2b/case-one") return detail;
     if (path.includes("offset=50"))
@@ -133,7 +133,7 @@ it("opens the selected saved case in Source view and reports publication errors"
   const accept = vi.fn();
   const artifact = {
     artifact_id: "published",
-    projection_schema_version: 1,
+    projection_schema_version: 2,
   } as ArtifactManifest;
   vi.mocked(visualizeSavedBenchmarkCase)
     .mockRejectedValueOnce(new Error("Retained XML checksum differs."))
@@ -142,6 +142,8 @@ it("opens the selected saved case in Source view and reports publication errors"
   await user.click(
     await screen.findByRole("button", { name: "Inspect Type 2b case 1" }),
   );
+  expect(screen.getAllByText("Classification disagreement").length).toBeGreaterThan(0);
+  expect(screen.getByText(/A completely detected Type-2b expectation/)).toBeInTheDocument();
   const open = await screen.findByRole("button", {
     name: "Open in Source view",
   });
@@ -203,7 +205,7 @@ it("selects the saved run, filters cases and opens exact fragments and reported 
     within(evidence).getByText("int after() { return b; }"),
   ).toBeInTheDocument();
   expect(
-    within(evidence).getByText("match_kind: expected type2b, got type3"),
+    within(evidence).getByText("content_relationship: expected type2b, got type3"),
   ).toBeInTheDocument();
   await user.click(within(evidence).getByText("move-one · Type 3"));
   expect(within(evidence).getByText("a();")).toBeVisible();
@@ -239,7 +241,7 @@ it("pages results and resets the page when filters change", async () => {
 
 it("explains empty configuration and case-detail failures", async () => {
   vi.mocked(readBenchmark).mockResolvedValueOnce({
-    schema_version: 1,
+    schema_version: 2,
     items: [],
     default_run_id: null,
   });

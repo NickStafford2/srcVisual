@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from srcdiffvisual.core.commands import run_command
+from srcdiffvisual.srcmove.srcmove_results import validate_producer_results
 from srcdiffvisual.core.notify import ProgressCallback, notify_progress
 
 
@@ -56,6 +57,7 @@ def run_srcmove(
         f"srcMove results JSON must be an object; got {type(move_results).__name__}."
     )
 
+    validate_producer_results(move_results)
     notify_progress(progress, "Reading moved srcdiff output.")
 
     return moved_srcdiff_xml, move_results

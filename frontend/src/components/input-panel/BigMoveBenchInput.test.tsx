@@ -9,7 +9,7 @@ vi.mock("./SavedBenchmarkBrowser", () => ({
 }));
 
 const manifest: BigMoveBenchReviewManifest = {
-  schema_version: 1,
+  schema_version: 2,
   review_id: "bmb-review-sha256-test",
   case_count: 2,
   cases: [

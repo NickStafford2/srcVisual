@@ -13,10 +13,10 @@ from srcdiffvisual.srcmove.existing_annotations import (
 EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "examples"
 
 
-@pytest.mark.parametrize("match_kind", ["type2b", "type2c"])
+@pytest.mark.parametrize("content_relationship", ["type1", "type2c", "type3"])
 @pytest.mark.parametrize("archive", [False, True], ids=["single-root", "archive"])
 def test_supplied_type2_categories_survive_artifact_pipeline(
-    tmp_path: Path, match_kind: str, archive: bool
+    tmp_path: Path, content_relationship: str, archive: bool
 ) -> None:
     _xml = (EXAMPLES_DIR / "e2e_custom_pre_marked_move_small.xml").read_text()
     if archive:
@@ -25,9 +25,10 @@ def test_supplied_type2_categories_survive_artifact_pipeline(
     _results = build_move_results_from_moved_srcdiff(
         moved_srcdiff_xml=_xml, include_skipped_tags=True
     )
-    _results["moves"][0]["match_kind"] = match_kind
-    _results["match_kinds"] = {"type1": 0, "type2b": 0, "type2c": 0, "type3": 0}
-    _results["match_kinds"][match_kind] = 1
+    _results["results_schema_version"] = 2
+    _results["moves"][0]["content_relationship"] = content_relationship
+    _results["content_relationships"] = {"type1": 0, "type2c": 0, "type3": 0}
+    _results["content_relationships"][content_relationship] = 1
     _results["diagnostics"] = {
         "schema_version": 4,
         "candidates": [],
@@ -41,16 +42,16 @@ def test_supplied_type2_categories_survive_artifact_pipeline(
         producer_move_results=_results,
     )
     _stored = read_artifact(artifact_root=tmp_path, artifact_id=_published.artifact_id)
-    assert _stored.manifest["moves"]["items"][0]["match_kind"] == match_kind
+    assert _stored.manifest["moves"]["items"][0]["content_relationship"] == content_relationship
     _move = read_artifact_move(
         artifact_root=tmp_path,
         artifact_id=_published.artifact_id,
         move_id=_results["moves"][0]["move_id"],
     )
-    assert _move["move"]["match_kind"] == match_kind
+    assert _move["move"]["content_relationship"] == content_relationship
     assert (
-        _stored.payload.move_results["producer_metadata"]["match_kinds"]
-        == _results["match_kinds"]
+        _stored.payload.move_results["producer_metadata"]["content_relationships"]
+        == _results["content_relationships"]
     )
     assert (
         _stored.payload.move_results["producer_metadata"]["diagnostics"]
@@ -70,7 +71,7 @@ def test_native_type2c_move_and_diagnostics_survive_pipeline(tmp_path: Path) -> 
         diagnostics=True,
     )
     assert any(
-        _move["match_kind"] == "type2c"
+        _move["content_relationship"] == "type2c"
         for _move in _published.manifest["moves"]["items"]
     )
     _page = read_correspondences(
@@ -99,7 +100,7 @@ def test_archive_input_publishes_canonical_artifact(
 
     assert "<diff:ws" in _stored.payload.moved_srcdiff_xml
     assert _stored.manifest["provenance"]["move_results_source"] == "generated"
-    assert _stored.payload.move_results["moves"][0]["match_kind"] == "type1"
+    assert _stored.payload.move_results["moves"][0]["content_relationship"] == "type1"
 
 
 def test_single_root_input_round_trips_through_artifact(tmp_path: Path) -> None:

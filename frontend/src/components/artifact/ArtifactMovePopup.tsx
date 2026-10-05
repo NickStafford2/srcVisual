@@ -41,7 +41,7 @@ export function ArtifactMovePopup({
   return (
     <ArtifactPopup
       title="Move details"
-      badge={projection?.move.match_kind}
+      badge={projection?.move.content_relationship}
       identity={moveId}
       position={position}
       color="#fbbf24"
@@ -59,7 +59,7 @@ export function ArtifactMovePopup({
 function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
   const move = projection.move;
   const hasProducerDetails =
-    move.match_kind !== undefined ||
+    move.content_relationship !== undefined ||
     move.confidence_milli !== undefined ||
     move.selection_utility !== undefined ||
     move.matched_units !== undefined ||
@@ -69,7 +69,7 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
     <div className="space-y-4 p-4">
       {hasProducerDetails ? (
         <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
-          <Value label="match_kind" value={move.match_kind} />
+          <Value label="Content relationship (prediction)" value={move.content_relationship} />
           <Value label="confidence_milli" value={move.confidence_milli} />
           <Value label="matched_units" value={move.matched_units} />
           <Value label="selection_utility" value={move.selection_utility} />

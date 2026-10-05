@@ -10,7 +10,7 @@ afterEach(cleanup);
 
 it("does not invent srcMove fields for annotation-only moves", async () => {
   vi.mocked(fetchArtifactMove).mockResolvedValue({
-    schema_version: 1,
+    schema_version: 2,
     artifact_id: "artifact-1",
     results_schema_version: null,
     move: {

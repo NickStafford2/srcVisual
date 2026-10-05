@@ -45,8 +45,8 @@ def test_visualize_endpoint_accepts_example_file(example_path: Path) -> None:
 
     payload = response.get_json()
     assert isinstance(payload, dict)
-    assert payload["schema_version"] == 3
-    assert payload["projection_schema_version"] == 1
+    assert payload["schema_version"] == 4
+    assert payload["projection_schema_version"] == 2
     assert isinstance(payload["artifact_id"], str)
     assert isinstance(payload["files"], list)
 
@@ -65,8 +65,8 @@ def test_artifact_interface_serves_real_bounded_projections(
 
     assert response.status_code == 200
     manifest = response.get_json()
-    assert manifest["schema_version"] == 3
-    assert manifest["projection_schema_version"] == 1
+    assert manifest["schema_version"] == 4
+    assert manifest["projection_schema_version"] == 2
     assert manifest["focus_profiles"] == [
         "changes-and-moves",
         "moves",

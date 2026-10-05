@@ -12,7 +12,7 @@ export interface HistoryRepositoryDocument {
 }
 
 export interface HistoryStatusDocument {
-  schema_version: 2;
+  schema_version: 3;
   analysis: {
     name: string;
     repository: string;
@@ -35,7 +35,7 @@ export interface HistoryStatusDocument {
     detections: number;
     source_destination_pairings: number;
     annotated_regions: number;
-    by_match_type: Record<string, number>;
+    by_content_relationship: Record<string, number>;
   };
   history: {
     newest_commit: string;
@@ -59,7 +59,7 @@ export interface HistoryPairListItem {
 }
 
 export interface HistoryPairPageDocument {
-  schema_version: 1;
+  schema_version: 2;
   analysis: {
     name: string;
     repository: string;
@@ -72,7 +72,7 @@ export interface HistoryPairPageDocument {
 }
 
 export interface HistoryMoveEvidence {
-  match_kind?: string;
+  content_relationship?: string;
   from_xpaths?: string[];
   to_xpaths?: string[];
   [key: string]: unknown;
@@ -97,7 +97,7 @@ export interface HistoryPairDetail {
 }
 
 export interface HistoryPairDocument {
-  schema_version: 1;
+  schema_version: 2;
   analysis: {
     name: string;
     repository: string;

@@ -20,15 +20,20 @@ from srcdiffvisual.artifacts.models import (
     StoredArtifact,
 )
 from srcdiffvisual.files.models import RevisionFile, VisualizedFile
+from srcdiffvisual.srcmove.srcmove_results import validate_classification_fields
 from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
 from srcdiffvisual.workflow.models import VisualizationPayload
 
-ARTIFACT_SCHEMA_VERSION = 3
+ARTIFACT_SCHEMA_VERSION = 4
 DEFAULT_ARTIFACT_ROOT = Path("/tmp/srcdiffvisual-artifacts")
 
 
 class ArtifactIntegrityError(RuntimeError):
     """A stored artifact does not satisfy its published manifest."""
+
+
+class ArtifactCompatibilityError(ArtifactIntegrityError):
+    """A preserved artifact uses an incompatible contract, not corrupt data."""
 
 
 def get_artifact_root() -> Path:
@@ -81,6 +86,17 @@ def publish_artifact(
     provenance: ArtifactProvenance,
     artifact_id: str | None = None,
 ) -> PublishedArtifact:
+    validate_classification_fields(canonical_payload.move_results)
+    _metadata = canonical_payload.move_results.get(
+        "producer_metadata", canonical_payload.move_results
+    )
+    if (
+        "results_schema_version" in _metadata
+        and _metadata["results_schema_version"] != 2
+    ):
+        raise ArtifactCompatibilityError(
+            "Unsupported srcMove results schema. Preserve old evidence and regenerate schema-2 results."
+        )
     _artifact_id = artifact_id or uuid4().hex
     if len(_artifact_id) != 32 or any(
         _character not in "0123456789abcdef" for _character in _artifact_id
@@ -123,6 +139,8 @@ def read_artifact(*, artifact_root: Path, artifact_id: str) -> StoredArtifact:
         _validate_artifact_path(_artifact_path, _manifest)
         _validate_index(_artifact_path / "index.sqlite", _manifest)
         _payload = _read_payload(_artifact_path)
+    except ArtifactCompatibilityError:
+        raise
     except ArtifactIntegrityError:
         _quarantine_artifact(artifact_root, _artifact_path)
         raise
@@ -144,6 +162,8 @@ def validate_artifact(*, artifact_root: Path, artifact_id: str) -> None:
             artifact_root=artifact_root,
             artifact_id=artifact_id,
         )
+    except ArtifactCompatibilityError:
+        raise
     except ArtifactIntegrityError:
         _quarantine_artifact(artifact_root, _artifact_path)
         raise
@@ -534,7 +554,9 @@ def _validate_artifact_path(
     manifest: dict[str, Any],
 ) -> None:
     if manifest.get("schema_version") != ARTIFACT_SCHEMA_VERSION:
-        raise ArtifactIntegrityError("Unsupported artifact schema version.")
+        raise ArtifactCompatibilityError(
+            "Unsupported artifact schema version. Preserve the old artifact and regenerate it with current tools."
+        )
     if manifest.get("artifact_id") != artifact_path.name:
         raise ArtifactIntegrityError("Artifact id does not match its directory.")
 
@@ -670,7 +692,7 @@ def _build_move_summaries(
         _summaries.append(
             {
                 "move_id": _move["move_id"],
-                "match_kind": _move.get("match_kind"),
+                "content_relationship": _move.get("content_relationship"),
                 "from_node_ids": [path_to_node_id[_path] for _path in _from_paths],
                 "to_node_ids": [path_to_node_id[_path] for _path in _to_paths],
             }

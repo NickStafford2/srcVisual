@@ -6,13 +6,14 @@ from srcdiffvisual.core.namespaces import SRC_NS, DIFF_NS, MV_NS, POS_NS
 from srcdiffvisual.core.units import get_srcdiff_file_unit_elements
 from srcdiffvisual.srcmove.attributes import MV_ID, MV_FROM, MV_TO
 from srcdiffvisual.srcmove.move_regions import extract_raw_text
-from srcdiffvisual.srcmove.srcmove_results import build_filename_to_unit_index, parse_srcmove_result_moves
+from srcdiffvisual.srcmove.srcmove_results import build_filename_to_unit_index, parse_srcmove_result_moves, validate_producer_results
 from srcdiffvisual.srcmove.validate_results import validate_srcmove_results_match_xml
 
 
 def annotate_retained_results(srcdiff_xml: str, results: dict) -> str:
     _root = ET.fromstring(srcdiff_xml)
     _units = get_srcdiff_file_unit_elements(_root)
+    validate_producer_results(results)
     _moves = parse_srcmove_result_moves(results, filename_to_unit_index=build_filename_to_unit_index(srcdiff_xml))
     if results.get("move_count") != len(_moves):
         raise ValueError("Retained move count differs from the recorded move list.")

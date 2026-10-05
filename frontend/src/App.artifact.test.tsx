@@ -26,8 +26,8 @@ const file = {
 };
 
 const manifest: ArtifactManifest = {
-  schema_version: 2,
-  projection_schema_version: 1,
+  schema_version: 4,
+  projection_schema_version: 2,
   artifact_id: "a".repeat(32),
   source_filename: "example.xml",
   has_position_data: true,
@@ -39,7 +39,7 @@ const manifest: ArtifactManifest = {
     items: [
       {
         move_id: "move-1",
-        match_kind: "type1",
+        content_relationship: "type1",
         from_node_ids: [file.root_node_id],
         to_node_ids: [file.root_node_id],
       },
@@ -173,7 +173,7 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
       }
       if (url.endsWith("/moves/move-1")) {
         return jsonResponse({
-          schema_version: 1,
+          schema_version: 2,
           artifact_id: manifest.artifact_id,
           results_schema_version: null,
           move: {

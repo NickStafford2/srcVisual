@@ -8,6 +8,11 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from srcdiffvisual.srcmove.srcmove_results import (
+    validate_classification_fields,
+    validate_producer_results,
+)
+
 
 REQUIRED_CASE_FILES = {
     "expected_source": "expected-source.java",
@@ -96,18 +101,33 @@ def _extract_validated_bundle(payload: bytes, staging: Path) -> dict[str, Any]:
                 for _key, _filename in REQUIRED_CASE_FILES.items():
                     _member = (_directory / _filename).as_posix()
                     if _member not in _members:
-                        raise ValueError(f"BigMoveBench review file is missing: {_member}")
+                        raise ValueError(
+                            f"BigMoveBench review file is missing: {_member}"
+                        )
                     _destination = staging / _member
                     _destination.parent.mkdir(parents=True, exist_ok=True)
                     _destination.write_bytes(_archive.read(_member))
+            for _case in _manifest["cases"]:
+                _directory = staging / _case["directory"]
+                _review = _read_json(_directory / "review.json")
+                if _review.get("schema_version") != 2:
+                    raise ValueError(
+                        "Unsupported review case schema; export a new schema-2 bundle."
+                    )
+                validate_classification_fields(_review)
+                validate_producer_results(_read_json(_directory / "results.json"))
+                validate_producer_results(_review.get("results", {}))
             return _manifest
     except (zipfile.BadZipFile, json.JSONDecodeError) as _error:
         raise ValueError("Invalid BigMoveBench review bundle.") from _error
 
 
 def _validate_manifest(manifest: Any) -> None:
-    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
-        raise ValueError("Unsupported BigMoveBench review manifest.")
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 2:
+        raise ValueError(
+            "Unsupported BigMoveBench review manifest. Preserve the old ZIP and export a new schema-2 review bundle."
+        )
+    validate_classification_fields(manifest)
     _cases = manifest.get("cases")
     if not isinstance(_cases, list) or manifest.get("case_count") != len(_cases):
         raise ValueError("BigMoveBench review case count is invalid.")

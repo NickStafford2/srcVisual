@@ -17,10 +17,101 @@ FILENAME_UNIT_PATTERN = re.compile(
 @dataclass(frozen=True)
 class SrcMoveResultMove:
     move_id: str
+    content_relationship: str | None
     from_xpaths: tuple[str, ...]
     to_xpaths: tuple[str, ...]
     from_raw_texts: tuple[str, ...]
     to_raw_texts: tuple[str, ...]
+
+
+CONTENT_RELATIONSHIPS = {"type1", "type2c", "type3"}
+LEGACY_CLASSIFICATION_FIELDS = {
+    "match_kind",
+    "match_kinds",
+    "by_match_type",
+    "expected_match_kind",
+    "reviewed_expected_match_kind",
+    "observed_match_kind",
+    "reviewed_match_kind",
+    "_oracle_observed_match_kind",
+}
+
+
+def validate_classification_fields(value: Any) -> None:
+    """Reject superseded reporting fields, including nested oracle/review payloads."""
+    if isinstance(value, dict):
+        for _key, _item in value.items():
+            if _key in LEGACY_CLASSIFICATION_FIELDS:
+                raise ValueError(
+                    f"Unsupported legacy classification field {_key!r}. "
+                    "Preserve retained evidence and regenerate with current srcMove tools."
+                )
+            if (
+                _key
+                in {
+                    "content_relationship",
+                    "expected_content_relationship",
+                    "reviewed_expected_content_relationship",
+                    "observed_content_relationship",
+                    "reviewed_content_relationship",
+                    "_oracle_observed_content_relationship",
+                }
+                and _item is not None
+                and (
+                    not isinstance(_item, str)
+                    or _item not in CONTENT_RELATIONSHIPS | {"type2b"}
+                )
+            ):
+                raise ValueError(
+                    f"Unsupported content relationship: {_item!r}; regenerate with current tools."
+                )
+            if _key in {"content_relationships", "by_content_relationship"}:
+                if (
+                    not isinstance(_item, dict)
+                    or not set(_item) <= CONTENT_RELATIONSHIPS
+                ):
+                    raise ValueError(
+                        "Unsupported detector content_relationships; regenerate with current tools."
+                    )
+            validate_classification_fields(_item)
+    elif isinstance(value, list):
+        for _item in value:
+            validate_classification_fields(_item)
+
+
+def validate_producer_results(move_results: dict[str, Any]) -> None:
+    if not isinstance(move_results, dict):
+        raise ValueError("srcMove results must contain an object.")
+    validate_classification_fields(move_results)
+    if move_results.get("results_schema_version") != 2:
+        raise ValueError(
+            "Unsupported srcMove results schema; expected results_schema_version 2. "
+            "Preserve old evidence and regenerate results with the rebuilt executable."
+        )
+    _moves = move_results.get("moves")
+    if not isinstance(_moves, list):
+        raise ValueError("srcMove results must contain a moves list.")
+    _counts = dict.fromkeys(sorted(CONTENT_RELATIONSHIPS), 0)
+    for _move in _moves:
+        if (
+            not isinstance(_move, dict)
+            or not isinstance(_move.get("content_relationship"), str)
+            or _move["content_relationship"] not in CONTENT_RELATIONSHIPS
+        ):
+            raise ValueError(
+                "Each reported move requires content_relationship type1, type2c, or type3."
+            )
+        _counts[_move["content_relationship"]] += 1
+    _reported = move_results.get("content_relationships")
+    if (
+        not isinstance(_reported, dict)
+        or set(_reported) != CONTENT_RELATIONSHIPS
+        or any(type(_count) is not int or _count < 0 for _count in _reported.values())
+        or _reported != _counts
+    ):
+        raise ValueError(
+            "srcMove content_relationships must count all reported groups by classification."
+        )
 
 
 def build_filename_to_unit_index(moved_srcdiff_xml: str) -> dict[str, int]:
@@ -110,6 +201,7 @@ def parse_srcmove_result_moves(
         f"srcMove results must be a dict; got {type(move_results).__name__}."
     )
 
+    validate_classification_fields(move_results)
     moves_value = move_results.get("moves")
     assert isinstance(moves_value, list), "srcMove results must contain moves list."
 
@@ -120,6 +212,14 @@ def parse_srcmove_result_moves(
         assert isinstance(value, dict), (
             f"srcMove results moves[{index}] must be a dict."
         )
+
+        if (
+            "content_relationship" in value
+            and value["content_relationship"] not in CONTENT_RELATIONSHIPS
+        ):
+            raise ValueError(
+                "Reported moves require content_relationship type1, type2c, or type3; regenerate results."
+            )
 
         move_id = value.get("move_id")
         assert isinstance(move_id, str) and move_id, (
@@ -158,6 +258,7 @@ def parse_srcmove_result_moves(
         parsed_moves.append(
             SrcMoveResultMove(
                 move_id=move_id,
+                content_relationship=value.get("content_relationship"),
                 from_xpaths=from_xpaths,
                 to_xpaths=to_xpaths,
                 from_raw_texts=from_raw_texts,

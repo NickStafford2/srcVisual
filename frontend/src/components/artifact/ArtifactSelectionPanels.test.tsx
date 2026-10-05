@@ -34,7 +34,7 @@ const files: ArtifactFileSummary[] = [
 
 const move: ArtifactMoveSummary = {
   move_id: "move-1",
-  match_kind: "type1",
+  content_relationship: "type1",
   from_node_ids: ["f-before:n00000001"],
   to_node_ids: ["f-after:n00000002"],
 };

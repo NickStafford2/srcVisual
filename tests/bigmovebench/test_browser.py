@@ -11,7 +11,7 @@ def test_browser_forwards_only_run_case_and_filter_arguments(monkeypatch):
 
     def _read(command, *arguments):
         _calls.append((command, arguments))
-        return {"schema_version": 1, "items": []}
+        return {"schema_version": 2, "items": []}
 
     monkeypatch.setattr(routes, "read_benchmark", _read)
     _client = create_app().test_client()
@@ -51,8 +51,8 @@ def test_browser_calls_versioned_cli_with_configured_roots(monkeypatch):
 
     def _command(argv):
         _calls.append(argv)
-        return CommandResult(json.dumps({"schema_version": 1, "items": []}), "")
+        return CommandResult(json.dumps({"schema_version": 2, "items": []}), "")
 
     monkeypatch.setattr(browser, "run_command", _command)
-    assert read_benchmark("list-runs")["schema_version"] == 1
+    assert read_benchmark("list-runs")["schema_version"] == 2
     assert _calls[0][1:] == ["-m", "bigMoveBench.browser", "--results-root", "/results", "--cache-root", "/cache", "list-runs"]

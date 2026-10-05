@@ -18,7 +18,7 @@ export interface BigMoveBenchCaseSummary {
 }
 
 export interface BigMoveBenchReviewManifest {
-  schema_version: 1;
+  schema_version: 2;
   review_id: string;
   case_count: number;
   cases: BigMoveBenchCaseSummary[];
