@@ -70,7 +70,8 @@ export interface ArtifactManifest {
     identity_status:
       | "producer-not-observed"
       | "observed-runtime-binaries"
-      | "recorded-benchmark-binaries";
+      | "recorded-benchmark-binaries"
+      | "recorded-history-binaries";
     srcdiff_sha256: string | null;
     srcmove_sha256: string | null;
   };

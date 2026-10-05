@@ -317,3 +317,18 @@ def history_error_response(error: Exception) -> tuple[dict[str, str], int]:
     if isinstance(error, HistoryResponseError):
         return {"error": str(error)}, 502
     raise error
+
+
+def read_history_definition(repository: Path) -> dict[str, Any]:
+    return _run_json_command(repository, ("definition", "--format", "json"), expected_schema_version=7)
+
+
+def create_history_snapshot(repository: Path) -> Path:
+    _document = _run_json_command(repository, ("snapshot", "--format", "json"), expected_schema_version=1)
+    _identity = _document.get("snapshot_id")
+    if not isinstance(_identity, str) or len(_identity) != 64 or any(c not in "0123456789abcdef" for c in _identity):
+        raise HistoryResponseError("invalid snapshot identity")
+    _path = _validated_repository(repository) / ".srcmove" / "snapshots" / f"{_identity}.zip"
+    if not _path.is_file():
+        raise HistoryResponseError("snapshot file is unavailable")
+    return _path

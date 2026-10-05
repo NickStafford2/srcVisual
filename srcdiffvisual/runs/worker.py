@@ -23,7 +23,10 @@ from srcdiffvisual.history.client import (
     HistoryResponseError,
     materialize_history_pair,
     read_materialized_move_results,
+    read_history_pair,
+    read_history_definition,
 )
+from srcdiffvisual.history.extensions import process_extension, recover_extensions
 from srcdiffvisual.history.repositories import (
     HistoryRepositoryRegistry,
     get_history_repository_registry,
@@ -58,7 +61,11 @@ class HistoryRunWorker:
         return True
 
     def run(self, stop_event: Event, *, poll_seconds: float) -> None:
+        _registry = get_history_repository_registry()
+        assert _registry is not None
         while not stop_event.is_set():
+            if process_extension(self.store.database_path, _registry, stop_event):
+                continue
             if not self.process_next(stop_event):
                 stop_event.wait(poll_seconds)
 
@@ -169,6 +176,7 @@ class HistoryRunExecutor:
             run.history_pair,
         )
         _producer_results = read_materialized_move_results(_materialized)
+        _definition = read_history_definition(_repository)
         self.store.append_progress(
             run.run_id,
             "Building the immutable visualization artifact.",
@@ -180,6 +188,15 @@ class HistoryRunExecutor:
             provenance=ArtifactProvenance(
                 origin="history",
                 history_pair=run.history_pair,
+                history_analysis={
+                    "repository_id": run.repository_id,
+                    "definition": _definition,
+                    "pair": read_history_pair(_repository, run.history_pair)["pair"],
+                    "verified_against_stored_evidence": True,
+                },
+                producer_tool_sha256={
+                    name: tool["sha256"] for name, tool in _definition.get("executables", {}).items()
+                } or None,
                 move_results_source=(
                     "provided" if _producer_results is not None else "reconstructed"
                 ),
@@ -241,6 +258,7 @@ def main() -> None:
 
     _poll_seconds = _get_poll_seconds()
     with _exclusive_worker_lock(_artifact_root / "runs.worker.lock"):
+        recover_extensions(_store.database_path)
         _recovered = _store.fail_abandoned_runs()
         if _recovered:
             _LOGGER.warning("Marked %d abandoned run(s) as failed", _recovered)

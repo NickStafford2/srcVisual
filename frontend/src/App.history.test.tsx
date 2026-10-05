@@ -94,8 +94,11 @@ describe("repository history browser", () => {
     vi.stubGlobal("EventSource", MockEventSource);
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
         const url = String(input);
+        if (url.startsWith("/api/history/extensions?")) {
+          return jsonResponse({ schema_version: 1, extension: options?.method === "POST" ? { id: "extension-1", state: "queued", target: 470, message: "Waiting" } : null });
+        }
         if (url === "/api/examples") {
           return jsonResponse({ examples: [] });
         }
@@ -221,6 +224,20 @@ describe("repository history browser", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it("queues an increment and disables duplicate requests", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("tab", { name: /^History/ }));
+    const extend = await screen.findByRole("button", { name: "Analyze 100 more" });
+    await waitFor(() => expect(extend).toBeEnabled());
+    await user.click(extend);
+    expect(fetch).toHaveBeenCalledWith("/api/history/extensions?repository=notepadpp", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ count: 100 }),
+    });
+    await waitFor(() => expect(extend).toBeDisabled());
+    expect(screen.getByText("queued · target 470 comparisons")).toBeInTheDocument();
   });
 
   it("loads summary, filtered pairs, and selected compact evidence", async () => {

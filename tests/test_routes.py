@@ -216,6 +216,7 @@ def test_history_status_requires_configured_repository(monkeypatch) -> None:
 def test_history_repository_registry_selects_an_allowed_repository(
     monkeypatch, tmp_path: Path
 ) -> None:
+    monkeypatch.setattr(routes_module, "read_history_definition", lambda repository: {"schema_version": 7})
     notepadpp = tmp_path / "notepadpp"
     sqlite = tmp_path / "sqlite"
     monkeypatch.setenv(
@@ -260,6 +261,7 @@ def test_history_status_returns_cli_document(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.setattr(routes_module, "read_history_definition", lambda repository: {"schema_version": 7})
     monkeypatch.setenv("SRCDIFFVISUAL_HISTORY_REPOSITORY", str(tmp_path))
     monkeypatch.setattr(
         routes_module,

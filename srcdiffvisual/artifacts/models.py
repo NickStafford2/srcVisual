@@ -13,6 +13,7 @@ ArtifactOrigin = Literal["upload", "history", "benchmark"]
 class ArtifactProvenance:
     origin: ArtifactOrigin
     history_pair: int | None = None
+    history_analysis: dict[str, object] | None = None
     move_results_source: Literal["generated", "provided", "reconstructed"] = "generated"
     benchmark_case: dict[str, object] | None = None
     producer_tool_sha256: dict[str, str] | None = None
@@ -23,6 +24,8 @@ class ArtifactProvenance:
             "history_pair": self.history_pair,
             "move_results_source": self.move_results_source,
         }
+        if self.history_analysis is not None:
+            _value["history_analysis"] = self.history_analysis
         if self.benchmark_case is not None:
             _value["benchmark_case"] = self.benchmark_case
         return _value

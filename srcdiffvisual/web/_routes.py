@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any, Callable
 
-from flask import Blueprint, Response, current_app, request
+from flask import Blueprint, Response, current_app, request, send_file
 from werkzeug.datastructures import FileStorage
 
 from srcdiffvisual.artifacts.models import ArtifactProvenance
@@ -38,7 +38,11 @@ from srcdiffvisual.history.client import (
     read_history_pair,
     read_history_pairs,
     read_history_status,
+    read_history_definition,
+    create_history_snapshot,
 )
+from srcdiffvisual.history.snapshots import publish_thesis_snapshot
+from srcdiffvisual.history.extensions import queue_extension, read_extension
 from srcdiffvisual.history.repositories import (
     HistoryRepository,
     HistoryRepositoryRegistry,
@@ -242,6 +246,7 @@ def history_repositories() -> tuple[dict[str, object], int]:
 def history_status() -> tuple[dict[str, object], int]:
     try:
         result = read_history_status(_history_repository())
+        result["definition"] = read_history_definition(_history_repository())
     except HistoryConfigurationError as error:
         return history_error_response(error)
     except ValueError as error:
@@ -249,6 +254,36 @@ def history_status() -> tuple[dict[str, object], int]:
     except Exception as error:
         return history_error_response(error)
     return result, 200
+
+
+@api.route("/history/extensions", methods=["GET", "POST"])
+def history_extension():
+    try:
+        _repository = _configured_history_repository()
+        _database = current_app.config["RUN_STORE"].database_path
+        if request.method == "POST":
+            _body = request.get_json() or {}
+            if not isinstance(_body, dict):
+                raise ValueError("request body must be an object")
+            _record = queue_extension(_database, _history_repository_registry(), _repository.repository_id, _body.get("count", 100))
+        else:
+            _record = read_extension(_database, _repository.repository_id)
+        return {"schema_version": 1, "extension": _record}, 200
+    except ValueError as _error:
+        return {"error": str(_error)}, 400
+    except Exception as _error:
+        return history_error_response(_error)
+
+
+@api.post("/history/snapshot")
+def history_snapshot():
+    try:
+        _repository = _configured_history_repository()
+        _path = create_history_snapshot(_repository.path)
+        publish_thesis_snapshot(_path, _repository.repository_id)
+        return send_file(_path, as_attachment=True, download_name=_path.name)
+    except Exception as _error:
+        return history_error_response(_error)
 
 
 @api.get("/history/pairs")

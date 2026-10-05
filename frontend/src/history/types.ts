@@ -18,6 +18,9 @@ export interface HistoryStatusDocument {
     repository: string;
     root: string;
   };
+  definition?: {
+    executables: { srcmove: { sha256: string }; srcdiff: { sha256: string } };
+  };
   state: string;
   coverage: {
     committed_commit_pairs: number;
@@ -151,4 +154,11 @@ export interface HistoryRunEvent {
 export interface HistoryRunEventDocument {
   schema_version: 1;
   event: HistoryRunEvent;
+}
+
+export interface HistoryExtension {
+  id: string;
+  target: number;
+  state: "queued" | "running" | "completed" | "failed";
+  message: string;
 }

@@ -733,7 +733,7 @@ def _build_tool_provenance(
 ) -> dict[str, object]:
     if provenance.producer_tool_sha256 is not None:
         return {
-            "identity_status": "recorded-benchmark-binaries",
+            "identity_status": "recorded-history-binaries" if provenance.origin == "history" else "recorded-benchmark-binaries",
             "srcdiff_sha256": provenance.producer_tool_sha256.get("srcdiff"),
             "srcmove_sha256": provenance.producer_tool_sha256.get("srcmove"),
         }

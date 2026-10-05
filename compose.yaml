@@ -20,18 +20,31 @@ services:
       SRCDIFFVISUAL_GUNICORN_THREADS: "4"
       SRCDIFFVISUAL_GUNICORN_TIMEOUT_SECONDS: "360"
       SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
-        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"}]
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"}]
       SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
+      SRCDIFFVISUAL_HISTORY_EXPORT_ROOT: "/thesis-history"
+      # Both workspace containers access these operator-configured Git mounts
+      # under different Linux users. Trust only the admitted worktrees.
+      GIT_CONFIG_COUNT: "3"
+      GIT_CONFIG_KEY_0: "safe.directory"
+      GIT_CONFIG_VALUE_0: "/history/notepadpp"
+      GIT_CONFIG_KEY_1: "safe.directory"
+      GIT_CONFIG_VALUE_1: "/history/sqlite"
+      GIT_CONFIG_KEY_2: "safe.directory"
+      GIT_CONFIG_VALUE_2: "/history/opencv"
     volumes:
       - srcdiffvisual-artifacts:/var/lib/srcdiffvisual/artifacts
+      - ../thesis-workspace/data/srcMove-history:/thesis-history:rw
       - ../srcMove/bigMoveBench/browser:/opt/bigmovebench/bigMoveBench/browser:ro
       - ../srcMove/benchmark-results/bigMoveBench/thesis-runs:/bigmovebench/results:ro
       - ../srcMove/bigMoveBench/cache:/bigmovebench/cache:ro
       # The parent workspace builds this Linux executable incrementally. The
       # bind applies to long-running services and `docker compose run`.
       - ../srcMove/build/srcMove:/opt/srcMove/bin/srcMove:ro
+      - ../srcMove/srcmove_history:/opt/srcMove/srcmove_history:ro
+      - ../srcMove/srcmove_runtime:/opt/srcMove/srcmove_runtime:ro
       - ../srcMove/reference-repositories/notepadpp:/history/notepadpp:ro
       # srcmove-history owns these two repository-local areas. The source
       # working tree remains read-only while repository analysis and retained
@@ -41,6 +54,9 @@ services:
       - ../srcMove/reference-repositories/sqlite:/history/sqlite:ro
       - ../srcMove/reference-repositories/sqlite/.git:/history/sqlite/.git:rw
       - ../srcMove/reference-repositories/sqlite/.srcmove:/history/sqlite/.srcmove:rw
+      - ../srcMove/reference-repositories/opencv:/history/opencv:ro
+      - ../srcMove/reference-repositories/opencv/.git:/history/opencv/.git:rw
+      - ../srcMove/reference-repositories/opencv/.srcmove:/history/opencv/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:
@@ -55,19 +71,35 @@ services:
     environment:
       SRCDIFFVISUAL_COMMAND_TIMEOUT_SECONDS: "300"
       SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
-        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"}]
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"}]
       SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
+      SRCDIFFVISUAL_HISTORY_EXPORT_ROOT: "/thesis-history"
+      # Both workspace containers access these operator-configured Git mounts
+      # under different Linux users. Trust only the admitted worktrees.
+      GIT_CONFIG_COUNT: "3"
+      GIT_CONFIG_KEY_0: "safe.directory"
+      GIT_CONFIG_VALUE_0: "/history/notepadpp"
+      GIT_CONFIG_KEY_1: "safe.directory"
+      GIT_CONFIG_VALUE_1: "/history/sqlite"
+      GIT_CONFIG_KEY_2: "safe.directory"
+      GIT_CONFIG_VALUE_2: "/history/opencv"
     volumes:
       - srcdiffvisual-artifacts:/var/lib/srcdiffvisual/artifacts
+      - ../thesis-workspace/data/srcMove-history:/thesis-history:rw
       - ../srcMove/build/srcMove:/opt/srcMove/bin/srcMove:ro
+      - ../srcMove/srcmove_history:/opt/srcMove/srcmove_history:ro
+      - ../srcMove/srcmove_runtime:/opt/srcMove/srcmove_runtime:ro
       - ../srcMove/reference-repositories/notepadpp:/history/notepadpp:ro
       - ../srcMove/reference-repositories/notepadpp/.git:/history/notepadpp/.git:rw
       - ../srcMove/reference-repositories/notepadpp/.srcmove:/history/notepadpp/.srcmove:rw
       - ../srcMove/reference-repositories/sqlite:/history/sqlite:ro
       - ../srcMove/reference-repositories/sqlite/.git:/history/sqlite/.git:rw
       - ../srcMove/reference-repositories/sqlite/.srcmove:/history/sqlite/.srcmove:rw
+      - ../srcMove/reference-repositories/opencv:/history/opencv:ro
+      - ../srcMove/reference-repositories/opencv/.git:/history/opencv/.git:rw
+      - ../srcMove/reference-repositories/opencv/.srcmove:/history/opencv/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:

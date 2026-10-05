@@ -10,6 +10,7 @@ import {
 import type { ArtifactManifest, ComparisonContext } from "../types";
 import type {
   HistoryPairDetail,
+  HistoryExtension,
   HistoryPairListItem,
   HistoryRepositoryOption,
   HistoryRun,
@@ -45,6 +46,66 @@ export function useHistoryData(
   const [runEvents, setRunEvents] = useState<HistoryRunEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [extension, setExtension] = useState<HistoryExtension | null>(null);
+  const [isExtending, setIsExtending] = useState(false);
+  const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
+
+  useEffect(() => {
+    if (!enabled || !selectedRepositoryId) return;
+    let active = true;
+    let completedId = "";
+    setExtension(null);
+    async function poll() {
+      try {
+        const response = await fetch(`/api/history/extensions?repository=${encodeURIComponent(selectedRepositoryId)}`);
+        if (!response.ok) return;
+        const document = await response.json() as { extension: HistoryExtension | null };
+        if (!active) return;
+        setExtension(document.extension);
+        if (document.extension && ["queued", "running"].includes(document.extension.state)) {
+          const freshStatus = await fetchHistoryStatus(selectedRepositoryId);
+          if (active) setStatus(freshStatus);
+        }
+        if (document.extension?.state === "completed" && completedId !== document.extension.id) {
+          const [freshStatus, freshPairs] = await Promise.all([fetchHistoryStatus(selectedRepositoryId), fetchHistoryPairs(selectedRepositoryId, selection)]);
+          if (active) { setStatus(freshStatus); setPairs(freshPairs.pairs.items); setNextAfter(freshPairs.pairs.next_after); }
+        }
+        if (document.extension?.state === "completed") completedId = document.extension.id;
+      } catch { /* A repository may not be initialized yet; the status request reports that error. */ }
+    }
+    void poll();
+    const interval = window.setInterval(() => void poll(), 2000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [enabled, selectedRepositoryId, selection]);
+
+  async function extendHistory(count: number) {
+    setIsExtending(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/history/extensions?repository=${encodeURIComponent(selectedRepositoryId)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ count }) });
+      const document = await response.json() as { extension: HistoryExtension; error?: string };
+      if (!response.ok) throw new Error(document.error ?? "Unable to extend history.");
+      setExtension(document.extension);
+    } catch (problem) { setError(errorMessage(problem, "Unable to extend history.")); }
+    finally { setIsExtending(false); }
+  }
+
+  async function saveSnapshot() {
+    setIsSavingSnapshot(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/history/snapshot?repository=${encodeURIComponent(selectedRepositoryId)}`, { method: "POST" });
+      if (!response.ok) { const document = await response.json(); throw new Error(document.error ?? "Unable to save snapshot."); }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = response.headers.get("Content-Disposition")?.match(/filename="?([^";]+)/)?.[1] ?? "history-snapshot.zip";
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (problem) { setError(errorMessage(problem, "Unable to save snapshot.")); }
+    finally { setIsSavingSnapshot(false); }
+  }
 
   useEffect(() => {
     if (!enabled) return;
@@ -162,6 +223,8 @@ export function useHistoryData(
           },
         },
       );
+      const openedPair = (await fetchHistoryPair(selectedRepositoryId, pairNumber)).pair;
+      setSelectedPair(openedPair);
       onVisualization(payload, {
         mode: "history",
         label: `${
@@ -171,14 +234,8 @@ export function useHistoryData(
           status?.analysis.repository ??
           "Repository"
         } · Pair ${pairNumber}`,
-        before:
-          selectedPair?.number === pairNumber
-            ? selectedPair.old_commit
-            : undefined,
-        after:
-          selectedPair?.number === pairNumber
-            ? selectedPair.new_commit
-            : undefined,
+        before: openedPair.old_commit,
+        after: openedPair.new_commit,
       });
     } catch (loadError) {
       setError(
@@ -213,6 +270,11 @@ export function useHistoryData(
   }
 
   return {
+    extension,
+    isExtending,
+    isSavingSnapshot,
+    extendHistory,
+    saveSnapshot,
     repositories,
     selectedRepositoryId,
     status,

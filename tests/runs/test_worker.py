@@ -36,6 +36,8 @@ def test_executor_materializes_history_and_completes_with_published_artifact(
     tmp_path: Path,
 ) -> None:
     _store, _executor = _components(tmp_path)
+    monkeypatch.setattr(worker_module, "read_history_definition", lambda repository: {"schema_version": 7})
+    monkeypatch.setattr(worker_module, "read_history_pair", lambda repository, number: {"pair": {"number": number}})
     _run = _store.create_history_run(13)
     _store.claim_next()
     _materialized = tmp_path / "srcmove.xml"
@@ -88,6 +90,8 @@ def test_executor_records_safe_failure_without_command_details(
     tmp_path: Path,
 ) -> None:
     _store, _executor = _components(tmp_path)
+    monkeypatch.setattr(worker_module, "read_history_definition", lambda repository: {"schema_version": 7})
+    monkeypatch.setattr(worker_module, "read_history_pair", lambda repository, number: {"pair": {"number": number}})
     _run = _store.create_history_run(4)
     _store.claim_next()
 

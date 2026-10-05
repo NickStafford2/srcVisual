@@ -319,6 +319,7 @@ def _build_canonical_payload(
     _effective_provenance = ArtifactProvenance(
         origin=provenance.origin,
         history_pair=provenance.history_pair,
+        history_analysis=provenance.history_analysis,
         move_results_source=_move_results_source,
         benchmark_case=provenance.benchmark_case,
         producer_tool_sha256=provenance.producer_tool_sha256,

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   CONTENT_RELATIONSHIPS,
   contentRelationshipLabel,
@@ -13,7 +14,10 @@ const FILTERS = [
 ] as const;
 
 export function HistoryInput(props: HistoryInputProps) {
+  const [increment, setIncrement] = useState(100);
+  const [query, setQuery] = useState("");
   const {
+    extension, isExtending, isSavingSnapshot, extendHistory, saveSnapshot,
     repositories,
     selectedRepositoryId,
     status,
@@ -93,6 +97,15 @@ export function HistoryInput(props: HistoryInputProps) {
       ) : null}
 
       {status ? <HistorySummary status={status} /> : null}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 p-3">
+        <label className="text-sm text-slate-300">Additional comparisons
+          <input aria-label="Additional comparisons" type="number" min={1} max={1000} value={increment} onChange={(event) => setIncrement(Number(event.target.value))} className="ml-2 w-24 rounded border border-white/20 bg-slate-950 p-2" />
+        </label>
+        <button type="button" disabled={!status || isExtending || !Number.isInteger(increment) || increment < 1 || increment > 1000 || status.history.exhausted || status.state === "running" || ["queued", "running"].includes(extension?.state ?? "")} onClick={() => void extendHistory(increment)} className="rounded-lg bg-sky-300/15 px-4 py-2 text-sm text-sky-100 disabled:opacity-40">Analyze {increment} more</button>
+        <button type="button" disabled={!status || isSavingSnapshot || status.state === "running" || ["queued", "running"].includes(extension?.state ?? "")} onClick={() => void saveSnapshot()} className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-200 disabled:opacity-40">{isSavingSnapshot ? "Saving…" : "Save thesis snapshot"}</button>
+        <p className="w-full text-xs text-slate-400">Extension keeps the current tools and starting revision. After updating srcMove, run <code>make history-new REPO={selectedRepositoryId} COUNT={status?.coverage.committed_commit_pairs ?? 100}</code> to recreate. Use <code>make history-export REPO={selectedRepositoryId}</code> to save the same snapshot in thesis-workspace.</p>
+        {extension ? <p role="status" className="w-full text-sm text-sky-200">{extension.state} · target {extension.target} comparisons{extension.state === "failed" ? ` · ${extension.message}` : ""}</p> : null}
+      </div>
 
       <div className="flex flex-wrap gap-2" aria-label="History pair filters">
         {FILTERS.map((filter) => (
@@ -113,9 +126,10 @@ export function HistoryInput(props: HistoryInputProps) {
         ))}
       </div>
 
+      <input aria-label="Find loaded commit pairs" placeholder="Find a commit hash or pair number in loaded results" value={query} onChange={(event) => setQuery(event.target.value)} className="w-full rounded-xl border border-white/15 bg-slate-950 p-3 text-sm text-slate-200" />
       <div className="grid min-h-[430px] gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
         <HistoryPairList
-          pairs={pairs}
+          pairs={pairs.filter(pair => `${pair.number} ${pair.old_commit} ${pair.new_commit} ${pair.status}`.toLowerCase().includes(query.toLowerCase()))}
           selectedPairNumber={selectedPair?.number ?? null}
           isLoading={isLoading}
           isLoadingMore={isLoadingMore}
@@ -143,9 +157,10 @@ export function HistoryInput(props: HistoryInputProps) {
 function HistorySummary({ status }: { status: HistoryInputProps["status"] }) {
   if (!status) return null;
   const cards = [
-    ["Analyzed pairs", status.coverage.durable_commit_pairs],
+    ["Covered comparisons", status.coverage.durable_commit_pairs],
     ["Move detections", status.moves.detections],
-    ["Compared", status.outcomes.compared_commit_pairs],
+    ["Successfully compared", status.outcomes.compared_commit_pairs],
+    ["No analyzable changes", status.outcomes.without_analyzable_changes],
     ["Failed", status.outcomes.failed_commit_pairs],
   ] as const;
 
@@ -160,6 +175,7 @@ function HistorySummary({ status }: { status: HistoryInputProps["status"] }) {
           <div className="text-xs text-slate-400">{label}</div>
         </div>
       ))}
+      <p className="col-span-full text-xs text-slate-400">Starting commit {status.history.newest_commit.slice(0, 12)} · oldest covered {status.history.oldest_analyzed_commit?.slice(0, 12) ?? "none"} · srcMove {status.definition?.executables.srcmove.sha256.slice(0, 12) ?? "unknown"}</p>
       <p
         className="col-span-full text-xs text-slate-400"
         aria-label="Content relationship predictions"
@@ -248,7 +264,7 @@ function HistoryPairList({
           disabled={isLoadingMore}
           className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-200 hover:bg-white/[0.08] disabled:opacity-50"
         >
-          {isLoadingMore ? "Loading…" : "Load more"}
+          {isLoadingMore ? "Loading…" : "Show more existing results"}
         </button>
       ) : null}
     </section>
