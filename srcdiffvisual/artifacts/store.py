@@ -21,6 +21,7 @@ from srcdiffvisual.artifacts.models import (
 )
 from srcdiffvisual.files.models import RevisionFile, VisualizedFile
 from srcdiffvisual.srcmove.srcmove_results import validate_classification_fields
+from srcdiffvisual.srcmove.reported_moves import reported_move_records
 from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
 from srcdiffvisual.workflow.models import VisualizationPayload
 
@@ -679,9 +680,7 @@ def _build_move_summaries(
     move_results: dict[str, Any],
     path_to_node_id: dict[str, str],
 ) -> dict[str, object]:
-    _moves = move_results.get("moves")
-    if not isinstance(_moves, list):
-        raise ValueError("Canonical move results must contain a moves list.")
+    _moves = reported_move_records(move_results)
 
     _summaries = []
     for _move in _moves:
@@ -692,6 +691,7 @@ def _build_move_summaries(
         _summaries.append(
             {
                 "move_id": _move["move_id"],
+                **{_key: _move[_key] for _key in ("report_kind", "member_move_ids") if _key in _move},
                 "content_relationship": _move.get("content_relationship"),
                 "from_node_ids": [path_to_node_id[_path] for _path in _from_paths],
                 "to_node_ids": [path_to_node_id[_path] for _path in _to_paths],

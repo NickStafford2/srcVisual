@@ -15,6 +15,7 @@ import {
   CorrespondenceOverlay,
 } from "./CorrespondenceSource";
 import type { Pair } from "./ArtifactCorrespondences";
+import { expandReportEndpoints, reportIdsByMember } from "./reportedMoves";
 import { ArtifactSourceFile } from "./ArtifactSourceFile";
 
 type Props = {
@@ -78,6 +79,7 @@ export function ArtifactSourcePane({
     () => new Set(selectedFileId ? [selectedFileId] : []),
   );
   const [isolatedMoveId, setIsolatedMoveId] = useState<string | null>(null);
+  const _reportIds = useMemo(() => reportIdsByMember(moves), [moves]);
   const _inspectedMove = moves.find((move) => move.move_id === inspectedMoveId);
   const _isolatedMove = moves.find((move) => move.move_id === isolatedMoveId);
   const _isolatedMoveFileIds = useMemo(
@@ -85,7 +87,7 @@ export function ArtifactSourcePane({
     [_isolatedMove],
   );
   const _visibleMoves = useMemo(
-    () => moves.filter((move) => visibleMoveIds.has(move.move_id)),
+    () => moves.filter((move) => visibleMoveIds.has(move.move_id)).flatMap(expandReportEndpoints),
     [moves, visibleMoveIds],
   );
   const _visibleFiles = _isolatedMove
@@ -109,7 +111,7 @@ export function ArtifactSourcePane({
   }
 
   function inspectMove(moveId: string, position: { x: number; y: number }) {
-    onInspectMove(moveId, position);
+    onInspectMove((_reportIds.get(moveId) ?? moveId), position);
   }
 
   return (
@@ -197,7 +199,7 @@ export function ArtifactSourcePane({
           />
           <DiffRegionOverlay groups={diffRegionOverlay.groups} />
           <MoveConnectorOverlay
-            groups={groups}
+            groups={groups.map((group) => ({ ...group, moveId: (_reportIds.get(group.moveId) ?? group.moveId) }))}
             emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
             onMoveHover={(moveId) => setHoveredMoveId(moveId)}
             onMoveLeave={(moveId) =>

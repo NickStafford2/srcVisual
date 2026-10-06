@@ -22,6 +22,8 @@ export interface ArtifactFileSummary {
 
 export interface ArtifactMoveSummary {
   move_id: string;
+  report_kind?: "atomic" | "ordered_sequence";
+  member_move_ids?: string[];
   content_relationship: ContentRelationship | null;
   from_node_ids: string[];
   to_node_ids: string[];
@@ -29,6 +31,8 @@ export interface ArtifactMoveSummary {
 
 export interface ArtifactMoveRecord {
   move_id: string;
+  report_kind?: "atomic" | "ordered_sequence";
+  member_move_ids?: string[];
   content_relationship?: ContentRelationship;
   confidence_milli?: number;
   selection_utility?: number;

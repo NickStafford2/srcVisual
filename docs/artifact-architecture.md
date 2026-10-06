@@ -940,7 +940,19 @@ explicit Close behavior as move details.
 Move visibility controls enumerate detector predictions `type1`, `type2c`, and
 `type3`. `moves[].content_relationship` predicts endpoint contents; it does not
 establish continuity, relocation, or computational equivalence. Summary
-`content_relationships` counts reported groups. Results schema 2 is required
+`content_relationships` counts legacy atomic groups. When producer JSON includes
+`reported_moves`, the manifest, move list, details, selection, and History UI use
+that primary reporting partition and `reported_content_relationships`. An ordered
+Type-1 run appears once, with its member statements retained for inspection.
+Source connectors pair member endpoints by position; they do not connect every
+source statement to every destination statement. No synthetic AST node or
+aggregate confidence score is introduced. History retains the atomic count
+separately. Older results without this additive contract keep atomic reports.
+Grouping belongs to srcMove; the viewer validates and displays its reports rather
+than inferring adjacency. See [ordered move reporting](../../srcMove/doc/architecture.md#ordered-move-sequences).
+Annotations inherited from input XML remain separate, unclassified items and
+are excluded from the producer's report partition and classification counts.
+Results schema 2 is required
 for producer JSON, with all three count keys and a classification on every
 reported move. Legacy fields and labels are rejected, including nested review
 metadata. XML has no classification attribute: `mv:id`, `mv:from`, and `mv:to`

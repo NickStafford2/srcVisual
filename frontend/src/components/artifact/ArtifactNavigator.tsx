@@ -74,7 +74,8 @@ export function ArtifactNavigator({
   const visibleFiles = manifest.files.filter((file) =>
     file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
   );
-  const currentMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
+  const selectedMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
+  const currentMoveId = manifest.moves.items.find((move) => move.move_id === selectedMoveId || (selectedMoveId !== null && move.member_move_ids?.includes(selectedMoveId)))?.move_id ?? selectedMoveId;
   function toggleContentRelationship(contentRelationship: ContentRelationship) {
     const movesOfRelationship = manifest.moves.items.filter(
       (move) => move.content_relationship === contentRelationship,

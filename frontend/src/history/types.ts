@@ -36,6 +36,7 @@ export interface HistoryStatusDocument {
   };
   moves: {
     detections: number;
+    atomic_groups?: number;
     source_destination_pairings: number;
     annotated_regions: number;
     by_content_relationship: Record<string, number>;
@@ -56,6 +57,8 @@ export interface HistoryPairListItem {
   changed_path_count: number;
   analyzable_path_count: number;
   move_count: number;
+  reported_move_count?: number | null;
+  atomic_move_count?: number;
   elapsed_seconds: number;
   checkpointed: boolean;
   invocation_id: string;

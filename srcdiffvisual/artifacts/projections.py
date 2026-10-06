@@ -16,6 +16,8 @@ from srcdiffvisual.artifacts.store import (
     _resolve_artifact_path,
 )
 
+from srcdiffvisual.srcmove.reported_moves import reported_move_records
+
 FocusProfile = Literal["changes-and-moves", "moves", "changes", "complete-file"]
 FOCUS_PROFILES: tuple[FocusProfile, ...] = (
     "changes-and-moves",
@@ -51,9 +53,7 @@ def read_artifact_move(
         raise ArtifactIntegrityError("Artifact move results are missing.")
 
     move_results = json.loads(row[0])
-    moves = move_results.get("moves")
-    if not isinstance(moves, list):
-        raise ArtifactIntegrityError("Artifact move results are invalid.")
+    moves = reported_move_records(move_results) + move_results.get("moves", [])
     move = next(
         (
             candidate

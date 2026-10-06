@@ -86,8 +86,17 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
         </p>
       )}
 
-      <TextEvidence label="from_raw_texts" values={move.from_raw_texts} />
-      <TextEvidence label="to_raw_texts" values={move.to_raw_texts} />
+      {move.report_kind === "ordered_sequence" ? (
+        <details className="rounded-lg border border-white/10 p-3 text-xs">
+          <summary className="cursor-pointer text-slate-300">Retained member matches ({move.member_move_ids?.length})</summary>
+          <p className="mt-2 text-slate-400">Each member pairs the source and destination evidence at the same position.</p>
+          {move.member_move_ids?.map((member, index) => (
+            <p key={member} className="mt-1 font-mono text-slate-300">{index + 1}. {member}</p>
+          ))}
+        </details>
+      ) : null}
+      <TextEvidence label="from_raw_texts" values={move.from_raw_texts} ordered={move.report_kind === "ordered_sequence"} />
+      <TextEvidence label="to_raw_texts" values={move.to_raw_texts} ordered={move.report_kind === "ordered_sequence"} />
 
       <details className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
         <summary className="cursor-pointer text-slate-300">
@@ -119,7 +128,7 @@ function Value({
   );
 }
 
-function TextEvidence({ label, values }: { label: string; values?: string[] }) {
+function TextEvidence({ label, values, ordered = false }: { label: string; values?: string[]; ordered?: boolean }) {
   if (!values?.length) return null;
   return (
     <div>
@@ -127,7 +136,7 @@ function TextEvidence({ label, values }: { label: string; values?: string[] }) {
         {label}
       </p>
       <pre className="max-h-40 overflow-auto rounded-lg border border-white/10 bg-black/35 p-3 text-xs whitespace-pre-wrap text-slate-200">
-        {values.join("\n\n---\n\n")}
+        {values.join(ordered ? "\n" : "\n\n---\n\n")}
       </pre>
     </div>
   );

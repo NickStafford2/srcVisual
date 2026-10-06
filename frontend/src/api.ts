@@ -1,3 +1,4 @@
+import { withReportedMoveCount } from "./history/pairCounts";
 import {
   assertClassificationContract,
   assertDetectorMove,
@@ -116,7 +117,8 @@ export async function fetchHistoryPairs(
   ) {
     throw new Error("Backend returned an unsupported history pair page.");
   }
-  return payload as unknown as HistoryPairPageDocument;
+  const document = payload as unknown as HistoryPairPageDocument;
+  return { ...document, pairs: { ...document.pairs, items: document.pairs.items.map(withReportedMoveCount) } };
 }
 
 export async function fetchHistoryPair(

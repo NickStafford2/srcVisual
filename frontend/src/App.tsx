@@ -172,7 +172,9 @@ export default function App() {
     moveId: string,
     position: { x: number; y: number },
   ) {
-    if (!artifact?.moves.items.some((move) => move.move_id === moveId)) return;
+    const report = artifact?.moves.items.find((move) => move.move_id === moveId || move.member_move_ids?.includes(moveId));
+    if (!report) return;
+    moveId = report.move_id;
     setVisibleArtifactMoveIds((current) => {
       if (current.has(moveId)) return current;
       const next = new Set(current);

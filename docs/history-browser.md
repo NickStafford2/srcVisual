@@ -97,7 +97,10 @@ Successful zero-move comparisons remain zero. Failed comparisons and outcomes
 with no analyzable changes appear as separate markers below the axis and break
 the count line. The optional trailing mean uses a full window of 5, 10, or 25
 consecutive successfully compared pairs; missing, failed, and no-source pairs
-break the mean. Points can be clicked or activated with Enter/Space to inspect
+break the mean. The logarithmic Y-axis toggle uses `log10(1 + moves)` so zero
+remains visible. Axis labels and tooltips retain original move counts, and the
+rolling mean is calculated from raw counts before applying the display scale.
+Points can be clicked or activated with Enter/Space to inspect
 pair evidence. This is exploratory detector activity, not a validated clustering
 result or an immutable thesis figure; use evidence snapshots for final claims.
 

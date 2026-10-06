@@ -24,13 +24,20 @@ export function activityPoints(series: HistoryPairListItem[], window: number) {
 
 export function HistoryActivityChart({ series, isLoading, error, selectedPair, onSelect }: Props) {
   const [window, setWindow] = useState(10);
+  const [logarithmic, setLogarithmic] = useState(false);
   const points = useMemo(() => activityPoints(series, window), [series, window]);
   const width = 960, height = 260, left = 58, right = 24, top = 20, bottom = 42;
   const oldest = points[0]?.pair.distance_from_newest ?? 0;
   const newest = points[points.length - 1]?.pair.distance_from_newest ?? 0;
   const maximum = points.reduce((maximum, point) => point.pair.status === "completed" ? Math.max(maximum, point.pair.move_count) : maximum, 1);
   const x = (distance: number) => oldest === newest ? (left + width - right) / 2 : left + (oldest - distance) / (oldest - newest) * (width - left - right);
-  const y = (value: number) => height - bottom - value / maximum * (height - top - bottom);
+  const transform = (value: number) => logarithmic ? Math.log10(1 + value) : value;
+  const y = (value: number) => height - bottom - transform(value) / transform(maximum) * (height - top - bottom);
+  // Invert equally spaced scale positions to label the original move counts.
+  const ticks = (logarithmic ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1]).map(fraction => {
+    const value = logarithmic ? Math.pow(10, fraction * transform(maximum)) - 1 : fraction * maximum;
+    return { value, label: Number(value.toFixed(1)) };
+  });
   function path(average: boolean) {
     let connected = false;
     return points.map((point, index) => {
@@ -53,6 +60,11 @@ export function HistoryActivityChart({ series, isLoading, error, selectedPair, o
           <h3 className="text-sm font-semibold text-slate-100">Historical move activity</h3>
           <p className="mt-1 text-xs text-slate-400">Detected moves per commit comparison · oldest → newest</p>
         </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-slate-300">
+            <input type="checkbox" checked={logarithmic} onChange={event => setLogarithmic(event.target.checked)} className="accent-sky-400" />
+            Logarithmic Y axis
+          </label>
         <label className="text-xs text-slate-300">Rolling average
           <select aria-label="Rolling average" value={window} onChange={event => setWindow(Number(event.target.value))} className="ml-2 rounded-lg border border-white/15 bg-slate-950 px-2 py-1.5">
             <option value={0}>Off</option>
@@ -61,14 +73,15 @@ export function HistoryActivityChart({ series, isLoading, error, selectedPair, o
             <option value={25}>25 comparisons</option>
           </select>
         </label>
+        </div>
       </div>
       {isLoading ? <p role="status" className="py-8 text-sm text-slate-400">Loading all saved comparisons…</p> : error ? <p role="alert" className="py-4 text-sm text-red-200">Move activity unavailable: {error}</p> : points.length === 0 ? <p className="py-8 text-sm text-slate-400">No saved comparisons to plot yet.</p> : <>
         <div className="mt-3 overflow-x-auto">
           <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[640px] w-full" aria-label="Detected moves across analyzed commit pairs">
-            <text x={left} y={12} fill="#94a3b8" fontSize={11}>Moves</text>
-            {[0, 0.5, 1].map(fraction => <g key={fraction}>
-              <line x1={left} x2={width - right} y1={y(maximum * fraction)} y2={y(maximum * fraction)} stroke="#334155" strokeDasharray="3 5" />
-              <text x={left - 10} y={y(maximum * fraction) + 4} textAnchor="end" fill="#94a3b8" fontSize={11}>{Number((maximum * fraction).toFixed(1))}</text>
+            <text x={left} y={12} fill="#94a3b8" fontSize={11}>{logarithmic ? "Moves · log scale" : "Moves"}</text>
+            {ticks.map(({ value, label }) => <g key={value}>
+              <line x1={left} x2={width - right} y1={y(value)} y2={y(value)} stroke="#334155" strokeDasharray="3 5" />
+              <text x={left - 10} y={y(value) + 4} textAnchor="end" fill="#94a3b8" fontSize={11}>{label}</text>
             </g>)}
             <path aria-label="Raw move counts" d={path(false)} fill="none" stroke="#38bdf8" strokeWidth={1.5} />
             {window > 0 ? <path aria-label="Rolling mean" d={path(true)} fill="none" stroke="#fbbf24" strokeWidth={2.5} /> : null}
@@ -94,6 +107,7 @@ export function HistoryActivityChart({ series, isLoading, error, selectedPair, o
           <span className="text-red-300">● Failed: {failed}</span>
           <span>{series.length} saved comparisons</span>
         </div>
+        {logarithmic ? <p className="mt-2 text-xs text-slate-400">Log scale uses log10(1 + moves) to keep zero visible. Axis labels and tooltips show original move counts; the rolling mean is calculated before scaling.</p> : null}
         <p className="mt-2 text-xs text-slate-400">Click a point to inspect its pair. Failures and no-source comparisons break both lines; the mean requires a full window of consecutive successful comparisons. List filters do not affect this graph.</p>
         {active ? <p className="mt-2 text-xs text-sky-200">Selected pair #{active.number} · {active.status === "completed" ? `${active.move_count} detected moves` : active.status.replace(/_/g, " ")}</p> : null}
       </>}

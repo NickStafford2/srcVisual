@@ -177,6 +177,7 @@ function HistorySummary({ status }: { status: HistoryInputProps["status"] }) {
           <div className="text-xs text-slate-400">{label}</div>
         </div>
       ))}
+      {status.moves.atomic_groups !== undefined ? <p className="col-span-full text-xs text-slate-400">{status.moves.detections} reported moves · {status.moves.atomic_groups} atomic groups retained</p> : null}
       <p className="col-span-full text-xs text-slate-400">Starting commit {status.history.newest_commit.slice(0, 12)} · oldest covered {status.history.oldest_analyzed_commit?.slice(0, 12) ?? "none"} · srcMove {status.definition?.executables.srcmove.sha256.slice(0, 12) ?? "unknown"}</p>
       <p
         className="col-span-full text-xs text-slate-400"
@@ -254,7 +255,7 @@ function HistoryPairList({
             <span>
               {pair.analyzable_path_count}/{pair.changed_path_count}
             </span>
-            <span>{pair.move_count}</span>
+            <span title={pair.atomic_move_count !== undefined ? `${pair.atomic_move_count} atomic groups retained` : undefined}>{pair.move_count}</span>
             <span>{pair.elapsed_seconds.toFixed(1)}s</span>
           </button>
         ))}
