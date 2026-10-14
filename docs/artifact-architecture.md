@@ -16,7 +16,7 @@ The source view should behave like a large, aligned GitHub-style diff:
 - ordinary changes and move endpoints are visible by default;
 - moves are visually emphasized;
 - three lines of surrounding context are initially shown;
-- omitted source is represented by explicit expandable gaps;
+- omitted source is represented by explicit expandable gaps; each click reveals up to 20 lines adjacent to visible source, with separate above/below controls between visible blocks;
 - a user can reveal any source range without rerunning srcDiff or srcMove;
 - large comparisons do not require downloading or rendering every source line,
   tree node, and XML line at once.

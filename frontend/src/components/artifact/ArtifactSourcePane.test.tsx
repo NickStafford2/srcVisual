@@ -204,7 +204,7 @@ describe("ArtifactSourcePane", () => {
     const leftGapControl = screen.getByRole("button", {
       name: /Show 10 left/,
     });
-    expect(leftGapControl).toHaveClass("sticky", "left-0");
+    expect(leftGapControl.parentElement).toHaveClass("sticky", "left-0");
     await user.click(leftGapControl);
     await waitFor(() =>
       expect(fetchArtifactSource).toHaveBeenLastCalledWith(
@@ -220,6 +220,93 @@ describe("ArtifactSourcePane", () => {
       ),
     );
   });
+
+  it.each([
+    ["leading", "above", 5570, 5589],
+    ["trailing", "below", 1, 20],
+    ["middle", "above", 5570, 5589],
+    ["middle", "below", 1, 20],
+  ] as const)(
+    "reveals 20 nearby lines from a %s gap (%s)",
+    async (position, direction, start, end) => {
+      const user = userEvent.setup();
+      const gap = {
+        type: "gap" as const,
+        block_id: "large-gap",
+        left: { start_line: 1, end_line: 5589, line_count: 5589 },
+        right: { start_line: 1, end_line: 5589, line_count: 5589 },
+      };
+      const hunk = projection.blocks[1];
+      const blocks =
+        position === "leading"
+          ? [gap, hunk]
+          : position === "trailing"
+            ? [hunk, gap]
+            : [{ ...hunk, block_id: "before" }, gap, hunk];
+      const initial = { ...projection, blocks };
+      const updated = structuredClone(initial);
+      const remaining = updated.blocks.find((block) => block.type === "gap")!;
+      if (remaining.type === "gap") {
+        for (const side of ["left", "right"] as const) {
+          remaining[side].line_count -= 20;
+          if (direction === "above") remaining[side].end_line! -= 20;
+          else remaining[side].start_line! += 20;
+        }
+      }
+      vi.mocked(fetchArtifactSource)
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValue(updated);
+      render(
+        <ArtifactSourcePane
+          artifactId="artifact-1"
+          files={[file]}
+          selectedFileId="f-1"
+          selectedNodeId={null}
+          active
+          focus="moves"
+          inspectedMoveId={null}
+          moves={[]}
+          visibleMoveIds={new Set()}
+          onInspectMove={vi.fn()}
+          onFocusChange={vi.fn()}
+        />,
+      );
+      await user.click(
+        await screen.findByRole("button", {
+          name: `Show 20 left lines ${direction} · 5589 hidden`,
+        }),
+      );
+      const first = { left: { start, end }, right: { start, end } };
+      await waitFor(() =>
+        expect(fetchArtifactSource).toHaveBeenLastCalledWith(
+          "artifact-1",
+          "f-1",
+          "moves",
+          [first],
+        ),
+      );
+      await user.click(
+        await screen.findByRole("button", {
+          name: `Show 20 left lines ${direction} · 5569 hidden`,
+        }),
+      );
+      const shift = direction === "above" ? -20 : 20;
+      await waitFor(() =>
+        expect(fetchArtifactSource).toHaveBeenLastCalledWith(
+          "artifact-1",
+          "f-1",
+          "moves",
+          [
+            first,
+            {
+              left: { start: start + shift, end: end + shift },
+              right: { start: start + shift, end: end + shift },
+            },
+          ],
+        ),
+      );
+    },
+  );
 
   it("renders type1 move fragments with the established move color", async () => {
     const user = userEvent.setup();

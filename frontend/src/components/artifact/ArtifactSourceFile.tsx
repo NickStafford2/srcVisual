@@ -22,6 +22,9 @@ import type {
 import { sourceColumnAt } from "../source-view/code-pane/renderVisibleWhitespace";
 import { buildArtifactLineSegments } from "./artifactSourceSegments";
 
+const CONTEXT_STEP = 20;
+type GapEdge = "start" | "end";
+
 type Props = {
   artifactId: string;
   file: ArtifactFileSummary;
@@ -167,6 +170,7 @@ export function ArtifactSourceFile({
       NonNullable<typeof projection>["blocks"][number],
       { type: "gap" }
     >,
+    edge: GapEdge,
   ) {
     setLoading(true);
     setError(null);
@@ -174,8 +178,12 @@ export function ArtifactSourceFile({
       const nextRanges = [
         ...expandedRanges,
         {
-          left: boundedRange(block.left.start_line, block.left.end_line),
-          right: boundedRange(block.right.start_line, block.right.end_line),
+          left: contextRange(block.left.start_line, block.left.end_line, edge),
+          right: contextRange(
+            block.right.start_line,
+            block.right.end_line,
+            edge,
+          ),
         },
       ];
       const result = await fetchArtifactSource(
@@ -324,6 +332,7 @@ export function ArtifactSourceFile({
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
             showGap={showGap}
+            loading={loading}
           />
           <SourceRevisionPane
             label="Modified source"
@@ -337,6 +346,7 @@ export function ArtifactSourceFile({
             registerMoveSegment={registerMoveSegment}
             unregisterMoveSegment={unregisterMoveSegment}
             showGap={showGap}
+            loading={loading}
           />
           {projection.truncated ? (
             <p className="col-span-2 px-3 py-2 text-amber-300">
@@ -362,6 +372,7 @@ function SourceRevisionPane({
   registerMoveSegment,
   unregisterMoveSegment,
   showGap,
+  loading,
 }: {
   label: string;
   revision: SourceRevision;
@@ -374,11 +385,10 @@ function SourceRevisionPane({
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
   showGap: (
-    block: Extract<
-      ArtifactSourceProjection["blocks"][number],
-      { type: "gap" }
-    >,
+    block: Extract<ArtifactSourceProjection["blocks"][number], { type: "gap" }>,
+    edge: GapEdge,
   ) => Promise<void>;
+  loading: boolean;
 }) {
   const side = revision === "revision-0" ? "left" : "right";
 
@@ -387,16 +397,26 @@ function SourceRevisionPane({
       aria-label={label}
       className="min-w-0 overflow-x-auto border-r border-white/10"
     >
-      {projection.blocks.map((block) =>
+      {projection.blocks.map((block, blockIndex) =>
         block.type === "gap" ? (
-          <button
+          <div
             key={block.block_id}
-            type="button"
-            onClick={() => void showGap(block)}
-            className="sticky left-0 z-20 block h-9 w-full border-y border-sky-400/20 bg-neutral-950 px-3 text-left text-sky-300 hover:bg-slate-900"
+            className="sticky left-0 z-20 flex h-9 w-full border-y border-sky-400/20 bg-neutral-950 text-sky-300"
           >
-            Show {block[side].line_count} {side} hidden lines
-          </button>
+            {gapEdges(projection, blockIndex).map((edge) => (
+              <button
+                key={edge}
+                type="button"
+                disabled={loading || block[side].line_count === 0}
+                onClick={() => void showGap(block, edge)}
+                className="min-w-0 flex-1 px-3 text-left hover:bg-slate-900 disabled:opacity-50"
+              >
+                Show {Math.min(CONTEXT_STEP, block[side].line_count)} {side}{" "}
+                lines {edge === "end" ? "above" : "below"} ·{" "}
+                {block[side].line_count} hidden
+              </button>
+            ))}
+          </div>
         ) : (
           <div key={block.block_id} className="w-max min-w-full">
             {block.rows.map((row, index) => (
@@ -622,9 +642,30 @@ function collectRenderedMoveNodeIds(
   }
 }
 
-function boundedRange(start: number | null, end: number | null) {
+function gapEdges(
+  projection: ArtifactSourceProjection,
+  index: number,
+): GapEdge[] {
+  const before = projection.blocks
+    .slice(0, index)
+    .some((block) => block.type === "hunk");
+  const after = projection.blocks
+    .slice(index + 1)
+    .some((block) => block.type === "hunk");
+  return before
+    ? after
+      ? ["start", "end"]
+      : ["start"]
+    : after
+      ? ["end"]
+      : ["start"];
+}
+
+function contextRange(start: number | null, end: number | null, edge: GapEdge) {
   if (start === null || end === null) return undefined;
-  return { start, end: Math.min(end, start + 1_999) };
+  return edge === "end"
+    ? { start: Math.max(start, end - CONTEXT_STEP + 1), end }
+    : { start, end: Math.min(end, start + CONTEXT_STEP - 1) };
 }
 
 function errorMessage(reason: unknown) {
