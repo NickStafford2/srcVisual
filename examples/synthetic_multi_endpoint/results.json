@@ -1,0 +1,391 @@
+{
+  "results_schema_version": 2,
+  "move_count": 2,
+  "move_group_count": 2,
+  "move_pair_count": 3,
+  "moves": [
+    {
+      "move_id": "c89025cc1",
+      "content_relationship": "type1",
+      "confidence_milli": 1000,
+      "selection_utility": 7000,
+      "matched_units": 7,
+      "identity_status": "exact",
+      "identity_reason": "",
+      "selection_reason": "greedy_utility",
+      "from_xpaths": [
+        "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:delete[1]/diff:delete[1]/src:decl_stmt[1]"
+      ],
+      "to_xpaths": [
+        "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:insert[1]/diff:insert[1]/src:decl_stmt[1]"
+      ],
+      "from_raw_texts": [
+        "int batch_limit = configured_limit + retry_count;"
+      ],
+      "to_raw_texts": [
+        "int batch_limit = configured_limit + retry_count;"
+      ]
+    },
+    {
+      "move_id": "97b1dcdaf",
+      "content_relationship": "type1",
+      "confidence_milli": 333,
+      "selection_utility": 5994,
+      "matched_units": 18,
+      "identity_status": "exact",
+      "identity_reason": "",
+      "selection_reason": "greedy_utility",
+      "from_xpaths": [
+        "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_primary']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_backup']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]"
+      ],
+      "to_xpaths": [
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_primary']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_backup']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_archive']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]"
+      ],
+      "from_raw_texts": [
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);"
+      ],
+      "to_raw_texts": [
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);"
+      ]
+    }
+  ],
+  "reported_move_count": 2,
+  "reported_content_relationships": {
+    "type1": 2,
+    "type2c": 0,
+    "type3": 0
+  },
+  "reported_moves": [
+    {
+      "move_id": "c89025cc1",
+      "report_kind": "atomic",
+      "content_relationship": "type1",
+      "identity_status": "exact",
+      "identity_reason": "",
+      "member_move_ids": [
+        "c89025cc1"
+      ],
+      "from_xpaths": [
+        "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:delete[1]/diff:delete[1]/src:decl_stmt[1]"
+      ],
+      "to_xpaths": [
+        "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:insert[1]/diff:insert[1]/src:decl_stmt[1]"
+      ],
+      "from_raw_texts": [
+        "int batch_limit = configured_limit + retry_count;"
+      ],
+      "to_raw_texts": [
+        "int batch_limit = configured_limit + retry_count;"
+      ]
+    },
+    {
+      "move_id": "97b1dcdaf",
+      "report_kind": "atomic",
+      "content_relationship": "type1",
+      "identity_status": "exact",
+      "identity_reason": "",
+      "member_move_ids": [
+        "97b1dcdaf"
+      ],
+      "from_xpaths": [
+        "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_primary']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_backup']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]"
+      ],
+      "to_xpaths": [
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_primary']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_backup']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_archive']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]"
+      ],
+      "from_raw_texts": [
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);"
+      ],
+      "to_raw_texts": [
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "record_event(\"checkpoint\", session_id, elapsed_ms);"
+      ]
+    }
+  ],
+  "sequence_cluster_count": 0,
+  "sequence_reporting_unit_count": 2,
+  "move_sequences": [
+  ],
+  "annotated_regions": 7,
+  "annotated_region_count": 7,
+  "regions_total": 9,
+  "candidates_total": 7,
+  "groups_total": 2,
+  "group_kinds": {
+    "move_1_to_1": 1,
+    "moves_many": 0,
+    "delete_only": 0,
+    "insert_only": 0,
+    "copy_or_repeat": 1,
+    "ambiguous": 0
+  },
+  "content_relationships": {
+    "type1": 2,
+    "type2c": 0,
+    "type3": 0
+  },
+  "diagnostics": {
+    "schema_version": 4,
+    "candidates": [
+      {
+        "candidate_id": 0,
+        "side": "delete",
+        "filename": "01_sources.cpp",
+        "xpath": "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_primary']/src:block[1]/src:block_content[1]/diff:delete[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    record_event(\"checkpoint\", session_id, elapsed_ms);\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 1,
+        "side": "delete",
+        "filename": "01_sources.cpp",
+        "xpath": "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_primary']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]",
+        "construct": "expr_stmt",
+        "role": "structural_child",
+        "raw_text": "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 2,
+        "side": "delete",
+        "filename": "01_sources.cpp",
+        "xpath": "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_backup']/src:block[1]/src:block_content[1]/diff:delete[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    record_event(\"checkpoint\", session_id, elapsed_ms);\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 3,
+        "side": "delete",
+        "filename": "01_sources.cpp",
+        "xpath": "/src:unit[@filename='01_sources.cpp']/src:function[src:name='process_backup']/src:block[1]/src:block_content[1]/diff:delete[1]/src:expr_stmt[1]",
+        "construct": "expr_stmt",
+        "role": "structural_child",
+        "raw_text": "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 4,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_primary']/src:block[1]/src:block_content[1]/diff:insert[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    record_event(\"checkpoint\", session_id, elapsed_ms);\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 5,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_primary']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "construct": "expr_stmt",
+        "role": "structural_child",
+        "raw_text": "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 6,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_backup']/src:block[1]/src:block_content[1]/diff:insert[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    record_event(\"checkpoint\", session_id, elapsed_ms);\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 7,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_backup']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "construct": "expr_stmt",
+        "role": "structural_child",
+        "raw_text": "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 8,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_archive']/src:block[1]/src:block_content[1]/diff:insert[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    record_event(\"checkpoint\", session_id, elapsed_ms);\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 9,
+        "side": "insert",
+        "filename": "02_targets.cpp",
+        "xpath": "/src:unit[@filename='02_targets.cpp']/src:function[src:name='inspect_archive']/src:block[1]/src:block_content[1]/diff:insert[1]/src:expr_stmt[1]",
+        "construct": "expr_stmt",
+        "role": "structural_child",
+        "raw_text": "record_event(\"checkpoint\", session_id, elapsed_ms);",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 9
+      },
+      {
+        "candidate_id": 10,
+        "side": "delete",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:delete[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    int batch_limit = configured_limit + retry_count;\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 7
+      },
+      {
+        "candidate_id": 11,
+        "side": "delete",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:delete[1]/diff:delete[1]/src:decl_stmt[1]",
+        "construct": "decl_stmt",
+        "role": "structural_child",
+        "raw_text": "int batch_limit = configured_limit + retry_count;",
+        "type3_eligible": true,
+        "line_units": 1,
+        "token_units": 7
+      },
+      {
+        "candidate_id": 12,
+        "side": "delete",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:delete[1]/diff:delete[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "int batch_limit = configured_limit + retry_count;",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 7
+      },
+      {
+        "candidate_id": 13,
+        "side": "insert",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:insert[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "    int batch_limit = configured_limit + retry_count;\n",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 7
+      },
+      {
+        "candidate_id": 14,
+        "side": "insert",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:insert[1]/diff:insert[1]/src:decl_stmt[1]",
+        "construct": "decl_stmt",
+        "role": "structural_child",
+        "raw_text": "int batch_limit = configured_limit + retry_count;",
+        "type3_eligible": true,
+        "line_units": 1,
+        "token_units": 7
+      },
+      {
+        "candidate_id": 15,
+        "side": "insert",
+        "filename": "03_local.cpp",
+        "xpath": "/src:unit[@filename='03_local.cpp']/src:function[src:name='prepare_batch']/src:block[1]/src:block_content[1]/diff:insert[1]/diff:insert[1]",
+        "construct": "",
+        "role": "single_child_wrapper",
+        "raw_text": "int batch_limit = configured_limit + retry_count;",
+        "type3_eligible": false,
+        "line_units": 1,
+        "token_units": 7
+      }
+    ],
+    "type2b_groups": [
+    ],
+    "type3_pairs": [
+    ],
+    "correspondences": [
+      {
+        "delete_candidate_id": 11,
+        "insert_candidate_id": 14,
+        "correspondence_kind": "type1",
+        "cardinality": "one_to_one",
+        "current_result": "move",
+        "shadow_change": "relocated",
+        "classification_reason": "crossed_stable_sibling",
+        "identity_status": "exact",
+        "file_observation": "same",
+        "semantic_container_observation": "same_mapped",
+        "anchor_interval_observation": "crossed",
+        "relative_order_observation": "crossed_stable_sibling",
+        "ancestor_observation": "same",
+        "carried_by_parent": false,
+        "parent_delete_candidate_id": null,
+        "parent_insert_candidate_id": null,
+        "before_context": {
+          "revision_file": "03_local.cpp",
+          "semantic_container_id": "03_local.cpp:580:function",
+          "semantic_container_label": "function:prepare_batch",
+          "previous_common_anchor_id": "03_local.cpp:580:function:begin",
+          "next_common_anchor_id": "03_local.cpp:580:function:anchor:657",
+          "meaningful_ancestors": [
+            "block"
+          ],
+          "ancestor_summary_interpretable": true,
+          "structural_region_id": "block:594",
+          "structural_region_mapped": true,
+          "common_sibling_prefix_count": 0,
+          "common_sibling_suffix_begin": 0,
+          "anchor_region_id": "block:594"
+        },
+        "after_context": {
+          "revision_file": "03_local.cpp",
+          "semantic_container_id": "03_local.cpp:580:function",
+          "semantic_container_label": "function:prepare_batch",
+          "previous_common_anchor_id": "03_local.cpp:580:function:anchor:693",
+          "next_common_anchor_id": "03_local.cpp:580:function:anchor:766",
+          "meaningful_ancestors": [
+            "block"
+          ],
+          "ancestor_summary_interpretable": true,
+          "structural_region_id": "block:594",
+          "structural_region_mapped": true,
+          "common_sibling_prefix_count": 3,
+          "common_sibling_suffix_begin": 3,
+          "anchor_region_id": "block:594"
+        }
+      }
+    ]
+  }
+}
