@@ -95,9 +95,10 @@ through `compose.dev.yaml`. In development, the API source is also mounted with 
 Python dependency and native dependency edits still require rebuilding the image;
 the history worker continues using its packaged code. Outside development,
 application changes require rebuilding the packaged application. The checked-in
-Compose configuration makes the analyzed Notepad++ and SQLite reference
+Compose configuration makes the analyzed Notepad++, SQLite, OpenCV, and Linux reference
 repositories available in the History selector, with Notepad++ selected by
-default. Their source worktrees are read-only; only their `.git` and `.srcmove`
+default. The Linux entry is labeled **Linux (kernel/)** because its saved
+analysis selects that directory. Their source worktrees are read-only; only their `.git` and `.srcmove`
 directories are writable so the `srcmove-history` CLI can manage its own
 operation state and saved comparison artifacts. Additional repositories must be
 mounted into both services and added to the allow-listed
