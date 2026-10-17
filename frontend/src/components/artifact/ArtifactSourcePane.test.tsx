@@ -308,7 +308,10 @@ describe("ArtifactSourcePane", () => {
     },
   );
 
-  it("renders type1 move fragments with the established move color", async () => {
+  it.each([false, true])("renders atomic move highlights and connectors (producer report=%s)", async (producerReport) => {
+    const reportMove = producerReport
+      ? { ...activeMove, move_id: "item:move-1", report_kind: "atomic" as const, member_move_ids: ["move-1"] }
+      : activeMove;
     const user = userEvent.setup();
     const onInspectMove = vi.fn();
     const scrollIntoView = vi.fn();
@@ -398,9 +401,9 @@ describe("ArtifactSourcePane", () => {
         selectedNodeId={activeMove.from_node_ids[0]}
         active
         focus="moves"
-        inspectedMoveId={activeMove.move_id}
-        moves={[activeMove]}
-        visibleMoveIds={new Set(["move-1"])}
+        inspectedMoveId={reportMove.move_id}
+        moves={[reportMove]}
+        visibleMoveIds={new Set([reportMove.move_id])}
         onInspectMove={onInspectMove}
         onFocusChange={vi.fn()}
       />,
@@ -426,7 +429,18 @@ describe("ArtifactSourcePane", () => {
     ).toHaveClass("bg-black");
     await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
     expect(onInspectMove).toHaveBeenCalledWith(
-      "move-1",
+      reportMove.move_id,
+      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
+    );
+    await waitFor(() => {
+      const connector = document.querySelector("svg g[data-move-id]");
+      expect(connector).toHaveAttribute("data-move-id", reportMove.move_id);
+      expect(connector?.querySelector('[data-move-overlay-line="true"]')).not.toBeNull();
+    });
+    const connectorHit = document.querySelector('[data-move-overlay-hit="true"]')!;
+    await user.click(connectorHit);
+    expect(onInspectMove).toHaveBeenLastCalledWith(
+      reportMove.move_id,
       expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
     );
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());

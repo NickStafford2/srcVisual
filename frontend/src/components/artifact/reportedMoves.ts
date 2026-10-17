@@ -11,6 +11,15 @@ export function reportIdsByMember(moves: ArtifactMoveSummary[]): Map<string, str
 
 // Keep one connector per exact member pair; never construct an all-to-all group.
 export function expandReportEndpoints(move: ArtifactMoveSummary): ArtifactMoveSummary[] {
+  if (move.report_kind === "atomic") {
+    const members = move.member_move_ids;
+    if (!members || members.length !== 1) {
+      throw new Error("Atomic move report requires exactly one XML group.");
+    }
+    // Source spans and connector registrations use the retained XML group ID.
+    // Keep every endpoint in that group, including unresolved/copy partners.
+    return [{ ...move, move_id: members[0] }];
+  }
   if (move.report_kind !== "ordered_sequence") return [move];
   const members = move.member_move_ids;
   if (!members || members.length !== move.from_node_ids.length || members.length !== move.to_node_ids.length) {

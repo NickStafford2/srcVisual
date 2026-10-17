@@ -15,6 +15,25 @@ describe("compound move reports", () => {
     ]);
     expect(reportIdsByMember([report]).get("b")).toBe("sequence:a");
   });
+  it.each([
+    { from_node_ids: ["x", "y"], to_node_ids: ["z"] },
+    { from_node_ids: ["x"], to_node_ids: ["y", "z"] },
+  ])("maps atomic report identity to its complete XML group endpoints: %j", (endpoints) => {
+    const atomic: ArtifactMoveSummary = {
+      move_id: "item:a", report_kind: "atomic", member_move_ids: ["a"],
+      content_relationship: "type1", ...endpoints,
+    };
+    expect(expandReportEndpoints(atomic)).toEqual([{ ...atomic, move_id: "a" }]);
+    expect(reportIdsByMember([atomic]).get("a")).toBe("item:a");
+  });
+
+  it("rejects atomic reports without exactly one retained XML group", () => {
+    const atomic: ArtifactMoveSummary = { ...report, report_kind: "atomic" };
+    for (const members of [undefined, [], ["a", "b"]]) {
+      expect(() => expandReportEndpoints({ ...atomic, member_move_ids: members })).toThrow("exactly one XML group");
+    }
+  });
+
   it("retains legacy equivalence groups and rejects incomplete ordered reports", () => {
     const atomic: ArtifactMoveSummary = { move_id: "a", content_relationship: "type1", from_node_ids: ["x", "y"], to_node_ids: ["z"] };
     expect(expandReportEndpoints(atomic)).toEqual([atomic]);
