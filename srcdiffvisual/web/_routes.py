@@ -85,9 +85,9 @@ def artifact_correspondences(artifact_id: str) -> tuple[dict[str, object], int]:
     )
 
 
-@api.get("/artifacts/<artifact_id>/correspondences/<int:index>")
+@api.get("/artifacts/<artifact_id>/correspondences/<path:index>")
 def artifact_correspondence(
-    artifact_id: str, index: int
+    artifact_id: str, index: str
 ) -> tuple[dict[str, object], int]:
     return _artifact_response(
         lambda: read_correspondence(

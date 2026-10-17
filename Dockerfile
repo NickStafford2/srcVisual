@@ -98,7 +98,7 @@ ENV PATH="/opt/venv/bin:/opt/srcML-install/bin:/opt/srcDiff/bin:/opt/srcMove/bin
 ENV LD_LIBRARY_PATH="/opt/srcML-install/lib:/opt/srcDiff/bin:/opt/srcReader/bin"
 ENV SRCDIFFVISUAL_FRONTEND_DIST="/app/frontend/dist"
 ENV SRCDIFFVISUAL_EXAMPLES_DIR="/app/examples"
-ENV PYTHONPATH="/opt/bigmovebench"
+ENV PYTHONPATH="/opt/bigmovebench:/opt/srcMove"
 ENV PORT=5000
 
 RUN apt-get update && apt-get install --no-install-recommends -y \

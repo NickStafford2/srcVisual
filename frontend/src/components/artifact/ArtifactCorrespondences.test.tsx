@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { ArtifactCorrespondences, correspondenceColor } from "./ArtifactCorrespondences";
 const pair = {
-  id: 3,
+  id: "pair:3",
   kind: "type2c",
   classification: "stationary",
   outcome: "not_move",
@@ -13,7 +13,7 @@ const pair = {
   after_file: "new.cpp",
 };
 const page = {
-  schema_version: 1,
+  schema_version: 2,
   available: true,
   items: [pair],
   total: 1,
@@ -35,10 +35,10 @@ it("loads only on demand, filters nonmoves and shows selected candidate evidence
     async (input: string) =>
       new Response(
         JSON.stringify(
-          input.endsWith("/3")
+          input.endsWith("/pair%3A3")
             ? {
-                schema_version: 1,
-                id: 3,
+                schema_version: 2,
+                id: "pair:3",
                 before: {
                   candidate_id: 0,
                   filename: "old.cpp",
@@ -70,7 +70,7 @@ it("loads only on demand, filters nonmoves and shows selected candidate evidence
   );
   expect(fetchMock).not.toHaveBeenCalled();
   rerender(<ArtifactCorrespondences artifactId="artifact" active />);
-  await user.click(await screen.findByRole("button", { name: /Pair 4/ }));
+  await user.click(await screen.findByRole("button", { name: /Pair pair:3/ }));
   expect(await screen.findByText("before();")).toBeInTheDocument();
   expect(screen.getByText("after();")).toBeInTheDocument();
   expect(screen.getAllByText("Not selected as a move").length).toBeGreaterThan(

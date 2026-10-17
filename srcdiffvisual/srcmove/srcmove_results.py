@@ -79,39 +79,27 @@ def validate_classification_fields(value: Any) -> None:
             validate_classification_fields(_item)
 
 
-def validate_producer_results(move_results: dict[str, Any]) -> None:
+def validate_producer_results(
+    move_results: dict[str, Any], *, allow_visualization_metadata: bool = False
+) -> None:
+    from srcmove_runtime.results_schema import validate_results
+
     if not isinstance(move_results, dict):
         raise ValueError("srcMove results must contain an object.")
-    validate_classification_fields(move_results)
-    if move_results.get("results_schema_version") != 2:
-        raise ValueError(
-            "Unsupported srcMove results schema; expected results_schema_version 2. "
-            "Preserve old evidence and regenerate results with the rebuilt executable."
-        )
-    _moves = move_results.get("moves")
-    if not isinstance(_moves, list):
-        raise ValueError("srcMove results must contain a moves list.")
-    _counts = dict.fromkeys(sorted(CONTENT_RELATIONSHIPS), 0)
-    for _move in _moves:
-        if (
-            not isinstance(_move, dict)
-            or not isinstance(_move.get("content_relationship"), str)
-            or _move["content_relationship"] not in CONTENT_RELATIONSHIPS
-        ):
-            raise ValueError(
-                "Each reported move requires content_relationship type1, type2c, or type3."
-            )
-        _counts[_move["content_relationship"]] += 1
-    _reported = move_results.get("content_relationships")
-    if (
-        not isinstance(_reported, dict)
-        or set(_reported) != CONTENT_RELATIONSHIPS
-        or any(type(_count) is not int or _count < 0 for _count in _reported.values())
-        or _reported != _counts
-    ):
-        raise ValueError(
-            "srcMove content_relationships must count all reported groups by classification."
-        )
+    validate_results({_key: _value for _key, _value in move_results.items()
+                      if not allow_visualization_metadata or _key != "visualization_candidate_locations"})
+
+
+class _LocatorUnits(dict[str, int]):
+    """Filename index plus native XML identity for exact locator remapping."""
+
+    tree: Any
+    xml: bytes
+    paths: dict[Any, str]
+    namespaces: dict[str, str] | None = None
+    xml_namespaces: dict[str, str]
+    ambiguous_prefixes: set[str]
+    internal_paths: set[str]
 
 
 def build_filename_to_unit_index(moved_srcdiff_xml: str) -> dict[str, int]:
@@ -136,14 +124,63 @@ def build_filename_to_unit_index(moved_srcdiff_xml: str) -> dict[str, int]:
     for filename in duplicate_filenames:
         del filename_to_unit_index[filename]
 
-    return filename_to_unit_index
+    from lxml import etree
+
+    _index = _LocatorUnits(filename_to_unit_index)
+    _index.xml = moved_srcdiff_xml.encode()
+    _index.tree = etree.fromstring(
+        moved_srcdiff_xml.encode(), etree.XMLParser(resolve_entities=False, no_network=True)
+    )
+    _index.xml_namespaces = {"src": "http://www.srcML.org/srcML/src", "diff": "http://www.srcML.org/srcDiff", "mv": "http://www.srcML.org/srcMove"}
+    _index.ambiguous_prefixes = set()
+    for _node in _index.tree.iter():
+        for _prefix, _uri in _node.nsmap.items():
+            if _prefix:
+                if _prefix in _index.xml_namespaces and _index.xml_namespaces[_prefix] != _uri:
+                    _index.ambiguous_prefixes.add(_prefix)
+                else:
+                    _index.xml_namespaces[_prefix] = _uri
+    _index.paths = {}
+    _native_units = get_srcdiff_file_unit_elements(_index.tree)
+
+    def _walk(_node: Any, _path: str) -> None:
+        _index.paths[_node] = _path
+        _counts: dict[str, int] = {}
+        from srcdiffvisual.core.namespaces import prefixed_name
+        for _child in _node:
+            if not isinstance(_child.tag, str):
+                continue
+            _name = prefixed_name(_child.tag)
+            _counts[_name] = _counts.get(_name, 0) + 1
+            _walk(_child, f"{_path}/{_name}[{_counts[_name]}]")
+
+    for _number, _unit in enumerate(_native_units, 1):
+        _walk(_unit, f"/src:unit[{_number}]")
+    _index.internal_paths = set(_index.paths.values())
+    return _index
 
 
 def normalize_srcmove_xpath(
     xpath: str,
     *,
     filename_to_unit_index: dict[str, int],
+    allow_internal: bool = False,
 ) -> str:
+    if isinstance(filename_to_unit_index, _LocatorUnits):
+        from srcmove_runtime.results_schema import resolve_locator
+        if allow_internal and xpath in filename_to_unit_index.internal_paths:
+            return xpath
+        if filename_to_unit_index.namespaces is not None:
+            _namespaces = filename_to_unit_index.namespaces
+        else:
+            _namespaces = filename_to_unit_index.xml_namespaces
+            _used = set(re.findall(r"([A-Za-z_][\w.-]*):[A-Za-z_]", re.sub(r"'[^']*'|\"[^\"]*\"", "", xpath)))
+            if _used & filename_to_unit_index.ambiguous_prefixes:
+                raise ValueError("Unsupported ambiguous XML locator namespace")
+        _node = resolve_locator(filename_to_unit_index.tree, xpath, _namespaces)
+        if _node not in filename_to_unit_index.paths:
+            raise ValueError(f"Locator does not identify a displayed file endpoint: {xpath}")
+        return filename_to_unit_index.paths[_node]
     match = FILENAME_UNIT_PATTERN.match(xpath)
 
     if match is None:
@@ -182,11 +219,13 @@ def normalize_srcmove_xpath_tuple(
     xpaths: tuple[str, ...],
     *,
     filename_to_unit_index: dict[str, int],
+    allow_internal: bool = False,
 ) -> tuple[str, ...]:
     return tuple(
         normalize_srcmove_xpath(
             xpath,
             filename_to_unit_index=filename_to_unit_index,
+            allow_internal=allow_internal,
         )
         for xpath in xpaths
     )
@@ -196,13 +235,48 @@ def parse_srcmove_result_moves(
     move_results: dict[str, Any],
     *,
     filename_to_unit_index: dict[str, int],
+    allow_visualization_metadata: bool = False,
 ) -> tuple[SrcMoveResultMove, ...]:
     assert isinstance(move_results, dict), (
         f"srcMove results must be a dict; got {type(move_results).__name__}."
     )
 
     validate_classification_fields(move_results)
-    moves_value = move_results.get("moves")
+    if isinstance(filename_to_unit_index, _LocatorUnits) and "producer_metadata" in move_results:
+        _context = move_results["producer_metadata"].get("xpath_context")
+        if _context is not None:
+            filename_to_unit_index.namespaces = _context["namespaces"]
+    if "results_schema_version" in move_results:
+        from srcmove_runtime.results_schema import atomic_moves
+        validate_producer_results(move_results, allow_visualization_metadata=allow_visualization_metadata)
+        if isinstance(filename_to_unit_index, _LocatorUnits):
+            from lxml import etree
+            from srcmove_runtime.results_schema import resolve_locator
+            _namespaces = move_results["xpath_context"]["namespaces"]
+            from srcmove_runtime.results_xml import validate_sequences
+            validate_sequences(filename_to_unit_index.xml, etree.ElementTree(filename_to_unit_index.tree), move_results, resolve_locator, check_parent_ids=False)
+            for _group in move_results["atomic_move_groups"]:
+                for _side, _revision in (("original", 0), ("modified", 1)):
+                    for _endpoint in _group[_side]:
+                        _node = resolve_locator(filename_to_unit_index.tree, _endpoint["xpath"], _namespaces)
+                        if _endpoint["construct"] is not None:
+                            _local = etree.QName(_node).localname
+                            if _endpoint["construct"].split(":")[-1] != _local:
+                                raise ValueError("Endpoint construct differs from native XML")
+                        _unit = _node
+                        while _unit is not None and etree.QName(_unit).localname != "unit":
+                            _unit = _unit.getparent()
+                        _filename = _unit.get("filename") if _unit is not None else None
+                        if _filename is not None and "|" in _filename:
+                            _parts = _filename.split("|", 1)
+                            _filename = _parts[_revision] or None
+                        if _endpoint["revision_file"] is not None and _endpoint["revision_file"] != _filename:
+                            raise ValueError("Endpoint revision file differs from native XML")
+        moves_value = atomic_moves(move_results)
+        if isinstance(filename_to_unit_index, _LocatorUnits):
+            filename_to_unit_index.namespaces = move_results["xpath_context"]["namespaces"]
+    else:
+        moves_value = move_results.get("moves")
     assert isinstance(moves_value, list), "srcMove results must contain moves list."
 
     parsed_moves: list[SrcMoveResultMove] = []
@@ -234,10 +308,12 @@ def parse_srcmove_result_moves(
         from_xpaths = normalize_srcmove_xpath_tuple(
             expect_string_tuple(value, "from_xpaths", index),
             filename_to_unit_index=filename_to_unit_index,
+            allow_internal="results_schema_version" not in move_results,
         )
         to_xpaths = normalize_srcmove_xpath_tuple(
             expect_string_tuple(value, "to_xpaths", index),
             filename_to_unit_index=filename_to_unit_index,
+            allow_internal="results_schema_version" not in move_results,
         )
         from_raw_texts = expect_string_tuple(value, "from_raw_texts", index)
         to_raw_texts = expect_string_tuple(value, "to_raw_texts", index)

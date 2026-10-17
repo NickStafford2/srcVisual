@@ -4,7 +4,7 @@ FRONTEND_CHECK_IMAGE ?= srcdiffvisual-frontend-check:local
 PYTEST_ARGS ?=
 
 WORKSPACE_ROOT := $(abspath ..)
-BACKEND_RUN = $(DOCKER) run --rm -v "$(CURDIR):/app" -w /app $(BACKEND_IMAGE)
+BACKEND_RUN = $(DOCKER) run --rm -v "$(CURDIR):/app" -v "$(WORKSPACE_ROOT)/srcMove/srcmove_runtime:/opt/srcMove/srcmove_runtime:ro" -v "$(WORKSPACE_ROOT)/srcMove/build/srcMove:/opt/srcMove/bin/srcMove:ro" -e PYTHONPATH=/opt/bigmovebench:/opt/srcMove -w /app $(BACKEND_IMAGE)
 DEV_COMPOSE = $(DOCKER) compose -f compose.yaml -f compose.dev.yaml
 
 .DEFAULT_GOAL := help

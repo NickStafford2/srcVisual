@@ -115,3 +115,16 @@ cached runs and old ZIPs in their original locations; no migration or overwrite
 is performed by the viewer. Source view publishes artifact schema 4 with manifest
 and move projection schema 2. Retained results are evidence from their original
 implementation and are not results of this update.
+
+Portable review cases separate execution receipts from producer evidence.
+`results.json` contains strict schema-3 results for admitted cases;
+`review.json.results` retains the complete receipt, including the explicit
+benchmark metadata fields. Import checks that extracting admitted evidence
+from that receipt exactly reproduces `results.json`. Visualization uses only
+that admitted evidence and leaves the inspected receipt intact.
+
+A case explicitly marked `result_evidence.status: nonvisualizable` retains its
+raw forensic results and admission error for inspection. Opening its Source
+visualization returns that error without running a detector or substituting an
+empty successful result. Invalid results without this explicit forensic status
+remain rejected.

@@ -6,7 +6,7 @@ import type { Pair } from "./ArtifactCorrespondences";
 afterEach(cleanup);
 it("uses type colors, corner routes and clickable swatches below moves", async () => {
   const user = userEvent.setup();
-  const pair = { id: 2, kind: "type2c" } as Pair;
+  const pair = { id: "pair:2", kind: "type2c" } as Pair;
   const inspect = vi.fn();
   const { container } = render(
     <CorrespondenceOverlay
@@ -15,7 +15,7 @@ it("uses type colors, corner routes and clickable swatches below moves", async (
       groups={[
         {
           key: "c",
-          moveId: "correspondence-2",
+          moveId: "correspondence-pair:2",
           boxes: [
             {
               key: "l",
@@ -51,7 +51,7 @@ it("uses type colors, corner routes and clickable swatches below moves", async (
     "M 100 23 C 100 11, 200 61, 200 73",
   );
   await user.click(
-    screen.getByRole("button", { name: "Inspect correspondence 3 before" }),
+    screen.getByRole("button", { name: "Inspect correspondence pair:2 before" }),
   );
   expect(inspect).toHaveBeenCalledWith(pair, expect.any(Object));
 });

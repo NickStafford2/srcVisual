@@ -24,53 +24,23 @@ def _read_diagnostics(root: Path, artifact_id: str) -> dict[str, Any] | None:
     _diagnostics = _producer.get("diagnostics")
     if _diagnostics is None:
         return None
-    if not isinstance(_diagnostics, dict) or _diagnostics.get("schema_version") != 4:
-        raise ArtifactIntegrityError(
-            "Unsupported correspondence diagnostics schema; expected version 4. Regenerate with the current srcMove."
-        )
-    _candidates = _diagnostics.get("candidates")
-    _pairs = _diagnostics.get("correspondences")
-    if not isinstance(_candidates, list) or not isinstance(_pairs, list):
-        raise ArtifactIntegrityError("Invalid correspondence diagnostics collections.")
+    from srcdiffvisual.srcmove.srcmove_results import validate_producer_results
+    _contract = { _key: _value for _key, _value in _producer.items()
+                  if _key != "visualization_candidate_locations" }
+    try:
+        validate_producer_results(_contract)
+    except ValueError as _error:
+        raise ArtifactIntegrityError(str(_error)) from _error
+    _selected = {_endpoint["candidate_id"]: _endpoint
+                 for _group in _producer["atomic_move_groups"]
+                 for _side in ("original", "modified") for _endpoint in _group[_side]}
     _by_id = {}
-    for _candidate in _candidates:
-        if (
-            not isinstance(_candidate, dict)
-            or type(_candidate.get("candidate_id")) is not int
-        ):
-            raise ArtifactIntegrityError("Invalid diagnostic candidate identity.")
+    for _candidate in _diagnostics["candidates"]:
         _id = _candidate["candidate_id"]
-        if _id in _by_id or any(
-            not isinstance(_candidate.get(_key), str)
-            for _key in ("side", "filename", "xpath", "construct", "raw_text")
-        ):
-            raise ArtifactIntegrityError("Invalid or duplicate diagnostic candidate.")
-        _by_id[_id] = _candidate
-    for _pair in _pairs:
-        if not isinstance(_pair, dict) or any(
-            not isinstance(_pair.get(_key), str)
-            for _key in (
-                "correspondence_kind",
-                "shadow_change",
-                "current_result",
-                "classification_reason",
-                "cardinality",
-            )
-        ):
-            raise ArtifactIntegrityError("Invalid diagnostic correspondence.")
-        for _key, _side in (
-            ("delete_candidate_id", "delete"),
-            ("insert_candidate_id", "insert"),
-        ):
-            _id = _pair.get(_key)
-            if (
-                type(_id) is not int
-                or _id not in _by_id
-                or _by_id[_id]["side"] != _side
-            ):
-                raise ArtifactIntegrityError(
-                    "Correspondence references a missing or incorrect endpoint."
-                )
+        _endpoint = (_selected[_id] if _candidate["selected_group_id"] is not None
+                     else _candidate["endpoint"])
+        _by_id[_id] = {**_candidate, **_endpoint, "filename": _endpoint["revision_file"]}
+    _pairs = _diagnostics["correspondences"]
     with closing(_connect_readonly(_path / "index.sqlite")) as _db:
         _files = dict(_db.execute("SELECT unit_id, file_id FROM files"))
     _locations = {}
@@ -99,7 +69,7 @@ def read_correspondences(
         raise ValueError("Invalid correspondence page or search length.")
     _data = _read_diagnostics(artifact_root, artifact_id)
     _response = {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_id": artifact_id,
         "available": _data is not None,
         "items": [],
@@ -113,37 +83,37 @@ def read_correspondences(
     _pairs = _data["pairs"]
     _candidates = _data["candidates"]
     _items = []
-    for _index, _pair in enumerate(_pairs):
-        _before = _candidates[_pair["delete_candidate_id"]]
-        _after = _candidates[_pair["insert_candidate_id"]]
-        if kind and _pair["correspondence_kind"] != kind:
+    for _pair in _pairs:
+        _before = _candidates[_pair["original_candidate_id"]]
+        _after = _candidates[_pair["modified_candidate_id"]]
+        if kind and _pair["content_relationship"] != kind:
             continue
-        if classification and _pair["shadow_change"] != classification:
+        if classification and _pair["location"]["classification"] != classification:
             continue
-        if outcome and _pair["current_result"] != outcome:
+        if outcome and _pair["selection"]["status"] != outcome:
             continue
         _search = " ".join(
             [
-                str(_index + 1),
-                _before["filename"],
-                _after["filename"],
-                _before["construct"],
-                _after["construct"],
-                _pair["classification_reason"],
+                _pair["id"],
+                _before["filename"] or "",
+                _after["filename"] or "",
+                _before["construct"] or "",
+                _after["construct"] or "",
+                _pair["location"]["reason"],
             ]
         )
         if query.casefold() not in _search.casefold():
             continue
         _items.append(
             {
-                "id": _index,
-                "kind": _pair["correspondence_kind"],
-                "classification": _pair["shadow_change"],
-                "outcome": _pair["current_result"],
-                "reason": _pair["classification_reason"],
-                "cardinality": _pair["cardinality"],
-                "before_file": _before["filename"],
-                "after_file": _after["filename"],
+                "id": _pair["id"],
+                "kind": _pair["content_relationship"],
+                "classification": _pair["location"]["classification"],
+                "outcome": _pair["selection"]["status"],
+                "reason": _pair["location"]["reason"],
+                "cardinality": "1-to-1",
+                "before_file": _before["filename"] or "",
+                "after_file": _after["filename"] or "",
                 "before_location": _location(_data, _before["candidate_id"]),
                 "after_location": _location(_data, _after["candidate_id"]),
             }
@@ -154,21 +124,21 @@ def read_correspondences(
         items=_items[offset : offset + limit],
         next_offset=offset + limit if offset + limit < len(_items) else None,
         filters={
-            "kinds": sorted({_p["correspondence_kind"] for _p in _pairs}),
-            "classifications": sorted({_p["shadow_change"] for _p in _pairs}),
-            "outcomes": sorted({_p["current_result"] for _p in _pairs}),
+            "kinds": sorted({_p["content_relationship"] for _p in _pairs}),
+            "classifications": sorted({_p["location"]["classification"] for _p in _pairs}),
+            "outcomes": sorted({_p["selection"]["status"] for _p in _pairs}),
         },
     )
     return _response
 
 
 def read_correspondence(
-    *, artifact_root: Path, artifact_id: str, index: int
+    *, artifact_root: Path, artifact_id: str, index: str
 ) -> dict[str, Any]:
     _data = _read_diagnostics(artifact_root, artifact_id)
-    if _data is None or not 0 <= index < len(_data["pairs"]):
+    _pair = next((_pair for _pair in _data["pairs"] if _pair["id"] == index), None) if _data else None
+    if _pair is None:
         raise FileNotFoundError("Correspondence does not exist in this artifact.")
-    _pair = _data["pairs"][index]
 
     def _endpoint(candidate_id: int) -> dict[str, Any]:
         _candidate = _data["candidates"][candidate_id]
@@ -182,12 +152,12 @@ def read_correspondence(
         }
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_id": artifact_id,
         "id": index,
         "evidence": _pair,
-        "before": _endpoint(_pair["delete_candidate_id"]),
-        "after": _endpoint(_pair["insert_candidate_id"]),
+        "before": _endpoint(_pair["original_candidate_id"]),
+        "after": _endpoint(_pair["modified_candidate_id"]),
     }
 
 

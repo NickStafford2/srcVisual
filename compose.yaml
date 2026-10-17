@@ -10,7 +10,7 @@ services:
       - "127.0.0.1:5000:5000"
     environment:
       PORT: "5000"
-      PYTHONPATH: "/opt/bigmovebench"
+      PYTHONPATH: "/opt/bigmovebench:/opt/srcMove"
       SRCDIFFVISUAL_BIGMOVEBENCH_RESULTS_ROOT: "/bigmovebench/results"
       SRCDIFFVISUAL_BIGMOVEBENCH_CACHE_ROOT: "/bigmovebench/cache"
       # Historical comparisons can legitimately take several minutes.

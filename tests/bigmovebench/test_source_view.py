@@ -25,8 +25,8 @@ def _source(archive, zero):
                 del _element.attrib[_key]
     if zero:
         _results = {"move_count": 0, "moves": []}
-    _results["results_schema_version"] = 2
-    _results["content_relationships"] = {"type1": 0, "type2c": 0 if zero else len(_results["moves"]), "type3": 0}
+    from tests.schema3_fixtures import schema3_results
+    _results = schema3_results(_results['moves'])
     return {"schema_version": 2, "srcdiff_xml": ET.tostring(_root, encoding="unicode"),
             "results": _results, "case": {"category": "type2c", "ordinal": 1, "attempt_id": "retained-attempt", "outcome": "srcmove_miss" if zero else "oracle_pass"},
             "tool_sha256": {"srcdiff": "d" * 64, "srcmove": "e" * 64}}
@@ -61,11 +61,11 @@ def test_saved_case_opens_canonical_artifact_without_detector(monkeypatch, tmp_p
 
 def test_replay_rejects_mismatched_text_and_missing_paths():
     _source_record = _source(False, False)
-    _source_record["results"]["moves"][0]["from_raw_texts"][0] = "wrong text"
+    _source_record["results"]["atomic_move_groups"][0]["original"][0]["raw_text"] = "wrong text"
     with pytest.raises(ValueError, match="text differs"):
         annotate_retained_results(_source_record["srcdiff_xml"], _source_record["results"])
-    _source_record["results"]["moves"][0]["from_xpaths"][0] = "/src:unit[99]/function[1]"
-    with pytest.raises(ValueError, match="no file unit"):
+    _source_record["results"]["atomic_move_groups"][0]["original"][0]["xpath"] = "/src:unit[99]/function[1]"
+    with pytest.raises(ValueError, match="resolve exactly once"):
         annotate_retained_results(_source_record["srcdiff_xml"], _source_record["results"])
 
 

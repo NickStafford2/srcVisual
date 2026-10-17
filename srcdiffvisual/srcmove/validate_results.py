@@ -22,13 +22,15 @@ def validate_srcmove_results_match_xml(
     include_skipped_tags: bool,
     allow_additional_xml_moves: bool = False,
     require_producer_contract: bool = True,
+    allow_visualization_metadata: bool = False,
 ) -> None:
     if require_producer_contract:
-        validate_producer_results(move_results)
+        validate_producer_results(move_results, allow_visualization_metadata=allow_visualization_metadata)
     _filename_to_unit_index = build_filename_to_unit_index(moved_srcdiff_xml)
     _result_moves = parse_srcmove_result_moves(
         move_results,
         filename_to_unit_index=_filename_to_unit_index,
+        allow_visualization_metadata=allow_visualization_metadata,
     )
     _xml_regions = collect_xml_move_regions(
         moved_srcdiff_xml=moved_srcdiff_xml,
@@ -36,7 +38,9 @@ def validate_srcmove_results_match_xml(
         filename_to_unit_index=_filename_to_unit_index,
     )
 
-    assert move_results.get("move_count") == len(_result_moves), (
+    _count = (move_results["summary"]["atomic_move_group_count"]
+              if "results_schema_version" in move_results else move_results.get("move_count"))
+    assert _count == len(_result_moves), (
         "srcMove results move_count does not match moves length. "
         f"move_count={move_results.get('move_count')!r}, "
         f"moves length={len(_result_moves)}."

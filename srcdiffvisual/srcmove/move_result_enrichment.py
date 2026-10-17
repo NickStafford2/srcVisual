@@ -65,9 +65,10 @@ def merge_producer_move_results(
     reconstructed_results: dict[str, Any],
     producer_results: dict[str, Any],
 ) -> dict[str, Any]:
-    validate_producer_results(producer_results)
+    validate_producer_results(producer_results, allow_visualization_metadata=True)
     _reconstructed_moves = reconstructed_results.get("moves")
-    _producer_moves = producer_results.get("moves")
+    from srcmove_runtime.results_schema import atomic_moves
+    _producer_moves = atomic_moves(producer_results)
     assert isinstance(_reconstructed_moves, list), (
         "Reconstructed move results must contain a moves list."
     )
@@ -105,9 +106,7 @@ def merge_producer_move_results(
         "Producer move results refer to moves missing from reconstructed XML: "
         f"{sorted(_producer_by_id)}."
     )
-    _producer_metadata = {
-        _key: _value for _key, _value in producer_results.items() if _key != "moves"
-    }
+    _producer_metadata = dict(producer_results)
     return {
         **reconstructed_results,
         "moves": _merged_moves,

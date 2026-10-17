@@ -21,20 +21,13 @@ def test_supplied_type2_categories_survive_artifact_pipeline(
     _xml = (EXAMPLES_DIR / "e2e_custom_pre_marked_move_small.xml").read_text()
     if archive:
         _xml = _xml[_xml.index("<unit"):]
-        _xml = f'<unit xmlns="http://www.srcML.org/srcML/src">{_xml}</unit>'
+        _xml = f'<unit xmlns="http://www.srcML.org/srcML/src" url="original|modified">{_xml}</unit>'
     _results = build_move_results_from_moved_srcdiff(
         moved_srcdiff_xml=_xml, include_skipped_tags=True
     )
-    _results["results_schema_version"] = 2
-    _results["moves"][0]["content_relationship"] = content_relationship
-    _results["content_relationships"] = {"type1": 0, "type2c": 0, "type3": 0}
-    _results["content_relationships"][content_relationship] = 1
-    _results["diagnostics"] = {
-        "schema_version": 4,
-        "candidates": [],
-        "correspondences": [],
-        "type2b_groups": [],
-    }
+    from tests.schema3_fixtures import schema3_results
+    _results['moves'][0]['content_relationship'] = content_relationship
+    _results = schema3_results(_results['moves'])
     _published = build_visualization_artifact(
         filename="supplied-results.xml",
         payload=_xml.encode(),
@@ -46,17 +39,14 @@ def test_supplied_type2_categories_survive_artifact_pipeline(
     _move = read_artifact_move(
         artifact_root=tmp_path,
         artifact_id=_published.artifact_id,
-        move_id=_results["moves"][0]["move_id"],
+        move_id="item:" + _results["atomic_move_groups"][0]["id"],
     )
     assert _move["move"]["content_relationship"] == content_relationship
     assert (
-        _stored.payload.move_results["producer_metadata"]["content_relationships"]
-        == _results["content_relationships"]
+        _stored.payload.move_results["producer_metadata"]["summary"]["atomic_content_relationships"]
+        == _results["summary"]["atomic_content_relationships"]
     )
-    assert (
-        _stored.payload.move_results["producer_metadata"]["diagnostics"]
-        == _results["diagnostics"]
-    )
+
 
 
 def test_native_type2c_move_and_diagnostics_survive_pipeline(tmp_path: Path) -> None:

@@ -304,7 +304,7 @@ export function ArtifactSourceFile({
               className="px-3 py-1 text-xs"
             >
               <CorrespondenceSpan endpoints={[endpoint]} proxy>
-                ● Pair {endpoint.pair.id + 1} ·{" "}
+                ● Pair {endpoint.pair.id} ·{" "}
                 {endpoint.revision === "revision-0" ? "Before" : "After"}{" "}
                 endpoint hidden · expand file/gaps to reveal
               </CorrespondenceSpan>

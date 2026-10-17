@@ -8,6 +8,7 @@ from srcdiffvisual.bigmovebench.bundles import (
     publish_review_bundle,
     read_review_case,
     read_review_manifest,
+    read_review_results,
 )
 from srcdiffvisual.workflow.payload import build_visualization_artifact
 
@@ -66,9 +67,10 @@ def visualize_review_case(
             review_id=review_id,
             ordinal=ordinal,
         )
-        _results = _review.get("results")
-        if not isinstance(_results, dict):
-            raise ValueError("BigMoveBench review results are invalid.")
+        _results = read_review_results(
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            review_id=review_id, ordinal=ordinal,
+        )
         _published = build_visualization_artifact(
             filename=f"bigmovebench-type3-{ordinal:04d}.xml",
             payload=(_directory / "srcmove.xml").read_bytes(),

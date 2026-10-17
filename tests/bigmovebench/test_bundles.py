@@ -26,13 +26,7 @@ def _bundle() -> bytes:
         "case_id": "case-one",
         "outcome": "srcmove_miss",
         "diagnosis": {"stage": "verification", "reason": "below_threshold"},
-        "results": {
-            "results_schema_version": 2,
-            "move_count": 0,
-            "moves": [],
-            "content_relationships": {"type1": 0, "type2c": 0, "type3": 0},
-            "diagnostics": {"type2b_groups": []},
-        },
+        "results": __import__('tests.schema3_fixtures', fromlist=['schema3_results']).schema3_results(),
     }
     _manifest = {
         "schema_version": 2,
@@ -113,7 +107,7 @@ def test_review_routes_import_inspect_and_visualize(
         routes_module,
         "read_artifact_manifest",
         lambda **_kwargs: {
-            "schema_version": 4,
+            "schema_version": 5,
             "projection_schema_version": 2,
             "artifact_id": "artifact-one",
         },
@@ -141,3 +135,81 @@ def test_invalid_bundle_is_rejected_without_publication(tmp_path: Path) -> None:
     else:
         raise AssertionError("invalid review bundle was accepted")
     assert not list((tmp_path / "bigmovebench-reviews").glob("bmb-review-*"))
+
+
+def _rewrite_bundle(*, receipt=None, results=None, result_evidence=None):
+    _stream = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(_bundle())) as _source, zipfile.ZipFile(_stream, "w") as _destination:
+        for _name in _source.namelist():
+            _data = _source.read(_name)
+            if _name == "manifest.json" and result_evidence is not None:
+                _document = json.loads(_data)
+                _document["cases"][0]["result_evidence"] = result_evidence
+                _data = json.dumps(_document)
+            elif _name.endswith("review.json") and receipt is not None:
+                _document = json.loads(_data)
+                _document["results"] = receipt
+                _data = json.dumps(_document)
+            elif _name.endswith("results.json") and results is not None:
+                _data = json.dumps(results)
+            _destination.writestr(_name, _data)
+    return _stream.getvalue()
+
+
+def test_augmented_receipt_is_inspected_intact_but_visualization_gets_strict_evidence(monkeypatch, tmp_path):
+    from tests.schema3_fixtures import schema3_results
+    _results = schema3_results()
+    _receipt = {**_results, "_oracle_diagnostic_stage": "verification"}
+    _payload = _rewrite_bundle(receipt=_receipt, results=_results,
+                               result_evidence={"status": "admitted", "results_schema_version": 3})
+    _app = create_app()
+    _app.config["ARTIFACT_ROOT"] = tmp_path
+    _client = _app.test_client()
+    _import = _client.post("/api/bigmovebench/reviews", data={"review_bundle": (io.BytesIO(_payload), "review.zip")})
+    assert _import.status_code == 201, _import.get_json()
+    _review_id = _import.get_json()["review_id"]
+    _inspect = _client.get(f"/api/bigmovebench/reviews/{_review_id}/cases/1")
+    assert _inspect.get_json()["results"] == _receipt
+    _calls = []
+    monkeypatch.setattr(routes_module, "build_visualization_artifact", lambda **kwargs: (_calls.append(kwargs) or PublishedArtifact("artifact-one", tmp_path, {})))
+    monkeypatch.setattr(routes_module, "read_artifact_manifest", lambda **kwargs: {"artifact_id": "artifact-one"})
+    _visualize = _client.post(f"/api/bigmovebench/reviews/{_review_id}/cases/1/visualize")
+    assert _visualize.status_code == 200, _visualize.get_json()
+    assert _calls[0]["producer_move_results"] == _results
+    assert "_oracle_diagnostic_stage" not in _calls[0]["producer_move_results"]
+
+
+def test_failed_case_keeps_forensics_but_never_executes_visualization(monkeypatch, tmp_path):
+    _forensic = {"results_schema_version": 2, "moves": [], "error": "producer failed"}
+    _payload = _rewrite_bundle(receipt=_forensic, results=_forensic,
+                               result_evidence={"status": "nonvisualizable", "error": "No admitted schema-3 output"})
+    _app = create_app()
+    _app.config["ARTIFACT_ROOT"] = tmp_path
+    _client = _app.test_client()
+    _import = _client.post("/api/bigmovebench/reviews", data={"review_bundle": (io.BytesIO(_payload), "failed.zip")})
+    assert _import.status_code == 201, _import.get_json()
+    _review_id = _import.get_json()["review_id"]
+    assert _client.get(f"/api/bigmovebench/reviews/{_review_id}/cases/1").get_json()["results"] == _forensic
+    def _unexpected(**kwargs):
+        raise AssertionError("Nonvisualizable forensic results must not execute visualization or detection")
+    monkeypatch.setattr(routes_module, "build_visualization_artifact", _unexpected)
+    _visualize = _client.post(f"/api/bigmovebench/reviews/{_review_id}/cases/1/visualize")
+    assert _visualize.status_code == 400
+    assert "no admitted visualizable results" in _visualize.get_json()["error"]
+
+
+def test_bundle_rejects_receipt_and_plain_evidence_disagreement(tmp_path):
+    import pytest
+    from tests.schema3_fixtures import schema3_results
+    _results = schema3_results()
+    _receipt = {**schema3_results(), "_oracle_diagnostic_stage": "verification"}
+    _receipt["configuration"]["min_granularity"] = "fragment"
+    with pytest.raises(ValueError, match="differs from results.json"):
+        publish_review_bundle(artifact_root=tmp_path, payload=_rewrite_bundle(receipt=_receipt, results=_results))
+
+
+def test_invalid_results_need_explicit_forensic_status(tmp_path):
+    import pytest
+    _invalid = {"error": "no producer output"}
+    with pytest.raises(ValueError):
+        publish_review_bundle(artifact_root=tmp_path, payload=_rewrite_bundle(receipt=_invalid, results=_invalid))

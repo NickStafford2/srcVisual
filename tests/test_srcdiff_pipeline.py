@@ -138,11 +138,13 @@ def test_diagnostic_run_passes_flag_and_rejects_existing_moves(monkeypatch, tmp_
     def _fake_run(args):
         _calls.append(args)
         (tmp_path / "moved.srcdiff.xml").write_text("<unit />")
-        (tmp_path / "results.json").write_text(
-            '{"results_schema_version": 2, "content_relationships": {"type1": 0, "type2c": 0, "type3": 0}, "moves": [], "diagnostics": {"schema_version": 4}}'
-        )
+        import json
+        from tests.schema3_fixtures import schema3_results
+        (tmp_path / "results.json").write_text(json.dumps(schema3_results()))
+
 
     monkeypatch.setattr("srcdiffvisual.srcmove.runner.run_command", _fake_run)
+    (tmp_path / "input.xml").write_text("<unit />")
     run_srcmove(
         positioned_path=tmp_path / "input.xml", tmpdir=tmp_path, diagnostics=True
     )

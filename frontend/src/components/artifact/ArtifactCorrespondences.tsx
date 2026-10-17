@@ -11,7 +11,7 @@ export type SourceLocation = {
   reason: string | null;
 };
 export type Pair = {
-  id: number;
+  id: string;
   kind: string;
   classification: string;
   outcome: string;
@@ -23,7 +23,7 @@ export type Pair = {
   after_location: SourceLocation;
 };
 type Page = {
-  schema_version: 1;
+  schema_version: 2;
   artifact_id: string;
   available: boolean;
   items: Pair[];
@@ -42,9 +42,9 @@ type Endpoint = {
   text_truncated: boolean;
 };
 export type Detail = {
-  schema_version: 1;
+  schema_version: 2;
   artifact_id: string;
-  id: number;
+  id: string;
   before: Endpoint;
   after: Endpoint;
   evidence: Record<string, unknown>;
@@ -57,7 +57,7 @@ export async function getProjection<T>(url: string): Promise<T> {
     throw new Error(
       payload.error ?? "Unable to load correspondence diagnostics.",
     );
-  if (payload.schema_version !== 1)
+  if (payload.schema_version !== 2)
     throw new Error("Unsupported correspondence projection version.");
   return payload as T;
 }
@@ -97,7 +97,7 @@ export function ArtifactCorrespondences({
   const [outcome, setOutcome] = useState("");
   const [offset, setOffset] = useState(0);
   const [page, setPage] = useState<Page | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -145,7 +145,7 @@ export function ArtifactCorrespondences({
     setDetail(null);
     setDetailError(null);
     void getProjection<Detail>(
-      `/api/artifacts/${artifactId}/correspondences/${selected}`,
+      `/api/artifacts/${artifactId}/correspondences/${encodeURIComponent(selected ?? "")}`,
     )
       .then((value) => {
         if (current) setDetail(value);
@@ -329,7 +329,7 @@ export function ArtifactCorrespondences({
                     className="block w-full border-b border-white/10 p-3 text-left hover:bg-white/5 aria-pressed:bg-sky-500/15"
                   >
                     <span className="flex flex-wrap gap-x-3 gap-y-1">
-                      <strong>Pair {pair.id + 1}</strong>
+                      <strong>Pair {pair.id}</strong>
                       <span style={{ color: correspondenceColor(pair.kind) }}>
                         {sidebar
                           ? visiblePairs.some((p) => p.id === pair.id)
@@ -415,7 +415,7 @@ export function CorrespondenceRecord({ detail }: { detail: Detail }) {
   return (
     <div className="space-y-3">
       <h3 className="font-semibold text-slate-100">
-        Pair {detail.id + 1} · candidate snippets
+        Pair {detail.id} · candidate snippets
       </h3>
       <div className="grid gap-3 lg:grid-cols-2">
         {(
@@ -469,7 +469,9 @@ export function CorrespondenceRecord({ detail }: { detail: Detail }) {
                       ? value
                         ? "Yes"
                         : "No"
-                      : label(String(value))}
+                      : typeof value === "object"
+                        ? <pre className="whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>
+                        : label(String(value))}
               </dd>
             </div>
           ))}

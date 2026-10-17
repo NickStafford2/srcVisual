@@ -939,33 +939,32 @@ explicit Close behavior as move details.
 
 Move visibility controls enumerate detector predictions `type1`, `type2c`, and
 `type3`. `moves[].content_relationship` predicts endpoint contents; it does not
-establish continuity, relocation, or computational equivalence. Summary
-`content_relationships` counts legacy atomic groups. When producer JSON includes
-`reported_moves`, the manifest, move list, details, selection, and History UI use
-that primary reporting partition and `reported_content_relationships`. An ordered
-Type-1 run appears once, with its member statements retained for inspection.
-Source connectors pair member endpoints by position; they do not connect every
-source statement to every destination statement. No synthetic AST node or
-aggregate confidence score is introduced. History retains the atomic count
-separately. Older results without this additive contract keep atomic reports.
-Grouping belongs to srcMove; the viewer validates and displays its reports rather
-than inferring adjacency. See [ordered move reporting](../../srcMove/doc/architecture.md#ordered-move-sequences).
-Annotations inherited from input XML remain separate, unclassified items and
-are excluded from the producer's report partition and classification counts.
-Results schema 2 is required
-for producer JSON, with all three count keys and a classification on every
-reported move. Legacy fields and labels are rejected, including nested review
-metadata. XML has no classification attribute: `mv:id`, `mv:from`, and `mv:to`
-continue to identify groups and partners. XML-only moves remain explicitly
-unclassified. Diagnostic `correspondence_kind` is comparison evidence and may
-include Type-2b; it is distinct from a reported content classification.
+establish continuity, relocation, or computational equivalence. Results schema 3 retains atomic evidence in `atomic_move_groups` and a partition
+in `output_items`. The manifest, move list, details, selection, and History UI
+use this output partition. An item ID (`item:<group-id>` or
+`sequence:<first-member-id>`) remains distinct from its atomic member group IDs.
+An ordered Type-1 run appears once, with member statements retained for inspection.
+Source connectors pair member endpoints by position. No synthetic AST node or
+aggregate selection weight is introduced. Atomic details retain correspondence,
+name, location, and selection evidence; a sequence resolves evidence through its
+members. Grouping belongs to srcMove; the viewer displays its reports rather
+than inferring adjacency. See [the producer contract](../../srcMove/doc/plans/results_schema_v3/README.md).
+Annotations inherited from input XML remain separate, unclassified items outside
+the producer partition and histograms. XML-only moves remain unclassified.
 
-Artifact schema 4 and manifest/move projection schema 2 replace incompatible
-saved artifacts. Inventory marks these artifacts `incompatible` rather than
-corrupt; reads do not quarantine them, and collection excludes them. Preserve older artifacts and regenerate new artifacts from
-source XML/current schema-2 results. Completed history runs referring to old
-artifacts cannot be reused. Do not relabel retained evidence as new results.
-Rebuild the packaged application and history worker before using these contracts.
+Producer JSON requires results schema 3 and optional diagnostics schema 5.
+Shared `srcmove_runtime.results_schema` validates the complete structure and
+cross-record invariants at admission. The diagnostic pair inspector resolves
+selected candidates through their ordinary atomic endpoints, retains nested
+classification evidence, and addresses pairs by explicit producer IDs. Its
+projection schema is 2. Type-2b groups and verification comparisons remain
+retained observations rather than production moves.
+
+Artifact schema 5 replaces incompatible saved artifacts. Inventory marks older
+artifacts `incompatible`; reads do not quarantine them and collection excludes
+them. Preserve older artifacts and regenerate from source XML/current schema-3
+results. Completed history runs referring to old artifacts cannot be reused.
+Rebuild the application and history worker before using these contracts.
 
 The observation-only `diagnostics.type2b_groups` collection is retained as
 producer metadata; it does not populate selected moves or the pair inspector.
@@ -977,9 +976,23 @@ input. The mapper requires a unique endpoint, exact candidate text, and identica
 rendered revision source before and after annotation. It stores verified unit
 and source spans in producer metadata (`visualization_candidate_locations`).
 Artifact projections translate unit IDs to artifact file IDs. Ambiguous paths,
-unsupported XPath predicates, mismatched text, and older artifacts without
+unbound namespace prefixes, mismatched text, and older artifacts without
 locations are explicitly unavailable for source highlighting; no text-search
 fallback is used. Regenerate older diagnostic artifacts to collect locations.
 Collapsed files or source gaps use labeled hidden-endpoint proxies rather than
 boxes across unrendered code. This remains diagnostic evidence and does not
 change source alignment or move selection.
+
+Native srcReader locators are evaluated with a full XPath engine and the exact
+producer namespace context before remapping to viewer node paths. Archive root
+omission follows srcReader's `unit`/`url` present/`filename` absent test. Name and
+filename predicates may be followed by positional qualifiers; locator strings
+and native partner links remain unchanged. XML-only namespace rebindings that
+cannot be represented unambiguously are rejected instead of guessed.
+
+Sequence admission also checks actual revision-projected XML children, member
+order, adjacency, common parents, files, and disjoint spans through the shared
+native XML validator. Fresh execution and retained reannotation check parent
+stream IDs against the original input. For supplied already-annotated XML,
+original event indices may be unavailable after serialization; structural checks
+still apply, while historical parent stream IDs remain retained producer evidence.

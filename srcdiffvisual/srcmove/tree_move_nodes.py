@@ -138,10 +138,12 @@ def collect_tree_move_nodes_from_node(
             from_paths=normalize_srcmove_xpath_tuple(
                 tuple(from_paths),
                 filename_to_unit_index=filename_to_unit_index,
+                allow_internal=True,
             ),
             to_paths=normalize_srcmove_xpath_tuple(
                 tuple(to_paths),
                 filename_to_unit_index=filename_to_unit_index,
+                allow_internal=True,
             ),
             position_start=position_start if isinstance(position_start, str) else None,
             position_end=position_end if isinstance(position_end, str) else None,

@@ -87,7 +87,7 @@ def test_move_projection_returns_record_without_interpreting_it(tmp_path) -> Non
     assert projection == {
         "schema_version": 2,
         "artifact_id": published.artifact_id,
-        "results_schema_version": 2,
+        "results_schema_version": 3,
         "move": {
             "move_id": "move-1",
             "content_relationship": "type1",
@@ -432,7 +432,7 @@ def _publish_fixture(tmp_path, diagnostics=None):
                 }
             ],
             "producer_metadata": {
-                "results_schema_version": 2,
+                "results_schema_version": 3,
                 **({"diagnostics": diagnostics} if diagnostics is not None else {}),
             },
         },
@@ -452,6 +452,8 @@ def _publish_fixture(tmp_path, diagnostics=None):
             ),
         ),
     )
+    from tests.schema3_fixtures import schema3_results
+    payload.move_results['producer_metadata'] = schema3_results(payload.move_results['moves'], diagnostics=diagnostics)
     return publish_artifact(
         artifact_root=tmp_path,
         canonical_payload=payload,
@@ -466,47 +468,7 @@ def test_correspondence_pages_and_snippets_preserve_nonmove_evidence(tmp_path):
         read_correspondence,
     )
 
-    _diagnostics = {
-        "schema_version": 4,
-        "candidates": [
-            {
-                "candidate_id": 1,
-                "side": "delete",
-                "filename": "old.cpp",
-                "xpath": "/unit/delete",
-                "construct": "function",
-                "raw_text": "x" * 20001,
-            },
-            {
-                "candidate_id": 2,
-                "side": "insert",
-                "filename": "new.cpp",
-                "xpath": "/unit/insert",
-                "construct": "function",
-                "raw_text": "after();",
-            },
-        ],
-        "correspondences": [
-            {
-                "delete_candidate_id": 1,
-                "insert_candidate_id": 2,
-                "correspondence_kind": "type1",
-                "shadow_change": "stationary",
-                "current_result": "not_move",
-                "classification_reason": "same_interval",
-                "cardinality": "one_to_one",
-            },
-            {
-                "delete_candidate_id": 1,
-                "insert_candidate_id": 2,
-                "correspondence_kind": "type3",
-                "shadow_change": "relocated",
-                "current_result": "move",
-                "classification_reason": "different_file",
-                "cardinality": "one_to_one",
-            },
-        ],
-    }
+    _diagnostics = _diagnostic_fixture()
     _artifact = _publish_fixture(tmp_path, diagnostics=_diagnostics)
     _args = {"artifact_root": tmp_path, "artifact_id": _artifact.artifact_id}
     _page = read_correspondences(**_args, limit=1)
@@ -514,27 +476,26 @@ def test_correspondence_pages_and_snippets_preserve_nonmove_evidence(tmp_path):
     assert _page["next_offset"] == 1
     assert _page["total"] == 2
     assert "raw_text" not in str(_page)
-    assert read_correspondences(**_args, offset=1, limit=1)["items"][0]["id"] == 1
+    assert read_correspondences(**_args, offset=1, limit=1)["items"][0]["id"] == "pair:selected"
     _filtered = read_correspondences(
         **_args,
         query="OLD.CPP",
         kind="type1",
-        outcome="not_move",
+        outcome="not_selected_pair",
         classification="stationary",
     )
     assert _filtered["matched"] == 1
-    assert _filtered["items"][0]["outcome"] == "not_move"
-    _detail = read_correspondence(**_args, index=0)
+    assert _filtered["items"][0]["outcome"] == "not_selected_pair"
+    _detail = read_correspondence(**_args, index="pair:stationary")
     assert _detail["before"]["text_truncated"] is True
     assert len(_detail["before"]["raw_text"]) == 20000
     assert _detail["after"]["raw_text"] == "after();"
-    assert _detail["evidence"]["classification_reason"] == "same_interval"
+    assert _detail["evidence"]["location"]["reason"] == "same_anchor_interval"
 
 
 def test_correspondences_distinguish_missing_empty_and_unsupported(tmp_path):
     import pytest
     from srcdiffvisual.artifacts.correspondences import read_correspondences
-    from srcdiffvisual.artifacts.store import ArtifactIntegrityError
 
     _missing = _publish_fixture(tmp_path)
     assert (
@@ -545,12 +506,51 @@ def test_correspondences_distinguish_missing_empty_and_unsupported(tmp_path):
     )
     _empty = _publish_fixture(
         tmp_path,
-        diagnostics={"schema_version": 4, "candidates": [], "correspondences": []},
+        diagnostics=_diagnostic_fixture(empty=True),
     )
     _page = read_correspondences(artifact_root=tmp_path, artifact_id=_empty.artifact_id)
     assert _page["available"] is True and _page["total"] == 0
-    _unsupported = _publish_fixture(tmp_path, diagnostics={"schema_version": 999})
-    with pytest.raises(ArtifactIntegrityError, match="Unsupported"):
-        read_correspondences(
-            artifact_root=tmp_path, artifact_id=_unsupported.artifact_id
-        )
+    with pytest.raises(ValueError):
+        _publish_fixture(tmp_path, diagnostics={'schema_version': 999})
+
+
+def _diagnostic_fixture(empty=False):
+    def context(filename):
+        return {'revision_file': filename, 'semantic_container_id': None,
+                'semantic_container_label': None, 'previous_common_anchor_id': None,
+                'next_common_anchor_id': None, 'meaningful_ancestors': [],
+                'ancestor_summary_interpretable': False, 'structural_region_id': None,
+                'structural_region_mapped': False, 'common_sibling_prefix_count': 0,
+                'common_sibling_suffix_begin': 0, 'anchor_region_id': None}
+    candidates = [
+        {'candidate_id': i, 'revision': side, 'role': 'diff_wrapper',
+         'selected_group_id': 'move-1', 'endpoint': None, 'type3_eligible': False,
+         'line_units': 1, 'token_units': 1}
+        for i, side in [(0, 'original'), (1, 'modified')]]
+    pairs = []
+    if not empty:
+        for i, side, text in [(2, 'original', 'x' * 20001), (3, 'modified', 'after();')]:
+            candidates.append({'candidate_id': i, 'revision': side, 'role': 'diff_wrapper',
+                               'selected_group_id': None, 'type3_eligible': False,
+                               'line_units': 1, 'token_units': 1,
+                               'endpoint': {'candidate_id': i, 'revision_file': 'old.cpp',
+                                            'xpath': '/src:unit[1]/diff:delete[1]' if i == 2 else '/src:unit[1]/diff:insert[1]',
+                                            'construct': 'function', 'raw_text': text}})
+        for selected in (False, True):
+            pairs.append({'id': 'pair:selected' if selected else 'pair:stationary',
+                          'original_candidate_id': 0 if selected else 2,
+                          'modified_candidate_id': 1 if selected else 3,
+                          'content_relationship': 'type1', 'name_evidence': 'not_assessed',
+                          'location': {'scope': 'pair', 'classification': 'relocated' if selected else 'stationary',
+                                       'reason': 'different_file' if selected else 'same_anchor_interval',
+                                       'observations': {'file': 'different' if selected else 'same',
+                                                        'semantic_container': 'unknown', 'anchor_interval': 'unknown',
+                                                        'relative_order': 'unknown', 'ancestor': 'unknown'},
+                                       'carried_by_parent': False, 'parent_pair': None},
+                          'original_context': context('original.cpp' if selected else 'old.cpp'),
+                          'modified_context': context('modified.cpp' if selected else 'old.cpp'),
+                          'verified_partner_counts': None,
+                          'selection': {'status': 'selected_pair' if selected else 'not_selected_pair',
+                                        'selected_group_id': 'move-1' if selected else None}})
+    return {'schema_version': 5, 'candidate_counts': {'registered': len(candidates), 'active': len(candidates)},
+            'candidates': candidates, 'correspondences': pairs, 'type3_comparisons': [], 'type2b_groups': []}

@@ -82,7 +82,9 @@ Stop and remove the local container with:
 docker compose -f srcDiffVisual/compose.yaml down
 ```
 
-The image contains a compiled snapshot of the sibling source checkouts at build
+The image also supplies srcMove's shared Python results validator and the full XPath
+engine required for schema-3 locator admission. The image contains a compiled snapshot
+of the sibling source checkouts at build
 time; building it does not edit those checkouts. In the parent workspace's
 evaluation workflow, Compose replaces the packaged srcMove executable with the
 incrementally built Linux `srcMove/build/srcMove` binary in both services and

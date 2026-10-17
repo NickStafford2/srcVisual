@@ -131,18 +131,13 @@ def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
             {"move_id": "srcmove", "from_xpaths": ["srcmove-from"]},
         ],
     }
-    _producer = {
-        "move_count": 1,
-        "moves": [
-            {
-                "move_id": "srcmove",
-                "content_relationship": "type3",
-                "from_xpaths": ["srcmove-from"],
-            }
-        ],
-        "results_schema_version": 2,
-        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
-    }
+    from tests.schema3_fixtures import schema3_results
+    _producer = schema3_results([{
+        'move_id': 'srcmove', 'content_relationship': 'type3',
+        'from_xpaths': ['/src:unit[1]/diff:delete[1]'],
+        'to_xpaths': ['/src:unit[1]/diff:insert[1]'],
+        'from_raw_texts': ['before();'], 'to_raw_texts': ['after();']}])
+
 
     _merged = merge_producer_move_results(
         reconstructed_results=_reconstructed,
@@ -150,21 +145,11 @@ def test_merge_producer_results_retains_other_xml_move_annotations() -> None:
     )
 
     assert _merged["move_count"] == 2
-    assert _merged["producer_metadata"] == {
-        "move_count": 1,
-        "results_schema_version": 2,
-        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
-    }
-    assert _merged["moves"] == [
-        {
-            "move_id": "legacy",
-            "from_xpaths": ["legacy-from"],
-            "result_provenance": "xml-annotation",
-        },
-        {
-            "move_id": "srcmove",
-            "from_xpaths": ["srcmove-from"],
-            "content_relationship": "type3",
-            "result_provenance": "producer-results",
-        },
-    ]
+    assert _merged['producer_metadata'] == _producer
+    assert _merged['moves'][0] == {
+        'move_id': 'legacy', 'from_xpaths': ['legacy-from'],
+        'result_provenance': 'xml-annotation'}
+    assert _merged['moves'][1]['move_id'] == 'srcmove'
+    assert _merged['moves'][1]['content_relationship'] == 'type3'
+    assert _merged['moves'][1]['result_provenance'] == 'producer-results'
+    assert _merged['moves'][1]['selection'] == _producer['atomic_move_groups'][0]['selection']

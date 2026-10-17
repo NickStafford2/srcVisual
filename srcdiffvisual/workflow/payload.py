@@ -104,6 +104,9 @@ def _build_canonical_payload(
     producer_move_results: dict[str, Any] | None,
     diagnostics: bool = False,
 ) -> tuple[VisualizationPayload, ArtifactProvenance]:
+    if producer_move_results is not None:
+        from srcdiffvisual.srcmove.srcmove_results import validate_producer_results
+        validate_producer_results(producer_move_results)
     payload_validation_enabled = is_payload_validation_enabled()
     strict_srcmove_validation_enabled = is_strict_srcmove_validation_enabled()
 
@@ -167,6 +170,7 @@ def _build_canonical_payload(
                 move_results=move_results,
                 include_skipped_tags=True,
                 allow_additional_xml_moves=True,
+                allow_visualization_metadata=True,
             )
             _reconstructed_results = build_move_results_from_moved_srcdiff(
                 moved_srcdiff_xml=moved_srcdiff_xml,

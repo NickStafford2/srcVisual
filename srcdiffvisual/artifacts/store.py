@@ -25,7 +25,7 @@ from srcdiffvisual.srcmove.reported_moves import reported_move_records
 from srcdiffvisual.workflow._source_renderer import SOURCE_PROJECTION_VERSION
 from srcdiffvisual.workflow.models import VisualizationPayload
 
-ARTIFACT_SCHEMA_VERSION = 4
+ARTIFACT_SCHEMA_VERSION = 5
 DEFAULT_ARTIFACT_ROOT = Path("/tmp/srcdiffvisual-artifacts")
 
 
@@ -93,11 +93,14 @@ def publish_artifact(
     )
     if (
         "results_schema_version" in _metadata
-        and _metadata["results_schema_version"] != 2
+        and _metadata["results_schema_version"] != 3
     ):
         raise ArtifactCompatibilityError(
-            "Unsupported srcMove results schema. Preserve old evidence and regenerate schema-2 results."
+            "Unsupported srcMove results schema. Preserve old evidence and regenerate schema-3 results."
         )
+    if "results_schema_version" in _metadata:
+        from srcdiffvisual.srcmove.srcmove_results import validate_producer_results
+        validate_producer_results(_metadata, allow_visualization_metadata=True)
     _artifact_id = artifact_id or uuid4().hex
     if len(_artifact_id) != 32 or any(
         _character not in "0123456789abcdef" for _character in _artifact_id

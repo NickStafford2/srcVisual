@@ -58,6 +58,11 @@ def run_srcmove(
     )
 
     validate_producer_results(move_results)
+    from lxml import etree
+    from srcmove_runtime.results_schema import resolve_locator
+    from srcmove_runtime.results_xml import validate_sequences
+    _input = positioned_path.read_bytes()
+    validate_sequences(_input, etree.ElementTree(etree.fromstring(_input, etree.XMLParser(resolve_entities=False, no_network=True))), move_results, resolve_locator)
     notify_progress(progress, "Reading moved srcdiff output.")
 
     return moved_srcdiff_xml, move_results

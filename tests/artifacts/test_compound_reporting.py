@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from tests.schema3_fixtures import schema3_results
 
 from srcdiffvisual.artifacts.projections import read_artifact_move
 from srcdiffvisual.artifacts.store import read_artifact
@@ -15,21 +16,15 @@ def test_xml_only_annotations_survive_empty_producer_reports(tmp_path, archive):
     _xml = (Path(__file__).parents[2] / "examples/e2e_custom_two_independent_groups.xml").read_text()
     if archive:
         _xml = _xml.split("?>", 1)[1].strip()
-        _xml = f'<unit xmlns="http://www.srcML.org/srcML/src">{_xml}</unit>'
-    _counts = {"type1": 0, "type2c": 0, "type3": 0}
-    _results = {
-        "results_schema_version": 2, "moves": [], "move_count": 0,
-        "content_relationships": _counts,
-        "reported_moves": [], "reported_move_count": 0,
-        "reported_content_relationships": _counts,
-    }
+        _xml = f'<unit xmlns="http://www.srcML.org/srcML/src" url="archive">{_xml}</unit>'
+    _results = schema3_results()
     _published = build_visualization_artifact(
         filename="inherited.xml", payload=_xml.encode(), artifact_root=tmp_path,
         producer_move_results=_results,
     )
     _stored = read_artifact(artifact_root=tmp_path, artifact_id=_published.artifact_id)
     assert _stored.manifest["moves"]["move_count"] == 2
-    assert _stored.payload.move_results["producer_metadata"]["reported_move_count"] == 0
+    assert _stored.payload.move_results["producer_metadata"]["summary"]["output_item_count"] == 0
     for _move in _stored.payload.move_results["moves"]:
         assert _move["result_provenance"] == "xml-annotation"
         assert "content_relationship" not in _move
@@ -41,11 +36,10 @@ def test_xml_only_annotations_survive_empty_producer_reports(tmp_path, archive):
 
 @pytest.mark.parametrize("archive", [False, True])
 def test_compound_reporting_survives_complete_artifact_pipeline(tmp_path, archive):
-    # Consumer contract fixture: original XML annotations remain atomic.
-    xml = (Path(__file__).parents[2] / "examples/e2e_custom_two_independent_groups.xml").read_text()
+    # Hand-authored structural children, preserving atomic XML annotations.
+    xml = '<unit xmlns="http://www.srcML.org/srcML/src" xmlns:diff="http://www.srcML.org/srcDiff" xmlns:mv="http://www.srcML.org/srcMove" filename="two_groups.cpp"><diff:delete><expr_stmt mv:id="a" mv:to="/src:unit[1]/diff:insert[1]/src:expr_stmt[1]">a();</expr_stmt><expr_stmt mv:id="b" mv:to="/src:unit[1]/diff:insert[1]/src:expr_stmt[2]">b();</expr_stmt></diff:delete><diff:insert><expr_stmt mv:id="a" mv:from="/src:unit[1]/diff:delete[1]/src:expr_stmt[1]">a();</expr_stmt><expr_stmt mv:id="b" mv:from="/src:unit[1]/diff:delete[1]/src:expr_stmt[2]">b();</expr_stmt></diff:insert></unit>'
     if archive:
-        xml = xml.split("?>", 1)[1].strip()
-        xml = f'<unit xmlns="http://www.srcML.org/srcML/src">{xml}</unit>'
+        xml = '<unit xmlns="http://www.srcML.org/srcML/src" url="archive">' + xml + '</unit>'
     results = build_move_results_from_moved_srcdiff(
         moved_srcdiff_xml=xml, include_skipped_tags=True,
     )
@@ -61,13 +55,13 @@ def test_compound_reporting_survives_complete_artifact_pipeline(tmp_path, archiv
         **{key: [value for member in members for value in member[key]]
            for key in ("from_xpaths", "to_xpaths", "from_raw_texts", "to_raw_texts")},
     }
-    results.update({
-        "results_schema_version": 2,
-        "content_relationships": {"type1": 2, "type2c": 0, "type3": 0},
-        "reported_moves": [report],
-        "reported_move_count": 1,
-        "reported_content_relationships": {"type1": 1, "type2c": 0, "type3": 0},
-    })
+    results = schema3_results(members, sequence=True)
+    for group in results["atomic_move_groups"]:
+        for side in ("original", "modified"):
+            group[side][0]["revision_file"] = "two_groups.cpp"
+    for side in ("original", "modified"):
+        results["output_items"][0]["sequence"][side]["revision_file"] = "two_groups.cpp"
+        results["output_items"][0]["sequence"][side]["parent_id"] = f"two_groups.cpp:{side}:unit:{int(archive)}"
     published = build_visualization_artifact(
         filename="compound.xml", payload=xml.encode(), artifact_root=tmp_path,
         producer_move_results=results,

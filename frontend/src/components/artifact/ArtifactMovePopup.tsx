@@ -60,7 +60,7 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
   const move = projection.move;
   const hasProducerDetails =
     move.content_relationship !== undefined ||
-    move.confidence_milli !== undefined ||
+    move.selection !== undefined ||
     move.selection_utility !== undefined ||
     move.matched_units !== undefined ||
     move.selection_reason !== undefined;
@@ -70,10 +70,13 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
       {hasProducerDetails ? (
         <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
           <Value label="Content relationship (prediction)" value={move.content_relationship} />
-          <Value label="confidence_milli" value={move.confidence_milli} />
-          <Value label="matched_units" value={move.matched_units} />
-          <Value label="selection_utility" value={move.selection_utility} />
-          <Value label="selection_reason" value={move.selection_reason} />
+          <Value label="Matching weight (milli)" value={move.selection?.matching_weight_milli} />
+          <Value label="Correspondence" value={move.correspondence?.status} />
+          <Value label="Name evidence" value={move.name_evidence} />
+          <Value label="Location" value={move.location_evidence?.classification ?? move.location_evidence?.status ?? move.location_evidence?.reason} />
+          <Value label="matched_units" value={move.selection?.matched_units} />
+          <Value label="selection_utility" value={move.selection?.utility} />
+          <Value label="selection_reason" value={move.selection?.reason} />
           <Value
             label="results_schema_version"
             value={projection.results_schema_version ?? undefined}

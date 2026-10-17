@@ -39,25 +39,18 @@ export function CorrespondenceSpan({
 }) {
   const context = useContext(CorrespondenceSourceContext);
   const ref = useRef<HTMLSpanElement>(null);
-  const endpointKey = endpoints
-    .map((e) => `${e.pair.id}:${e.revision}`)
-    .join(",");
+  const endpointKey = JSON.stringify(endpoints.map((e) => [e.pair.id, e.revision]));
   // Endpoint list can change with source focus; register only currently rendered elements.
   useEffect(() => {
     const element = ref.current;
     if (!element || !context) return;
-    const registrations = endpointKey
-      ? endpointKey.split(",").map((key) => {
-          const [id, side] = key.split(":");
-          const revision = side as "revision-0" | "revision-1";
-          return {
-            moveId: `correspondence-${id}`,
-            endpointId: key,
-            revision,
-            element,
-          };
-        })
-      : [];
+    const registrations = (JSON.parse(endpointKey) as [string, "revision-0" | "revision-1"][])
+      .map(([id, revision]) => ({
+        moveId: `correspondence-${id}`,
+        endpointId: JSON.stringify([id, revision]),
+        revision,
+        element,
+      }));
     registrations.forEach(context.register);
     return () => registrations.forEach(context.unregister);
   }, [context, endpointKey]);
@@ -130,7 +123,7 @@ export function CorrespondenceOverlay({
               <g key={box.key}>
                 <rect
                   role="button"
-                  aria-label={`Inspect correspondence ${pair.id + 1} ${box.revision === "revision-0" ? "before" : "after"}`}
+                  aria-label={`Inspect correspondence ${pair.id} ${box.revision === "revision-0" ? "before" : "after"}`}
                   tabIndex={0}
                   x={box.x - 10}
                   y={box.y - 10}

@@ -8,6 +8,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from srcmove_runtime.results_schema import benchmark_result_evidence
+
 from srcdiffvisual.srcmove.srcmove_results import (
     validate_classification_fields,
     validate_producer_results,
@@ -75,6 +77,39 @@ def read_review_case(
     return _review, _directory
 
 
+def read_review_results(*, artifact_root: Path, review_id: str, ordinal: int) -> dict[str, Any]:
+    """Return admitted evidence only; forensic cases remain inspectable."""
+    _manifest = read_review_manifest(artifact_root=artifact_root, review_id=review_id)
+    _case = next((_case for _case in _manifest["cases"] if _case["ordinal"] == ordinal), None)
+    if _case is None:
+        raise ValueError(f"BigMoveBench review case does not exist: {ordinal}")
+    _status = _case.get("result_evidence", {"status": "admitted", "results_schema_version": 3})
+    if _status["status"] == "nonvisualizable":
+        raise ValueError("This review case has no admitted visualizable results: " + _status["error"])
+    _review, _directory = read_review_case(artifact_root=artifact_root, review_id=review_id, ordinal=ordinal)
+    _results = _read_json(_directory / _case["files"]["results"])
+    _validate_case_results(_case, _review, _results)
+    return _results
+
+
+def _validate_case_results(case: dict[str, Any], review: dict[str, Any], results: dict[str, Any]) -> None:
+    _status = case.get("result_evidence", {"status": "admitted", "results_schema_version": 3})
+    if _status["status"] == "nonvisualizable":
+        validate_classification_fields({_key: _value for _key, _value in review.items() if _key != "results"})
+        if results != review.get("results"):
+            raise ValueError("Forensic results.json differs from the retained review receipt.")
+        try:
+            benchmark_result_evidence(results)
+        except ValueError:
+            return
+        raise ValueError("Nonvisualizable review case contains admitted schema-3 evidence.")
+    validate_classification_fields(review)
+    validate_producer_results(results)
+    _evidence = benchmark_result_evidence(review.get("results"))
+    if _evidence != results:
+        raise ValueError("Review receipt evidence differs from results.json.")
+
+
 def _review_directory(artifact_root: Path, review_id: str) -> Path:
     if not review_id.startswith("bmb-review-sha256-") or len(review_id) != 82:
         raise ValueError("Invalid BigMoveBench review identifier.")
@@ -114,9 +149,7 @@ def _extract_validated_bundle(payload: bytes, staging: Path) -> dict[str, Any]:
                     raise ValueError(
                         "Unsupported review case schema; export a new schema-2 bundle."
                     )
-                validate_classification_fields(_review)
-                validate_producer_results(_read_json(_directory / "results.json"))
-                validate_producer_results(_review.get("results", {}))
+                _validate_case_results(_case, _review, _read_json(_directory / "results.json"))
             return _manifest
     except (zipfile.BadZipFile, json.JSONDecodeError) as _error:
         raise ValueError("Invalid BigMoveBench review bundle.") from _error
@@ -146,6 +179,18 @@ def _validate_manifest(manifest: Any) -> None:
             raise ValueError("BigMoveBench review case file contract is invalid.")
         if not isinstance(_case.get("case_id"), str):
             raise ValueError("BigMoveBench review case identifier is invalid.")
+        _status = _case.get("result_evidence")
+        if _status is not None:
+            if not isinstance(_status, dict):
+                raise ValueError("Invalid BigMoveBench result evidence status.")
+            if _status.get("status") == "admitted":
+                if _status != {"status": "admitted", "results_schema_version": 3}:
+                    raise ValueError("Invalid admitted BigMoveBench result evidence version.")
+            elif _status.get("status") == "nonvisualizable":
+                if set(_status) != {"status", "error"} or not isinstance(_status["error"], str) or not _status["error"]:
+                    raise ValueError("Nonvisualizable BigMoveBench case requires an error.")
+            else:
+                raise ValueError("Unsupported BigMoveBench result evidence status.")
         if not isinstance(_case.get("diagnosis"), dict):
             raise ValueError("BigMoveBench review diagnosis is invalid.")
 

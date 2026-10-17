@@ -34,6 +34,10 @@ export interface ArtifactMoveRecord {
   report_kind?: "atomic" | "ordered_sequence";
   member_move_ids?: string[];
   content_relationship?: ContentRelationship;
+  correspondence?: { status: "selected_pair" | "unresolved_partners" | "copy_source_set" };
+  name_evidence?: string;
+  location_evidence?: { scope: string; classification?: string; reason?: string; status?: string };
+  selection?: { matching_weight_milli: number; utility: number; matched_units: number; reason: string };
   confidence_milli?: number;
   selection_utility?: number;
   matched_units?: number;

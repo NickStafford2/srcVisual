@@ -103,7 +103,7 @@ describe("ArtifactSourcePane", () => {
         reason: null,
       };
       const pair: Pair = {
-        id: 0,
+        id: "pair:0",
         kind: "type2c",
         classification: "stationary",
         outcome: "not_move",
@@ -134,17 +134,17 @@ describe("ArtifactSourcePane", () => {
       );
       await waitFor(() =>
         expect(
-          container.querySelectorAll('[data-correspondence-segment="0"]'),
+          container.querySelectorAll('[data-correspondence-segment="pair:0"]'),
         ).toHaveLength(2),
       );
       expect(
         [
-          ...container.querySelectorAll('[data-correspondence-segment="0"]'),
+          ...container.querySelectorAll('[data-correspondence-segment="pair:0"]'),
         ].map((e) => e.textContent),
       ).toEqual(["old", "new"]);
       await user.click(screen.getByRole("button", { name: "Collapse all" }));
       const proxy = screen.getByRole("button", {
-        name: /Pair 1 · Before endpoint hidden/,
+        name: /Pair pair:0 · Before endpoint hidden/,
       });
       await user.click(proxy);
       expect(inspect).toHaveBeenCalledWith(

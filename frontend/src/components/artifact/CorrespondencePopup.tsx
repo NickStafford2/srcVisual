@@ -26,7 +26,7 @@ export function CorrespondencePopup({
     setDetail(null);
     setError(null);
     void getProjection<Detail>(
-      `/api/artifacts/${artifactId}/correspondences/${pair.id}`,
+      `/api/artifacts/${artifactId}/correspondences/${encodeURIComponent(pair.id)}`,
     )
       .then((value) => {
         if (current) setDetail(value);
@@ -42,7 +42,7 @@ export function CorrespondencePopup({
     <ArtifactPopup
       title="Correspondence details"
       badge={pair.kind.toUpperCase()}
-      identity={`Pair ${pair.id + 1}`}
+      identity={`Pair ${pair.id}`}
       position={position}
       color={correspondenceColor(pair.kind)}
       onClose={onClose}

@@ -256,13 +256,11 @@ def test_read_materialized_move_results_preserves_producer_metadata(
 ) -> None:
     _artifact = tmp_path / "srcmove.xml"
     _artifact.touch()
-    _results = {
-        "results_schema_version": 2,
-        "content_relationships": {"type1": 0, "type2c": 0, "type3": 1},
-        "move_count": 1,
-        "moves": [{"move_id": "move-1", "content_relationship": "type3"}],
-        "group_kinds": {"move_1_to_1": 1},
-    }
+    from tests.schema3_fixtures import schema3_results
+    _results = schema3_results([{'move_id': 'move-1', 'content_relationship': 'type3',
+                                'from_xpaths': ['/src:unit[1]/diff:delete[1]'],
+                                'to_xpaths': ['/src:unit[1]/diff:insert[1]'],
+                                'from_raw_texts': ['before();'], 'to_raw_texts': ['after();']}])
     (_artifact.with_name("results.json")).write_text(
         json.dumps(_results),
         encoding="utf-8",
