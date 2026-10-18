@@ -20,14 +20,14 @@ services:
       SRCDIFFVISUAL_GUNICORN_THREADS: "4"
       SRCDIFFVISUAL_GUNICORN_TIMEOUT_SECONDS: "360"
       SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
-        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"},{"id":"linux","label":"Linux (kernel/)","path":"/history/linux"}]
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"},{"id":"linux-whole","label":"Linux","path":"/history/linux-whole"},{"id":"linux","label":"Linux (kernel/)","path":"/history/linux"}]
       SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
       SRCDIFFVISUAL_HISTORY_EXPORT_ROOT: "/thesis-history"
       # Both workspace containers access these operator-configured Git mounts
       # under different Linux users. Trust only the admitted worktrees.
-      GIT_CONFIG_COUNT: "4"
+      GIT_CONFIG_COUNT: "5"
       GIT_CONFIG_KEY_0: "safe.directory"
       GIT_CONFIG_VALUE_0: "/history/notepadpp"
       GIT_CONFIG_KEY_1: "safe.directory"
@@ -36,6 +36,8 @@ services:
       GIT_CONFIG_VALUE_2: "/history/opencv"
       GIT_CONFIG_KEY_3: "safe.directory"
       GIT_CONFIG_VALUE_3: "/history/linux"
+      GIT_CONFIG_KEY_4: "safe.directory"
+      GIT_CONFIG_VALUE_4: "/history/linux-whole"
     volumes:
       - srcdiffvisual-artifacts:/var/lib/srcdiffvisual/artifacts
       - ../thesis-workspace/data/srcMove-history:/thesis-history:rw
@@ -62,6 +64,10 @@ services:
       - ../srcMove/reference-repositories/linux:/history/linux:ro
       - ../srcMove/reference-repositories/linux/.git:/history/linux/.git:rw
       - ../srcMove/reference-repositories/linux/.srcmove:/history/linux/.srcmove:rw
+      # Expose the separate whole-repository analysis under the CLI default path.
+      - ../srcMove/reference-repositories/linux:/history/linux-whole:ro
+      - ../srcMove/reference-repositories/linux/.git:/history/linux-whole/.git:rw
+      - ../srcMove/reference-repositories/linux/.srcmove-whole:/history/linux-whole/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:
@@ -76,14 +82,14 @@ services:
     environment:
       SRCDIFFVISUAL_COMMAND_TIMEOUT_SECONDS: "300"
       SRCDIFFVISUAL_HISTORY_REPOSITORIES: >-
-        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"},{"id":"linux","label":"Linux (kernel/)","path":"/history/linux"}]
+        [{"id":"notepadpp","label":"Notepad++","path":"/history/notepadpp"},{"id":"sqlite","label":"SQLite","path":"/history/sqlite"},{"id":"opencv","label":"OpenCV","path":"/history/opencv"},{"id":"linux-whole","label":"Linux","path":"/history/linux-whole"},{"id":"linux","label":"Linux (kernel/)","path":"/history/linux"}]
       SRCDIFFVISUAL_DEFAULT_HISTORY_REPOSITORY: "notepadpp"
       SRCDIFFVISUAL_ARTIFACT_ROOT: "/var/lib/srcdiffvisual/artifacts"
       SRCDIFFVISUAL_TMP_ROOT: "/tmp/srcdiffvisual"
       SRCDIFFVISUAL_HISTORY_EXPORT_ROOT: "/thesis-history"
       # Both workspace containers access these operator-configured Git mounts
       # under different Linux users. Trust only the admitted worktrees.
-      GIT_CONFIG_COUNT: "4"
+      GIT_CONFIG_COUNT: "5"
       GIT_CONFIG_KEY_0: "safe.directory"
       GIT_CONFIG_VALUE_0: "/history/notepadpp"
       GIT_CONFIG_KEY_1: "safe.directory"
@@ -92,6 +98,8 @@ services:
       GIT_CONFIG_VALUE_2: "/history/opencv"
       GIT_CONFIG_KEY_3: "safe.directory"
       GIT_CONFIG_VALUE_3: "/history/linux"
+      GIT_CONFIG_KEY_4: "safe.directory"
+      GIT_CONFIG_VALUE_4: "/history/linux-whole"
     volumes:
       - srcdiffvisual-artifacts:/var/lib/srcdiffvisual/artifacts
       - ../thesis-workspace/data/srcMove-history:/thesis-history:rw
@@ -110,6 +118,10 @@ services:
       - ../srcMove/reference-repositories/linux:/history/linux:ro
       - ../srcMove/reference-repositories/linux/.git:/history/linux/.git:rw
       - ../srcMove/reference-repositories/linux/.srcmove:/history/linux/.srcmove:rw
+      # Expose the separate whole-repository analysis under the CLI default path.
+      - ../srcMove/reference-repositories/linux:/history/linux-whole:ro
+      - ../srcMove/reference-repositories/linux/.git:/history/linux-whole/.git:rw
+      - ../srcMove/reference-repositories/linux/.srcmove-whole:/history/linux-whole/.srcmove:rw
     security_opt:
       - no-new-privileges:true
     tmpfs:

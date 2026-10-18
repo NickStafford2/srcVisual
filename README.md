@@ -100,8 +100,11 @@ the history worker continues using its packaged code. Outside development,
 application changes require rebuilding the packaged application. The checked-in
 Compose configuration makes the analyzed Notepad++, SQLite, OpenCV, and Linux reference
 repositories available in the History selector, with Notepad++ selected by
-default. The Linux entry is labeled **Linux (kernel/)** because its saved
-analysis selects that directory. Their source worktrees are read-only; only their `.git` and `.srcmove`
+default. **Linux** selects the whole-repository analysis, and **Linux (kernel/)**
+selects the separate directory-scoped analysis. Both use the same Linux worktree
+through separate container paths; the whole-repository mount maps the host
+`.srcmove-whole` directory to its own `.srcmove` path. Their source worktrees
+are read-only; only their `.git` and `.srcmove`
 directories are writable so the `srcmove-history` CLI can manage its own
 operation state and saved comparison artifacts. Additional repositories must be
 mounted into both services and added to the allow-listed
