@@ -54,6 +54,7 @@ const manifest: ArtifactManifest = {
       language: "C++",
       revision_0_lines: 10,
       revision_1_lines: 10,
+      diff_region_counts: { delete: 0, insert: 0 },
     },
     {
       file_id: "f-two",
@@ -64,6 +65,7 @@ const manifest: ArtifactManifest = {
       language: "C++",
       revision_0_lines: 10,
       revision_1_lines: 10,
+      diff_region_counts: { delete: 0, insert: 0 },
     },
   ],
   moves: {

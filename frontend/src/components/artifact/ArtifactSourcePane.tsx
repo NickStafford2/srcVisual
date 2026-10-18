@@ -21,6 +21,7 @@ import { ArtifactSourceFile } from "./ArtifactSourceFile";
 type Props = {
   artifactId: string;
   files: ArtifactFileSummary[];
+  hiddenFileIds?: ReadonlySet<string>;
   selectedFileId: string;
   selectedNodeId: string | null;
   active: boolean;
@@ -42,6 +43,7 @@ type Props = {
 export function ArtifactSourcePane({
   artifactId,
   files,
+  hiddenFileIds = EMPTY_FILE_IDS,
   selectedFileId,
   selectedNodeId,
   active,
@@ -87,12 +89,17 @@ export function ArtifactSourcePane({
     [_isolatedMove],
   );
   const _visibleMoves = useMemo(
-    () => moves.filter((move) => visibleMoveIds.has(move.move_id)).flatMap(expandReportEndpoints),
+    () =>
+      moves
+        .filter((move) => visibleMoveIds.has(move.move_id))
+        .flatMap(expandReportEndpoints),
     [moves, visibleMoveIds],
   );
-  const _visibleFiles = _isolatedMove
-    ? files.filter((file) => _isolatedMoveFileIds.has(file.file_id))
-    : files;
+  const _visibleFiles = files.filter(
+    (file) =>
+      !hiddenFileIds.has(file.file_id) &&
+      (!_isolatedMove || _isolatedMoveFileIds.has(file.file_id)),
+  );
 
   useEffect(() => {
     if (!selectedFileId) return;
@@ -111,7 +118,7 @@ export function ArtifactSourcePane({
   }
 
   function inspectMove(moveId: string, position: { x: number; y: number }) {
-    onInspectMove((_reportIds.get(moveId) ?? moveId), position);
+    onInspectMove(_reportIds.get(moveId) ?? moveId, position);
   }
 
   return (
@@ -199,7 +206,10 @@ export function ArtifactSourcePane({
           />
           <DiffRegionOverlay groups={diffRegionOverlay.groups} />
           <MoveConnectorOverlay
-            groups={groups.map((group) => ({ ...group, moveId: (_reportIds.get(group.moveId) ?? group.moveId) }))}
+            groups={groups.map((group) => ({
+              ...group,
+              moveId: _reportIds.get(group.moveId) ?? group.moveId,
+            }))}
             emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
             onMoveHover={(moveId) => setHoveredMoveId(moveId)}
             onMoveLeave={(moveId) =>
@@ -214,6 +224,11 @@ export function ArtifactSourcePane({
           />
 
           <div className="relative z-10 space-y-4">
+            {_visibleFiles.length === 0 ? (
+              <p className="rounded-xl border border-white/10 p-6 text-sm text-slate-400">
+                No files visible. Use the Files directory to show files.
+              </p>
+            ) : null}
             {_visibleFiles.map((file) => (
               <ArtifactSourceFile
                 key={file.file_id}
@@ -255,3 +270,5 @@ const DEFAULT_VISIBLE_DIFF_KINDS = new Set<ArtifactDiffKind>([
   "delete",
   "insert",
 ]);
+
+const EMPTY_FILE_IDS = new Set<string>();

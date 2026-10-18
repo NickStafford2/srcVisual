@@ -23,8 +23,9 @@ atomically publishes an immutable artifact containing normalized annotated
 XML, extracted sources, retained move metadata, checksums, and a structural
 SQLite index.
 
-The frontend loads bounded projections of that artifact. Its Source view lists
-changed files as collapsible cards, retrieves source only for expanded files,
+The frontend loads bounded projections of that artifact. Its Files navigator groups paths into a searchable directory tree with change
+counts and per-file visibility options. Source lists visible files as collapsible
+cards, retrieves source only for expanded files,
 and represents omitted ranges as expandable gaps. A dedicated srcDiff sidebar
 control independently highlights explicit `diff:common`, `diff:delete`, and
 `diff:insert` source regions; unwrapped common source remains neutral. Move

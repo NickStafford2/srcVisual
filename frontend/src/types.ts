@@ -18,6 +18,7 @@ export interface ArtifactFileSummary {
   language: string | null;
   revision_0_lines: number;
   revision_1_lines: number;
+  diff_region_counts: { delete: number; insert: number };
 }
 
 export type ArtifactMoveOrigin = "srcmove" | "srcdiff";

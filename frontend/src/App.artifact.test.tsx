@@ -23,6 +23,7 @@ const file = {
   language: "C++",
   revision_0_lines: 1,
   revision_1_lines: 1,
+  diff_region_counts: { delete: 0, insert: 0 },
 };
 
 const manifest: ArtifactManifest = {
@@ -228,6 +229,16 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   });
   expect(await screen.findByText("old();")).toBeInTheDocument();
   expect(await screen.findByText("unit: example.cpp")).toBeInTheDocument();
+  await user.click(screen.getByLabelText("Options for example.cpp"));
+  await user.click(screen.getByRole("button", { name: "Hide file" }));
+  expect(screen.queryByText("old();")).not.toBeInTheDocument();
+  expect(screen.getByText(/No files visible/)).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "example.cpp" }),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Show all" }));
+  expect(await screen.findByText("old();")).toBeInTheDocument();
+
   expect(xmlRequests).toBe(0);
 
   expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(

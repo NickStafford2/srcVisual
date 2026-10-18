@@ -14,6 +14,7 @@ import type {
   ArtifactTreeNode,
 } from "../../types";
 import { moveLayer } from "./artifactMoveLayers";
+import { ArtifactFileExplorer } from "./ArtifactFileExplorer";
 import { ArtifactNodeInfo } from "./ArtifactNodeInfo";
 import {
   CONTENT_RELATIONSHIPS,
@@ -25,6 +26,8 @@ type Props = {
   correspondenceControls?: ReactNode;
   manifest: ArtifactManifest;
   selectedFileId: string;
+  hiddenFileIds?: ReadonlySet<string>;
+  onHiddenFileIdsChange?: (ids: Set<string>) => void;
   inspectedMoveId: string | null;
   visibleMoveIds: ReadonlySet<string>;
   visibleDiffKinds: ReadonlySet<ArtifactDiffKind>;
@@ -48,6 +51,8 @@ export function ArtifactNavigator({
   correspondenceControls,
   manifest,
   selectedFileId,
+  hiddenFileIds = EMPTY_FILE_IDS,
+  onHiddenFileIdsChange = () => {},
   inspectedMoveId,
   visibleMoveIds,
   visibleDiffKinds,
@@ -71,10 +76,6 @@ export function ArtifactNavigator({
   const [diffTreeLoading, setDiffTreeLoading] = useState(true);
   const [diffTreeError, setDiffTreeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fileQuery, setFileQuery] = useState("");
-  const visibleFiles = manifest.files.filter((file) =>
-    file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
-  );
   const srcMoveItems = manifest.moves.items.filter(
     (move) => moveLayer(move) === "srcmove",
   );
@@ -208,33 +209,15 @@ export function ArtifactNavigator({
       aria-label="Artifact navigator"
     >
       <SidebarPanel title="Files">
-        <div className="px-4 pb-4">
-          <input
-            type="search"
-            value={fileQuery}
-            onChange={(event) => setFileQuery(event.target.value)}
-            placeholder="Filter files…"
-            aria-label="Filter artifact files"
-            className="w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 placeholder:text-slate-600"
-          />
-          <div className="mt-3 max-h-48 space-y-1 overflow-auto">
-            {visibleFiles.map((file) => (
-              <button
-                key={file.file_id}
-                type="button"
-                onClick={() => onSelectFile(file.file_id)}
-                className={`block w-full truncate rounded px-2 py-1 text-left text-xs ${file.file_id === selectedFileId ? "bg-sky-500/20 text-sky-200" : "text-slate-300 hover:bg-white/5"}`}
-              >
-                {file.filename}
-              </button>
-            ))}
-            {visibleFiles.length === 0 ? (
-              <p className="px-2 py-2 text-xs text-slate-500">
-                No matching files.
-              </p>
-            ) : null}
-          </div>
-        </div>
+        <ArtifactFileExplorer
+          key={manifest.artifact_id}
+          files={manifest.files}
+          moves={manifest.moves.items}
+          selectedFileId={selectedFileId}
+          hiddenFileIds={hiddenFileIds}
+          onSelectFile={onSelectFile}
+          onHiddenFileIdsChange={onHiddenFileIdsChange}
+        />
       </SidebarPanel>
 
       <SidebarPanel title="srcDiff">
@@ -854,3 +837,5 @@ function errorMessage(reason: unknown) {
     ? reason.message
     : "Unable to load tree projection.";
 }
+
+const EMPTY_FILE_IDS = new Set<string>();

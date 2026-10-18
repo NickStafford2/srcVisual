@@ -54,6 +54,7 @@ const file = {
   language: "C++",
   revision_0_lines: 20,
   revision_1_lines: 20,
+  diff_region_counts: { delete: 0, insert: 0 },
 };
 
 const secondFile = {

@@ -39,11 +39,37 @@ MAX_CHILDREN = 100
 
 def read_artifact_manifest(*, artifact_root: Path, artifact_id: str) -> dict[str, Any]:
     artifact_path, manifest = _open_artifact(artifact_root, artifact_id)
+    _index_path = artifact_path / "index.sqlite"
+    _stat = _index_path.stat()
+    _counts = _file_diff_counts(str(_index_path), _stat.st_mtime_ns, _stat.st_size)
     return _with_move_origins({
         **manifest,
+        "files": [
+            {**_file, "diff_region_counts": _counts[_file["file_id"]]}
+            for _file in manifest["files"]
+        ],
         "projection_schema_version": 2,
         "focus_profiles": list(FOCUS_PROFILES),
     }, artifact_path)
+
+
+@lru_cache(maxsize=8)
+def _file_diff_counts(
+    _index_path: str, _mtime_ns: int, _size: int
+) -> dict[str, dict[str, int]]:
+    """Count explicit canonical diff regions, independent of focus or tree limits."""
+    with closing(_connect_readonly(Path(_index_path))) as _database:
+        _counts = {
+            _file_id: {"delete": 0, "insert": 0}
+            for (_file_id,) in _database.execute("SELECT file_id FROM files")
+        }
+        for _file_id, _payload in _database.execute(
+            "SELECT file_id, payload FROM nodes WHERE kind != 'plain'"
+        ):
+            _kind = _diff_kind_for_tag(json.loads(zlib.decompress(_payload)).get("tag"))
+            if _kind in ("delete", "insert"):
+                _counts[_file_id][_kind] += 1
+    return _counts
 
 
 def read_artifact_move(

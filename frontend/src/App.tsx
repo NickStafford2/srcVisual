@@ -59,6 +59,9 @@ export default function App() {
     position: { x: number; y: number };
   } | null>(null);
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>("input");
+  const [hiddenArtifactFileIds, setHiddenArtifactFileIds] = useState<
+    Set<string>
+  >(() => new Set());
   const [selectedArtifactFileId, setSelectedArtifactFileId] = useState("");
   const [inspectedArtifactMove, setInspectedArtifactMove] = useState<{
     moveId: string;
@@ -111,6 +114,7 @@ export default function App() {
 
   useEffect(() => {
     if (artifact) {
+      setHiddenArtifactFileIds(new Set());
       setSelectedArtifactFileId(artifact.files[0]?.file_id ?? "");
       setInspectedArtifactMove(null);
       setVisibleCorrespondences([]);
@@ -138,7 +142,7 @@ export default function App() {
       .then((node) => {
         if (current) {
           setSelectedArtifactNode(node);
-          setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
+          revealArtifactFile(fileIdFromNodeId(node.node_id));
         }
       })
       .catch((reason: unknown) => {
@@ -162,8 +166,18 @@ export default function App() {
   const selectedArtifactFile = artifact?.files.find(
     (file) => file.file_id === selectedArtifactFileId,
   );
-  function selectArtifactFile(fileId: string) {
+  function revealArtifactFile(fileId: string) {
+    setHiddenArtifactFileIds((current) => {
+      if (!current.has(fileId)) return current;
+      const next = new Set(current);
+      next.delete(fileId);
+      return next;
+    });
     setSelectedArtifactFileId(fileId);
+  }
+
+  function selectArtifactFile(fileId: string) {
+    revealArtifactFile(fileId);
     clearArtifactNodeSelection();
   }
 
@@ -205,19 +219,19 @@ export default function App() {
   }
 
   function selectArtifactNode(node: ArtifactTreeNode) {
-    setSelectedArtifactFileId(fileIdFromNodeId(node.node_id));
+    revealArtifactFile(fileIdFromNodeId(node.node_id));
     setSelectedArtifactNodeId(node.node_id);
     setSelectedArtifactNode(node);
   }
 
   function selectArtifactNodeById(nodeId: string) {
-    setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
+    revealArtifactFile(fileIdFromNodeId(nodeId));
     setSelectedArtifactNodeId(nodeId);
     setSelectedArtifactNode(null);
   }
 
   function selectArtifactEndpoint(nodeId: string) {
-    setSelectedArtifactFileId(fileIdFromNodeId(nodeId));
+    revealArtifactFile(fileIdFromNodeId(nodeId));
     setSelectedArtifactNodeId(nodeId);
     setActiveMainTab("source-code");
   }
@@ -293,6 +307,8 @@ export default function App() {
                     />
                   ) : null
                 }
+                hiddenFileIds={hiddenArtifactFileIds}
+                onHiddenFileIdsChange={setHiddenArtifactFileIds}
                 manifest={artifact}
                 selectedFileId={selectedArtifactFileId}
                 inspectedMoveId={inspectedArtifactMove?.moveId ?? null}
@@ -311,7 +327,10 @@ export default function App() {
                 onDiffOverlayRegionsChange={setDiffOverlayRegions}
                 onSelectNode={selectArtifactNode}
                 onClearNode={clearArtifactNodeSelection}
-                onRevealNode={() => setActiveMainTab("source-code")}
+                onRevealNode={() => {
+                  revealArtifactFile(selectedArtifactFileId);
+                  setActiveMainTab("source-code");
+                }}
               />
             ) : null}
           </aside>
@@ -364,6 +383,7 @@ export default function App() {
                         onInspectCorrespondence={(pair, position) =>
                           setInspectedCorrespondence({ pair, position })
                         }
+                        hiddenFileIds={hiddenArtifactFileIds}
                         files={artifact.files}
                         selectedFileId={selectedArtifactFileId}
                         selectedNodeId={selectedArtifactNodeId}

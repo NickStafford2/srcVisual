@@ -570,7 +570,21 @@ The artifact manifest replaces `VisualizeResponse` as the root frontend
 contract. Source, tree, and XML data have separate explicit types and loading
 states.
 
-The source view lists every manifest file as a collapsible card. Only expanded
+The Files navigator groups all manifest files into a searchable, collapsible
+directory tree. Nonzero badges count explicit canonical delete/insert regions
+(not lines) and distinct srcDiff/srcMove reports touching each file. A report
+with multiple endpoints in one file counts once there. These counts are
+independent of source focus, move highlighting, and visibility; the manifest
+projection derives region counts from the immutable structural index, including
+for previously published artifacts.
+
+Each file's options offer Hide/Show file and Show only this file. Show all
+restores the complete list. Hidden files stay in the directory tree but are
+omitted from Source, including their endpoint proxies. Selecting a file restores
+its visibility. Visibility resets when a new artifact is loaded and does not
+alter canonical XML or other projections.
+
+The source view lists visible manifest files as collapsible cards. Only expanded
 cards request focused source projections, so the list can represent a large
 change without eagerly downloading every file. File and move navigation can
 request additional files or ranges. Inspecting a move opens its retained

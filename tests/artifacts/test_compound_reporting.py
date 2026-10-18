@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from tests.schema3_fixtures import schema3_results
 
-from srcdiffvisual.artifacts.projections import read_artifact_move
+from srcdiffvisual.artifacts.projections import read_artifact_move, read_artifact_manifest
 from srcdiffvisual.artifacts.store import read_artifact
 from srcdiffvisual.srcmove.existing_annotations import (
     build_move_results_from_moved_srcdiff,
@@ -66,6 +66,8 @@ def test_compound_reporting_survives_complete_artifact_pipeline(tmp_path, archiv
         filename="compound.xml", payload=xml.encode(), artifact_root=tmp_path,
         producer_move_results=results,
     )
+    _manifest = read_artifact_manifest(artifact_root=tmp_path, artifact_id=published.artifact_id)
+    assert _manifest["files"][0]["diff_region_counts"] == {"delete": 1, "insert": 1}
     stored = read_artifact(artifact_root=tmp_path, artifact_id=published.artifact_id)
     summary = stored.manifest["moves"]
     assert summary["move_count"] == 1
