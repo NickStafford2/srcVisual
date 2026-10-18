@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMoveConnectorGroup,
+  buildMoveSequenceConnectorGroup,
   clusterMoveRects,
   type RectLike,
 } from "./_moveConnectorGeometry";
@@ -124,5 +125,43 @@ describe("move connector geometry", () => {
     expect(_group?.hub?.cx).toBeLessThan(620);
     expect(_group?.hub?.cy).toBeGreaterThan(60);
     expect(_group?.hub?.cy).toBeLessThan(260);
+  });
+});
+
+describe("sequence connector geometry", () => {
+  function member(moveId: string, offset: number) {
+    return buildMoveConnectorGroup({
+      moveId,
+      containerRect: buildRect(100, 200, 1000, 1200),
+      fromEndpointRectGroups: [
+        [buildRect(180, 220 + offset, 320, 240 + offset)],
+      ],
+      toEndpointRectGroups: [[buildRect(720, 640 + offset, 880, 660 + offset)]],
+    })!;
+  }
+
+  it("retains each statement box and uses two side hubs with exactly one trunk", () => {
+    const members = [member("a", 0), member("b", 80), member("c", 160)];
+    const group = buildMoveSequenceConnectorGroup("sequence:a", members)!;
+    expect(group.boxes).toEqual(members.flatMap((value) => value.boxes));
+    expect(group.hub).toBeNull();
+    expect(group.sequenceHubs).toHaveLength(2);
+    const [from, to] = group.sequenceHubs!;
+    expect(from).toMatchObject({ revision: "revision-0", cx: 258, cy: 110 });
+    expect(to).toMatchObject({ revision: "revision-1", cx: 582, cy: 530 });
+    expect(group.paths.filter((path) => path.role === "spoke")).toHaveLength(6);
+    const trunks = group.paths.filter((path) => path.role === "sequence");
+    expect(trunks).toHaveLength(1);
+    expect(trunks[0].d).toContain(`M ${from.cx} ${from.cy}`);
+    expect(trunks[0].d).toMatch(new RegExp(`${to.cx} ${to.cy}$`));
+  });
+
+  it("does not invent an opposite hub or trunk when one revision is hidden", () => {
+    const single = member("a", 0);
+    single.boxes = single.boxes.filter((box) => box.revision === "revision-0");
+    const group = buildMoveSequenceConnectorGroup("sequence:a", [single])!;
+    expect(group.sequenceHubs).toHaveLength(1);
+    expect(group.paths.map((path) => path.role)).toEqual(["spoke"]);
+    expect(buildMoveSequenceConnectorGroup("sequence:a", [])).toBeNull();
   });
 });

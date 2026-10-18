@@ -15,7 +15,11 @@ import {
   CorrespondenceOverlay,
 } from "./CorrespondenceSource";
 import type { Pair } from "./ArtifactCorrespondences";
-import { expandReportEndpoints, reportIdsByMember } from "./reportedMoves";
+import {
+  expandReportEndpoints,
+  reportIdsByMember,
+  reportedMoveConnectorGroups,
+} from "./reportedMoves";
 import { ArtifactFileOptions } from "./ArtifactFileOptions";
 import { ArtifactSourceFile } from "./ArtifactSourceFile";
 
@@ -211,10 +215,7 @@ export function ArtifactSourcePane({
           />
           <DiffRegionOverlay groups={diffRegionOverlay.groups} />
           <MoveConnectorOverlay
-            groups={groups.map((group) => ({
-              ...group,
-              moveId: _reportIds.get(group.moveId) ?? group.moveId,
-            }))}
+            groups={reportedMoveConnectorGroups(groups, moves)}
             emphasizedMoveId={hoveredMoveId ?? inspectedMoveId}
             onMoveHover={(moveId) => setHoveredMoveId(moveId)}
             onMoveLeave={(moveId) =>

@@ -963,7 +963,12 @@ in `output_items`. The manifest, move list, details, selection, and History UI
 use this output partition. An item ID (`item:<group-id>` or
 `sequence:<first-member-id>`) remains distinct from its atomic member group IDs.
 An ordered Type-1 run appears once, with member statements retained for inspection.
-Source connectors pair member endpoints by position. No synthetic AST node or
+Source retains the exact member endpoint pairs. Sequence connector boxes fan
+into one dot on each revision, joined by a single connector; ordinary multi-endpoint
+move groups retain one central dot. All sequence boxes, spokes, dots, and the
+joining connector share the report identity for inspection and emphasis. A
+hidden revision does not create a synthetic opposite dot or joining connector.
+No synthetic AST node or
 aggregate selection weight is introduced. Atomic details retain correspondence,
 name, location, and selection evidence; a sequence resolves evidence through its
 members. Grouping belongs to srcMove; the viewer displays its reports rather

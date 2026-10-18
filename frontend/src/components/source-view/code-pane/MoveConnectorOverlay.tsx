@@ -163,6 +163,7 @@ export function MoveConnectorOverlay({
               <g key={path.key}>
                 <path
                   data-move-overlay-line="true"
+                  data-move-connector-role={path.role}
                   d={path.d}
                   fill="none"
                   stroke="currentColor"
@@ -188,31 +189,34 @@ export function MoveConnectorOverlay({
               </g>
             ))}
 
-            {group.hub ? (
-              <>
-                <circle
-                  data-move-overlay-hub="true"
-                  cx={group.hub.cx}
-                  cy={group.hub.cy}
-                  r={group.hub.r}
-                  fill="currentColor"
-                  fillOpacity={_strokeOpacity}
-                  className="drop-shadow"
-                />
-                <circle
-                  cx={group.hub.cx}
-                  cy={group.hub.cy}
-                  r={group.hub.hitR}
-                  fill="transparent"
-                  data-move-overlay-hit="true"
-                  className="pointer-events-auto cursor-pointer"
-                  onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
-                  onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
-                  onMouseLeave={() => onMoveLeave?.(group.moveId)}
-                  onClick={(event) => onMoveClick?.(group.moveId, event)}
-                />
-              </>
-            ) : null}
+            {(group.sequenceHubs ?? (group.hub ? [group.hub] : [])).map(
+              (hub) => (
+                <g key={hub.key}>
+                  <circle
+                    data-move-overlay-hub="true"
+                    data-move-hub-revision={hub.revision}
+                    cx={hub.cx}
+                    cy={hub.cy}
+                    r={hub.r}
+                    fill="currentColor"
+                    fillOpacity={_strokeOpacity}
+                    className="drop-shadow"
+                  />
+                  <circle
+                    cx={hub.cx}
+                    cy={hub.cy}
+                    r={hub.hitR}
+                    fill="transparent"
+                    data-move-overlay-hit="true"
+                    className="pointer-events-auto cursor-pointer"
+                    onMouseEnter={(event) => onMoveHover?.(group.moveId, event)}
+                    onMouseMove={(event) => onMoveHover?.(group.moveId, event)}
+                    onMouseLeave={() => onMoveLeave?.(group.moveId)}
+                    onClick={(event) => onMoveClick?.(group.moveId, event)}
+                  />
+                </g>
+              ),
+            )}
           </g>
         );
       })}

@@ -1,6 +1,9 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { MoveConnectorGroup } from "./_moveConnectorGeometry";
+import {
+  buildMoveSequenceConnectorGroup,
+  type MoveConnectorGroup,
+} from "./_moveConnectorGeometry";
 import { MoveConnectorOverlay } from "./MoveConnectorOverlay";
 
 const _group: MoveConnectorGroup = {
@@ -162,4 +165,27 @@ describe("MoveConnectorOverlay", () => {
     expect(_line).toHaveAttribute("stroke-width", "3.5");
     expect(_hub).toHaveAttribute("fill-opacity", "0.96");
   });
+});
+
+it("renders two clickable sequence hubs and one trunk under the report identity", () => {
+  const selected: string[] = [];
+  const sequence = buildMoveSequenceConnectorGroup("sequence:a", [_group])!;
+  const { container, unmount } = render(
+    <MoveConnectorOverlay
+      groups={[sequence]}
+      emphasizedMoveId="sequence:a"
+      onMoveClick={(id) => selected.push(id)}
+    />,
+  );
+  const hubs = container.querySelectorAll("[data-move-overlay-hub]");
+  expect(hubs).toHaveLength(2);
+  expect(
+    container.querySelectorAll('[data-move-connector-role="sequence"]'),
+  ).toHaveLength(1);
+  for (const hub of hubs) {
+    expect(hub).toHaveAttribute("fill-opacity", "0.96");
+    fireEvent.click(hub.nextElementSibling!);
+  }
+  expect(selected).toEqual(["sequence:a", "sequence:a"]);
+  unmount();
 });

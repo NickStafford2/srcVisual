@@ -80,6 +80,119 @@ describe("ArtifactSourcePane", () => {
 
   afterEach(cleanup);
 
+  it("bundles sequence members into two hubs and keeps report interactions through collapse", async () => {
+    const user = userEvent.setup();
+    const inspect = vi.fn();
+    const sequence = {
+      move_id: "sequence:a",
+      report_kind: "ordered_sequence" as const,
+      member_move_ids: ["a", "b"],
+      content_relationship: "type1" as const,
+      from_node_ids: ["f-1:n00000001", "f-1:n00000003"],
+      to_node_ids: ["f-1:n00000002", "f-1:n00000004"],
+    };
+    vi.mocked(fetchArtifactSource).mockResolvedValue({
+      ...projection,
+      blocks: [
+        {
+          type: "hunk",
+          block_id: "sequence",
+          left: { start_line: 11, end_line: 12 },
+          right: { start_line: 11, end_line: 12 },
+          rows: ["a", "b"].map((id, index) => {
+            const span = {
+              start_line: 11 + index,
+              end_line: 11 + index,
+              start_col: 1,
+              end_col: 4,
+            };
+            return {
+              kind: "replace" as const,
+              left: {
+                line_number: 11 + index,
+                text: `${id}();`,
+                anchors: [
+                  {
+                    node_id: sequence.from_node_ids[index],
+                    kind: "move" as const,
+                    move_id: id,
+                    span,
+                  },
+                ],
+              },
+              right: {
+                line_number: 11 + index,
+                text: `${id}();`,
+                anchors: [
+                  {
+                    node_id: sequence.to_node_ids[index],
+                    kind: "move" as const,
+                    move_id: id,
+                    span,
+                  },
+                ],
+              },
+            };
+          }),
+        },
+      ],
+    });
+    const { container } = render(
+      <ArtifactSourcePane
+        artifactId="artifact-1"
+        files={[file]}
+        selectedFileId="f-1"
+        selectedNodeId={null}
+        active
+        focus="moves"
+        inspectedMoveId={null}
+        moves={[sequence]}
+        visibleMoveIds={new Set([sequence.move_id])}
+        onInspectMove={inspect}
+        onFocusChange={vi.fn()}
+      />,
+    );
+    await screen.findAllByRole("button", { name: "a();" });
+    await waitFor(() => {
+      expect(container.querySelectorAll("svg g[data-move-id]")).toHaveLength(1);
+      expect(
+        container.querySelectorAll("[data-move-overlay-hub]"),
+      ).toHaveLength(2);
+      expect(
+        container.querySelectorAll("[data-move-overlay-box]"),
+      ).toHaveLength(4);
+      expect(
+        container.querySelectorAll('[data-move-connector-role="sequence"]'),
+      ).toHaveLength(1);
+    });
+    await user.click(container.querySelector("circle[data-move-overlay-hit]")!);
+    expect(inspect).toHaveBeenLastCalledWith(
+      sequence.move_id,
+      expect.any(Object),
+    );
+    expect(container.querySelector("g[data-move-id]")).toHaveAttribute(
+      "data-move-visual-state",
+      "emphasized",
+    );
+    await user.click(screen.getByRole("button", { name: "Collapse all" }));
+    await waitFor(() =>
+      expect(
+        container.querySelectorAll("[data-move-overlay-hub]"),
+      ).toHaveLength(2),
+    );
+    expect(
+      container.querySelectorAll('[data-move-connector-role="sequence"]'),
+    ).toHaveLength(1);
+    await user.click(
+      container.querySelector('[data-move-connector-role="sequence"]')!
+        .nextElementSibling!,
+    );
+    expect(inspect).toHaveBeenLastCalledWith(
+      sequence.move_id,
+      expect.any(Object),
+    );
+  });
+
   it.each([false, true])(
     "highlights exact correspondence columns and uses explicit proxies (unicode=%s)",
     async (unicode) => {

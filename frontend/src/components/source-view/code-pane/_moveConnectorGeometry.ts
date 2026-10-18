@@ -10,6 +10,7 @@ export type RectLike = {
 export type MoveConnectorPath = {
   key: string;
   d: string;
+  role?: "sequence" | "spoke";
 };
 
 export type MoveConnectorHub = {
@@ -19,6 +20,7 @@ export type MoveConnectorHub = {
   cy: number;
   r: number;
   hitR: number;
+  revision?: "revision-0" | "revision-1";
 };
 
 export type MoveConnectorBox = {
@@ -38,6 +40,7 @@ export type MoveConnectorGroup = {
   boxes: MoveConnectorBox[];
   paths: MoveConnectorPath[];
   hub: MoveConnectorHub | null;
+  sequenceHubs?: MoveConnectorHub[];
 };
 
 type Point = {
@@ -154,6 +157,72 @@ export function buildMoveConnectorGroup({
         d: buildCurvePath(_hubPoint, anchor, laneOffset),
       })),
     ],
+  };
+}
+
+// Bundle display geometry only. Canonical member endpoints remain independent.
+export function buildMoveSequenceConnectorGroup(
+  moveId: string,
+  members: MoveConnectorGroup[],
+): MoveConnectorGroup | null {
+  const boxes = members.flatMap((member) => member.boxes);
+  if (boxes.length === 0) return null;
+  const fromAnchors = boxes
+    .filter((box) => box.revision === "revision-0")
+    .map((box) => ({ x: box.x + box.width, y: box.y + box.height / 2 }));
+  const toAnchors = boxes
+    .filter((box) => box.revision === "revision-1")
+    .map((box) => ({ x: box.x, y: box.y + box.height / 2 }));
+  const hubs: MoveConnectorHub[] = [];
+  const paths: MoveConnectorPath[] = [];
+  for (const [revision, anchors] of [
+    ["revision-0", fromAnchors],
+    ["revision-1", toAnchors],
+  ] as const) {
+    if (anchors.length === 0) continue;
+    const hub: MoveConnectorHub = {
+      key: `${moveId}-${revision}-hub`,
+      moveId,
+      revision,
+      cx:
+        revision === "revision-0"
+          ? Math.max(...anchors.map((anchor) => anchor.x)) + 32
+          : Math.min(...anchors.map((anchor) => anchor.x)) - 32,
+      cy: median(anchors.map((anchor) => anchor.y)),
+      r: 6,
+      hitR: 14,
+    };
+    hubs.push(hub);
+    const point = { x: hub.cx, y: hub.cy };
+    paths.push(
+      ...anchors.map((anchor, index) => ({
+        key: `${moveId}-${revision}-spoke-${index}`,
+        role: "spoke" as const,
+        d:
+          revision === "revision-0"
+            ? buildCurvePath(anchor, point)
+            : buildCurvePath(point, anchor),
+      })),
+    );
+  }
+  if (hubs.length === 2) {
+    paths.push({
+      key: `${moveId}-sequence`,
+      role: "sequence",
+      d: buildCurvePath(
+        { x: hubs[0].cx, y: hubs[0].cy },
+        { x: hubs[1].cx, y: hubs[1].cy },
+      ),
+    });
+  }
+  return {
+    key: moveId,
+    moveId,
+    moveOrigin: members[0].moveOrigin,
+    boxes,
+    paths,
+    hub: null,
+    sequenceHubs: hubs,
   };
 }
 

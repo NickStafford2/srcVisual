@@ -1,3 +1,7 @@
+import {
+  buildMoveSequenceConnectorGroup,
+  type MoveConnectorGroup,
+} from "../source-view/code-pane/_moveConnectorGeometry";
 import type { ArtifactMoveSummary } from "../../types";
 
 export function reportIdsByMember(
@@ -12,7 +16,7 @@ export function reportIdsByMember(
   return ids;
 }
 
-// Keep one connector per exact member pair; never construct an all-to-all group.
+// Retain exact member pairs for source spans and endpoint proxy registration.
 export function expandReportEndpoints(
   move: ArtifactMoveSummary,
 ): ArtifactMoveSummary[] {
@@ -43,4 +47,34 @@ export function expandReportEndpoints(
     from_node_ids: [move.from_node_ids[index]],
     to_node_ids: [move.to_node_ids[index]],
   }));
+}
+
+export function reportedMoveConnectorGroups(
+  groups: MoveConnectorGroup[],
+  moves: ArtifactMoveSummary[],
+): MoveConnectorGroup[] {
+  const reportIds = reportIdsByMember(moves);
+  const sequences = moves.filter(
+    (move) => move.report_kind === "ordered_sequence",
+  );
+  const sequenceMembers = new Set(
+    sequences.flatMap((move) => move.member_move_ids ?? []),
+  );
+  const byId = new Map(groups.map((group) => [group.moveId, group]));
+  return [
+    ...groups
+      .filter((group) => !sequenceMembers.has(group.moveId))
+      .map((group) => ({
+        ...group,
+        moveId: reportIds.get(group.moveId) ?? group.moveId,
+      })),
+    ...sequences.flatMap((sequence) => {
+      const members = (sequence.member_move_ids ?? []).flatMap((id) => {
+        const group = byId.get(id);
+        return group ? [group] : [];
+      });
+      const group = buildMoveSequenceConnectorGroup(sequence.move_id, members);
+      return group ? [group] : [];
+    }),
+  ];
 }
