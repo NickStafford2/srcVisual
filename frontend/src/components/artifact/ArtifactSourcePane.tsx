@@ -16,12 +16,15 @@ import {
 } from "./CorrespondenceSource";
 import type { Pair } from "./ArtifactCorrespondences";
 import { expandReportEndpoints, reportIdsByMember } from "./reportedMoves";
+import { ArtifactFileOptions } from "./ArtifactFileOptions";
 import { ArtifactSourceFile } from "./ArtifactSourceFile";
 
 type Props = {
   artifactId: string;
   files: ArtifactFileSummary[];
   hiddenFileIds?: ReadonlySet<string>;
+  onHiddenFileIdsChange?: (ids: Set<string>) => void;
+  onSelectFile?: (fileId: string) => void;
   selectedFileId: string;
   selectedNodeId: string | null;
   active: boolean;
@@ -44,6 +47,8 @@ export function ArtifactSourcePane({
   artifactId,
   files,
   hiddenFileIds = EMPTY_FILE_IDS,
+  onHiddenFileIdsChange,
+  onSelectFile,
   selectedFileId,
   selectedNodeId,
   active,
@@ -234,6 +239,32 @@ export function ArtifactSourcePane({
                 key={file.file_id}
                 artifactId={artifactId}
                 file={file}
+                fileOptions={
+                  onHiddenFileIdsChange ? (
+                    <ArtifactFileOptions
+                      filename={file.filename}
+                      hidden={false}
+                      onToggleVisibility={() =>
+                        onHiddenFileIdsChange(
+                          new Set(hiddenFileIds).add(file.file_id),
+                        )
+                      }
+                      onShowOnly={() => {
+                        onHiddenFileIdsChange(
+                          new Set(
+                            files
+                              .filter((other) => other.file_id !== file.file_id)
+                              .map((other) => other.file_id),
+                          ),
+                        );
+                        setExpandedFileIds((current) =>
+                          new Set(current).add(file.file_id),
+                        );
+                        onSelectFile?.(file.file_id);
+                      }}
+                    />
+                  ) : null
+                }
                 focus={focus}
                 expanded={expandedFileIds.has(file.file_id)}
                 visibleMoves={_visibleMoves}

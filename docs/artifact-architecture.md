@@ -578,7 +578,8 @@ independent of source focus, move highlighting, and visibility; the manifest
 projection derives region counts from the immutable structural index, including
 for previously published artifacts.
 
-Each file's options offer Hide/Show file and Show only this file. Show all
+The directory rows and Source card headers share the same file options, offering
+Hide/Show file and Show only this file. Show all
 restores the complete list. Hidden files stay in the directory tree but are
 omitted from Source, including their endpoint proxies. Selecting a file restores
 its visibility. Visibility resets when a new artifact is loaded and does not

@@ -1,4 +1,10 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import App from "./App";
@@ -229,7 +235,11 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   });
   expect(await screen.findByText("old();")).toBeInTheDocument();
   expect(await screen.findByText("unit: example.cpp")).toBeInTheDocument();
-  await user.click(screen.getByLabelText("Options for example.cpp"));
+  await user.click(
+    within(screen.getByLabelText("Artifact navigator")).getByLabelText(
+      "Options for example.cpp",
+    ),
+  );
   await user.click(screen.getByRole("button", { name: "Hide file" }));
   expect(screen.queryByText("old();")).not.toBeInTheDocument();
   expect(screen.getByText(/No files visible/)).toBeInTheDocument();
@@ -239,6 +249,39 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
   await user.click(screen.getByRole("button", { name: "Show all" }));
   expect(await screen.findByText("old();")).toBeInTheDocument();
 
+  const sourceCard = screen.getByLabelText("Artifact source file example.cpp");
+  await user.click(
+    within(sourceCard).getByRole("button", { name: "Options for example.cpp" }),
+  );
+  expect(
+    within(sourceCard).getByRole("button", {
+      name: /example.cpp.*example.cpp/,
+    }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await user.click(screen.getByRole("button", { name: "Hide file" }));
+  expect(
+    screen.queryByLabelText("Artifact source file example.cpp"),
+  ).not.toBeInTheDocument();
+  expect(
+    within(screen.getByLabelText("Artifact navigator")).getByText(
+      "0/1 visible",
+    ),
+  ).toBeInTheDocument();
+  await user.click(
+    within(screen.getByLabelText("Artifact navigator")).getByRole("button", {
+      name: "example.cpp",
+    }),
+  );
+  const restoredCard = await screen.findByLabelText(
+    "Artifact source file example.cpp",
+  );
+  await user.click(
+    within(restoredCard).getByRole("button", {
+      name: "Options for example.cpp",
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: "Show only this file" }));
+  expect(await screen.findByText("old();")).toBeInTheDocument();
   expect(xmlRequests).toBe(0);
 
   expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(

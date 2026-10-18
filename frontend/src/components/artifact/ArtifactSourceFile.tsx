@@ -3,7 +3,14 @@ import {
   CorrespondenceSpan,
   type CorrespondenceEndpoint,
 } from "./CorrespondenceSource";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { fetchArtifactSource } from "../../api";
 import type { SourceRevision } from "../../srcdiff/lineLinks";
 import type {
@@ -28,6 +35,7 @@ type GapEdge = "start" | "end";
 type Props = {
   artifactId: string;
   file: ArtifactFileSummary;
+  fileOptions?: ReactNode;
   focus: ArtifactFocusProfile;
   expanded: boolean;
   visibleMoves: ArtifactMoveSummary[];
@@ -43,6 +51,7 @@ type Props = {
 export function ArtifactSourceFile({
   artifactId,
   file,
+  fileOptions,
   focus,
   expanded,
   visibleMoves,
@@ -249,6 +258,7 @@ export function ArtifactSourceFile({
               Collapse expanded gaps
             </button>
           ) : null}
+          {fileOptions}
         </div>
         {expanded ? (
           <div className="grid grid-cols-2 border-t border-white/10 text-[11px] text-slate-400">
@@ -403,7 +413,7 @@ function SourceRevisionPane({
         block.type === "gap" ? (
           <div
             key={block.block_id}
-            className="sticky left-0 z-20 flex h-9 w-full border-y border-sky-400/20 bg-neutral-950 text-sky-300"
+            className="sticky left-0 z-20 flex h-7 w-full border-y border-sky-400/20 bg-neutral-950 text-sky-300"
           >
             {gapEdges(projection, blockIndex).map((edge) => (
               <button
@@ -525,12 +535,12 @@ function SourceCell({
   return (
     <div
       data-source-row-kind={rowKind}
-      className="flex min-h-7 min-w-full border-b border-white/5 bg-black"
+      className="flex min-h-5.5 min-w-full border-b border-white/5 bg-black"
     >
-      <span className="sticky left-0 z-10 w-14 shrink-0 bg-black px-2 py-1 text-right text-slate-600 select-none">
+      <span className="sticky left-0 z-10 w-14 shrink-0 bg-black px-2 py-0.5 text-right text-slate-600 select-none">
         {line?.line_number ?? ""}
       </span>
-      <code className="px-2 py-1 whitespace-pre text-slate-200 [tab-size:8]">
+      <code className="px-2 py-0.5 whitespace-pre text-slate-200 [tab-size:8]">
         {_segments.map(({ segment, sourceColumn, endpoints }, index) => (
           <CorrespondenceSpan
             key={`${segment.nodeId ?? "plain"}-${index}`}

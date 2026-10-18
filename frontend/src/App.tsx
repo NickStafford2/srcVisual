@@ -384,6 +384,8 @@ export default function App() {
                           setInspectedCorrespondence({ pair, position })
                         }
                         hiddenFileIds={hiddenArtifactFileIds}
+                        onHiddenFileIdsChange={setHiddenArtifactFileIds}
+                        onSelectFile={selectArtifactFile}
                         files={artifact.files}
                         selectedFileId={selectedArtifactFileId}
                         selectedNodeId={selectedArtifactNodeId}

@@ -1,5 +1,6 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ArtifactFileSummary, ArtifactMoveSummary } from "../../types";
+import { ArtifactFileOptions } from "./ArtifactFileOptions";
 import { moveLayer } from "./artifactMoveLayers";
 
 type Props = {
@@ -25,23 +26,6 @@ export function ArtifactFileExplorer({
   onSelectFile,
   onHiddenFileIdsChange,
 }: Props) {
-  const [openOptionsId, setOpenOptionsId] = useState<string | null>(null);
-  const optionsId = useId();
-  const explorerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!openOptionsId) return;
-    function dismiss(event: PointerEvent) {
-      if (
-        event.target instanceof Element &&
-        !explorerRef.current
-          ?.querySelector("[data-file-options-open]")
-          ?.contains(event.target)
-      )
-        setOpenOptionsId(null);
-    }
-    document.addEventListener("pointerdown", dismiss);
-    return () => document.removeEventListener("pointerdown", dismiss);
-  }, [openOptionsId]);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const counts = useMemo(() => {
@@ -184,69 +168,21 @@ export function ArtifactFileExplorer({
                     ) : null}
                   </span>
                 </button>
-                <div
-                  data-file-options-open={
-                    openOptionsId === file.file_id ? "" : undefined
-                  }
-                  className="relative shrink-0"
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      setOpenOptionsId(null);
-                      event.currentTarget.querySelector("button")?.focus();
-                    }
+                <ArtifactFileOptions
+                  filename={file.filename}
+                  hidden={hidden}
+                  onToggleVisibility={() => toggleVisibility(file.file_id)}
+                  onShowOnly={() => {
+                    onHiddenFileIdsChange(
+                      new Set(
+                        files
+                          .filter((other) => other.file_id !== file.file_id)
+                          .map((other) => other.file_id),
+                      ),
+                    );
+                    onSelectFile(file.file_id);
                   }}
-                >
-                  <button
-                    type="button"
-                    aria-expanded={openOptionsId === file.file_id}
-                    aria-controls={
-                      openOptionsId === file.file_id ? optionsId : undefined
-                    }
-                    onClick={() =>
-                      setOpenOptionsId((current) =>
-                        current === file.file_id ? null : file.file_id,
-                      )
-                    }
-                    aria-label={`Options for ${file.filename}`}
-                    title={`Options for ${file.filename}`}
-                    className="flex h-5 items-center rounded px-1.5 text-slate-500 hover:bg-white/10 hover:text-white"
-                  >
-                    ⋯
-                  </button>
-                  {openOptionsId === file.file_id ? (
-                    <div
-                      id={optionsId}
-                      className="absolute top-full right-0 z-30 w-40 rounded border border-white/15 bg-slate-900 p-1 shadow-xl"
-                      onClick={() => setOpenOptionsId(null)}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => toggleVisibility(file.file_id)}
-                        className="w-full rounded px-2 py-2 text-left text-xs text-slate-200 hover:bg-white/10"
-                      >
-                        {hidden ? "Show file" : "Hide file"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onHiddenFileIdsChange(
-                            new Set(
-                              files
-                                .filter(
-                                  (other) => other.file_id !== file.file_id,
-                                )
-                                .map((other) => other.file_id),
-                            ),
-                          );
-                          onSelectFile(file.file_id);
-                        }}
-                        className="w-full rounded px-2 py-2 text-left text-xs text-slate-200 hover:bg-white/10"
-                      >
-                        Show only this file
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                />
               </div>
             );
           })}
@@ -255,7 +191,7 @@ export function ArtifactFileExplorer({
   }
 
   return (
-    <div ref={explorerRef} className="px-3 pb-2">
+    <div className="px-3 pb-2">
       <input
         type="search"
         value={query}
@@ -277,10 +213,7 @@ export function ArtifactFileExplorer({
           Show all
         </button>
       </div>
-      <div
-        aria-label="File directory"
-        className={`max-h-80 overflow-y-auto ${openOptionsId ? "pb-20" : ""}`}
-      >
+      <div aria-label="File directory" className="max-h-80 overflow-y-auto">
         {branch(root)}
         {matching.length === 0 ? (
           <p className="px-2 py-2 text-xs text-slate-500">No matching files.</p>
