@@ -36,7 +36,7 @@ const root: ArtifactTreeNode = {
 };
 
 const manifest: ArtifactManifest = {
-  schema_version: 4,
+  schema_version: 5,
   projection_schema_version: 2,
   artifact_id: "artifact-1",
   source_filename: "comparison.xml",

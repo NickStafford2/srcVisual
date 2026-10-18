@@ -9,7 +9,7 @@ vi.mock("virtual:viewer-identity", () => ({
 }));
 afterEach(cleanup);
 const artifact: ArtifactManifest = {
-  schema_version: 4,
+  schema_version: 5,
   projection_schema_version: 2,
   artifact_id: "a".repeat(32),
   source_filename: "pasted.srcdiff.xml",

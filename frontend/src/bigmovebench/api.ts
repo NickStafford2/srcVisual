@@ -1,3 +1,4 @@
+import { assertArtifactManifest } from "../artifactManifest";
 import { assertClassificationContract } from "../contentRelationships";
 import type { ArtifactManifest } from "../types";
 import type { BigMoveBenchReviewManifest } from "./types";
@@ -28,17 +29,8 @@ export async function visualizeBigMoveBenchCase(
   );
   const payload: unknown = await response.json();
   if (!response.ok) throw new Error(responseError(payload));
-  if (
-    typeof payload !== "object" ||
-    payload === null ||
-    (payload as Partial<ArtifactManifest>).schema_version !== 4 ||
-    (payload as Partial<ArtifactManifest>).projection_schema_version !== 2 ||
-    typeof (payload as Partial<ArtifactManifest>).artifact_id !== "string"
-  ) {
-    throw new Error("Backend returned an unsupported visualization artifact.");
-  }
-  assertClassificationContract(payload);
-  return payload as ArtifactManifest;
+  assertArtifactManifest(payload);
+  return payload;
 }
 
 function assertReviewManifest(

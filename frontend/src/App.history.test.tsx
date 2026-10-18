@@ -209,7 +209,7 @@ describe("repository history browser", () => {
         }
         if (url === `/api/artifacts/${"a".repeat(32)}`) {
           return jsonResponse({
-            schema_version: 4,
+            schema_version: 5,
             projection_schema_version: 2,
             artifact_id: "a".repeat(32),
             source_filename: "history-pair-1.srcmove.xml",

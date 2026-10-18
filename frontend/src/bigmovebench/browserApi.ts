@@ -1,3 +1,4 @@
+import { assertArtifactManifest } from "../artifactManifest";
 import {
   assertClassificationContract,
   assertDetectorMove,
@@ -46,12 +47,7 @@ export async function visualizeSavedBenchmarkCase(
   const payload = await response.json();
   if (!response.ok)
     throw new Error(payload.error ?? "Unable to open benchmark Source view.");
-  if (
-    payload.schema_version !== 4 ||
-    payload.projection_schema_version !== 2 ||
-    typeof payload.artifact_id !== "string"
-  )
-    throw new Error("Unsupported benchmark visualization artifact.");
+  assertArtifactManifest(payload);
   return payload;
 }
 import type { ArtifactManifest } from "../types";

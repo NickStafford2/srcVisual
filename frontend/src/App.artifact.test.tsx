@@ -26,7 +26,7 @@ const file = {
 };
 
 const manifest: ArtifactManifest = {
-  schema_version: 4,
+  schema_version: 5,
   projection_schema_version: 2,
   artifact_id: "a".repeat(32),
   source_filename: "example.xml",
