@@ -13,6 +13,7 @@ import type {
   ArtifactMoveSummary,
   ArtifactTreeNode,
 } from "../../types";
+import { moveLayer } from "./artifactMoveLayers";
 import { ArtifactNodeInfo } from "./ArtifactNodeInfo";
 import {
   CONTENT_RELATIONSHIPS,
@@ -74,10 +75,38 @@ export function ArtifactNavigator({
   const visibleFiles = manifest.files.filter((file) =>
     file.filename.toLocaleLowerCase().includes(fileQuery.toLocaleLowerCase()),
   );
+  const srcMoveItems = manifest.moves.items.filter(
+    (move) => moveLayer(move) === "srcmove",
+  );
+  const srcDiffItems = manifest.moves.items.filter(
+    (move) => moveLayer(move) === "srcdiff",
+  );
+  const visibleSrcMoveCount = srcMoveItems.filter((move) =>
+    visibleMoveIds.has(move.move_id),
+  ).length;
+  function setLayerVisibility(
+    items: ArtifactMoveSummary[],
+    enabled: boolean,
+    onlyId?: string,
+  ) {
+    const next = new Set(visibleMoveIds);
+    for (const move of items) {
+      if (enabled && (!onlyId || move.move_id === onlyId))
+        next.add(move.move_id);
+      else next.delete(move.move_id);
+    }
+    onVisibleMoveIdsChange(next);
+  }
   const selectedMoveId = inspectedMoveId ?? selectedNode?.move_id ?? null;
-  const currentMoveId = manifest.moves.items.find((move) => move.move_id === selectedMoveId || (selectedMoveId !== null && move.member_move_ids?.includes(selectedMoveId)))?.move_id ?? selectedMoveId;
+  const currentMoveId =
+    srcMoveItems.find(
+      (move) =>
+        move.move_id === selectedMoveId ||
+        (selectedMoveId !== null &&
+          move.member_move_ids?.includes(selectedMoveId)),
+    )?.move_id ?? null;
   function toggleContentRelationship(contentRelationship: ContentRelationship) {
-    const movesOfRelationship = manifest.moves.items.filter(
+    const movesOfRelationship = srcMoveItems.filter(
       (move) => move.content_relationship === contentRelationship,
     );
     if (movesOfRelationship.length === 0) return;
@@ -209,6 +238,63 @@ export function ArtifactNavigator({
       </SidebarPanel>
 
       <SidebarPanel title="srcDiff">
+        <div
+          className="border-b border-white/10 p-4"
+          aria-label="srcDiff moves"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
+              Moves
+            </p>
+            <span className="text-[10px] text-slate-500">
+              {
+                srcDiffItems.filter((move) => visibleMoveIds.has(move.move_id))
+                  .length
+              }
+              /{srcDiffItems.length} shown
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Inherited srcDiff annotations; independent of srcMove results.
+          </p>
+          <div
+            role="group"
+            aria-label="srcDiff move connector visibility"
+            className="mt-3 flex gap-2 text-xs"
+          >
+            <button
+              type="button"
+              onClick={() => setLayerVisibility(srcDiffItems, true)}
+              className="rounded border border-violet-300/30 px-2 py-1 text-violet-200"
+            >
+              Show all srcDiff moves
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayerVisibility(srcDiffItems, false)}
+              className="rounded border border-white/15 px-2 py-1 text-slate-300"
+            >
+              Hide srcDiff moves
+            </button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {srcDiffItems.map((move) => (
+              <button
+                key={move.move_id}
+                type="button"
+                aria-pressed={visibleMoveIds.has(move.move_id)}
+                title={`${visibleMoveIds.has(move.move_id) ? "Hide" : "Show"} srcDiff ${move.move_id} connector`}
+                onClick={() => onToggleMove(move)}
+                className={`rounded border px-2 py-1 text-xs ${visibleMoveIds.has(move.move_id) ? "border-violet-300/70 bg-violet-400/20 text-violet-200" : "border-violet-300/25 text-violet-200/60"}`}
+              >
+                <span aria-hidden="true" className="mr-1">
+                  {visibleMoveIds.has(move.move_id) ? "●" : "○"}
+                </span>
+                {move.move_id}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="p-4 pt-2">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
@@ -303,14 +389,14 @@ export function ArtifactNavigator({
         title="srcMove"
         contentClassName="max-h-[55vh] overflow-auto"
       >
-        {manifest.moves.items.length > 0 ? (
+        {srcMoveItems.length > 0 ? (
           <div className="border-b border-white/10 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] tracking-[0.28em] text-slate-500 uppercase">
                 Move highlighting
               </p>
               <span className="text-[10px] text-slate-600">
-                {visibleMoveIds.size}/{manifest.moves.items.length} shown
+                {visibleSrcMoveCount}/{srcMoveItems.length} shown
               </span>
             </div>
             <div
@@ -320,15 +406,17 @@ export function ArtifactNavigator({
             >
               <button
                 type="button"
-                disabled={!currentMoveId}
+                disabled={
+                  !srcMoveItems.some((move) => move.move_id === currentMoveId)
+                }
                 aria-pressed={
                   currentMoveId !== null &&
-                  visibleMoveIds.size === 1 &&
+                  visibleSrcMoveCount === 1 &&
                   visibleMoveIds.has(currentMoveId)
                 }
                 onClick={() => {
                   if (currentMoveId) {
-                    onVisibleMoveIdsChange(new Set([currentMoveId]));
+                    setLayerVisibility(srcMoveItems, true, currentMoveId);
                   }
                 }}
                 className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 disabled:opacity-40 aria-pressed:text-amber-200"
@@ -337,22 +425,16 @@ export function ArtifactNavigator({
               </button>
               <button
                 type="button"
-                aria-pressed={
-                  visibleMoveIds.size === manifest.moves.items.length
-                }
-                onClick={() =>
-                  onVisibleMoveIdsChange(
-                    new Set(manifest.moves.items.map((move) => move.move_id)),
-                  )
-                }
+                aria-pressed={visibleSrcMoveCount === srcMoveItems.length}
+                onClick={() => setLayerVisibility(srcMoveItems, true)}
                 className="aria-pressed:bg-diff-move-1/20 border-r border-white/10 px-2 py-1.5 text-slate-300 aria-pressed:text-amber-200"
               >
                 All
               </button>
               <button
                 type="button"
-                aria-pressed={visibleMoveIds.size === 0}
-                onClick={() => onVisibleMoveIdsChange(new Set())}
+                aria-pressed={visibleSrcMoveCount === 0}
+                onClick={() => setLayerVisibility(srcMoveItems, false)}
                 className="px-2 py-1.5 text-slate-300 aria-pressed:bg-white/10 aria-pressed:text-white"
               >
                 None
@@ -364,7 +446,7 @@ export function ArtifactNavigator({
               className="mt-2 grid grid-cols-2 gap-1 text-xs"
             >
               {CONTENT_RELATIONSHIPS.map((contentRelationship) => {
-                const movesOfRelationship = manifest.moves.items.filter(
+                const movesOfRelationship = srcMoveItems.filter(
                   (move) => move.content_relationship === contentRelationship,
                 );
                 const allVisible =
@@ -398,7 +480,7 @@ export function ArtifactNavigator({
               })}
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
-              {manifest.moves.items.map((move) => (
+              {srcMoveItems.map((move) => (
                 <button
                   key={move.move_id}
                   type="button"
@@ -567,7 +649,15 @@ function ArtifactDiffTreeBranch({
         >
           {node.tag}
           {node.kind === "move" ? (
-            <span className="ml-1 text-[9px] text-amber-300">move</span>
+            <span
+              className={`ml-1 text-[9px] ${node.move_origin === "srcdiff" ? "text-violet-300" : "text-amber-300"}`}
+            >
+              {node.move_origin === "srcdiff"
+                ? "srcDiff move"
+                : node.move_origin === "srcmove"
+                  ? "srcMove move"
+                  : "move"}
+            </span>
           ) : null}
           {node.child_count > 0 ? (
             <span className="ml-1 text-[10px] text-slate-600">
@@ -663,7 +753,9 @@ function ArtifactTreeBranch({
         className={`flex items-center rounded ${
           selectedNodeId === node.node_id
             ? node.kind === "move"
-              ? "bg-diff-move-1/12 ring-diff-move-1/25 ring-1"
+              ? node.move_origin === "srcdiff"
+                ? "bg-violet-400/12 ring-1 ring-violet-300/25"
+                : "bg-diff-move-1/12 ring-diff-move-1/25 ring-1"
               : "bg-sky-400/10"
             : ""
         }`}
@@ -686,7 +778,9 @@ function ArtifactTreeBranch({
           aria-pressed={selectedNodeId === node.node_id}
           className={`min-w-0 flex-1 py-0.5 text-left hover:text-white ${
             node.kind === "move"
-              ? "text-diff-move-1"
+              ? node.move_origin === "srcdiff"
+                ? "text-violet-300"
+                : "text-diff-move-1"
               : selectedNodeId === node.node_id
                 ? "text-sky-200"
                 : "text-slate-300"
@@ -694,8 +788,14 @@ function ArtifactTreeBranch({
         >
           <span>{node.label}</span>
           {node.kind === "move" ? (
-            <span className="bg-diff-move-1/15 text-diff-move-1 ml-1 rounded-full px-1.5 py-0.5 text-[9px] tracking-wide uppercase">
-              move
+            <span
+              className={`${node.move_origin === "srcdiff" ? "bg-violet-400/15 text-violet-300" : "bg-diff-move-1/15 text-diff-move-1"} ml-1 rounded-full px-1.5 py-0.5 text-[9px] tracking-wide uppercase`}
+            >
+              {node.move_origin === "srcdiff"
+                ? "srcDiff move"
+                : node.move_origin === "srcmove"
+                  ? "srcMove move"
+                  : "move"}
             </span>
           ) : null}
           {!node.children_complete ? (

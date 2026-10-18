@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import { CodeSegment } from "./CodeSegment";
@@ -108,4 +108,67 @@ it("can highlight common source independently", () => {
   expect(_segment).toHaveTextContent("unchanged();");
   expect(_segment).toHaveClass("bg-diff-plain/25");
   expect(_segment).toHaveAttribute("data-highlighted-segment", "true");
+});
+
+it("registers both enabled overlapping endpoints and distinguishes their layers", () => {
+  const register = vi.fn();
+  const unregister = vi.fn();
+  const inspect = vi.fn();
+  const segment: ViewerLineSegment = {
+    ..._moveSegment,
+    moveOrigin: "srcmove",
+    moveAnchors: [
+      { moveId: "1", nodeId: "wrapper", origin: "srcdiff" },
+      { moveId: "move-1", nodeId: "declaration", origin: "srcmove" },
+    ],
+  };
+  const { container, rerender } = render(
+    <CodeSegment
+      revision="revision-0"
+      segment={segment}
+      visibleMoveIds={new Set(["1", "move-1"])}
+      registerMoveSegment={register}
+      unregisterMoveSegment={unregister}
+      onMoveInspect={inspect}
+    />,
+  );
+  const endpoint = container.querySelector("[data-move-id='move-1']")!;
+  fireEvent.click(endpoint, { altKey: true });
+  expect(inspect).toHaveBeenLastCalledWith("1", expect.any(Object));
+  fireEvent.keyDown(endpoint, { key: "Enter", altKey: true });
+  expect(inspect).toHaveBeenLastCalledWith("1", expect.any(Object));
+  expect(endpoint).toHaveAttribute(
+    "title",
+    expect.stringContaining("srcDiff: 1"),
+  );
+  expect(register).toHaveBeenCalledTimes(2);
+  expect(
+    register.mock.calls.map(([registration]) => [
+      registration.moveId,
+      registration.moveOrigin,
+    ]),
+  ).toEqual([
+    ["1", "srcdiff"],
+    ["move-1", "srcmove"],
+  ]);
+  expect(container.querySelector("[data-move-id='move-1']")).toHaveClass(
+    "bg-diff-move-1/25",
+    "decoration-violet-400",
+  );
+  rerender(
+    <CodeSegment
+      revision="revision-0"
+      segment={segment}
+      visibleMoveIds={new Set(["move-1"])}
+      registerMoveSegment={register}
+      unregisterMoveSegment={unregister}
+    />,
+  );
+  expect(unregister).toHaveBeenCalledTimes(2);
+  expect(register.mock.calls[register.mock.calls.length - 1]?.[0].moveId).toBe(
+    "move-1",
+  );
+  expect(container.querySelector("[data-move-id='move-1']")).not.toHaveClass(
+    "decoration-violet-400",
+  );
 });

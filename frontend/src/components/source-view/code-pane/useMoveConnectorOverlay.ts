@@ -12,6 +12,7 @@ import {
 } from "./_moveConnectorGeometry";
 
 type MoveSegmentElements = {
+  moveOrigin?: "srcmove" | "srcdiff";
   "revision-0": Map<string, Set<HTMLElement>>;
   "revision-1": Map<string, Set<HTMLElement>>;
 };
@@ -52,12 +53,14 @@ export function useMoveConnectorOverlay() {
     for (const [moveId, elements] of segmentElementsByMoveIdRef.current) {
       const group = buildMoveConnectorGroup({
         moveId,
+        laneOffset: elements.moveOrigin === "srcdiff" ? 24 : 0,
         containerRect,
         fromEndpointRectGroups: getEndpointRectGroups(elements["revision-0"]),
         toEndpointRectGroups: getEndpointRectGroups(elements["revision-1"]),
       });
 
       if (group) {
+        group.moveOrigin = elements.moveOrigin;
         nextGroups.push(group);
       }
     }
@@ -66,10 +69,17 @@ export function useMoveConnectorOverlay() {
   }, []);
 
   const registerMoveSegment = useCallback(
-    ({ moveId, endpointId, revision, element }: MoveSegmentRegistration) => {
+    ({
+      moveId,
+      moveOrigin,
+      endpointId,
+      revision,
+      element,
+    }: MoveSegmentRegistration) => {
       const current =
         segmentElementsByMoveIdRef.current.get(moveId) ??
         createMoveSegmentElements();
+      current.moveOrigin = moveOrigin;
 
       const endpointElements = current[revision].get(endpointId) ?? new Set();
       endpointElements.add(element);
@@ -94,7 +104,8 @@ export function useMoveConnectorOverlay() {
       if (endpointElements?.size === 0) current[revision].delete(endpointId);
 
       if (
-        current["revision-0"].size === 0 && current["revision-1"].size === 0
+        current["revision-0"].size === 0 &&
+        current["revision-1"].size === 0
       ) {
         segmentElementsByMoveIdRef.current.delete(moveId);
       } else {

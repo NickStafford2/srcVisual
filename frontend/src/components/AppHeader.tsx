@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { moveLayer } from "./artifact/artifactMoveLayers";
 import initialIdentity from "virtual:viewer-identity";
 import type {
   ArtifactFocusProfile,
@@ -26,6 +27,7 @@ type Props = {
   view: string;
   focus: ArtifactFocusProfile;
   visibleMoveCount: number;
+  visibleMoveIds?: ReadonlySet<string>;
 };
 
 export function AppHeader({
@@ -34,6 +36,7 @@ export function AppHeader({
   view,
   focus,
   visibleMoveCount,
+  visibleMoveIds,
 }: Props) {
   const [identity, setIdentity] = useState(initialIdentity);
   const [copyStatus, setCopyStatus] = useState("");
@@ -62,12 +65,26 @@ export function AppHeader({
     : visibleMoveCount === artifact.moves.items.length
       ? `All ${visibleMoveCount} moves shown`
       : `${visibleMoveCount} of ${artifact.moves.items.length} moves shown`;
+  const layerVisibility =
+    artifact && visibleMoveIds
+      ? (["srcmove", "srcdiff"] as const)
+          .map((layer) => {
+            const moves = artifact.moves.items.filter(
+              (move) => moveLayer(move) === layer,
+            );
+            const shown = moves.filter((move) =>
+              visibleMoveIds.has(move.move_id),
+            ).length;
+            return `${layer === "srcmove" ? "srcMove" : "srcDiff"}: ${shown}/${moves.length} shown`;
+          })
+          .join(" · ")
+      : visibility;
   const details = [
     `Comparison: ${label}`,
     `Input: ${mode}`,
     `View: ${view}`,
     `Source focus: ${focuses[focus]}`,
-    `Source connectors: ${visibility}`,
+    `Source connectors: ${layerVisibility}`,
     `Before: ${context?.before ?? "revision 0 (commit unknown)"}`,
     `After: ${context?.after ?? "revision 1 (commit unknown)"}`,
     `Artifact: ${artifact?.artifact_id ?? "none"}`,
@@ -98,14 +115,14 @@ export function AppHeader({
               {artifact ? mode : "Input"} · {identity.mode}
             </span>
           </div>
-          <p className="mt-1 break-words text-sm font-semibold text-slate-100">
+          <p className="mt-1 text-sm font-semibold break-words text-slate-100">
             {label}
           </p>
           {artifact ? (
             <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-slate-400">
               <span>{view}</span>
               <span>Source focus: {focuses[focus]}</span>
-              <span>{visibility}</span>
+              <span>{layerVisibility}</span>
               {context?.before && context.after ? (
                 <span title={`${context.before} → ${context.after}`}>
                   Before {context.before.slice(0, 10)} → After{" "}
@@ -124,7 +141,7 @@ export function AppHeader({
               srcMove{" "}
               {srcmove ? `SHA ${srcmove.slice(0, 10)}` : "version unknown"}
             </span>
-            <span className="block mt-1">
+            <span className="mt-1 block">
               srcDiffVisual frontend SHA {identity.sha256.slice(0, 10)} ·
               Details
             </span>
@@ -147,7 +164,7 @@ export function AppHeader({
             <span role="status" className="ml-3">
               {copyStatus}
             </span>
-            <pre className="whitespace-pre-wrap break-all text-[11px]">
+            <pre className="text-[11px] break-all whitespace-pre-wrap">
               {details}
             </pre>
           </div>

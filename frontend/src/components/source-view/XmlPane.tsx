@@ -129,8 +129,13 @@ function XmlSegment({
       data-highlighted-segment={segment.highlighted ? "true" : "false"}
       data-highlight-kind={segment.kind}
       data-node-id={segment.nodeId ?? undefined}
+      data-move-origin={
+        segment.kind === "move" ? (segment.moveOrigin ?? "srcmove") : undefined
+      }
       className={[
-        getSourceSegmentClasses(segment.kind, segment.highlighted),
+        segment.kind === "move" && segment.moveOrigin === "srcdiff"
+          ? "rounded bg-violet-400/20 text-violet-200"
+          : getSourceSegmentClasses(segment.kind, segment.highlighted),
         selectable ? "cursor-pointer" : "",
         selected
           ? "text-sky-100 underline decoration-sky-300 decoration-2 underline-offset-2"

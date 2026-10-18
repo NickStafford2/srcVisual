@@ -110,8 +110,13 @@ export function MoveConnectorOverlay({
           <g
             key={group.key}
             data-move-id={group.moveId}
+            data-move-origin={group.moveOrigin ?? "srcmove"}
             data-move-visual-state={_isEmphasized ? "emphasized" : "visible"}
-            className="text-diff-move-1/70"
+            className={
+              group.moveOrigin === "srcdiff"
+                ? "text-violet-400/80"
+                : "text-diff-move-1/70"
+            }
           >
             {group.boxes.map((box) => (
               <g key={box.key}>
@@ -127,6 +132,9 @@ export function MoveConnectorOverlay({
                   stroke="currentColor"
                   strokeOpacity={_strokeOpacity}
                   strokeWidth={_boxStrokeWidth}
+                  strokeDasharray={
+                    group.moveOrigin === "srcdiff" ? "5 3" : undefined
+                  }
                   mask={`url(#${buildBoxStrokeMaskId(box.key)})`}
                   className="drop-shadow"
                 />
@@ -160,6 +168,9 @@ export function MoveConnectorOverlay({
                   stroke="currentColor"
                   strokeOpacity={_strokeOpacity}
                   strokeWidth={_isEmphasized ? 3.5 : 2}
+                  strokeDasharray={
+                    group.moveOrigin === "srcdiff" ? "5 3" : undefined
+                  }
                   className="drop-shadow"
                 />
                 <path

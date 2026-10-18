@@ -47,6 +47,35 @@ describe("MoveConnectorOverlay", () => {
     cleanup();
   });
 
+  it("distinguishes srcDiff connectors from srcMove without dropping either layer", () => {
+    const srcdiff = {
+      ..._group,
+      key: "srcdiff-1",
+      moveId: "srcdiff-1",
+      moveOrigin: "srcdiff" as const,
+      boxes: _group.boxes.map((box) => ({ ...box, key: `srcdiff-${box.key}` })),
+      paths: _group.paths.map((path) => ({
+        ...path,
+        key: `srcdiff-${path.key}`,
+      })),
+      hub: null,
+    };
+    const { container } = render(
+      <MoveConnectorOverlay groups={[_group, srcdiff]} />,
+    );
+    const srcmoveGroup = container.querySelector('[data-move-id="move-1"]')!;
+    const srcdiffGroup = container.querySelector('[data-move-id="srcdiff-1"]')!;
+    expect(srcmoveGroup).toHaveAttribute("data-move-origin", "srcmove");
+    expect(srcmoveGroup).toHaveClass("text-diff-move-1/70");
+    expect(srcdiffGroup).toHaveClass("text-violet-400/80");
+    expect(
+      srcdiffGroup.querySelector("[data-move-overlay-line]"),
+    ).toHaveAttribute("stroke-dasharray", "5 3");
+    expect(
+      srcmoveGroup.querySelector("[data-move-overlay-line]"),
+    ).not.toHaveAttribute("stroke-dasharray");
+  });
+
   it("uses one shared inactive look for box border, line, and hub", () => {
     render(<MoveConnectorOverlay groups={[_group]} />);
 

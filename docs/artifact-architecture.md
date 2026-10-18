@@ -949,8 +949,27 @@ aggregate selection weight is introduced. Atomic details retain correspondence,
 name, location, and selection evidence; a sequence resolves evidence through its
 members. Grouping belongs to srcMove; the viewer displays its reports rather
 than inferring adjacency. See [the producer contract](../../srcMove/doc/plans/results_schema_v3/README.md).
-Annotations inherited from input XML remain separate, unclassified items outside
-the producer partition and histograms. XML-only moves remain unclassified.
+Move origins are separate display layers. Namespaced `mv:id` annotations belong
+to srcMove; plain `move` annotations belong to srcDiff. The projection API derives
+`move_origin` from retained XML namespaces, including for existing immutable
+artifacts. XML-only srcMove annotations remain srcMove even without producer
+JSON, and remain unclassified when classification evidence is unavailable.
+Current projection identities require distinct raw move IDs across tools;
+collisions fail admission instead of merging the annotations.
+
+The srcMove sidebar controls gold highlights and solid connectors. Separate move
+controls within the srcDiff sidebar control violet highlights and dashed
+connectors. When any srcMove annotations exist, only srcMove moves start enabled;
+srcDiff-only documents start with their srcDiff moves enabled. Visibility controls
+and counts are independent, and Move Summary has separate origin views. srcDiff
+annotations never enter the producer partition or its content histograms.
+
+Both layers may be enabled together. Source segments retain every enabled
+overlapping endpoint, rather than letting one annotation discard another.
+Overlapping source uses gold fill and a violet underline, with separate connector
+lanes. Normal click inspects srcMove; Alt-click inspects an overlapping srcDiff
+annotation. Disabled moves cannot mask enabled moves, and proxy endpoints are
+used only when the corresponding source endpoint is actually unrendered.
 
 Producer JSON requires results schema 3 and optional diagnostics schema 5.
 Shared `srcmove_runtime.results_schema` validates the complete structure and

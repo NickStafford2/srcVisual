@@ -20,8 +20,11 @@ export interface ArtifactFileSummary {
   revision_1_lines: number;
 }
 
+export type ArtifactMoveOrigin = "srcmove" | "srcdiff";
+
 export interface ArtifactMoveSummary {
   move_id: string;
+  move_origin?: ArtifactMoveOrigin;
   report_kind?: "atomic" | "ordered_sequence";
   member_move_ids?: string[];
   content_relationship: ContentRelationship | null;
@@ -31,13 +34,26 @@ export interface ArtifactMoveSummary {
 
 export interface ArtifactMoveRecord {
   move_id: string;
+  move_origin?: ArtifactMoveOrigin;
   report_kind?: "atomic" | "ordered_sequence";
   member_move_ids?: string[];
   content_relationship?: ContentRelationship;
-  correspondence?: { status: "selected_pair" | "unresolved_partners" | "copy_source_set" };
+  correspondence?: {
+    status: "selected_pair" | "unresolved_partners" | "copy_source_set";
+  };
   name_evidence?: string;
-  location_evidence?: { scope: string; classification?: string; reason?: string; status?: string };
-  selection?: { matching_weight_milli: number; utility: number; matched_units: number; reason: string };
+  location_evidence?: {
+    scope: string;
+    classification?: string;
+    reason?: string;
+    status?: string;
+  };
+  selection?: {
+    matching_weight_milli: number;
+    utility: number;
+    matched_units: number;
+    reason: string;
+  };
   confidence_milli?: number;
   selection_utility?: number;
   matched_units?: number;
@@ -96,6 +112,7 @@ export interface ArtifactXmlAnchor {
   kind: "common" | "delete" | "insert" | "move";
   diff_kind?: ArtifactDiffKind | null;
   move_id: string | null;
+  move_origin?: ArtifactMoveOrigin;
   span: SourceCodeSpan;
 }
 
@@ -114,6 +131,7 @@ export interface ArtifactSourceLine {
     kind: "common" | "delete" | "insert" | "move";
     diff_kind?: ArtifactDiffKind | null;
     move_id: string | null;
+    move_origin?: ArtifactMoveOrigin;
     span: SourceCodeSpan;
   }[];
 }
@@ -160,12 +178,14 @@ export interface ArtifactSourceProjection {
 }
 
 export interface ArtifactTreeNode {
+  move_annotations?: { move_id: string; move_origin: ArtifactMoveOrigin }[];
   node_id: string;
   path: string;
   tag: string;
   label: string;
   kind: "plain" | "common" | "delete" | "insert" | "move";
   move_id: string | null;
+  move_origin?: ArtifactMoveOrigin;
   srcdiff_attributes: Record<string, unknown>;
   xml_span: SourceCodeSpan | null;
   revision_0_span: SourceCodeSpan | null;

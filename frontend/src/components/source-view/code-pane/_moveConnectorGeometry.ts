@@ -34,6 +34,7 @@ export type MoveConnectorBox = {
 export type MoveConnectorGroup = {
   key: string;
   moveId: string;
+  moveOrigin?: "srcmove" | "srcdiff";
   boxes: MoveConnectorBox[];
   paths: MoveConnectorPath[];
   hub: MoveConnectorHub | null;
@@ -46,6 +47,7 @@ type Point = {
 
 type BuildMoveConnectorGroupOptions = {
   moveId: string;
+  laneOffset?: number;
   containerRect: RectLike;
   fromRects?: RectLike[];
   toRects?: RectLike[];
@@ -78,6 +80,7 @@ export function getCombinedRect(rects: RectLike[]): RectLike | null {
 
 export function buildMoveConnectorGroup({
   moveId,
+  laneOffset = 0,
   containerRect,
   fromRects = [],
   toRects = [],
@@ -121,7 +124,7 @@ export function buildMoveConnectorGroup({
       paths: [
         {
           key: `${moveId}-direct`,
-          d: buildCurvePath(_fromAnchor, _toAnchor),
+          d: buildCurvePath(_fromAnchor, _toAnchor, laneOffset),
         },
       ],
     };
@@ -144,11 +147,11 @@ export function buildMoveConnectorGroup({
     paths: [
       ..._fromAnchors.map((anchor, index) => ({
         key: `${moveId}-from-${index}`,
-        d: buildCurvePath(anchor, _hubPoint),
+        d: buildCurvePath(anchor, _hubPoint, laneOffset),
       })),
       ..._toAnchors.map((anchor, index) => ({
         key: `${moveId}-to-${index}`,
-        d: buildCurvePath(_hubPoint, anchor),
+        d: buildCurvePath(_hubPoint, anchor, laneOffset),
       })),
     ],
   };
@@ -253,14 +256,14 @@ function buildHub(
   };
 }
 
-function buildCurvePath(start: Point, end: Point): string {
+function buildCurvePath(start: Point, end: Point, laneOffset = 0): string {
   const _direction = end.x >= start.x ? 1 : -1;
   const _controlOffset = Math.max(32, Math.abs(end.x - start.x) * 0.35);
 
   return [
     `M ${start.x} ${start.y}`,
-    `C ${start.x + _direction * _controlOffset} ${start.y}`,
-    `${end.x - _direction * _controlOffset} ${end.y}`,
+    `C ${start.x + _direction * _controlOffset} ${start.y + laneOffset}`,
+    `${end.x - _direction * _controlOffset} ${end.y + laneOffset}`,
     `${end.x} ${end.y}`,
   ].join(" ");
 }

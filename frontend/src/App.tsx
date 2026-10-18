@@ -5,6 +5,7 @@ import { TabPanel } from "./components/TabPanel";
 import { Tabs, type TabDefinition } from "./components/Tabs";
 import { useSrcDiffData } from "./srcdiff/useSrcDiffData";
 import { useHistoryData } from "./history/useHistoryData";
+import { defaultVisibleMoveIds } from "./components/artifact/artifactMoveLayers";
 import { ArtifactNavigator } from "./components/artifact/ArtifactNavigator";
 import { ArtifactMoveSummary as ArtifactMoveSummaryPane } from "./components/artifact/ArtifactMoveSummary";
 import { ArtifactMovePopup } from "./components/artifact/ArtifactMovePopup";
@@ -114,9 +115,7 @@ export default function App() {
       setInspectedArtifactMove(null);
       setVisibleCorrespondences([]);
       setInspectedCorrespondence(null);
-      setVisibleArtifactMoveIds(
-        new Set(artifact.moves.items.map((move) => move.move_id)),
-      );
+      setVisibleArtifactMoveIds(defaultVisibleMoveIds(artifact.moves.items));
       setSelectedArtifactNodeId(null);
       setSelectedArtifactNode(null);
       setArtifactNodeError(null);
@@ -172,7 +171,10 @@ export default function App() {
     moveId: string,
     position: { x: number; y: number },
   ) {
-    const report = artifact?.moves.items.find((move) => move.move_id === moveId || move.member_move_ids?.includes(moveId));
+    const report = artifact?.moves.items.find(
+      (move) =>
+        move.move_id === moveId || move.member_move_ids?.includes(moveId),
+    );
     if (!report) return;
     moveId = report.move_id;
     setVisibleArtifactMoveIds((current) => {
@@ -238,15 +240,37 @@ export default function App() {
           }
           focus={artifactFocus}
           visibleMoveCount={visibleArtifactMoveIds.size}
+          visibleMoveIds={visibleArtifactMoveIds}
         />
 
-        {srcDiffData.comparisonContext?.mode === "history" && historyData.selectedPair && activeMainTab !== "input" ? (
+        {srcDiffData.comparisonContext?.mode === "history" &&
+        historyData.selectedPair &&
+        activeMainTab !== "input" ? (
           <div className="flex items-center gap-3 border-b border-white/10 px-4 py-2 text-xs text-slate-300">
             <span>History pair #{historyData.selectedPair.number}</span>
-            {([-1, 1] as const).map(direction => {
-              const current = historyData.pairs.findIndex(pair => pair.number === historyData.selectedPair?.number);
+            {([-1, 1] as const).map((direction) => {
+              const current = historyData.pairs.findIndex(
+                (pair) => pair.number === historyData.selectedPair?.number,
+              );
               const adjacent = historyData.pairs[current + direction];
-              return <button key={direction} type="button" disabled={current < 0 || !adjacent || adjacent.status !== "completed" || historyData.isVisualizingPair} onClick={() => void historyData.openVisualization(adjacent.number)} className="rounded border border-white/20 px-3 py-1 disabled:opacity-40">{direction === -1 ? "Previous result" : "Next result"}</button>;
+              return (
+                <button
+                  key={direction}
+                  type="button"
+                  disabled={
+                    current < 0 ||
+                    !adjacent ||
+                    adjacent.status !== "completed" ||
+                    historyData.isVisualizingPair
+                  }
+                  onClick={() =>
+                    void historyData.openVisualization(adjacent.number)
+                  }
+                  className="rounded border border-white/20 px-3 py-1 disabled:opacity-40"
+                >
+                  {direction === -1 ? "Previous result" : "Next result"}
+                </button>
+              );
             })}
             <span>Uses the current filter and loaded results.</span>
           </div>
@@ -357,6 +381,8 @@ export default function App() {
 
                     <TabPanel tabId="xml-pane" activeTabId={activeMainTab}>
                       <ArtifactXmlPane
+                        moves={artifact.moves.items}
+                        visibleMoveIds={visibleArtifactMoveIds}
                         artifactId={artifact.artifact_id}
                         active={activeMainTab === "xml-pane"}
                         selectedNode={selectedArtifactNode}

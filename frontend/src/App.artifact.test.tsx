@@ -39,6 +39,7 @@ const manifest: ArtifactManifest = {
     items: [
       {
         move_id: "move-1",
+        move_origin: "srcmove",
         content_relationship: "type1",
         from_node_ids: [file.root_node_id],
         to_node_ids: [file.root_node_id],
@@ -77,6 +78,7 @@ const source: ArtifactSourceProjection = {
                 node_id: file.root_node_id,
                 kind: "move",
                 move_id: "move-1",
+                move_origin: "srcmove",
                 span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
               },
             ],
@@ -89,6 +91,7 @@ const source: ArtifactSourceProjection = {
                 node_id: file.root_node_id,
                 kind: "move",
                 move_id: "move-1",
+                move_origin: "srcmove",
                 span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
               },
             ],
@@ -113,6 +116,7 @@ const tree: ArtifactTreeProjection = {
     label: "unit: example.cpp",
     kind: "move",
     move_id: "move-1",
+    move_origin: "srcmove",
     srcdiff_attributes: {},
     xml_span: { start_line: 1, start_col: 1, end_line: 1, end_col: 8 },
     revision_0_span: { start_line: 1, start_col: 1, end_line: 1, end_col: 6 },
@@ -178,6 +182,7 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
           results_schema_version: null,
           move: {
             move_id: "move-1",
+            move_origin: "srcmove",
             result_provenance: "xml-annotation",
             from_xpaths: ["/unit/delete"],
             to_xpaths: ["/unit/insert"],
@@ -202,6 +207,7 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
               node_id: file.root_node_id,
               kind: "move",
               move_id: "move-1",
+              move_origin: "srcmove",
               span: tree.root!.xml_span,
             },
           ],
@@ -234,10 +240,19 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
     "false",
   );
 
+  expect(
+    screen.queryByRole("button", { name: "old();" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText("old();")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "All" }));
+  expect(screen.getByRole("button", { name: "move-1" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await user.click(screen.getByRole("button", { name: "old();" }));
   expect(
     await screen.findByRole("button", {
-      name: "Close move details move-1",
+      name: "Close srcmove details move-1",
     }),
   ).toBeInTheDocument();
   await waitFor(() =>
@@ -276,7 +291,7 @@ it("loads artifact projections and defers XML until its tab opens", async () => 
     screen.getByText("e2e_generated_example.xml", { selector: "header p" }),
   ).toBeInTheDocument();
   expect(screen.getByText("Example · Development")).toBeInTheDocument();
-});
+}, 15_000); // Full navigation/visibility flow runs in the shared Docker runtime.
 
 function jsonResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), {

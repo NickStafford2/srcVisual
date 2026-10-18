@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { SourceRevision } from "../../../srcdiff/lineLinks";
 import type { ViewerLineSegment } from "../../../srcdiff/types";
 import type { ArtifactDiffKind } from "../../../types";
@@ -34,11 +34,40 @@ export function CodeSegment({
 }: CodeSegmentProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
 
+  const visibleAnchors = useMemo(
+    () =>
+      (
+        segment.moveAnchors ??
+        (segment.moveId
+          ? [
+              {
+                moveId: segment.moveId,
+                nodeId: segment.nodeId ?? segment.moveId,
+                origin: segment.moveOrigin ?? "srcmove",
+              },
+            ]
+          : [])
+      ).filter(
+        (anchor) =>
+          visibleMoveIds === undefined || visibleMoveIds.has(anchor.moveId),
+      ),
+    [
+      segment.moveAnchors,
+      segment.moveId,
+      segment.nodeId,
+      segment.moveOrigin,
+      visibleMoveIds,
+    ],
+  );
+  const hasSrcdiff = visibleAnchors.some(
+    (anchor) => anchor.origin === "srcdiff",
+  );
+  const hasSrcmove = visibleAnchors.some(
+    (anchor) => anchor.origin === "srcmove",
+  );
   const isMoveHighlight =
     segment.highlighted && segment.kind === "move" && Boolean(segment.moveId);
-  const registersMove =
-    isMoveHighlight &&
-    (visibleMoveIds === undefined || visibleMoveIds.has(segment.moveId!));
+  const registersMove = isMoveHighlight && visibleAnchors.length > 0;
   const moveVisualState = selected
     ? "selected"
     : registersMove
@@ -62,31 +91,25 @@ export function CodeSegment({
     }
 
     const element = ref.current;
-    const moveId = segment.moveId;
-    const endpointId = segment.nodeId ?? moveId;
-
-    registerMoveSegment?.({
-      moveId,
-      endpointId,
+    const registrations = visibleAnchors.map((anchor) => ({
+      moveId: anchor.moveId,
+      endpointId: anchor.nodeId,
+      moveOrigin: anchor.origin,
       revision,
       element,
-    });
-
+    }));
+    for (const registration of registrations)
+      registerMoveSegment?.(registration);
     return () => {
-      unregisterMoveSegment?.({
-        moveId,
-        endpointId,
-        revision,
-        element,
-      });
+      for (const registration of registrations)
+        unregisterMoveSegment?.(registration);
     };
   }, [
     registersMove,
     registerMoveSegment,
     unregisterMoveSegment,
     revision,
-    segment.moveId,
-    segment.nodeId,
+    visibleAnchors,
     segment.text,
   ]);
 
@@ -117,8 +140,13 @@ export function CodeSegment({
       role={onMoveInspect ? "button" : undefined}
       tabIndex={onMoveInspect ? 0 : undefined}
       onClick={(event) => {
-        if (segment.moveId) {
-          onMoveInspect?.(segment.moveId, {
+        const moveId =
+          event.altKey && visibleAnchors.length > 1
+            ? visibleAnchors.find((anchor) => anchor.moveId !== segment.moveId)
+                ?.moveId
+            : segment.moveId;
+        if (moveId) {
+          onMoveInspect?.(moveId, {
             x: event.clientX,
             y: event.clientY,
           });
@@ -129,7 +157,14 @@ export function CodeSegment({
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           const bounds = event.currentTarget.getBoundingClientRect();
-          onMoveInspect(segment.moveId, {
+          const moveId =
+            event.altKey && visibleAnchors.length > 1
+              ? visibleAnchors.find(
+                  (anchor) => anchor.moveId !== segment.moveId,
+                )?.moveId
+              : segment.moveId;
+          if (!moveId) return;
+          onMoveInspect(moveId, {
             x: bounds.right,
             y: bounds.bottom,
           });
@@ -140,15 +175,33 @@ export function CodeSegment({
       data-node-id={segment.nodeId ?? undefined}
       data-diff-region-ids={diffRegionIds(segment)}
       data-move-id={segment.moveId}
+      data-move-ids={visibleAnchors.map((anchor) => anchor.moveId).join("|")}
+      data-move-origin={segment.moveOrigin}
+      title={
+        visibleAnchors
+          .map(
+            (anchor) =>
+              `${anchor.origin === "srcmove" ? "srcMove" : "srcDiff"}: ${anchor.moveId}`,
+          )
+          .join(" · ") +
+        (visibleAnchors.length > 1
+          ? " · Alt-click or Alt-Enter to inspect the overlapping move"
+          : "")
+      }
       data-move-visual-state={moveVisualState}
       data-source-revision={revision}
       className={[
         `group relative inline rounded-md ${onMoveInspect ? "cursor-pointer" : ""}`,
-        getSourceSegmentClasses(
-          segment.kind,
-          segment.highlighted,
-          moveVisualState,
-        ),
+        hasSrcdiff && !hasSrcmove
+          ? "rounded-md bg-violet-400/25 px-0.5 text-violet-100"
+          : getSourceSegmentClasses(
+              segment.kind,
+              segment.highlighted,
+              moveVisualState,
+            ),
+        hasSrcdiff && hasSrcmove
+          ? "underline decoration-violet-400 decoration-2 underline-offset-2"
+          : "",
       ].join(" ")}
     >
       {text}

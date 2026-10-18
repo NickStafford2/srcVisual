@@ -73,3 +73,41 @@ it("only displays checksums with observed runtime provenance", () => {
   );
   expect(screen.getByText("srcMove version unknown")).toBeInTheDocument();
 });
+
+it("reports srcMove and srcDiff visibility independently", () => {
+  render(
+    <AppHeader
+      artifact={{
+        ...artifact,
+        moves: {
+          move_count: 2,
+          items: [
+            {
+              move_id: "item:a",
+              move_origin: "srcmove",
+              content_relationship: "type1",
+              from_node_ids: [],
+              to_node_ids: [],
+            },
+            {
+              move_id: "1",
+              move_origin: "srcdiff",
+              content_relationship: null,
+              from_node_ids: [],
+              to_node_ids: [],
+            },
+          ],
+        },
+      }}
+      context={null}
+      view="Source"
+      focus="moves"
+      visibleMoveCount={1}
+      visibleMoveIds={new Set(["item:a"])}
+    />,
+  );
+  expect(
+    screen.getByText("srcMove: 1/1 shown · srcDiff: 0/1 shown"),
+  ).toBeInTheDocument();
+  expect(screen.queryByText("1 of 2 moves shown")).not.toBeInTheDocument();
+});

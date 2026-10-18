@@ -83,3 +83,48 @@ def test_compound_reporting_survives_complete_artifact_pipeline(tmp_path, archiv
             artifact_root=tmp_path, artifact_id=published.artifact_id,
             move_id=member["move_id"],
         )["move"]["move_id"] == member["move_id"]
+
+
+@pytest.mark.parametrize("archive", [False, True])
+def test_same_element_upstream_and_srcmove_annotations_remain_separate(tmp_path, archive):
+    from srcdiffvisual.artifacts.projections import (
+        read_artifact_manifest, read_artifact_xml, read_source_projection,
+        read_tree_projection,
+    )
+
+    _xml = (Path(__file__).parents[2] / "examples/e2e_custom_pre_marked_move_small.xml").read_text()
+    if archive:
+        _xml = _xml.split("?>", 1)[1].strip()
+        _xml = f'<unit xmlns="http://www.srcML.org/srcML/src" url="archive">{_xml}</unit>'
+    _published = build_visualization_artifact(
+        filename="both-layers.xml", payload=_xml.encode(), artifact_root=tmp_path,
+    )
+    _artifact_path = tmp_path / _published.artifact_id
+    _before = {str(_path): _path.read_bytes() for _path in _artifact_path.rglob("*") if _path.is_file()}
+    _args = {"artifact_root": tmp_path, "artifact_id": _published.artifact_id}
+    _manifest = read_artifact_manifest(**_args)
+    assert {_item["move_id"]: _item["move_origin"] for _item in _manifest["moves"]["items"]} == {
+        "97b1dcdaf": "srcmove", "1": "srcdiff",
+    }
+    _file_id = _manifest["files"][0]["file_id"]
+    _xml_projection = read_artifact_xml(**_args)
+    _source = read_source_projection(**_args, file_id=_file_id, focus_profile="moves")
+    _tree = read_tree_projection(**_args, file_id=_file_id, focus_profile="moves")
+    _detail = read_artifact_move(**_args, move_id="1")["move"]
+    assert _detail["move_origin"] == "srcdiff"
+    assert _detail["from_raw_texts"] == _detail["to_raw_texts"] == ["int a;"]
+    assert len(_detail["from_node_ids"]) == len(_detail["to_node_ids"]) == 1
+    for _node_id in _detail["from_node_ids"] + _detail["to_node_ids"]:
+        assert {_anchor["move_origin"] for _anchor in _xml_projection["anchors"]
+                if _anchor["node_id"] == _node_id} == {"srcmove", "srcdiff"}
+    _anchors = [
+        _anchor for _block in _source["blocks"] if _block["type"] == "hunk"
+        for _row in _block["rows"] for _side in ("left", "right") if _row[_side]
+        for _anchor in _row[_side]["anchors"]
+    ]
+    assert {_anchor["move_origin"] for _anchor in _anchors if _anchor["move_id"]} == {"srcmove", "srcdiff"}
+    _moved_nodes = [_node for _node in _tree["root"]["children"] if _node["move_id"]]
+    assert len(_moved_nodes) == 2
+    for _node in _moved_nodes:
+        assert {_annotation["move_origin"] for _annotation in _node["move_annotations"]} == {"srcmove", "srcdiff"}
+    assert _before == {str(_path): _path.read_bytes() for _path in _artifact_path.rglob("*") if _path.is_file()}

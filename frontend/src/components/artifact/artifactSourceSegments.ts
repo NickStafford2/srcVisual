@@ -3,6 +3,7 @@ import type { ArtifactSourceLine } from "../../types";
 
 export function buildArtifactLineSegments(
   line: ArtifactSourceLine,
+  visibleMoveIds?: ReadonlySet<string>,
 ): ViewerLineSegment[] {
   const _slices = line.anchors.flatMap((anchor) => {
     const _start =
@@ -17,8 +18,15 @@ export function buildArtifactLineSegments(
   });
 
   if (line.text.length === 0) {
-    const _anchor = preferredAnchor(line.anchors);
-    return [segmentForRange(" ", _anchor, diffRegions(line.anchors))];
+    const _anchor = preferredAnchor(line.anchors, visibleMoveIds);
+    return [
+      segmentForRange(
+        " ",
+        _anchor,
+        diffRegions(line.anchors),
+        moveAnchors(line.anchors, visibleMoveIds),
+      ),
+    ];
   }
 
   const _boundaries = [
@@ -36,11 +44,12 @@ export function buildArtifactLineSegments(
     const _anchors = _slices
       .filter((slice) => slice.start <= _start && slice.end >= _end)
       .map((slice) => slice.anchor);
-    const _anchor = preferredAnchor(_anchors);
+    const _anchor = preferredAnchor(_anchors, visibleMoveIds);
     const _segment = segmentForRange(
       line.text.slice(_start, _end),
       _anchor,
       diffRegions(_anchors),
+      moveAnchors(_anchors, visibleMoveIds),
     );
     const _previous = _segments[_segments.length - 1];
     if (
@@ -48,6 +57,8 @@ export function buildArtifactLineSegments(
       _previous.kind === _segment.kind &&
       _previous.nodeId === _segment.nodeId &&
       _previous.moveId === _segment.moveId &&
+      JSON.stringify(_previous.moveAnchors) ===
+        JSON.stringify(_segment.moveAnchors) &&
       sameDiffRegions(_previous.diffRegions, _segment.diffRegions)
     ) {
       _previous.text += _segment.text;
@@ -59,18 +70,36 @@ export function buildArtifactLineSegments(
   return _segments;
 }
 
-function preferredAnchor(anchors: ArtifactSourceLine["anchors"]) {
-  return [...anchors].sort(
-    (left, right) =>
-      anchorPriority(right.kind) - anchorPriority(left.kind) ||
-      spanSize(left.span) - spanSize(right.span),
-  )[0];
+function preferredAnchor(
+  anchors: ArtifactSourceLine["anchors"],
+  visibleMoveIds?: ReadonlySet<string>,
+) {
+  return anchors
+    .flatMap((anchor) => {
+      if (
+        anchor.kind !== "move" ||
+        (anchor.move_id !== null &&
+          (visibleMoveIds === undefined || visibleMoveIds.has(anchor.move_id)))
+      )
+        return [anchor];
+      return anchor.diff_kind
+        ? [{ ...anchor, kind: anchor.diff_kind, move_id: null }]
+        : [];
+    })
+    .sort(
+      (left, right) =>
+        anchorPriority(right.kind) - anchorPriority(left.kind) ||
+        (left.move_origin === "srcmove" ? -1 : 0) -
+          (right.move_origin === "srcmove" ? -1 : 0) ||
+        spanSize(left.span) - spanSize(right.span),
+    )[0];
 }
 
 function segmentForRange(
   text: string,
   anchor: ArtifactSourceLine["anchors"][number] | undefined,
   regions: NonNullable<ViewerLineSegment["diffRegions"]>,
+  moves: NonNullable<ViewerLineSegment["moveAnchors"]>,
 ): ViewerLineSegment {
   return {
     text,
@@ -78,8 +107,29 @@ function segmentForRange(
     highlighted: anchor !== undefined,
     nodeId: anchor?.node_id ?? null,
     moveId: anchor?.move_id ?? null,
+    ...(anchor?.move_origin ? { moveOrigin: anchor.move_origin } : {}),
+    ...(moves.length > 1 || anchor?.move_origin ? { moveAnchors: moves } : {}),
     ...(regions.length > 0 ? { diffRegions: regions } : {}),
   };
+}
+
+function moveAnchors(
+  anchors: ArtifactSourceLine["anchors"],
+  visibleMoveIds?: ReadonlySet<string>,
+): NonNullable<ViewerLineSegment["moveAnchors"]> {
+  return anchors.flatMap((anchor) =>
+    anchor.kind === "move" &&
+    anchor.move_id &&
+    (visibleMoveIds === undefined || visibleMoveIds.has(anchor.move_id))
+      ? [
+          {
+            moveId: anchor.move_id,
+            nodeId: anchor.node_id,
+            origin: anchor.move_origin ?? "srcmove",
+          },
+        ]
+      : [],
+  );
 }
 
 function diffRegions(

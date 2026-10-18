@@ -161,3 +161,81 @@ describe("artifact source segments", () => {
     ]);
   });
 });
+
+function overlappingMoves(): ArtifactSourceLine {
+  const span = { start_line: 60, start_col: 1, end_line: 60, end_col: 25 };
+  return {
+    line_number: 60,
+    text: "unsigned int nMultiInsert;",
+    anchors: [
+      {
+        node_id: "wrapper",
+        kind: "move",
+        diff_kind: "delete",
+        move_id: "1",
+        move_origin: "srcdiff",
+        span,
+      },
+      {
+        node_id: "declaration",
+        kind: "move",
+        move_id: "item:97b1dcdaf",
+        move_origin: "srcmove",
+        span,
+      },
+    ],
+  };
+}
+
+it("does not let a disabled srcDiff wrapper mask the srcMove endpoint", () => {
+  const [segment] = buildArtifactLineSegments(
+    overlappingMoves(),
+    new Set(["item:97b1dcdaf"]),
+  );
+  expect(segment.moveId).toBe("item:97b1dcdaf");
+  expect(segment.nodeId).toBe("declaration");
+  expect(segment.moveAnchors).toEqual([
+    { moveId: "item:97b1dcdaf", nodeId: "declaration", origin: "srcmove" },
+  ]);
+});
+
+it("retains both overlapping identities when both layers are visible", () => {
+  const [segment] = buildArtifactLineSegments(
+    overlappingMoves(),
+    new Set(["1", "item:97b1dcdaf"]),
+  );
+  expect(segment.moveId).toBe("item:97b1dcdaf");
+  expect(segment.moveAnchors?.map((anchor) => anchor.moveId)).toEqual([
+    "1",
+    "item:97b1dcdaf",
+  ]);
+});
+
+it("reveals srcDiff moves independently and preserves diff highlights when neither move is visible", () => {
+  const [srcdiff] = buildArtifactLineSegments(
+    overlappingMoves(),
+    new Set(["1"]),
+  );
+  expect(srcdiff.moveId).toBe("1");
+  expect(srcdiff.moveOrigin).toBe("srcdiff");
+  const [diff] = buildArtifactLineSegments(overlappingMoves(), new Set());
+  expect(diff.kind).toBe("delete");
+  expect(diff.moveId).toBeNull();
+  expect(diff.moveAnchors).toEqual([]);
+});
+
+it("retains different producer annotations attached to the same XML element", () => {
+  const line = overlappingMoves();
+  line.anchors[1].node_id = line.anchors[0].node_id;
+  const [segment] = buildArtifactLineSegments(
+    line,
+    new Set(["1", "item:97b1dcdaf"]),
+  );
+  expect(segment.moveAnchors).toHaveLength(2);
+  expect(
+    segment.moveAnchors?.map((anchor) => [anchor.moveId, anchor.nodeId]),
+  ).toEqual([
+    ["1", "wrapper"],
+    ["item:97b1dcdaf", "wrapper"],
+  ]);
+});

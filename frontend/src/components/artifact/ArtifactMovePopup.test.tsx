@@ -45,3 +45,36 @@ it("does not invent srcMove fields for annotation-only moves", async () => {
     .click(screen.getByRole("button", { name: "Close move details move-1" }));
   expect(onClose).toHaveBeenCalledOnce();
 });
+
+it("identifies inherited srcDiff annotations without presenting them as missing srcMove evidence", async () => {
+  vi.mocked(fetchArtifactMove).mockResolvedValue({
+    schema_version: 2,
+    artifact_id: "artifact-1",
+    results_schema_version: null,
+    move: {
+      move_id: "1",
+      move_origin: "srcdiff",
+      result_provenance: "xml-annotation",
+    },
+  });
+  render(
+    <ArtifactMovePopup
+      artifactId="artifact-1"
+      moveId="1"
+      position={{ x: 20, y: 20 }}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(
+    await screen.findByText("Origin: srcDiff move annotation"),
+  ).toBeInTheDocument();
+  expect(screen.getByText("srcDiff move details")).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      /inherited srcDiff move annotation, separate from srcMove results/,
+    ),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText(/no srcMove result fields/),
+  ).not.toBeInTheDocument();
+});

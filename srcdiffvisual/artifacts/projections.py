@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from contextlib import closing
+from copy import deepcopy
 from difflib import SequenceMatcher
+from functools import lru_cache
 import json
 from pathlib import Path
 from typing import Any, Literal
 import zlib
+import xml.etree.ElementTree as ET
+
+from srcdiffvisual.srcmove.attributes import MV_ID
+from srcdiffvisual.artifacts._move_layers import read_secondary_srcdiff_moves
 
 from srcdiffvisual.artifacts.store import (
     ARTIFACT_SCHEMA_VERSION,
@@ -33,12 +39,11 @@ MAX_CHILDREN = 100
 
 def read_artifact_manifest(*, artifact_root: Path, artifact_id: str) -> dict[str, Any]:
     artifact_path, manifest = _open_artifact(artifact_root, artifact_id)
-    del artifact_path
-    return {
+    return _with_move_origins({
         **manifest,
         "projection_schema_version": 2,
         "focus_profiles": list(FOCUS_PROFILES),
-    }
+    }, artifact_path)
 
 
 def read_artifact_move(
@@ -62,6 +67,9 @@ def read_artifact_move(
         ),
         None,
     )
+    secondary_move = read_secondary_srcdiff_moves(artifact_path).get(move_id)
+    if secondary_move is not None:
+        move = {key: value for key, value in secondary_move.items() if key != "annotations"}
     if move is None:
         raise FileNotFoundError("Artifact move does not exist.")
 
@@ -71,12 +79,12 @@ def read_artifact_move(
         if isinstance(producer_metadata, dict)
         else move_results.get("results_schema_version")
     )
-    return {
+    return _with_move_origins({
         "schema_version": 2,
         "artifact_id": artifact_id,
         "results_schema_version": results_schema_version,
         "move": move,
-    }
+    }, artifact_path)
 
 
 def read_artifact_xml(*, artifact_root: Path, artifact_id: str) -> dict[str, Any]:
@@ -106,12 +114,12 @@ def read_artifact_xml(*, artifact_root: Path, artifact_id: str) -> dict[str, Any
         if diff_kind is not None:
             anchor["diff_kind"] = diff_kind
         anchors.append(anchor)
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "xml": (artifact_path / "annotated.xml").read_text(encoding="utf-8"),
         "anchors": anchors,
-    }
+    }, artifact_path)
 
 
 def read_source_projection(
@@ -150,7 +158,7 @@ def read_source_projection(
     selected = selected[:MAX_SOURCE_ROWS]
     blocks = _build_source_blocks(rows, selected)
 
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "file_id": file_id,
@@ -163,7 +171,7 @@ def read_source_projection(
         "revision_0_line_count": len(left_lines),
         "revision_1_line_count": len(right_lines),
         "blocks": blocks,
-    }
+    }, artifact_path)
 
 
 def read_tree_projection(
@@ -193,7 +201,7 @@ def read_tree_projection(
         ).fetchall()
 
     if not rows:
-        return {
+        return _with_move_origins({
             "schema_version": 1,
             "artifact_id": artifact_id,
             "file_id": file_id,
@@ -201,7 +209,7 @@ def read_tree_projection(
             "root": None,
             "node_count": 0,
             "truncated": False,
-        }
+        }, artifact_path)
 
     by_ordinal = {row[0]: row for row in rows}
     included = _focused_tree_ordinals(rows, focus_profile, node_limit)
@@ -212,7 +220,7 @@ def read_tree_projection(
             children.setdefault(parent, []).append(ordinal)
     root_ordinal = rows[0][0]
     root = _project_tree_node(file_id, by_ordinal, children, root_ordinal)
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "file_id": file_id,
@@ -220,7 +228,7 @@ def read_tree_projection(
         "root": root,
         "node_count": len(included),
         "truncated": len(included) < len(rows),
-    }
+    }, artifact_path)
 
 
 def read_diff_tree_projection(
@@ -286,7 +294,7 @@ def read_diff_tree_projection(
         for ordinal in diff_children.get(None, [])
         if ordinal in included
     ]
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "file_id": file_id,
@@ -294,7 +302,7 @@ def read_diff_tree_projection(
         "node_count": len(included),
         "total_node_count": len(diff_ordinals),
         "truncated": len(included) < len(diff_ordinals),
-    }
+    }, artifact_path)
 
 
 def read_node_children(
@@ -331,14 +339,14 @@ def read_node_children(
         ).fetchall()
     children = [_project_flat_node(file_id, row[0], row[1], row[2]) for row in rows]
     next_offset = offset + len(children)
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "node_id": node_id,
         "child_count": parent[0],
         "children": children,
         "next_offset": next_offset if next_offset < parent[0] else None,
-    }
+    }, artifact_path)
 
 
 def read_artifact_node(
@@ -358,11 +366,11 @@ def read_artifact_node(
         ).fetchone()
     if row is None:
         raise FileNotFoundError("Artifact node does not exist.")
-    return {
+    return _with_move_origins({
         "schema_version": 1,
         "artifact_id": artifact_id,
         "node": _project_flat_node(file_id, ordinal, row[0], row[1]),
-    }
+    }, artifact_path)
 
 
 def _open_artifact(
@@ -695,3 +703,79 @@ def _diff_kind_for_tag(tag: object) -> str | None:
     if tag == "diff:insert":
         return "insert"
     return None
+
+
+def _with_move_origins(_payload: dict[str, Any], _artifact_path: Path) -> dict[str, Any]:
+    """Expose tool identity from XML namespaces, including immutable older artifacts."""
+    _payload = deepcopy(_payload)
+    _xml_path = _artifact_path / "annotated.xml"
+    _stat = _xml_path.stat()
+    _origins = _xml_move_origins(str(_xml_path), _stat.st_mtime_ns, _stat.st_size)
+
+    _secondary = deepcopy(read_secondary_srcdiff_moves(_artifact_path))
+    _annotations = {}
+    for _move in _secondary.values():
+        for _annotation in _move["annotations"]:
+            _annotations.setdefault(_annotation["node_id"], []).append(_annotation)
+    _summary = _payload.get("moves")
+    if isinstance(_summary, dict) and "items" in _summary:
+        _secondary_ids = set(_secondary)
+        _summary["items"] = [
+            _item for _item in _summary["items"] if _item["move_id"] not in _secondary_ids
+        ] + [{
+            "move_id": _move["move_id"], "move_origin": "srcdiff",
+            "content_relationship": None,
+            "from_node_ids": _move["from_node_ids"],
+            "to_node_ids": _move["to_node_ids"],
+        } for _move in _secondary.values()]
+        _summary["move_count"] = len(_summary["items"])
+
+    def _enrich(_value: Any) -> None:
+        if isinstance(_value, list):
+            _extra = []
+            for _item in _value:
+                _enrich(_item)
+                if (isinstance(_item, dict) and "span" in _item
+                        and _item.get("move_origin") == "srcmove"):
+                    for _annotation in _annotations.get(_item.get("node_id"), []):
+                        _extra.append({**_item, **_annotation})
+            _value.extend(_extra)
+        elif isinstance(_value, dict):
+            _move_id = _value.get("move_id")
+            if _move_id is not None:
+                _members = _value.get("member_move_ids") or [_move_id]
+                _known = {_origins.get(_member) for _member in _members}
+                if len(_known) != 1 or None in _known:
+                    raise ArtifactIntegrityError(
+                        f"Move {_move_id!r} has missing or conflicting XML tool origins."
+                    )
+                _value["move_origin"] = _known.pop()
+                if "children" in _value and _value.get("node_id") in _annotations:
+                    _value["move_annotations"] = [{
+                        "move_id": _move_id, "move_origin": _value["move_origin"],
+                    }, *deepcopy(_annotations[_value["node_id"]])]
+            for _child in _value.values():
+                _enrich(_child)
+
+    _enrich(_payload)
+    return _payload
+
+
+@lru_cache(maxsize=8)
+def _xml_move_origins(_xml_path: str, _mtime_ns: int, _size: int) -> dict[str, str]:
+    # Immutable artifact identity plus file signature keys the cache.
+    _origins: dict[str, str] = {}
+    for _event, _element in ET.iterparse(_xml_path, events=("start", "end")):
+        if _event == "end":
+            _element.clear()
+            continue
+        for _attribute, _origin in ((MV_ID, "srcmove"), ("move", "srcdiff")):
+            _move_id = _element.get(_attribute)
+            if _move_id is None:
+                continue
+            if _move_id in _origins and _origins[_move_id] != _origin:
+                raise ArtifactIntegrityError(
+                    f"Move ID {_move_id!r} is shared by srcMove and srcDiff annotations."
+                )
+            _origins[_move_id] = _origin
+    return _origins

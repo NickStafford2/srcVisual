@@ -270,6 +270,7 @@ export function ArtifactSourceFile({
                   key={`${move.move_id}-from`}
                   fileId={file.file_id}
                   moveId={move.move_id}
+                  moveOrigin={move.move_origin}
                   revision="revision-0"
                   count={fromCount}
                   label="from"
@@ -285,6 +286,7 @@ export function ArtifactSourceFile({
                   key={`${move.move_id}-to`}
                   fileId={file.file_id}
                   moveId={move.move_id}
+                  moveOrigin={move.move_origin}
                   revision="revision-1"
                   count={toCount}
                   label="to"
@@ -464,7 +466,9 @@ function SourceCell({
   registerMoveSegment: RegisterMoveSegment;
   unregisterMoveSegment: UnregisterMoveSegment;
 }) {
-  const originalSegments = line ? buildArtifactLineSegments(line) : [];
+  const originalSegments = line
+    ? buildArtifactLineSegments(line, visibleMoveIds)
+    : [];
   const endpoints = correspondenceEndpoints.filter(
     (endpoint) =>
       endpoint.revision === revision &&
@@ -539,7 +543,13 @@ function SourceCell({
               visibleMoveIds={visibleMoveIds}
               visibleDiffKinds={visibleDiffKinds}
               selected={
-                selectedNodeId !== null && segment.nodeId === selectedNodeId
+                selectedNodeId !== null &&
+                (segment.nodeId === selectedNodeId ||
+                  Boolean(
+                    segment.moveAnchors?.some(
+                      (anchor) => anchor.nodeId === selectedNodeId,
+                    ),
+                  ))
               }
               onMoveInspect={onInspectMove}
               registerMoveSegment={registerMoveSegment}
@@ -555,6 +565,7 @@ function SourceCell({
 function MoveEndpointProxy({
   fileId,
   moveId,
+  moveOrigin,
   revision,
   count,
   label,
@@ -564,6 +575,7 @@ function MoveEndpointProxy({
 }: {
   fileId: string;
   moveId: string;
+  moveOrigin?: "srcmove" | "srcdiff";
   revision: SourceRevision;
   count: number;
   label: string;
@@ -576,14 +588,20 @@ function MoveEndpointProxy({
     if (count === 0 || !ref.current) return;
     const element = ref.current;
     const endpointId = `proxy:${fileId}:${revision}`;
-    registerMoveSegment({ moveId, endpointId, revision, element });
+    registerMoveSegment({ moveId, moveOrigin, endpointId, revision, element });
     return () => {
-      unregisterMoveSegment({ moveId, endpointId, revision, element });
+      unregisterMoveSegment({
+        moveId,
+        endpointId,
+        revision,
+        element,
+      });
     };
   }, [
     count,
     fileId,
     moveId,
+    moveOrigin,
     registerMoveSegment,
     revision,
     unregisterMoveSegment,
@@ -592,7 +610,7 @@ function MoveEndpointProxy({
   return count > 0 ? (
     <span
       ref={ref}
-      className="border-diff-move-1/50 bg-diff-move-1/10 block rounded border border-dashed px-2 py-0.5 text-amber-200"
+      className={`block rounded border border-dashed px-2 py-0.5 ${moveOrigin === "srcdiff" ? "border-violet-400/50 bg-violet-400/10 text-violet-200" : "border-diff-move-1/50 bg-diff-move-1/10 text-amber-200"}`}
     >
       {moveId}: {count} {reason} {label} endpoint{count === 1 ? "" : "s"}
     </span>
@@ -638,6 +656,8 @@ function collectRenderedMoveNodeIds(
   for (const segment of buildArtifactLineSegments(line)) {
     if (segment.kind === "move" && segment.moveId && segment.nodeId) {
       nodeIds.add(segment.nodeId);
+      for (const anchor of segment.moveAnchors ?? [])
+        nodeIds.add(anchor.nodeId);
     }
   }
 }

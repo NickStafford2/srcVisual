@@ -140,7 +140,12 @@ it("opens the selected saved case in Source view and reports publication errors"
     .mockResolvedValueOnce(artifact);
   render(<SavedBenchmarkBrowser acceptVisualization={accept} />);
   await user.click(
-    await screen.findByRole("button", { name: "Inspect Type 2b case 1" }),
+    // The cases request starts after the run list commits and its timer fires.
+    await screen.findByRole(
+      "button",
+      { name: "Inspect Type 2b case 1" },
+      { timeout: 5_000 },
+    ),
   );
   expect(screen.getAllByText("Classification disagreement").length).toBeGreaterThan(0);
   expect(screen.getByText(/A completely detected Type-2b expectation/)).toBeInTheDocument();

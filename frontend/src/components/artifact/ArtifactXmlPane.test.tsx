@@ -87,3 +87,76 @@ it("applies srcDiff visibility filters to XML anchors", async () => {
   expect(container.querySelector('[data-highlight-kind="insert"]')).toBeNull();
   expect(screen.getByText("insert")).not.toHaveClass("bg-diff-insert/25");
 });
+
+it("keeps move origins and visibility independent in XML", async () => {
+  vi.mocked(fetchArtifactXml).mockResolvedValue({
+    schema_version: 1,
+    artifact_id: "mixed-origins",
+    xml: "outer inner",
+    anchors: [
+      {
+        node_id: "f:n1",
+        kind: "move",
+        move_id: "1",
+        move_origin: "srcdiff",
+        span: { start_line: 1, start_col: 1, end_line: 1, end_col: 5 },
+      },
+      {
+        node_id: "f:n2",
+        kind: "move",
+        move_id: "new",
+        move_origin: "srcmove",
+        span: { start_line: 1, start_col: 7, end_line: 1, end_col: 11 },
+      },
+    ],
+  });
+  const moves = [
+    {
+      move_id: "1",
+      move_origin: "srcdiff" as const,
+      content_relationship: null,
+      from_node_ids: ["f:n1"],
+      to_node_ids: [],
+    },
+    {
+      move_id: "item:new",
+      move_origin: "srcmove" as const,
+      report_kind: "atomic" as const,
+      member_move_ids: ["new"],
+      content_relationship: "type1" as const,
+      from_node_ids: ["f:n2"],
+      to_node_ids: [],
+    },
+  ];
+  const { container, rerender } = render(
+    <ArtifactXmlPane
+      artifactId="mixed-origins"
+      active
+      selectedNode={null}
+      onSelectNodeId={vi.fn()}
+      moves={moves}
+      visibleMoveIds={new Set(["item:new"])}
+    />,
+  );
+  await screen.findByText("inner");
+  expect(
+    container.querySelector('[data-move-origin="srcmove"]'),
+  ).toHaveTextContent("inner");
+  expect(container.querySelector('[data-move-origin="srcdiff"]')).toBeNull();
+  rerender(
+    <ArtifactXmlPane
+      artifactId="mixed-origins"
+      active
+      selectedNode={null}
+      onSelectNodeId={vi.fn()}
+      moves={moves}
+      visibleMoveIds={new Set(["1", "item:new"])}
+    />,
+  );
+  expect(container.querySelector('[data-move-origin="srcdiff"]')).toHaveClass(
+    "bg-violet-400/20",
+  );
+  expect(
+    container.querySelector('[data-move-origin="srcmove"]'),
+  ).toHaveTextContent("inner");
+});

@@ -13,6 +13,12 @@ export interface ViewerLineSegment {
   highlighted: boolean;
   nodeId?: string | null;
   moveId?: string | null;
+  moveOrigin?: "srcmove" | "srcdiff";
+  moveAnchors?: {
+    moveId: string;
+    nodeId: string;
+    origin: "srcmove" | "srcdiff";
+  }[];
   diffRegions?: {
     nodeId: string;
     kind: "common" | "delete" | "insert";

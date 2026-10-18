@@ -2,6 +2,7 @@ import type { SourceRevision } from "../../../srcdiff/lineLinks";
 
 export type MoveSegmentRegistration = {
   moveId: string;
+  moveOrigin?: "srcmove" | "srcdiff";
   endpointId: string;
   revision: SourceRevision;
   element: HTMLElement;

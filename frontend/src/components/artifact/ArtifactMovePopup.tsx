@@ -40,16 +40,22 @@ export function ArtifactMovePopup({
 
   return (
     <ArtifactPopup
-      title="Move details"
+      title={
+        projection?.move.move_origin === "srcdiff"
+          ? "srcDiff move details"
+          : projection?.move.move_origin === "srcmove"
+            ? "srcMove details"
+            : "Move details"
+      }
       badge={projection?.move.content_relationship}
       identity={moveId}
       position={position}
-      color="#fbbf24"
+      color={projection?.move.move_origin === "srcdiff" ? "#a78bfa" : "#fbbf24"}
       onClose={onClose}
     >
       {error ? <p className="p-4 text-sm text-rose-300">{error}</p> : null}
       {!projection && !error ? (
-        <p className="p-4 text-sm text-slate-400">Loading srcMove result…</p>
+        <p className="p-4 text-sm text-slate-400">Loading move details…</p>
       ) : null}
       {projection ? <MoveRecord projection={projection} /> : null}
     </ArtifactPopup>
@@ -67,13 +73,35 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
 
   return (
     <div className="space-y-4 p-4">
+      {move.move_origin ? (
+        <p
+          className={`text-xs ${move.move_origin === "srcdiff" ? "text-violet-200" : "text-amber-200"}`}
+        >
+          {move.move_origin === "srcdiff"
+            ? "Origin: srcDiff move annotation"
+            : "Origin: srcMove"}
+        </p>
+      ) : null}
       {hasProducerDetails ? (
         <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
-          <Value label="Content relationship (prediction)" value={move.content_relationship} />
-          <Value label="Matching weight (milli)" value={move.selection?.matching_weight_milli} />
+          <Value
+            label="Content relationship (prediction)"
+            value={move.content_relationship}
+          />
+          <Value
+            label="Matching weight (milli)"
+            value={move.selection?.matching_weight_milli}
+          />
           <Value label="Correspondence" value={move.correspondence?.status} />
           <Value label="Name evidence" value={move.name_evidence} />
-          <Value label="Location" value={move.location_evidence?.classification ?? move.location_evidence?.status ?? move.location_evidence?.reason} />
+          <Value
+            label="Location"
+            value={
+              move.location_evidence?.classification ??
+              move.location_evidence?.status ??
+              move.location_evidence?.reason
+            }
+          />
           <Value label="matched_units" value={move.selection?.matched_units} />
           <Value label="selection_utility" value={move.selection?.utility} />
           <Value label="selection_reason" value={move.selection?.reason} />
@@ -84,22 +112,38 @@ function MoveRecord({ projection }: { projection: ArtifactMoveProjection }) {
         </dl>
       ) : (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-400">
-          This artifact contains XML move annotations, but no srcMove result
-          fields were provided for this move.
+          {move.move_origin === "srcdiff"
+            ? "This is an inherited srcDiff move annotation, separate from srcMove results."
+            : "This artifact contains XML move annotations, but no srcMove result fields were provided for this move."}
         </p>
       )}
 
       {move.report_kind === "ordered_sequence" ? (
         <details className="rounded-lg border border-white/10 p-3 text-xs">
-          <summary className="cursor-pointer text-slate-300">Retained member matches ({move.member_move_ids?.length})</summary>
-          <p className="mt-2 text-slate-400">Each member pairs the source and destination evidence at the same position.</p>
+          <summary className="cursor-pointer text-slate-300">
+            Retained member matches ({move.member_move_ids?.length})
+          </summary>
+          <p className="mt-2 text-slate-400">
+            Each member pairs the source and destination evidence at the same
+            position.
+          </p>
           {move.member_move_ids?.map((member, index) => (
-            <p key={member} className="mt-1 font-mono text-slate-300">{index + 1}. {member}</p>
+            <p key={member} className="mt-1 font-mono text-slate-300">
+              {index + 1}. {member}
+            </p>
           ))}
         </details>
       ) : null}
-      <TextEvidence label="from_raw_texts" values={move.from_raw_texts} ordered={move.report_kind === "ordered_sequence"} />
-      <TextEvidence label="to_raw_texts" values={move.to_raw_texts} ordered={move.report_kind === "ordered_sequence"} />
+      <TextEvidence
+        label="from_raw_texts"
+        values={move.from_raw_texts}
+        ordered={move.report_kind === "ordered_sequence"}
+      />
+      <TextEvidence
+        label="to_raw_texts"
+        values={move.to_raw_texts}
+        ordered={move.report_kind === "ordered_sequence"}
+      />
 
       <details className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs">
         <summary className="cursor-pointer text-slate-300">
@@ -131,7 +175,15 @@ function Value({
   );
 }
 
-function TextEvidence({ label, values, ordered = false }: { label: string; values?: string[]; ordered?: boolean }) {
+function TextEvidence({
+  label,
+  values,
+  ordered = false,
+}: {
+  label: string;
+  values?: string[];
+  ordered?: boolean;
+}) {
   if (!values?.length) return null;
   return (
     <div>

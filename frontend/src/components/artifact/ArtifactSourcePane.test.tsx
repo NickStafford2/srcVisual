@@ -139,7 +139,9 @@ describe("ArtifactSourcePane", () => {
       );
       expect(
         [
-          ...container.querySelectorAll('[data-correspondence-segment="pair:0"]'),
+          ...container.querySelectorAll(
+            '[data-correspondence-segment="pair:0"]',
+          ),
         ].map((e) => e.textContent),
       ).toEqual(["old", "new"]);
       await user.click(screen.getByRole("button", { name: "Collapse all" }));
@@ -308,146 +310,164 @@ describe("ArtifactSourcePane", () => {
     },
   );
 
-  it.each([false, true])("renders atomic move highlights and connectors (producer report=%s)", async (producerReport) => {
-    const reportMove = producerReport
-      ? { ...activeMove, move_id: "item:move-1", report_kind: "atomic" as const, member_move_ids: ["move-1"] }
-      : activeMove;
-    const user = userEvent.setup();
-    const onInspectMove = vi.fn();
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-      configurable: true,
-      value: scrollIntoView,
-    });
-    vi.mocked(fetchArtifactSource).mockResolvedValue({
-      ...projection,
-      focus_profile: "moves",
-      blocks: [
-        {
-          type: "hunk",
-          block_id: "h-0-1",
-          left: { start_line: 11, end_line: 11 },
-          right: { start_line: 11, end_line: 11 },
-          rows: [
-            {
-              kind: "replace",
-              left: {
-                line_number: 11,
-                text: "before moved after",
-                anchors: [
-                  {
-                    node_id: "f-1:n00000000",
-                    kind: "delete",
-                    move_id: null,
-                    span: {
-                      start_line: 11,
-                      start_col: 1,
-                      end_line: 11,
-                      end_col: 18,
+  it.each([false, true])(
+    "renders atomic move highlights and connectors (producer report=%s)",
+    async (producerReport) => {
+      const reportMove = producerReport
+        ? {
+            ...activeMove,
+            move_id: "item:move-1",
+            report_kind: "atomic" as const,
+            member_move_ids: ["move-1"],
+          }
+        : activeMove;
+      const user = userEvent.setup();
+      const onInspectMove = vi.fn();
+      const scrollIntoView = vi.fn();
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        configurable: true,
+        value: scrollIntoView,
+      });
+      vi.mocked(fetchArtifactSource).mockResolvedValue({
+        ...projection,
+        focus_profile: "moves",
+        blocks: [
+          {
+            type: "hunk",
+            block_id: "h-0-1",
+            left: { start_line: 11, end_line: 11 },
+            right: { start_line: 11, end_line: 11 },
+            rows: [
+              {
+                kind: "replace",
+                left: {
+                  line_number: 11,
+                  text: "before moved after",
+                  anchors: [
+                    {
+                      node_id: "f-1:n00000000",
+                      kind: "delete",
+                      move_id: null,
+                      span: {
+                        start_line: 11,
+                        start_col: 1,
+                        end_line: 11,
+                        end_col: 18,
+                      },
                     },
-                  },
-                  {
-                    node_id: "f-1:n00000001",
-                    kind: "move",
-                    move_id: "move-1",
-                    span: {
-                      start_line: 11,
-                      start_col: 8,
-                      end_line: 11,
-                      end_col: 12,
+                    {
+                      node_id: "f-1:n00000001",
+                      kind: "move",
+                      move_id: "move-1",
+                      span: {
+                        start_line: 11,
+                        start_col: 8,
+                        end_line: 11,
+                        end_col: 12,
+                      },
                     },
-                  },
-                ],
+                  ],
+                },
+                right: {
+                  line_number: 11,
+                  text: "after moved before",
+                  anchors: [
+                    {
+                      node_id: "f-1:n00000003",
+                      kind: "insert",
+                      move_id: null,
+                      span: {
+                        start_line: 11,
+                        start_col: 1,
+                        end_line: 11,
+                        end_col: 18,
+                      },
+                    },
+                    {
+                      node_id: "f-1:n00000002",
+                      kind: "move",
+                      move_id: "move-1",
+                      span: {
+                        start_line: 11,
+                        start_col: 7,
+                        end_line: 11,
+                        end_col: 11,
+                      },
+                    },
+                  ],
+                },
               },
-              right: {
-                line_number: 11,
-                text: "after moved before",
-                anchors: [
-                  {
-                    node_id: "f-1:n00000003",
-                    kind: "insert",
-                    move_id: null,
-                    span: {
-                      start_line: 11,
-                      start_col: 1,
-                      end_line: 11,
-                      end_col: 18,
-                    },
-                  },
-                  {
-                    node_id: "f-1:n00000002",
-                    kind: "move",
-                    move_id: "move-1",
-                    span: {
-                      start_line: 11,
-                      start_col: 7,
-                      end_line: 11,
-                      end_col: 11,
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      });
 
-    render(
-      <ArtifactSourcePane
-        artifactId="artifact-1"
-        files={[file]}
-        selectedFileId="f-1"
-        selectedNodeId={activeMove.from_node_ids[0]}
-        active
-        focus="moves"
-        inspectedMoveId={reportMove.move_id}
-        moves={[reportMove]}
-        visibleMoveIds={new Set([reportMove.move_id])}
-        onInspectMove={onInspectMove}
-        onFocusChange={vi.fn()}
-      />,
-    );
+      render(
+        <ArtifactSourcePane
+          artifactId="artifact-1"
+          files={[file]}
+          selectedFileId="f-1"
+          selectedNodeId={activeMove.from_node_ids[0]}
+          active
+          focus="moves"
+          inspectedMoveId={reportMove.move_id}
+          moves={[reportMove]}
+          visibleMoveIds={new Set([reportMove.move_id])}
+          onInspectMove={onInspectMove}
+          onFocusChange={vi.fn()}
+        />,
+      );
 
-    await screen.findAllByText("before", {
-      exact: false,
-      selector: "code span",
-    });
-    const moveSegments = document.querySelectorAll(
-      '[data-highlight-kind="move"][data-move-id="move-1"]',
-    );
-    expect(moveSegments).toHaveLength(2);
-    expect(moveSegments[0]).toHaveTextContent("moved");
-    expect(moveSegments[0]).toHaveClass("bg-diff-move-1/35");
-    expect(moveSegments[0]).toHaveAttribute(
-      "data-move-visual-state",
-      "selected",
-    );
-    expect(moveSegments[0]).toHaveClass("ring-diff-move-1/70");
-    expect(
-      document.querySelector('[data-source-row-kind="replace"]'),
-    ).toHaveClass("bg-black");
-    await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
-    expect(onInspectMove).toHaveBeenCalledWith(
-      reportMove.move_id,
-      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
-    );
-    await waitFor(() => {
-      const connector = document.querySelector("svg g[data-move-id]");
-      expect(connector).toHaveAttribute("data-move-id", reportMove.move_id);
-      expect(connector?.querySelector('[data-move-overlay-line="true"]')).not.toBeNull();
-    });
-    const connectorHit = document.querySelector('[data-move-overlay-hit="true"]')!;
-    await user.click(connectorHit);
-    expect(onInspectMove).toHaveBeenLastCalledWith(
-      reportMove.move_id,
-      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }),
-    );
-    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
-    expect(
-      screen.getByLabelText("Artifact source file example.cpp"),
-    ).toHaveClass("bg-black");
-  });
+      await screen.findAllByText("before", {
+        exact: false,
+        selector: "code span",
+      });
+      const moveSegments = document.querySelectorAll(
+        '[data-highlight-kind="move"][data-move-id="move-1"]',
+      );
+      expect(moveSegments).toHaveLength(2);
+      expect(moveSegments[0]).toHaveTextContent("moved");
+      expect(moveSegments[0]).toHaveClass("bg-diff-move-1/35");
+      expect(moveSegments[0]).toHaveAttribute(
+        "data-move-visual-state",
+        "selected",
+      );
+      expect(moveSegments[0]).toHaveClass("ring-diff-move-1/70");
+      expect(
+        document.querySelector('[data-source-row-kind="replace"]'),
+      ).toHaveClass("bg-black");
+      await user.click(screen.getAllByRole("button", { name: "moved" })[0]);
+      expect(onInspectMove).toHaveBeenCalledWith(
+        reportMove.move_id,
+        expect.objectContaining({
+          x: expect.any(Number),
+          y: expect.any(Number),
+        }),
+      );
+      await waitFor(() => {
+        const connector = document.querySelector("svg g[data-move-id]");
+        expect(connector).toHaveAttribute("data-move-id", reportMove.move_id);
+        expect(
+          connector?.querySelector('[data-move-overlay-line="true"]'),
+        ).not.toBeNull();
+      });
+      const connectorHit = document.querySelector(
+        '[data-move-overlay-hit="true"]',
+      )!;
+      await user.click(connectorHit);
+      expect(onInspectMove).toHaveBeenLastCalledWith(
+        reportMove.move_id,
+        expect.objectContaining({
+          x: expect.any(Number),
+          y: expect.any(Number),
+        }),
+      );
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalledOnce());
+      expect(
+        screen.getByLabelText("Artifact source file example.cpp"),
+      ).toHaveClass("bg-black");
+    },
+  );
 
   it("uses a collapsed file header as a lazy cross-file move endpoint", async () => {
     const user = userEvent.setup();
@@ -585,5 +605,143 @@ describe("ArtifactSourcePane", () => {
 
     await user.click(screen.getByRole("button", { name: "Show all files" }));
     expect(screen.getByText("other.cpp")).toBeInTheDocument();
+  });
+});
+
+describe("overlapping srcDiff and srcMove layers", () => {
+  afterEach(cleanup);
+
+  it("keeps real endpoints and both connector groups across visibility changes", async () => {
+    const producer = {
+      ...activeMove,
+      move_id: "item:97b1dcdaf",
+      move_origin: "srcmove" as const,
+      report_kind: "atomic" as const,
+      member_move_ids: ["97b1dcdaf"],
+    };
+    const upstream = {
+      move_id: "1",
+      move_origin: "srcdiff" as const,
+      content_relationship: null,
+      from_node_ids: ["f-1:n00000003"],
+      to_node_ids: ["f-1:n00000004"],
+    };
+    const text = "unsigned int nMultiInsert;";
+    const source = (line: number, nodeId: string, wrapperId: string) => ({
+      line_number: line,
+      text,
+      anchors: [
+        {
+          node_id: wrapperId,
+          kind: "move" as const,
+          move_id: "1",
+          move_origin: "srcdiff" as const,
+          span: {
+            start_line: line,
+            start_col: 1,
+            end_line: line,
+            end_col: text.length,
+          },
+        },
+        {
+          node_id: nodeId,
+          kind: "move" as const,
+          move_id: "97b1dcdaf",
+          move_origin: "srcmove" as const,
+          span: {
+            start_line: line,
+            start_col: 1,
+            end_line: line,
+            end_col: text.length,
+          },
+        },
+      ],
+    });
+    vi.mocked(fetchArtifactSource).mockResolvedValue({
+      ...projection,
+      blocks: [
+        {
+          type: "hunk",
+          block_id: "overlap",
+          left: { start_line: 60, end_line: 60 },
+          right: { start_line: 45, end_line: 45 },
+          rows: [
+            {
+              kind: "replace",
+              left: source(
+                60,
+                producer.from_node_ids[0],
+                upstream.from_node_ids[0],
+              ),
+              right: source(
+                45,
+                producer.to_node_ids[0],
+                upstream.to_node_ids[0],
+              ),
+            },
+          ],
+        },
+      ],
+    });
+    const inspect = vi.fn();
+    const props = {
+      artifactId: "artifact-1",
+      files: [file],
+      selectedFileId: "f-1",
+      selectedNodeId: null,
+      active: true,
+      focus: "moves" as const,
+      inspectedMoveId: null,
+      moves: [producer, upstream],
+      onInspectMove: inspect,
+      onFocusChange: vi.fn(),
+    };
+    const { container, rerender } = render(
+      <ArtifactSourcePane
+        {...props}
+        visibleMoveIds={new Set([producer.move_id])}
+      />,
+    );
+    await screen.findAllByRole("button", { name: text.replace(/ /g, "·") });
+    expect(screen.queryByText(/unrendered/)).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(container.querySelectorAll("svg g[data-move-id]")).toHaveLength(1),
+    );
+    expect(container.querySelector("svg g[data-move-id]")).toHaveAttribute(
+      "data-move-id",
+      producer.move_id,
+    );
+
+    rerender(
+      <ArtifactSourcePane
+        {...props}
+        visibleMoveIds={new Set([producer.move_id, upstream.move_id])}
+      />,
+    );
+    await waitFor(() =>
+      expect(container.querySelectorAll("svg g[data-move-id]")).toHaveLength(2),
+    );
+    expect(screen.queryByText(/unrendered/)).not.toBeInTheDocument();
+    expect(container.querySelector("[data-move-ids]")).toHaveClass(
+      "decoration-violet-400",
+    );
+
+    rerender(
+      <ArtifactSourcePane
+        {...props}
+        visibleMoveIds={new Set([upstream.move_id])}
+      />,
+    );
+    await waitFor(() =>
+      expect(container.querySelectorAll("svg g[data-move-id]")).toHaveLength(1),
+    );
+    expect(container.querySelector("svg g[data-move-id]")).toHaveAttribute(
+      "data-move-id",
+      upstream.move_id,
+    );
+    expect(
+      container.querySelector("[data-move-id='1'][data-source-revision]"),
+    ).toHaveClass("bg-violet-400/25");
+    expect(screen.queryByText(/unrendered/)).not.toBeInTheDocument();
   });
 });

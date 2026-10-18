@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { moveLayer, type MoveLayer } from "./artifactMoveLayers";
 import type { ArtifactFileSummary, ArtifactMoveSummary } from "../../types";
 
 type Props = {
@@ -11,23 +13,57 @@ type Props = {
 
 export function ArtifactMoveSummary({
   files,
-  moves,
+  moves: allMoves,
   inspectedMoveId,
   selectedNodeId,
   onInspectMove,
   onSelectEndpoint,
 }: Props) {
+  const [layer, setLayer] = useState<MoveLayer>(() =>
+    allMoves.some((move) => moveLayer(move) === "srcmove")
+      ? "srcmove"
+      : "srcdiff",
+  );
+  useEffect(() => {
+    setLayer(
+      allMoves.some((move) => moveLayer(move) === "srcmove")
+        ? "srcmove"
+        : "srcdiff",
+    );
+  }, [allMoves]);
+  const moves = allMoves.filter((move) => moveLayer(move) === layer);
   const filenames = new Map(files.map((file) => [file.file_id, file.filename]));
 
   return (
     <section className="rounded-xl border border-white/10 bg-slate-950/65 p-4">
       <header className="border-b border-white/10 pb-3">
+        <div
+          role="group"
+          aria-label="Move summary origin"
+          className="mb-3 flex gap-2"
+        >
+          {(["srcmove", "srcdiff"] as const).map((origin) => (
+            <button
+              key={origin}
+              type="button"
+              aria-pressed={layer === origin}
+              onClick={() => setLayer(origin)}
+              className={`rounded border px-3 py-1.5 text-xs ${origin === "srcdiff" ? "border-violet-300/40 text-violet-200 aria-pressed:bg-violet-400/20" : "border-diff-move-1/40 text-diff-move-1 aria-pressed:bg-diff-move-1/20"}`}
+            >
+              {origin === "srcmove" ? "srcMove results" : "srcDiff annotations"}{" "}
+              ({allMoves.filter((move) => moveLayer(move) === origin).length})
+            </button>
+          ))}
+        </div>
         <p className="text-sm text-slate-300">
-          {moves.length} detected move{moves.length === 1 ? "" : "s"}
+          {moves.length}{" "}
+          {layer === "srcmove" ? "srcMove result" : "srcDiff annotation"}
+          {moves.length === 1 ? "" : "s"}
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          Inspect a move or open either tagged endpoint in Source. Content relationship
-          badges are predictions, not evidence of continuity, relocation, or computational equivalence.
+          {layer === "srcmove"
+            ? "Inspect a result or open either endpoint in Source. Content relationship badges are predictions, not evidence of continuity, relocation, or computational equivalence."
+            : "Inspect inherited srcDiff move annotations or open either endpoint in Source. These annotations are separate from srcMove results."}
         </p>
       </header>
 
@@ -40,7 +76,9 @@ export function ArtifactMoveSummary({
               key={move.move_id}
               className={`rounded-xl border p-3 ${
                 inspectedMoveId === move.move_id
-                  ? "border-diff-move-1/60 bg-diff-move-1/10"
+                  ? layer === "srcdiff"
+                    ? "border-violet-300/60 bg-violet-400/10"
+                    : "border-diff-move-1/60 bg-diff-move-1/10"
                   : "border-white/10 bg-black/20"
               }`}
             >
@@ -55,15 +93,20 @@ export function ArtifactMoveSummary({
                 }
                 className="flex w-full items-center justify-between gap-3 text-left"
               >
-                <span className="text-diff-move-1 font-mono">
+                <span
+                  className={`${layer === "srcmove" ? "text-diff-move-1" : "text-violet-200"} font-mono`}
+                >
                   {move.move_id}
-                </span>
+                </span>{" "}
                 <span className="text-xs text-slate-400">
-                  {move.content_relationship ?? "unclassified"}
+                  {layer === "srcmove"
+                    ? (move.content_relationship ?? "unclassified")
+                    : "srcDiff annotation"}
                 </span>
               </button>
 
               <EndpointList
+                layer={layer}
                 label="From"
                 nodeIds={move.from_node_ids}
                 filenames={filenames}
@@ -71,6 +114,7 @@ export function ArtifactMoveSummary({
                 onSelect={onSelectEndpoint}
               />
               <EndpointList
+                layer={layer}
                 label="To"
                 nodeIds={move.to_node_ids}
                 filenames={filenames}
@@ -86,12 +130,14 @@ export function ArtifactMoveSummary({
 }
 
 function EndpointList({
+  layer,
   label,
   nodeIds,
   filenames,
   selectedNodeId,
   onSelect,
 }: {
+  layer: MoveLayer;
   label: string;
   nodeIds: string[];
   filenames: Map<string, string>;
@@ -113,8 +159,12 @@ function EndpointList({
             onClick={() => onSelect(nodeId)}
             className={`rounded border px-2 py-1 text-left text-xs ${
               selectedNodeId === nodeId
-                ? "border-diff-move-1/70 bg-diff-move-1/20 ring-diff-move-1/30 text-amber-50 ring-1"
-                : "border-diff-move-1/20 hover:border-diff-move-1/50 bg-slate-950 text-slate-300 hover:text-amber-100"
+                ? layer === "srcdiff"
+                  ? "border-violet-300/70 bg-violet-400/20 text-violet-100 ring-1"
+                  : "border-diff-move-1/70 bg-diff-move-1/20 ring-diff-move-1/30 text-amber-50 ring-1"
+                : layer === "srcdiff"
+                  ? "border-violet-300/20 bg-slate-950 text-slate-300 hover:border-violet-300/50"
+                  : "border-diff-move-1/20 hover:border-diff-move-1/50 bg-slate-950 text-slate-300 hover:text-amber-100"
             }`}
           >
             <span className="block max-w-64 truncate">

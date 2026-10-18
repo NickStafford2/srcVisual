@@ -82,6 +82,13 @@ const manifest: ArtifactManifest = {
         to_node_ids: ["f-two:n00000002"],
       },
       {
+        move_id: "1",
+        move_origin: "srcdiff",
+        content_relationship: null,
+        from_node_ids: ["f-one:n00000004"],
+        to_node_ids: ["f-two:n00000004"],
+      },
+      {
         move_id: "move-3",
         content_relationship: "type3",
         from_node_ids: ["f-one:n00000003"],
@@ -215,6 +222,19 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   );
   expect(onToggleMove).toHaveBeenCalledWith(manifest.moves.items[0]);
 
+  expect(screen.getByRole("button", { name: "1" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Show all srcDiff moves" }),
+  );
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
+    new Set(["move-1", "1"]),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Hide srcDiff moves" }));
+  expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set(["move-1"]));
+
   fireEvent.click(screen.getByRole("button", { name: "None" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(new Set());
   fireEvent.click(screen.getByRole("button", { name: "All" }));
@@ -229,7 +249,9 @@ it("pages tree children and toggles cross-file move connectors", async () => {
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
     new Set(["move-1", "move-2"]),
   );
-  expect(screen.queryByRole("button", { name: /Type 2b/ })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /Type 2b/ }),
+  ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Type 3 (1 move)" }));
   expect(onVisibleMoveIdsChange).toHaveBeenLastCalledWith(
     new Set(["move-1", "move-3"]),
@@ -287,4 +309,4 @@ it("pages tree children and toggles cross-file move connectors", async () => {
       screen.getByRole("button", { name: `Expand ${panel}` }),
     ).toHaveAttribute("aria-expanded", "false");
   }
-});
+}, 15_000); // Includes paging, both move layers, and every sidebar panel.

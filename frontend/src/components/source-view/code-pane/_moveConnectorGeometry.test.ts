@@ -22,6 +22,21 @@ function buildRect(
 }
 
 describe("move connector geometry", () => {
+  it("separates overlapping connector lanes while preserving endpoint boxes", () => {
+    const options = {
+      moveId: "overlap",
+      containerRect: buildRect(0, 0, 800, 400),
+      fromRects: [buildRect(100, 20, 220, 60)],
+      toRects: [buildRect(520, 40, 680, 80)],
+    };
+    const srcmove = buildMoveConnectorGroup(options)!;
+    const srcdiff = buildMoveConnectorGroup({ ...options, laneOffset: 24 })!;
+    expect(srcdiff.boxes).toEqual(srcmove.boxes);
+    expect(srcdiff.paths[0].d).not.toEqual(srcmove.paths[0].d);
+    expect(srcdiff.paths[0].d).toContain("M 226 40");
+    expect(srcdiff.paths[0].d).toMatch(/514 60$/);
+  });
+
   it("keeps a direct connector for 1x1 moves", () => {
     const _group = buildMoveConnectorGroup({
       moveId: "move-1",

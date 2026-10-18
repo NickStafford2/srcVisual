@@ -32,10 +32,10 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
     ]
     assert "xml" not in manifest
     assert xml["xml"] == (
-        '<unit filename="example.cpp">\n'
+        '<unit xmlns:mv="http://www.srcML.org/srcMove" filename="example.cpp">\n'
         "  <delete>old();</delete>\n"
         "  <insert>new();</insert>\n"
-        '  <move id="move-1">moved();</move>\n'
+        '  <move mv:id="move-1">moved();</move>\n'
         "</unit>\n"
     )
     assert xml["anchors"] == [
@@ -65,6 +65,7 @@ def test_manifest_and_xml_are_separate_projections(tmp_path) -> None:
             "node_id": f"{manifest['files'][0]['file_id']}:n00000003",
             "kind": "move",
             "move_id": "move-1",
+            "move_origin": "srcmove",
             "span": {
                 "start_line": 4,
                 "start_col": 3,
@@ -90,6 +91,7 @@ def test_move_projection_returns_record_without_interpreting_it(tmp_path) -> Non
         "results_schema_version": 3,
         "move": {
             "move_id": "move-1",
+            "move_origin": "srcmove",
             "content_relationship": "type1",
             "confidence_milli": 1000,
             "selection_utility": 8000,
@@ -206,6 +208,7 @@ def test_source_projection_returns_character_precise_move_anchors(tmp_path) -> N
                 "node_id": f"{file_id}:n00000003",
                 "kind": "move",
                 "move_id": "move-1",
+                "move_origin": "srcmove",
                 "span": {
                     "start_line": 4,
                     "start_col": 1,
@@ -227,6 +230,7 @@ def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
         "label": "block",
         "kind": "move",
         "move_id": "move-1",
+        "move_origin": "srcmove",
         "srcdiff_attributes": {},
         "xml_span": None,
         "revision_0_span": _span,
@@ -249,7 +253,7 @@ def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
     _source = "before\nprefix moved\n\nafter tail\nlast\n"
     _payload = VisualizationPayload(
         source_filename="multiline.srcmove.xml",
-        moved_srcdiff_xml='<unit filename="example.cpp"/>\n',
+        moved_srcdiff_xml='<unit xmlns:mv="http://www.srcML.org/srcMove" filename="example.cpp" mv:id="move-1"/>\n',
         move_results={"move_count": 0, "moves": []},
         has_position_data=True,
         files=(
@@ -294,6 +298,7 @@ def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
                     "node_id": f"{_file_id}:n00000001",
                     "kind": "move",
                     "move_id": "move-1",
+                    "move_origin": "srcmove",
                     "span": _span,
                 }
             ]
@@ -407,10 +412,10 @@ def _publish_fixture(tmp_path, diagnostics=None):
     payload = VisualizationPayload(
         source_filename="example.srcmove.xml",
         moved_srcdiff_xml=(
-            '<unit filename="example.cpp">\n'
+            '<unit xmlns:mv="http://www.srcML.org/srcMove" filename="example.cpp">\n'
             "  <delete>old();</delete>\n"
             "  <insert>new();</insert>\n"
-            '  <move id="move-1">moved();</move>\n'
+            '  <move mv:id="move-1">moved();</move>\n'
             "</unit>\n"
         ),
         move_results={
@@ -418,6 +423,7 @@ def _publish_fixture(tmp_path, diagnostics=None):
             "moves": [
                 {
                     "move_id": "move-1",
+                    "move_origin": "srcmove",
                     "content_relationship": "type1",
                     "confidence_milli": 1000,
                     "selection_utility": 8000,
@@ -554,3 +560,52 @@ def _diagnostic_fixture(empty=False):
                                         'selected_group_id': 'move-1' if selected else None}})
     return {'schema_version': 5, 'candidate_counts': {'registered': len(candidates), 'active': len(candidates)},
             'candidates': candidates, 'correspondences': pairs, 'type3_comparisons': [], 'type2b_groups': []}
+
+
+def test_projection_origins_use_xml_namespaces_without_rewriting_saved_artifact(tmp_path):
+    from srcdiffvisual.artifacts.projections import _with_move_origins
+
+    _xml = b'''<unit xmlns:s="http://www.srcML.org/srcMove">
+      <delete move="1"><decl s:id="a">old</decl></delete>
+      <insert move="1"><decl s:id="a">new</decl></insert>
+      <delete s:id="xml-only">other</delete>
+    </unit>'''
+    _path = tmp_path / "annotated.xml"
+    _path.write_bytes(_xml)
+    _payload = {
+        "moves": {"items": [
+            {"move_id": "item:a", "member_move_ids": ["a"]},
+            {"move_id": "1"},
+            {"move_id": "xml-only", "result_provenance": "xml-annotation"},
+        ]},
+        "anchors": [{"move_id": "a"}, {"move_id": "1"}],
+        "root": {"move_id": None, "children": [{"move_id": "a"}]},
+    }
+
+    _result = _with_move_origins(_payload, tmp_path)
+
+    assert [_item["move_origin"] for _item in _result["moves"]["items"]] == [
+        "srcmove", "srcdiff", "srcmove",
+    ]
+    assert [_anchor["move_origin"] for _anchor in _result["anchors"]] == [
+        "srcmove", "srcdiff",
+    ]
+    assert _result["root"]["children"][0]["move_origin"] == "srcmove"
+    assert "move_origin" not in _result["root"]
+    assert _path.read_bytes() == _xml
+
+
+def test_projection_origins_reject_missing_or_conflicting_xml_identity(tmp_path):
+    import pytest
+    from srcdiffvisual.artifacts.projections import _with_move_origins
+    from srcdiffvisual.artifacts.store import ArtifactIntegrityError
+
+    _path = tmp_path / "annotated.xml"
+    _path.write_text('<unit/>')
+    with pytest.raises(ArtifactIntegrityError, match="missing or conflicting"):
+        _with_move_origins({"move_id": "absent"}, tmp_path)
+
+    _path.write_text('''<unit xmlns:mv="http://www.srcML.org/srcMove">
+        <delete move="1"/><insert mv:id="1"/></unit>''')
+    with pytest.raises(ArtifactIntegrityError, match="shared by srcMove and srcDiff"):
+        _with_move_origins({"move_id": "1"}, tmp_path)

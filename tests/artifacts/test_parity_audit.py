@@ -306,7 +306,7 @@ def _publish_case(artifact_root: Path, case: _ParityCase):
             )
         )
         _xml_units.append(
-            f'<unit filename="{_file_case.filename}">' + "".join(_xml_children) + "</unit>"
+            f'<unit xmlns:mv="http://www.srcML.org/srcMove" filename="{_file_case.filename}">' + "".join(_xml_children) + "</unit>"
         )
 
     _xml = (

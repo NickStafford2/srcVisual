@@ -8,6 +8,7 @@ import type {
 export type SourceViewHighlight = {
   nodeId: string;
   moveId?: string | null;
+  moveOrigin?: "srcmove" | "srcdiff";
   kind: HighlightKind;
   span: SourceCodeSpan | null | undefined;
 };
@@ -20,6 +21,7 @@ type LineSlice = {
 type LineHighlight = {
   nodeId: string;
   moveId?: string | null;
+  moveOrigin?: "srcmove" | "srcdiff";
   kind: HighlightKind;
   span: SourceCodeSpan;
 };
@@ -89,6 +91,7 @@ function buildHighlightedSegments(
     return {
       nodeId: highlight.nodeId,
       moveId: highlight.moveId ?? null,
+      moveOrigin: highlight.moveOrigin,
       kind: highlight.kind,
       startIndex,
       endIndex,
@@ -153,6 +156,7 @@ function segmentForSlice(
     highlighted: highlight !== undefined,
     nodeId: highlight?.nodeId ?? null,
     moveId: highlight?.moveId ?? null,
+    moveOrigin: highlight?.moveOrigin,
   };
 }
 
@@ -181,6 +185,7 @@ function getHighlightsForLine(
       {
         nodeId: highlight.nodeId,
         moveId: highlight.moveId ?? null,
+        moveOrigin: highlight.moveOrigin,
         kind: highlight.kind,
         span: {
           start_line: lineNumber,
