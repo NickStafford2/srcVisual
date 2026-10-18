@@ -208,7 +208,7 @@ export function ArtifactNavigator({
       className="flex h-full min-h-0 flex-col overflow-x-hidden overflow-y-auto border border-white/10 bg-slate-950/75"
       aria-label="Artifact navigator"
     >
-      <SidebarPanel title="Files">
+      <SidebarPanel title="Files" compact>
         <ArtifactFileExplorer
           key={manifest.artifact_id}
           files={manifest.files}
@@ -535,11 +535,13 @@ function SidebarPanel({
   children,
   contentClassName = "",
   grow = false,
+  compact = false,
 }: {
   title: string;
   children: ReactNode;
   contentClassName?: string;
   grow?: boolean;
+  compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const contentId = useId();
@@ -554,7 +556,7 @@ function SidebarPanel({
         aria-controls={contentId}
         aria-label={`${expanded ? "Collapse" : "Expand"} ${title}`}
         onClick={() => setExpanded((current) => !current)}
-        className="flex w-full items-center gap-2 bg-slate-950 px-4 py-3 text-left text-sm font-semibold text-slate-200 hover:bg-white/[0.03] hover:text-white"
+        className={`flex w-full items-center gap-2 bg-slate-950 px-4 ${compact ? "py-1.5" : "py-3"} text-left text-sm font-semibold text-slate-200 hover:bg-white/[0.03] hover:text-white`}
       >
         <span aria-hidden="true" className="w-3 text-slate-500">
           {expanded ? "▾" : "▸"}

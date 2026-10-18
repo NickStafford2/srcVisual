@@ -110,7 +110,7 @@ export function ArtifactFileExplorer({
                       return next;
                     })
                   }
-                  className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left text-xs text-slate-400 hover:bg-white/5 hover:text-white"
+                  className="flex h-5 w-full items-center gap-1.5 rounded px-1 text-left text-xs leading-4 text-slate-400 hover:bg-white/5 hover:text-white"
                 >
                   <span aria-hidden="true" className="w-3 text-slate-600">
                     {expanded ? "▾" : "▸"}
@@ -144,7 +144,7 @@ export function ArtifactFileExplorer({
                   aria-label={file.filename}
                   aria-pressed={file.file_id === selectedFileId}
                   onClick={() => onSelectFile(file.file_id)}
-                  className={`flex min-w-0 flex-1 items-center gap-1 px-1.5 py-1.5 text-left text-xs ${hidden ? "text-slate-600" : "text-slate-200"}`}
+                  className={`flex h-5 min-w-0 flex-1 items-center gap-1 px-1.5 text-left text-xs leading-4 ${hidden ? "text-slate-600" : "text-slate-200"}`}
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {file.filename.split("/").pop()}
@@ -209,7 +209,7 @@ export function ArtifactFileExplorer({
                     }
                     aria-label={`Options for ${file.filename}`}
                     title={`Options for ${file.filename}`}
-                    className="rounded px-1.5 py-1 text-slate-500 hover:bg-white/10 hover:text-white"
+                    className="flex h-5 items-center rounded px-1.5 text-slate-500 hover:bg-white/10 hover:text-white"
                   >
                     ⋯
                   </button>
@@ -255,16 +255,16 @@ export function ArtifactFileExplorer({
   }
 
   return (
-    <div ref={explorerRef} className="px-3 pb-3">
+    <div ref={explorerRef} className="px-3 pb-2">
       <input
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Filter files…"
         aria-label="Filter artifact files"
-        className="w-full rounded border border-white/15 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 placeholder:text-slate-600"
+        className="w-full rounded border border-white/15 bg-slate-950 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600"
       />
-      <div className="flex items-center justify-between py-2 text-[10px] text-slate-500">
+      <div className="flex items-center justify-between py-1 text-[10px] text-slate-500">
         <span>
           {files.length - hiddenFileIds.size}/{files.length} visible
         </span>
@@ -286,7 +286,7 @@ export function ArtifactFileExplorer({
           <p className="px-2 py-2 text-xs text-slate-500">No matching files.</p>
         ) : null}
       </div>
-      <p className="mt-2 text-[9px] text-slate-500">
+      <p className="mt-1 text-[9px] text-slate-500">
         − deletes · + inserts · D srcDiff · M srcMove
       </p>
     </div>
@@ -308,7 +308,7 @@ function Badge({
     <span
       aria-label={`${label}: ${count}`}
       title={`${label}: ${count}`}
-      className={`rounded px-1 py-0.5 font-mono text-[9px] tabular-nums ${classes}`}
+      className={`rounded px-1 py-0.5 font-mono text-[9px] leading-3 tabular-nums ${classes}`}
     >
       {symbol}
       {count}
