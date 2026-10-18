@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import pytest
+
 from srcdiffvisual.artifacts.models import ArtifactProvenance
 from srcdiffvisual.artifacts.projections import (
+    _include_short_source_gaps,
     read_artifact_move,
     read_artifact_node,
     read_artifact_manifest,
@@ -107,7 +110,7 @@ def test_move_projection_returns_record_without_interpreting_it(tmp_path) -> Non
     }
 
 
-def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None:
+def test_source_projection_aligns_rows_and_reveals_short_gaps(tmp_path) -> None:
     published = _publish_fixture(tmp_path)
     file_id = published.manifest["files"][0]["file_id"]
 
@@ -119,13 +122,10 @@ def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None
         context_lines=0,
     )
 
-    assert [block["type"] for block in projection["blocks"]] == [
-        "gap",
-        "hunk",
-        "gap",
-    ]
-    hunk = projection["blocks"][1]
-    assert hunk["rows"] == [
+    assert [block["type"] for block in projection["blocks"]] == ["hunk"]
+    hunk = projection["blocks"][0]
+    assert [row["left"]["line_number"] for row in hunk["rows"]] == [1, 2, 3, 4]
+    assert [row for row in hunk["rows"] if row["kind"] == "replace"] == [
         {
             "kind": "replace",
             "left": {
@@ -164,11 +164,7 @@ def test_source_projection_aligns_rows_and_makes_gaps_explicit(tmp_path) -> None
             },
         }
     ]
-    assert projection["blocks"][0]["left"] == {
-        "start_line": 1,
-        "end_line": 1,
-        "line_count": 1,
-    }
+
 
 
 def test_source_projection_supports_bounded_revision_ranges(tmp_path) -> None:
@@ -203,7 +199,7 @@ def test_source_projection_returns_character_precise_move_anchors(tmp_path) -> N
 
     hunk = next(block for block in projection["blocks"] if block["type"] == "hunk")
     for side in ("left", "right"):
-        assert hunk["rows"][0][side]["anchors"] == [
+        assert next(row for row in hunk["rows"] if row[side]["line_number"] == 4)[side]["anchors"] == [
             {
                 "node_id": f"{file_id}:n00000003",
                 "kind": "move",
@@ -289,9 +285,11 @@ def test_source_projection_repeats_one_multiline_endpoint_on_every_source_line(
 
     _hunk = next(_block for _block in _projection["blocks"] if _block["type"] == "hunk")
     assert [
-        (_row["left"]["line_number"], _row["left"]["text"]) for _row in _hunk["rows"]
+        (_row["left"]["line_number"], _row["left"]["text"]) for _row in _hunk["rows"] if _row["left"]["anchors"]
     ] == [(2, "prefix moved"), (3, ""), (4, "after tail")]
     for _row in _hunk["rows"]:
+        if _row["left"]["line_number"] not in (2, 3, 4):
+            continue
         for _side in ("left", "right"):
             assert _row[_side]["anchors"] == [
                 {
@@ -318,10 +316,9 @@ def test_source_projection_accumulates_expanded_ranges_with_focus(tmp_path) -> N
     )
 
     hunks = [block for block in projection["blocks"] if block["type"] == "hunk"]
-    assert [[row["left"]["text"] for row in hunk["rows"]] for hunk in hunks] == [
-        ["old();"],
-        ["moved();"],
-    ]
+    assert len(hunks) == 1
+    assert [row["left"]["line_number"] for row in hunks[0]["rows"]] == [1, 2, 3, 4]
+    assert {row["left"]["text"] for row in hunks[0]["rows"]} >= {"old();", "moved();"}
 
 
 def test_tree_projection_is_bounded_and_children_are_pageable(tmp_path) -> None:
@@ -609,3 +606,37 @@ def test_projection_origins_reject_missing_or_conflicting_xml_identity(tmp_path)
         <delete move="1"/><insert mv:id="1"/></unit>''')
     with pytest.raises(ArtifactIntegrityError, match="shared by srcMove and srcDiff"):
         _with_move_origins({"move_id": "1"}, tmp_path)
+
+
+@pytest.mark.parametrize("hidden_lines", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("location", ["leading", "interior", "trailing"])
+def test_short_gap_threshold_includes_file_edges(hidden_lines, location):
+    _rows = [{"left": {"line_number": _i}, "right": {"line_number": _i}}
+             for _i in range(hidden_lines + 2)]
+    _selected = {"leading": [hidden_lines, hidden_lines + 1],
+                 "interior": [0, hidden_lines + 1], "trailing": [0, 1]}[location]
+    _result = _include_short_source_gaps(_rows, _selected)
+    assert _result == (list(range(len(_rows))) if hidden_lines < 4 else _selected)
+
+
+def test_short_gaps_keep_asymmetric_revision_rows_aligned():
+    _rows = [{"left": None, "right": {"line_number": _i}} for _i in range(4)]
+    assert _include_short_source_gaps(_rows, [3]) == [0, 1, 2, 3]
+    assert _include_short_source_gaps(_rows, []) == []
+    _rows[0]["left"] = {"line_number": 1}
+    assert _include_short_source_gaps(_rows, []) == [0, 1, 2, 3]
+
+
+def test_short_gap_expansion_respects_source_response_bound(tmp_path, monkeypatch):
+    import srcdiffvisual.artifacts.projections as _projections
+
+    _published = _publish_fixture(tmp_path)
+    monkeypatch.setattr(_projections, "MAX_SOURCE_ROWS", 2)
+    _projection = read_source_projection(
+        artifact_root=tmp_path, artifact_id=_published.artifact_id,
+        file_id=_published.manifest["files"][0]["file_id"],
+        focus_profile="changes", context_lines=0,
+    )
+    assert _projection["truncated"]
+    assert sum(len(_block["rows"]) for _block in _projection["blocks"]
+               if _block["type"] == "hunk") == 2

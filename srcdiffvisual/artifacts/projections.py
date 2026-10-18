@@ -179,7 +179,7 @@ def read_source_projection(
         selected = _focus_row_indexes(rows, anchors, focus_profile, context_lines)
         for expanded_left, expanded_right in expanded_ranges:
             selected.extend(_range_row_indexes(rows, expanded_left, expanded_right))
-        selected = sorted(set(selected))
+        selected = _include_short_source_gaps(rows, sorted(set(selected)))
     selected_count = len(selected)
     selected = selected[:MAX_SOURCE_ROWS]
     blocks = _build_source_blocks(rows, selected)
@@ -587,6 +587,26 @@ def _line_in_range(number: int | None, bounds: tuple[int, int] | None) -> bool:
     return (
         number is not None and bounds is not None and bounds[0] <= number <= bounds[1]
     )
+
+
+def _include_short_source_gaps(
+    _rows: list[dict[str, Any]], _selected: list[int]
+) -> list[int]:
+    """Reveal aligned gaps when a nonempty side hides fewer than four lines."""
+    _included = set(_selected)
+    _boundaries = [-1, *_selected, len(_rows)]
+    for _previous, _next in zip(_boundaries, _boundaries[1:]):
+        _start = _previous + 1
+        if _next <= _start:
+            continue
+        _gap = _rows[_start:_next]
+        _counts = [
+            sum(_row[_side] is not None for _row in _gap)
+            for _side in ("left", "right")
+        ]
+        if any(0 < _count < 4 for _count in _counts):
+            _included.update(range(_start, _next))
+    return sorted(_included)
 
 
 def _build_source_blocks(

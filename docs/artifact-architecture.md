@@ -360,7 +360,11 @@ a gap can replace its block IDs without changing canonical identities.
 
 Focus intervals are computed from the union of selected diff regions and move
 endpoints, expanded by three context lines, then merged when they overlap or
-are close enough to avoid tiny gaps.
+are close enough to avoid tiny gaps. Omitted runs are shown directly when
+either nonempty revision has fewer than four hidden source lines, including at
+file edges. Both sides expand together to preserve alignment. This
+applies after focused and expanded ranges are combined; explicit bounded-range
+requests and the 2,000-row response limit remain authoritative.
 
 The annotated XML determines which regions are semantically interesting. A
 normal line diff over the already extracted revision sources may derive display
