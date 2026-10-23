@@ -211,8 +211,8 @@ function HistoryPairList({
   onLoadMore: HistoryInputProps["loadMore"];
 }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-3">
-      <div className="mb-2 grid grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px] gap-2 px-3 text-[11px] font-medium tracking-wide text-slate-500 uppercase">
+    <section className="flex min-h-[430px] min-w-0 flex-col rounded-2xl border border-white/10 bg-slate-950/50 p-3">
+      <div className="mb-2 grid shrink-0 grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px] gap-2 px-3 text-[11px] font-medium tracking-wide text-slate-500 uppercase">
         <span>Pair</span>
         <span>Commits</span>
         <span>Status</span>
@@ -221,7 +221,7 @@ function HistoryPairList({
         <span>Time</span>
       </div>
       <div
-        className="max-h-[520px] space-y-1 overflow-auto"
+        className="h-0 min-h-0 flex-1 space-y-1 overflow-auto"
         aria-label="History commit pairs"
       >
         {isLoading ? (
@@ -265,7 +265,7 @@ function HistoryPairList({
           type="button"
           onClick={() => void onLoadMore()}
           disabled={isLoadingMore}
-          className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-200 hover:bg-white/[0.08] disabled:opacity-50"
+          className="mt-3 w-full shrink-0 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-200 hover:bg-white/[0.08] disabled:opacity-50"
         >
           {isLoadingMore ? "Loading…" : "Show more existing results"}
         </button>
