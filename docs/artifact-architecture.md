@@ -583,7 +583,10 @@ projection derives region counts from the immutable structural index, including
 for previously published artifacts.
 
 The directory rows and Source card headers share the same file options, offering
-Hide/Show file and Show only this file. Show all
+Hide/Show file and Show only this file. The Files toolbar's **Hide files…**
+dropdown bulk-hides files without any srcMove/srcDiff moves or without explicit
+insert/delete regions. Actions use counts for the whole artifact, independent
+of search and highlight settings, and preserve existing manual hiding. Show all
 restores the complete list. Hidden files stay in the directory tree but are
 omitted from Source, including their endpoint proxies. Selecting a file restores
 its visibility. Visibility resets when a new artifact is loaded and does not

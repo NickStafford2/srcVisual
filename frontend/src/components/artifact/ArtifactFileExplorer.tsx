@@ -73,6 +73,18 @@ export function ArtifactFileExplorer({
     onHiddenFileIdsChange(next);
   }
 
+  function hideFilesWithout(kind: "moves" | "diffs") {
+    const next = new Set(hiddenFileIds);
+    for (const file of files) {
+      const moveCounts = counts.get(file.file_id)!;
+      const hasContent = kind === "moves"
+        ? moveCounts.srcmove + moveCounts.srcdiff > 0
+        : file.diff_region_counts.delete + file.diff_region_counts.insert > 0;
+      if (!hasContent) next.add(file.file_id);
+    }
+    onHiddenFileIdsChange(next);
+  }
+
   function branch(directory: Directory) {
     return (
       <>
@@ -200,18 +212,35 @@ export function ArtifactFileExplorer({
         aria-label="Filter artifact files"
         className="w-full rounded border border-white/15 bg-slate-950 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-600"
       />
-      <div className="flex items-center justify-between py-1 text-[10px] text-slate-500">
+      <div className="flex items-center justify-between gap-2 py-1 text-[10px] text-slate-500">
         <span>
           {files.length - hiddenFileIds.size}/{files.length} visible
         </span>
-        <button
-          type="button"
-          onClick={() => onHiddenFileIdsChange(new Set())}
-          disabled={hiddenFileIds.size === 0}
-          className="text-sky-300 disabled:text-slate-600"
-        >
-          Show all
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            aria-label="Hide files"
+            title="Hide files from Source; restore them with Show all."
+            value=""
+            onChange={(event) => {
+              if (event.target.value === "moves" || event.target.value === "diffs") {
+                hideFilesWithout(event.target.value);
+              }
+            }}
+            className="w-24 rounded border border-white/10 bg-slate-950 px-1 py-0.5 text-[10px] text-slate-300"
+          >
+            <option value="" disabled>Hide files…</option>
+            <option value="moves">Without moves (srcMove or srcDiff)</option>
+            <option value="diffs">Without diffs (inserts or deletes)</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => onHiddenFileIdsChange(new Set())}
+            disabled={hiddenFileIds.size === 0}
+            className="text-sky-300 disabled:text-slate-600"
+          >
+            Show all
+          </button>
+        </div>
       </div>
       <div aria-label="File directory" className="max-h-80 overflow-y-auto">
         {branch(root)}

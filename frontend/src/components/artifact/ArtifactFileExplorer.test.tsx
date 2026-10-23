@@ -113,3 +113,32 @@ it("keeps hidden files in the tree and restores visibility from file and bulk op
   await user.click(screen.getByRole("button", { name: "Show all" }));
   expect(screen.getByText("3/3 visible")).toBeInTheDocument();
 });
+
+it("hides files without moves or diffs across the whole artifact and restores them", async () => {
+  const user = userEvent.setup();
+  function Explorer() {
+    const [hidden, setHidden] = useState(new Set<string>());
+    return <ArtifactFileExplorer files={files} moves={moves} selectedFileId="f-0" hiddenFileIds={hidden} onSelectFile={vi.fn()} onHiddenFileIdsChange={setHidden} />;
+  }
+  render(<Explorer />);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Hide files" }), "moves");
+  expect(screen.getByText("2/3 visible")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "README" })).getByText("hidden")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "src/b.cpp" })).queryByText("hidden")).not.toBeInTheDocument();
+  await user.selectOptions(screen.getByRole("combobox", { name: "Hide files" }), "diffs");
+  expect(screen.getByText("1/3 visible")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "src/b.cpp" })).getByText("hidden")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Show all" }));
+  expect(screen.getByText("3/3 visible")).toBeInTheDocument();
+  await user.type(screen.getByRole("searchbox"), "b.cpp");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Hide files" }), "diffs");
+  expect(screen.getByText("1/3 visible")).toBeInTheDocument();
+});
+
+it("preserves manually hidden files when applying a bulk visibility action", async () => {
+  const user = userEvent.setup();
+  const change = vi.fn();
+  render(<ArtifactFileExplorer files={files} moves={moves} selectedFileId="f-0" hiddenFileIds={new Set(["f-0"])} onSelectFile={vi.fn()} onHiddenFileIdsChange={change} />);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Hide files" }), "moves");
+  expect(change).toHaveBeenCalledWith(new Set(["f-0", "f-2"]));
+});
