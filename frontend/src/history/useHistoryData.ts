@@ -233,6 +233,7 @@ export function useHistoryData(
           },
         },
       );
+      setPairs(current => current.map(pair => pair.number === pairNumber ? { ...pair, cached: true } : pair));
       const openedPair = (await fetchHistoryPair(selectedRepositoryId, pairNumber)).pair;
       setSelectedPair(openedPair);
       onVisualization(payload, {

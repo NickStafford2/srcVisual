@@ -55,6 +55,7 @@ from srcdiffvisual.runs.store import InvalidRunTransitionError, RunNotFoundError
 from srcdiffvisual.web._examples import list_example_filenames, read_example_file
 from srcdiffvisual.web._progress import progress_broker
 from srcdiffvisual.web._validate_artifact import artifact_validation_cache
+from srcdiffvisual.web._history_cache import annotate_cached_pairs
 
 api = Blueprint("api", __name__)
 
@@ -325,6 +326,11 @@ def history_pairs() -> tuple[dict[str, object], int]:
             limit=limit,
             after=after,
             oldest_first=oldest_first,
+        )
+        result = annotate_cached_pairs(
+            result, store=current_app.config["RUN_STORE"],
+            artifact_root=current_app.config["ARTIFACT_ROOT"],
+            repository_id=_configured_history_repository().repository_id,
         )
     except HistoryConfigurationError as error:
         return history_error_response(error)

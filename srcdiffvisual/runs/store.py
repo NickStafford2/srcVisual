@@ -439,6 +439,27 @@ class RunStore:
             reject_cancellation=True,
         )
 
+    def completed_artifacts_for_pairs(
+        self, repository_id: str, pair_numbers: tuple[int, ...],
+    ) -> tuple[tuple[int, str], ...]:
+        """List saved candidates for one bounded page without executing history."""
+        _validate_repository_id(repository_id)
+        if not pair_numbers:
+            return ()
+        if len(pair_numbers) > 100:
+            raise ValueError("Cache lookup supports at most 100 pairs.")
+        for _number in pair_numbers:
+            _validate_history_pair(_number)
+        _placeholders = ",".join("?" for _ in pair_numbers)
+        with closing(self._connect()) as _database:
+            _rows = _database.execute(
+                f"SELECT history_pair, artifact_id FROM runs WHERE repository_id = ? "
+                f"AND history_pair IN ({_placeholders}) AND status = 'completed' "
+                "ORDER BY finished_at DESC",
+                (repository_id, *pair_numbers),
+            ).fetchall()
+        return tuple((_row["history_pair"], _row["artifact_id"]) for _row in _rows)
+
     def referenced_artifact_ids(self) -> frozenset[str]:
         """Return every artifact retained by a completed run."""
         with closing(self._connect()) as _database:

@@ -212,13 +212,14 @@ function HistoryPairList({
 }) {
   return (
     <section className="flex min-h-[430px] min-w-0 flex-col rounded-2xl border border-white/10 bg-slate-950/50 p-3">
-      <div className="mb-2 grid shrink-0 grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px] gap-2 px-3 text-[11px] font-medium tracking-wide text-slate-500 uppercase">
+      <div className="mb-2 grid shrink-0 grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px_60px] gap-2 px-3 text-[11px] font-medium tracking-wide text-slate-500 uppercase">
         <span>Pair</span>
         <span>Commits</span>
         <span>Status</span>
         <span>Paths</span>
         <span>Moves</span>
         <span>Time</span>
+        <span>Cached</span>
       </div>
       <div
         className="h-0 min-h-0 flex-1 space-y-1 overflow-auto"
@@ -241,7 +242,7 @@ function HistoryPairList({
             onClick={() => void onSelectPair(pair.number)}
             aria-pressed={selectedPairNumber === pair.number}
             className={[
-              "grid w-full grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px] gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition",
+              "grid w-full grid-cols-[70px_minmax(150px,1fr)_120px_70px_65px_65px_60px] gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition",
               selectedPairNumber === pair.number
                 ? "bg-sky-300/15 text-sky-50"
                 : "bg-white/[0.025] text-slate-300 hover:bg-white/[0.07]",
@@ -257,6 +258,16 @@ function HistoryPairList({
             </span>
             <span title={pair.atomic_move_count !== undefined ? `${pair.atomic_move_count} atomic groups retained` : undefined}>{pair.move_count}</span>
             <span>{pair.elapsed_seconds.toFixed(1)}s</span>
+            <span title="Saved visualization for these commits. Tool identity and integrity are verified when opened.">
+              <span className="relative inline-flex h-4 w-4 align-middle">
+                <input type="checkbox" checked={pair.cached === true} readOnly disabled aria-label={`Pair ${pair.number} cached`} className="pointer-events-none m-0 h-4 w-4 appearance-none rounded-sm border border-slate-300/40 bg-transparent opacity-100 disabled:opacity-100" />
+                {pair.cached === true ? (
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute inset-0 h-4 w-4 text-emerald-400">
+                    <path d="m3 8 3.5 3.5 6.5-7" />
+                  </svg>
+                ) : null}
+              </span>
+            </span>
           </button>
         ))}
       </div>

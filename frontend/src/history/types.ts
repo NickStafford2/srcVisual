@@ -49,6 +49,7 @@ export interface HistoryStatusDocument {
 }
 
 export interface HistoryPairListItem {
+  cached?: boolean;
   number: number;
   distance_from_newest: number;
   old_commit: string;

@@ -106,6 +106,15 @@ result or an immutable thesis figure; use evidence snapshots for final claims.
 
 ## Preparing fast historical demonstrations
 
+The commit list includes a read-only **Cached** checkbox. It indicates a
+completed saved visualization for the displayed repository/commit pair whose
+artifact format and source projection version are current and whose files
+are present. This is an availability hint, not a full integrity or current-tool
+identity check; opening still performs the canonical fingerprint and integrity
+validation and may rebuild if necessary. Cache status refreshes with the list
+and updates immediately after a visualization completes in this browser.
+The checkbox does not pin, delete, or create cached results.
+
 Completed history runs already reuse their immutable visualization artifact;
 the canonical srcMove pair fingerprint is still checked on every open. The
 first reuse per backend worker performs full checksum and SQLite validation.

@@ -282,6 +282,9 @@ describe("repository history browser", () => {
     );
 
     const pairList = screen.getByLabelText("History commit pairs");
+    const cachedIndicator = within(pairList).getByRole("checkbox", { name: "Pair 1 cached" });
+    expect(cachedIndicator).not.toBeChecked();
+    expect(cachedIndicator).toBeDisabled();
     await user.click(within(pairList).getByRole("button", { name: /#1/ }));
 
     const details = await screen.findByLabelText("Commit pair 1 details");
@@ -316,6 +319,7 @@ describe("repository history browser", () => {
         "true",
       );
     });
+    expect(cachedIndicator).toBeChecked();
     expect(fetch).toHaveBeenCalledWith(
       "/api/history/pairs/1/runs?repository=notepadpp",
       { method: "POST" },
