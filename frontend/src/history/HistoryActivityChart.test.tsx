@@ -36,6 +36,8 @@ describe("historical activity scale", () => {
     render(<HistoryActivityChart series={[pair(1, 99), pair(2, 9), pair(3, 0), pair(4, 0), pair(5, 0)]} isLoading={false} error={null} selectedPair={null} onSelect={onSelect} />);
     await user.selectOptions(screen.getByRole("combobox", { name: "Rolling average" }), "5");
     const toggle = screen.getByRole("checkbox", { name: "Logarithmic Y axis" });
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
     const zero = screen.getByRole("button", { name: "Pair 3: 0 detected moves" });
     const small = screen.getByRole("button", { name: "Pair 2: 9 detected moves" });
     const peak = screen.getByRole("button", { name: "Pair 1: 99 detected moves" });
@@ -57,10 +59,9 @@ describe("historical activity scale", () => {
     expect(screen.getByLabelText("Rolling mean").getAttribute("d")).toBe(linearMean);
   });
 
-  it("keeps an all-zero log chart finite", async () => {
-    const user = userEvent.setup();
+  it("keeps an all-zero log chart finite", () => {
     render(<HistoryActivityChart series={[pair(1, 0)]} isLoading={false} error={null} selectedPair={null} onSelect={() => {}} />);
-    await user.click(screen.getByRole("checkbox", { name: "Logarithmic Y axis" }));
+    expect(screen.getByRole("checkbox", { name: "Logarithmic Y axis" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Pair 1: 0 detected moves" }).getAttribute("cy")).toBe("218");
     expect(screen.getByLabelText("Raw move counts").getAttribute("d")).not.toMatch(/NaN|Infinity/);
   });

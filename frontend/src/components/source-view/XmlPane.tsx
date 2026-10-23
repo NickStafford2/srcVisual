@@ -41,9 +41,9 @@ export function XmlPane({
     <article
       id={XML_PANE_ID}
       aria-label="srcDiff XML"
-      className="overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-[18px] border border-purple-300/15 bg-slate-950/55"
     >
-      <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
+      <header className="flex shrink-0 items-start justify-between gap-3 px-4 pt-3 pb-2">
         <button
           type="button"
           onClick={() => setShowPositions((current) => !current)}
@@ -53,7 +53,7 @@ export function XmlPane({
         </button>
       </header>
 
-      <div className="max-h-[34vh] overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
+      <div className="min-h-0 flex-1 overflow-auto border-t border-purple-300/10 bg-slate-950/90 font-mono">
         {lines.length === 0 ? (
           <div className="px-5 py-5 text-sm text-slate-400">
             No XML to render yet.

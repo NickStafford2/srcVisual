@@ -347,7 +347,7 @@ export default function App() {
                 onTabChange={setActiveMainTab}
               />
 
-              <div className="min-h-0 p-2">
+              <div className={activeMainTab === "xml-pane" ? "min-h-0 flex-1 overflow-hidden p-2" : "min-h-0 p-2"}>
                 <TabPanel tabId="input" activeTabId={activeMainTab}>
                   <InputPanel
                     inputMode={srcDiffData.inputMode}
@@ -401,7 +401,7 @@ export default function App() {
                       />
                     </TabPanel>
 
-                    <TabPanel tabId="xml-pane" activeTabId={activeMainTab}>
+                    <TabPanel tabId="xml-pane" activeTabId={activeMainTab} className="h-full min-h-0">
                       <ArtifactXmlPane
                         moves={artifact.moves.items}
                         visibleMoveIds={visibleArtifactMoveIds}

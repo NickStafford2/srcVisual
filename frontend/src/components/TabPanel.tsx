@@ -4,12 +4,14 @@ type TabPanelProps<TTabId extends string> = {
   tabId: TTabId;
   activeTabId: TTabId;
   children: ReactNode;
+  className?: string;
 };
 
 export function TabPanel<TTabId extends string>({
   tabId,
   activeTabId,
   children,
+  className,
 }: TabPanelProps<TTabId>) {
   return (
     <div
@@ -17,6 +19,7 @@ export function TabPanel<TTabId extends string>({
       hidden={activeTabId !== tabId}
       id={`${tabId}-panel`}
       role="tabpanel"
+      className={className}
     >
       {children}
     </div>
