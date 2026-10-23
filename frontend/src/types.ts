@@ -124,6 +124,15 @@ export interface ArtifactXmlProjection {
   anchors: ArtifactXmlAnchor[];
 }
 
+export interface ArtifactReportProjection {
+  schema_version: 1;
+  artifact_id: string;
+  available: boolean;
+  diagnostics_available: boolean;
+  text: string;
+  truncated: boolean;
+}
+
 export interface ArtifactSourceLine {
   line_number: number;
   text: string;

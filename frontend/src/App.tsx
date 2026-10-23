@@ -16,6 +16,7 @@ import {
   type Pair,
 } from "./components/artifact/ArtifactCorrespondences";
 import { ArtifactXmlPane } from "./components/artifact/ArtifactXmlPane";
+import { ArtifactReportPane } from "./components/artifact/ArtifactReportPane";
 import { fetchArtifactNode } from "./api";
 import { useBigMoveBenchReview } from "./bigmovebench/useBigMoveBenchReview";
 import { BigMoveBenchCaseBar } from "./components/BigMoveBenchCaseBar";
@@ -33,12 +34,14 @@ type MainTabId =
   | "input"
   | "source-code"
   | "xml-pane"
+  | "report-json"
   | "move-summary"
   | "correspondences";
 
 const resultTabs: TabDefinition<MainTabId>[] = [
   { id: "source-code", label: "Source" },
   { id: "xml-pane", label: "XML" },
+  { id: "report-json", label: "results.json" },
   { id: "move-summary", label: "Move Summary" },
   { id: "correspondences", label: "Correspondences" },
 ];
@@ -347,7 +350,7 @@ export default function App() {
                 onTabChange={setActiveMainTab}
               />
 
-              <div className={activeMainTab === "xml-pane" ? "min-h-0 flex-1 overflow-hidden p-2" : "min-h-0 p-2"}>
+              <div className={activeMainTab === "xml-pane" || activeMainTab === "report-json" ? "min-h-0 flex-1 overflow-hidden p-2" : "min-h-0 p-2"}>
                 <TabPanel tabId="input" activeTabId={activeMainTab}>
                   <InputPanel
                     inputMode={srcDiffData.inputMode}
@@ -411,6 +414,10 @@ export default function App() {
                         visibleDiffKinds={visibleDiffKinds}
                         onSelectNodeId={selectArtifactNodeById}
                       />
+                    </TabPanel>
+
+                    <TabPanel tabId="report-json" activeTabId={activeMainTab} className="h-full min-h-0">
+                      <ArtifactReportPane artifactId={artifact.artifact_id} active={activeMainTab === "report-json"} />
                     </TabPanel>
 
                     <TabPanel

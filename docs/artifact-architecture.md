@@ -917,6 +917,30 @@ updates during development. It is a frontend source fingerprint, not a Git
 revision, backend version, or emitted-bundle checksum. The Details control
 exposes full hashes and comparison context with a Copy details action.
 
+### Retained JSON report
+
+The results.json tab displays the retained producer `results.json`, including its
+optional diagnostics, with basic key/string/number/boolean/null highlighting.
+It loads on first opening and uses the bounded browser projection cache. Like
+XML, it fills the remaining main-panel height and scrolls internally.
+
+`GET /api/artifacts/{id}/report` returns projection schema 1 with explicit
+`available`, `diagnostics_available`, `text`, and `truncated` fields. Preview
+formatting stops after 262,144 Unicode characters; all preview lines appear in one
+continuously scrollable pane without paging. A truncated preview is clearly labeled and may end inside a JSON value;
+its copy action is labeled **Copy preview**. Untruncated previews offer **Copy
+JSON**. `GET /api/artifacts/{id}/report/download` downloads the complete,
+pretty-printed retained producer document as `results.json` without the preview
+limit. The download preserves JSON values, not original file whitespace.
+
+An XML-only artifact without retained producer metadata reports unavailability;
+the viewer does not synthesize a producer report from annotations. Results without
+diagnostics remain viewable and explicitly indicate missing diagnostic details.
+Viewer-added `visualization_candidate_locations` are excluded from both views.
+No new artifact/schema migration or native execution is required. The server
+still parses the retained metadata JSON to extract the producer document; the
+preview limits bound transport and rendering, not that server-side parsing cost.
+
 ### Correspondence diagnostics inspector
 
 For examples, pasted XML and uploads, **Collect correspondence diagnostics**

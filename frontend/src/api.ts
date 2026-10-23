@@ -14,6 +14,7 @@ import type {
   ArtifactTreeNode,
   ArtifactTreeProjection,
   ArtifactXmlProjection,
+  ArtifactReportProjection,
 } from "./types";
 import type {
   HistoryPairDocument,
@@ -461,6 +462,16 @@ export async function fetchArtifactXml(
     throw new Error("Backend returned an unsupported artifact XML projection.");
   }
   return payload as unknown as ArtifactXmlProjection;
+}
+
+export async function fetchArtifactReport(artifactId: string): Promise<ArtifactReportProjection> {
+  const payload = await fetchArtifactProjection(`/api/artifacts/${artifactId}/report`);
+  if (payload.schema_version !== 1 || payload.artifact_id !== artifactId ||
+      typeof payload.available !== "boolean" || typeof payload.diagnostics_available !== "boolean" ||
+      typeof payload.text !== "string" || typeof payload.truncated !== "boolean") {
+    throw new Error("Backend returned an unsupported report projection.");
+  }
+  return payload as unknown as ArtifactReportProjection;
 }
 
 export function openVisualizationProgressStream(

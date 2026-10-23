@@ -35,7 +35,9 @@ diff ancestors, and its direct diff children in Source. Source, XML, the structu
 tree, sidebar node inspector, and Move Summary share stable artifact-local identities.
 Selecting a moved fragment or connector opens retained srcMove details;
 connector visibility and move isolation remain separate controls. The XML view
-is loaded only when opened. The application does not infer unavailable
+is loaded only when opened. A results.json tab lazily displays retained producer
+results with syntax highlighting, bounded previews, and a complete JSON download.
+The application does not infer unavailable
 classification or selection evidence from XML-only input.
 
 See [application rules](docs/Rules.md), the

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import sqlite3
 from typing import Any, Callable
@@ -9,6 +10,7 @@ from flask import Blueprint, Response, current_app, request, send_file
 from werkzeug.datastructures import FileStorage
 
 from srcdiffvisual.artifacts.models import ArtifactProvenance
+from srcdiffvisual.artifacts.report import read_report_document, read_report_projection
 from srcdiffvisual.artifacts.correspondences import (
     read_correspondences,
     read_correspondence,
@@ -131,6 +133,29 @@ def artifact_xml(artifact_id: str) -> tuple[dict[str, object], int]:
             artifact_root=current_app.config["ARTIFACT_ROOT"],
             artifact_id=artifact_id,
         )
+    )
+
+
+@api.get("/artifacts/<artifact_id>/report")
+def artifact_report(artifact_id: str) -> tuple[dict[str, object], int]:
+    return _artifact_response(lambda: read_report_projection(
+        artifact_root=current_app.config["ARTIFACT_ROOT"], artifact_id=artifact_id,
+    ))
+
+
+@api.get("/artifacts/<artifact_id>/report/download")
+def artifact_report_download(artifact_id: str):
+    _payload, _status = _artifact_response(lambda: {"report": read_report_document(
+        artifact_root=current_app.config["ARTIFACT_ROOT"], artifact_id=artifact_id,
+    )})
+    if _status != 200:
+        return _payload, _status
+    if _payload["report"] is None:
+        return {"error": "No producer results.json was retained for this artifact."}, 404
+    return Response(
+        json.JSONEncoder(indent=2, ensure_ascii=False).iterencode(_payload["report"]),
+        mimetype="application/json",
+        headers={"Content-Disposition": 'attachment; filename="results.json"'},
     )
 
 
