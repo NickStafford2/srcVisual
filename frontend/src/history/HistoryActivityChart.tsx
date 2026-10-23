@@ -24,7 +24,7 @@ export function activityPoints(series: HistoryPairListItem[], window: number) {
 
 export function HistoryActivityChart({ series, isLoading, error, selectedPair, onSelect }: Props) {
   const [window, setWindow] = useState(10);
-  const [logarithmic, setLogarithmic] = useState(false);
+  const [logarithmic, setLogarithmic] = useState(true);
   const points = useMemo(() => activityPoints(series, window), [series, window]);
   const width = 960, height = 260, left = 58, right = 24, top = 20, bottom = 42;
   const oldest = points[0]?.pair.distance_from_newest ?? 0;

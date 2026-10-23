@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import closing
 from copy import deepcopy
-from difflib import SequenceMatcher
 from functools import lru_cache
 import json
 from pathlib import Path
@@ -12,6 +11,7 @@ import xml.etree.ElementTree as ET
 
 from srcdiffvisual.srcmove.attributes import MV_ID
 from srcdiffvisual.artifacts._move_layers import read_secondary_srcdiff_moves
+from srcdiffvisual.artifacts._alignment import alignment_opcodes
 
 from srcdiffvisual.artifacts.store import (
     ARTIFACT_SCHEMA_VERSION,
@@ -169,7 +169,7 @@ def read_source_projection(
     file_row = _read_file_row(artifact_path, file_id)
     left_lines = _read_source_lines(artifact_path, file_id, revision=0)
     right_lines = _read_source_lines(artifact_path, file_id, revision=1)
-    rows = _align_lines(left_lines, right_lines)
+    rows = _align_lines(left_lines, right_lines, artifact_root=artifact_root)
     anchors = _read_focus_anchors(artifact_path, file_id)
     _attach_anchors(rows, anchors)
 
@@ -435,10 +435,13 @@ def _read_source_lines(
     )
 
 
-def _align_lines(left: list[str], right: list[str]) -> list[dict[str, Any]]:
+def _align_lines(
+    left: list[str], right: list[str], *, artifact_root: Path | None = None
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    matcher = SequenceMatcher(None, left, right, autojunk=False)
-    for tag, left_start, left_end, right_start, right_end in matcher.get_opcodes():
+    for tag, left_start, left_end, right_start, right_end in alignment_opcodes(
+        left, right, artifact_root=artifact_root
+    ):
         kind = {"equal": "context", "delete": "delete", "insert": "insert"}.get(
             tag, "replace"
         )

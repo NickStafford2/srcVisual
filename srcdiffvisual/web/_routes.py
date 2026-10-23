@@ -52,6 +52,7 @@ from srcdiffvisual.runs.events import stream_run_events
 from srcdiffvisual.runs.store import InvalidRunTransitionError, RunNotFoundError
 from srcdiffvisual.web._examples import list_example_filenames, read_example_file
 from srcdiffvisual.web._progress import progress_broker
+from srcdiffvisual.web._validate_artifact import artifact_validation_cache
 
 api = Blueprint("api", __name__)
 
@@ -393,9 +394,10 @@ def create_history_run(
                 break
             try:
                 assert _acquisition.run.artifact_id is not None
-                validate_artifact(
+                artifact_validation_cache.validate(
                     artifact_root=current_app.config["ARTIFACT_ROOT"],
                     artifact_id=_acquisition.run.artifact_id,
+                    validator=validate_artifact,
                 )
             except (ArtifactIntegrityError, FileNotFoundError):
                 _excluded_completed_run_ids.add(_acquisition.run.run_id)

@@ -104,6 +104,58 @@ Points can be clicked or activated with Enter/Space to inspect
 pair evidence. This is exploratory detector activity, not a validated clustering
 result or an immutable thesis figure; use evidence snapshots for final claims.
 
+## Preparing fast historical demonstrations
+
+Completed history runs already reuse their immutable visualization artifact;
+the canonical srcMove pair fingerprint is still checked on every open. The
+first reuse per backend worker performs full checksum and SQLite validation.
+Subsequent reuse checks file metadata instead, with a bounded memo of 32
+artifacts / 65,536 tracked paths. Changes to the manifest, XML, sources, index,
+or SQLite journal/WAL invalidate that memo. Restarting the backend discards it.
+
+Source projections retain compact, content-keyed line-alignment opcodes in
+`ARTIFACT_ROOT/.projection-cache/alignment.sqlite3`. This disposable cache is
+shared by backend workers and survives restarts; it never modifies published
+artifacts or srcMove evidence. The SQLite database is capped at 64 MiB, with
+least-recently-used eviction, at most 4,096 entries, and a 1 MiB uncompressed limit per entry. SQLite
+may briefly create a rollback journal during writes. A missing, busy, corrupt,
+or unwritable cache falls back to computing alignment from canonical sources.
+Focus changes and gap expansion reuse alignment without storing a separate
+full source/tree response for every combination.
+
+The frontend also retains immutable source, tree, node, move, and XML responses
+in a shared session cache (32 MiB serialized UTF-16 budget, at most 128 entries).
+Identical concurrent requests share one fetch; oversized responses bypass
+retention. This budget covers retained serialized responses, not the entire
+browser heap. Refreshing the page clears it. Live history/status/run data is
+not cached.
+
+Prepare chosen pairs before presenting, from the workspace root:
+
+```bash
+docker compose -f srcDiffVisual/compose.yaml exec -T srcdiffvisual \
+  /opt/venv/bin/python - --repository notepadpp --pairs 13 --timeout 600 \
+  < srcDiffVisual/scripts/warm_history_cache.py
+```
+
+The script uses the running HTTP API, reuses or builds each selected artifact,
+and requests move-focused source for its endpoint files. It prints artifact
+IDs, reuse status, file names, timings, and failures; any failed pair yields
+a nonzero exit status. `--all-files` also warms files without moves. It warms
+the persistent backend alignment cache; open the chosen examples in the browser
+to populate the browser session cache and verify layout. The frontend dev server
+is available through `make -C srcDiffVisual dev`.
+
+Normal `.srcmove` history retains compact detections, which are insufficient
+to render full source/XML. Saved comparisons may contain XML/results, while
+srcDiffVisual artifacts additionally contain the normalized source and structural
+index needed for interactive viewing. Keep the CLI ownership boundary above:
+do not substitute direct database reads or unverified saved XML for the admitted
+history workflow. These new disposable cache bounds do not limit the existing
+artifact store or `.srcmove/comparisons`; their retention remains separate and
+manual. Preparing a previously unopened pair can still require native execution
+and artifact construction.
+
 ## HTTP surface
 
 ```text

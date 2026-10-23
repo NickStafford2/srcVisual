@@ -1,3 +1,4 @@
+import { artifactProjectionCache } from "./artifactProjectionCache";
 import { assertArtifactManifest } from "./artifactManifest";
 import { withReportedMoveCount } from "./history/pairCounts";
 import {
@@ -260,6 +261,10 @@ async function fetchJson(url: string, signal?: AbortSignal): Promise<Record<stri
   return payload;
 }
 
+function fetchArtifactProjection(url: string): Promise<Record<string, unknown>> {
+  return artifactProjectionCache.get(url, () => fetchJson(url));
+}
+
 export async function visualizeSrcDiff(
   formData: FormData,
 ): Promise<ArtifactManifest> {
@@ -368,7 +373,7 @@ export async function fetchArtifactSource(
     parameters.append("left_range", encodeSourceRange(range.left));
     parameters.append("right_range", encodeSourceRange(range.right));
   }
-  return (await fetchJson(
+  return (await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/files/${fileId}/source?${parameters.toString()}`,
   )) as unknown as ArtifactSourceProjection;
 }
@@ -377,7 +382,7 @@ export async function fetchArtifactMove(
   artifactId: string,
   moveId: string,
 ): Promise<ArtifactMoveProjection> {
-  const payload = await fetchJson(
+  const payload = await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/moves/${encodeURIComponent(moveId)}`,
   );
   if (
@@ -405,7 +410,7 @@ export async function fetchArtifactTree(
   focus: ArtifactFocusProfile,
 ): Promise<ArtifactTreeProjection> {
   const parameters = new URLSearchParams({ focus, limit: "500" });
-  return (await fetchJson(
+  return (await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/files/${fileId}/tree?${parameters.toString()}`,
   )) as unknown as ArtifactTreeProjection;
 }
@@ -414,7 +419,7 @@ export async function fetchArtifactDiffTree(
   artifactId: string,
   fileId: string,
 ): Promise<ArtifactDiffTreeProjection> {
-  return (await fetchJson(
+  return (await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/files/${fileId}/diff-tree?limit=1000`,
   )) as unknown as ArtifactDiffTreeProjection;
 }
@@ -424,7 +429,7 @@ export async function fetchArtifactNodeChildren(
   nodeId: string,
   offset = 0,
 ): Promise<{ children: ArtifactTreeNode[]; next_offset: number | null }> {
-  return (await fetchJson(
+  return (await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/tree/nodes/${encodeURIComponent(nodeId)}/children?offset=${offset}&limit=100`,
   )) as unknown as { children: ArtifactTreeNode[]; next_offset: number | null };
 }
@@ -433,7 +438,7 @@ export async function fetchArtifactNode(
   artifactId: string,
   nodeId: string,
 ): Promise<ArtifactTreeNode> {
-  const payload = await fetchJson(
+  const payload = await fetchArtifactProjection(
     `/api/artifacts/${artifactId}/tree/nodes/${encodeURIComponent(nodeId)}`,
   );
   if (payload.schema_version !== 1 || typeof payload.node !== "object") {
@@ -447,7 +452,7 @@ export async function fetchArtifactNode(
 export async function fetchArtifactXml(
   artifactId: string,
 ): Promise<ArtifactXmlProjection> {
-  const payload = await fetchJson(`/api/artifacts/${artifactId}/xml`);
+  const payload = await fetchArtifactProjection(`/api/artifacts/${artifactId}/xml`);
   if (
     payload.schema_version !== 1 ||
     typeof payload.xml !== "string" ||
