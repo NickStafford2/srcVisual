@@ -10,6 +10,8 @@ type Props = {
   moveId: string;
   position: Position;
   onClose: () => void;
+  onShowOnly?: (moveId: string) => void;
+  onlyThisMove?: boolean;
 };
 
 export function ArtifactMovePopup({
@@ -17,6 +19,8 @@ export function ArtifactMovePopup({
   moveId,
   position,
   onClose,
+  onShowOnly,
+  onlyThisMove = false,
 }: Props) {
   const [projection, setProjection] = useState<ArtifactMoveProjection | null>(
     null,
@@ -56,6 +60,22 @@ export function ArtifactMovePopup({
       {error ? <p className="p-4 text-sm text-rose-300">{error}</p> : null}
       {!projection && !error ? (
         <p className="p-4 text-sm text-slate-400">Loading move details…</p>
+      ) : null}
+      {projection && onShowOnly ? (
+        <div className="px-4 pt-4">
+          <button
+            type="button"
+            onClick={() => onShowOnly(moveId)}
+            disabled={onlyThisMove}
+            className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-white/10 disabled:opacity-60"
+          >
+            {onlyThisMove
+              ? "Only this move shown"
+              : projection.move.report_kind === "ordered_sequence"
+                ? "Show only this sequence"
+                : "Show only this move group"}
+          </button>
+        </div>
       ) : null}
       {projection ? <MoveRecord projection={projection} /> : null}
     </ArtifactPopup>

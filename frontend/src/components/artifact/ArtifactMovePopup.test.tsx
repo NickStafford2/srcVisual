@@ -8,6 +8,21 @@ vi.mock("../../api", () => ({ fetchArtifactMove: vi.fn() }));
 
 afterEach(cleanup);
 
+it.each(["atomic", "ordered_sequence"] as const)("shows only the inspected %s report without selecting a single member", async (kind) => {
+  const user = userEvent.setup();
+  const id = kind === "ordered_sequence" ? "sequence:first" : "item:first";
+  vi.mocked(fetchArtifactMove).mockResolvedValue({
+    schema_version: 2, artifact_id: "artifact-1", results_schema_version: 3,
+    move: { move_id: id, move_origin: "srcmove", report_kind: kind, member_move_ids: kind === "ordered_sequence" ? ["first", "second"] : ["first"] },
+  });
+  const showOnly = vi.fn();
+  const view = render(<ArtifactMovePopup artifactId="artifact-1" moveId={id} position={{ x: 20, y: 20 }} onClose={vi.fn()} onShowOnly={showOnly} />);
+  await user.click(await screen.findByRole("button", { name: kind === "ordered_sequence" ? "Show only this sequence" : "Show only this move group" }));
+  expect(showOnly).toHaveBeenCalledWith(id);
+  view.rerender(<ArtifactMovePopup artifactId="artifact-1" moveId={id} position={{ x: 20, y: 20 }} onClose={vi.fn()} onShowOnly={showOnly} onlyThisMove />);
+  expect(screen.getByRole("button", { name: "Only this move shown" })).toBeDisabled();
+});
+
 it("does not invent srcMove fields for annotation-only moves", async () => {
   vi.mocked(fetchArtifactMove).mockResolvedValue({
     schema_version: 2,

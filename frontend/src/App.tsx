@@ -462,6 +462,8 @@ export default function App() {
           artifactId={artifact.artifact_id}
           moveId={inspectedArtifactMove.moveId}
           position={inspectedArtifactMove.position}
+          onlyThisMove={visibleArtifactMoveIds.size === 1 && visibleArtifactMoveIds.has(inspectedArtifactMove.moveId)}
+          onShowOnly={(moveId) => setVisibleArtifactMoveIds(new Set([moveId]))}
           onClose={() => setInspectedArtifactMove(null)}
         />
       ) : null}

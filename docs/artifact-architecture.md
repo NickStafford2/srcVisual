@@ -774,6 +774,12 @@ opens. `All` still respects lazy
 rendering: connectors terminate at rendered semantic endpoints or collapsed
 file-header proxies and never force every source projection to load.
 
+The details popup also offers **Show only this move group** (or **Show only this
+sequence**). This explicit action replaces move visibility with the inspected
+report ID, keeping every member endpoint of a sequence while hiding other
+groups' boxes and connectors. It does not filter files or dismiss the popup;
+the sidebar visibility controls can re-enable other moves.
+
 Move rendering must communicate semantic move groups rather than individual
 rendered lines. One multi-line source endpoint and its destination endpoint
 should each have one bounding outline around the complete contiguous moved
