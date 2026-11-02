@@ -63,3 +63,19 @@ Artifacts:
 Debugger:
 
 - Code launch config is in `.vscode/launch.json`
+
+## Artifact inspection
+
+From the parent workspace root, inspect artifact integrity, references and a
+retention plan without deleting data:
+
+```bash
+docker compose -f srcDiffVisual/compose.yaml run --rm srcdiffvisual artifact-inventory \
+  --max-artifacts 100 --max-bytes 10737418240 --max-age-days 90
+```
+
+Limits are optional. To apply the reviewed plan, repeat the same policy with
+`--apply-plan PLAN_ID` using the returned `plan_id`. This permanently deletes
+eligible artifacts; stale plans are refused and history-run references are
+rechecked. Automatic collection is not enabled. See the
+[artifact lifecycle](artifact-architecture.md#phase-5-operational-hardening-and-measured-extensions).

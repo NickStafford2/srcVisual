@@ -1,6 +1,8 @@
 DOCKER ?= docker
 BACKEND_IMAGE ?= srcdiffvisual:local
 FRONTEND_CHECK_IMAGE ?= srcdiffvisual-frontend-check:local
+PYTHON ?= python3
+APPLY ?= 0
 PYTEST_ARGS ?=
 
 WORKSPACE_ROOT := $(abspath ..)
@@ -9,10 +11,11 @@ DEV_COMPOSE = $(DOCKER) compose -f compose.yaml -f compose.dev.yaml
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev dev-stop dev-logs image lint test test-backend test-backend-unit test-frontend build-frontend
+.PHONY: help prepare dev dev-stop dev-logs image lint test test-backend test-backend-unit test-frontend build-frontend
 
 help:
 	@echo "srcDiffVisual development targets"
+	@echo "  make prepare            Preview host mount preparation (APPLY=1 to clone/create)"
 	@echo "  make dev                Start frontend hot reload at http://localhost:5173"
 	@echo "  make dev-stop           Stop the frontend development server"
 	@echo "  make dev-logs           Follow the frontend development logs"
@@ -23,6 +26,9 @@ help:
 	@echo "  make test-frontend      Run frontend tests and production build in Docker"
 	@echo "  make build-frontend     Run the production frontend build in Docker"
 	@echo "  make image              Rebuild the packaged backend and native-tool image"
+
+prepare:
+	$(PYTHON) scripts/prepare_workspace.py $(if $(filter 1,$(APPLY)),--apply,)
 
 dev:
 	$(DEV_COMPOSE) up -d --no-build srcdiffvisual history-worker frontend

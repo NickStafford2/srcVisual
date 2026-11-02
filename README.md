@@ -16,29 +16,15 @@ input workflows:
 - browse configured `srcmove-history` analyses and regenerate a selected pair
   with that analysis's admitted tools.
 
-For XML input, the backend extracts both source revisions with
-`archive_reader`. It runs `srcdiff --position` only when position annotations
-are missing and runs `srcMove` only when move annotations are missing. It then
-atomically publishes an immutable artifact containing normalized annotated
-XML, extracted sources, retained move metadata, checksums, and a structural
-SQLite index.
+For XML input, the backend extracts both revisions with `archive_reader`, adds
+missing positions with `srcdiff --position`, and runs `srcMove` only when move
+annotations are missing. It publishes an immutable artifact containing the XML,
+source, move metadata, checksums and a structural index.
 
-The frontend loads bounded projections of that artifact. Its Files navigator groups paths into a searchable directory tree with change
-counts and per-file visibility options. Source lists visible files as collapsible
-cards, retrieves source only for expanded files,
-and represents omitted ranges as expandable gaps. A dedicated srcDiff sidebar
-control independently highlights explicit `diff:common`, `diff:delete`, and
-`diff:insert` source regions; unwrapped common source remains neutral. Move
-highlighting and connectors remain a separate layer. A diff-only tree collapses
-intervening srcML syntax nodes and selecting a region outlines that region, its
-diff ancestors, and its direct diff children in Source. Source, XML, the structure
-tree, sidebar node inspector, and Move Summary share stable artifact-local identities.
-Selecting a moved fragment or connector opens retained srcMove details;
-connector visibility and move isolation remain separate controls. The XML view
-is loaded only when opened. A results.json tab lazily displays retained producer
-results with syntax highlighting, bounded previews, and a complete JSON download.
-The application does not infer unavailable
-classification or selection evidence from XML-only input.
+The interface provides a searchable file tree, lazy source and XML views,
+srcDiff region highlighting, move connectors, a move summary and retained
+producer results. All panes refer to the same artifact. Missing classification
+or selection evidence is never inferred from XML alone.
 
 See [application rules](docs/Rules.md), the
 [artifact architecture](docs/artifact-architecture.md), and the
@@ -46,109 +32,90 @@ See [application rules](docs/Rules.md), the
 
 ## Run locally with Docker
 
-For frontend development, first build the application once using the command
-below, then run this from the parent workspace:
+Use the parent [workspace recovery guide](../docs/workspace.md#recover-on-another-mac)
+to restore sibling source checkouts. Install Git, Python 3.9+ and Docker Desktop
+on the host; native builds, Python dependencies and frontend dependencies run
+in Docker. Run the following from the **parent workspace root**.
+
+Build the native tools, then preview and prepare the host bind sources:
 
 ```bash
-make -C srcDiffVisual dev
+make build
+python3 srcDiffVisual/scripts/prepare_workspace.py
+python3 srcDiffVisual/scripts/prepare_workspace.py --apply
 ```
 
-Open <http://localhost:5173>. React and CSS edits update automatically through
-Vite hot reload. The development server runs in Docker and proxies `/api` to
-the existing backend, sharing its artifacts and history. The first start
-installs frontend dependencies; `make -C srcDiffVisual dev-logs` shows readiness.
-After changing frontend dependencies, restart it with `make -C srcDiffVisual
-dev-stop` followed by `make -C srcDiffVisual dev` to reinstall from the lockfile.
-The stop command stops only the frontend development server.
+Preparation reads the [reference registry and recovery inventory](../srcMove/reference-repositories/README.md),
+clones only missing history repositories, and creates empty analysis/result
+mount directories. Existing clones are left unchanged. Full histories require
+substantial time and storage (the previous reference collection occupied about
+17 GB); the preview reports current free space. Review interrupted clones before
+retrying. `make -C srcDiffVisual prepare` also previews; add `APPLY=1` to apply.
 
-The following command builds and starts the packaged application at port 5000:
+Prepare before Compose: otherwise missing bind sources can become invalid
+`.git` or executable directories. The application image build alone does not
+create the required host `srcMove/build/srcMove`. Linux uses `--no-checkout` to
+avoid Mac filename collisions; history reads committed Git objects. A complete
+Linux source worktree needs a case-sensitive filesystem.
 
-On macOS, run srcDiffVisual from the parent workspace directory. Docker builds the
-Linux frontend, backend, srcML, srcReader, srcDiff, and srcMove dependencies;
-the host does not need native build tools for those projects.
+Build and start the packaged application:
 
 ```bash
 docker compose -f srcDiffVisual/compose.yaml up --build -d
-```
-
-Open <http://127.0.0.1:5000>. The service is bound only to the local machine.
-Inspect its status and logs with:
-
-```bash
 docker compose -f srcDiffVisual/compose.yaml ps
 docker compose -f srcDiffVisual/compose.yaml logs -f
 ```
 
-Stop and remove the local container with:
+Open <http://127.0.0.1:5000>. Examples and XML uploads work without old analysis
+state. The History selector lists Notepad++, SQLite, OpenCV and two Linux scopes;
+empty `.srcmove` directories are mount preparation, not completed analyses.
+To create a fresh analysis, use the parent
+[history workflow](../docs/workspace.md#macos-development-model), for example
+`make history-new REPO=notepadpp COUNT=100`. This rebuilds and starts the viewer
+as well. Both Linux entries share one clone; `.srcmove` holds the scoped analysis
+and `.srcmove-whole` holds the whole-repository analysis. Source mounts are
+read-only; Git and analysis state are writable. Additional repositories require
+mounts and allow-list entries in both Compose services.
+
+For frontend hot reload and backend Python reload:
+
+```bash
+make -C srcDiffVisual dev
+make -C srcDiffVisual dev-logs
+```
+
+Open <http://localhost:5173>. The first start installs frontend dependencies.
+After changing frontend dependencies, use `make -C srcDiffVisual dev-stop`
+then `make -C srcDiffVisual dev` to reinstall from the lockfile. `dev-stop`
+stops only the frontend. Rebuild the image after Python dependencies, native
+dependencies, or packaged application code change. The history worker uses
+packaged viewer code. See [debugging and tests](docs/Debugging.md) for checks and
+refreshing mounts after rebuilding srcMove.
+
+Stop the services with:
 
 ```bash
 docker compose -f srcDiffVisual/compose.yaml down
 ```
 
-The image also supplies srcMove's shared Python results validator and the full XPath
-engine required for schema-3 locator admission. The image contains a compiled snapshot
-of the sibling source checkouts at build
-time; building it does not edit those checkouts. In the parent workspace's
-evaluation workflow, Compose replaces the packaged srcMove executable with the
-incrementally built Linux `srcMove/build/srcMove` binary in both services and
-one-off containers. Rebuild the full image after changing srcDiffVisual,
-`srcmove_history` Python code, the Dockerfile, or another native dependency.
-The canonical commands and checksum-based analysis lifecycle are documented in
-the parent workspace's `docs/workspace.md`.
-Port 5000 serves the packaged build; port 5173 provides frontend hot reload
-through `compose.dev.yaml`. In development, the API source is also mounted with Gunicorn reload.
-Python dependency and native dependency edits still require rebuilding the image;
-the history worker continues using its packaged code. Outside development,
-application changes require rebuilding the packaged application. The checked-in
-Compose configuration makes the analyzed Notepad++, SQLite, OpenCV, and Linux reference
-repositories available in the History selector, with Notepad++ selected by
-default. **Linux** selects the whole-repository analysis, and **Linux (kernel/)**
-selects the separate directory-scoped analysis. Both use the same Linux worktree
-through separate container paths; the whole-repository mount maps the host
-`.srcmove-whole` directory to its own `.srcmove` path. Their source worktrees
-are read-only; only their `.git` and `.srcmove`
-directories are writable so the `srcmove-history` CLI can manage its own
-operation state and saved comparison artifacts. Additional repositories must be
-mounted into both services and added to the allow-listed
-`SRCDIFFVISUAL_HISTORY_REPOSITORIES` JSON configuration.
+The named `srcdiffvisual-artifacts` volume preserves visualization artifacts and
+`runs.sqlite3` across ordinary `down` and container replacement. Removing that
+volume removes its contents. Reference `.srcmove*` state and private thesis
+exports live in their host directories; retained thesis evidence belongs in the
+private repository. Fresh analyses and artifacts can be regenerated. See
+[artifact inspection](docs/Debugging.md#artifact-inspection) for manual retention
+and the [history-browser contract](docs/history-browser.md) for run APIs.
 
-Published visualization artifacts are stored in the named
-`srcdiffvisual-artifacts` volume mounted at `/var/lib/srcdiffvisual/artifacts`. They
-survive container replacement and ordinary `docker compose down`; removing the
-named volume removes them. Durable history run state and ordered progress
-events use `runs.sqlite3` in that same volume.
+## Repository contents
 
-Inspect artifact count, disk use, integrity, history-run protection, and a
-dry-run retention plan without deleting data:
-
-```bash
-docker compose -f srcDiffVisual/compose.yaml run --rm srcdiffvisual artifact-inventory \
-  --max-artifacts 100 --max-bytes 10737418240 --max-age-days 90
-```
-
-All retention limits are optional. The default command is read-only and emits
-a `plan_id`. To apply that exact reviewed plan, repeat the same policy with
-`--apply-plan PLAN_ID`. Collection takes an exclusive lock, rebuilds the
-inventory, rechecks history-run references, and refuses stale plans. Applying
-a plan permanently deletes its candidates; automatic collection is not
-enabled.
-
-History visualization runs are queued with
-`POST /api/history/pairs/{pair_number}/runs` and processed by the dedicated
-`history-worker` Compose service. The status polling endpoint is
-`GET /api/runs/{run_id}`; durable progress streams from
-`GET /api/runs/{run_id}/events`, and `POST /api/runs/{run_id}/cancel` requests
-cancellation. The history frontend now creates durable runs, shows their
-reconnectable progress stream, retains authoritative status polling, supports
-cancellation, and opens the resulting artifact. The synchronous history
-visualization endpoint has been removed.
-
-Run creation derives an internal fingerprint from srcMove's versioned pair
-identity plus srcDiffVisual's artifact schema and analysis configuration. A
-matching queued or running request follows the existing run (`202`); a valid
-completed artifact is returned immediately (`200`). The response field
-`reuse` distinguishes `new`, `active-run`, and `artifact`. Missing or corrupt
-completed artifacts are never reused and fresh work is queued instead.
+| Path | Purpose |
+| --- | --- |
+| `srcdiffvisual/` | Backend, artifact storage and history worker |
+| `frontend/` | React interface and locked Node dependencies |
+| `examples/`, `tests/` | Review examples and automated checks |
+| `scripts/` | Workspace preparation and review utilities |
+| `docs/` | [Canonical behavior and development guides](docs/README.md) |
+| `Dockerfile`, `compose*.yaml`, `Makefile` | Linux build, local services and checks |
 
 ## Current limitations
 
@@ -164,15 +131,6 @@ completed artifacts are never reused and fresh work is queued instead.
 
 ## Hosted application vision
 
-The long-term goal is a secure hosted service where users can:
-
-- upload srcDiff XML and inspect its structured differences
-- upload srcMove-annotated XML and inspect its moves
-- select a GitHub repository and two commits
-- let srcDiffVisual obtain both revisions, run srcDiff and srcMove, and visualize
-  the resulting cross-file differences and moves
-
-Public hosting is a future goal, not a current security guarantee. The backend
-runs native analysis tools and processes user-controlled repositories and XML.
-It must be threat-modeled, sandboxed, resource-limited, and hardened before it
-is exposed to untrusted public input.
+A future hosted service could compare arbitrary GitHub revisions and visualize
+their moves. Public hosting requires sandboxing, resource limits and a threat
+model for native tools and user-controlled inputs.
